@@ -9,7 +9,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6 text-gray-900">
-                    {{ __("Welcome back, ") }} **{{ Auth::user()->name }}**! 
+                    {{ __("Welcome back, ") }} {{ Auth::user()->name }}! 
                     {{ __("You're logged in as ") }} 
                     <span class="font-bold uppercase text-indigo-600">
                         {{ Auth::user()->role }}
@@ -36,12 +36,24 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr>
-                            <td class="px-6 py-4">Board of Trustees</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">admin@mendoza.edu.ph</td>
-                            <td class="px-6 py-4"><span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs uppercase">Admin</span></td>
-                            <td class="px-6 py-4 text-indigo-600 hover:text-indigo-900 cursor-pointer">Edit</td>
-                        </tr>
+                        @foreach($users as $user)
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">{{ $user->name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ $user->email ?? $user->lrn }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                                        {{ strtoupper($user->role) }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="{{ route('admin.users.edit', $user->id) }}" class="text-indigo-600 hover:text-indigo-900">
+                                        Edit
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
