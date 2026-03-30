@@ -9,11 +9,25 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    // Fetches ONLY active users for the dashboard
+    // Shows different dashboard based on the logged-in user's role
     public function index()
     {
-        $users = User::where('status', 'active')->get(); 
-        return view('dashboard', compact('users'));
+        $role = auth()->user()->role;
+
+        if ($role === 'admin') {
+            $users = User::where('status', 'active')->get();
+            return view('dashboard', compact('users'));
+        }
+
+        if ($role === 'teacher') {
+            return view('teacher.dashboard');
+        }
+
+        if ($role === 'parent') {
+            return view('parent.dashboard');
+        }
+
+        return redirect('/');
     }
 
     public function create()

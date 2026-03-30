@@ -25,14 +25,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Admin User Management Routes
+});
+
+// Admin only routes - role:admin middleware restricts access 👇
+Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('/admin/users/create', [UserController::class, 'create'])->name('admin.users.create');
     Route::post('/admin/users', [UserController::class, 'store'])->name('admin.users.store');
-    
-    // NEW: Edit and Update Routes for Archiving/Modifying accounts
     Route::get('/admin/users/{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit');
     Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
-    
 });
 
 require __DIR__.'/auth.php';

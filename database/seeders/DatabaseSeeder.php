@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User; // Check if this line is here!
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -17,6 +17,15 @@ class DatabaseSeeder extends Seeder
             'lrn' => null,
             'password' => Hash::make('Admin123!'),
             'role' => 'admin',
+        ]);
+
+        // Teacher Account
+        User::create([
+            'name' => 'Test Teacher',
+            'email' => 'teacher@mendoza.edu.ph',
+            'lrn' => null,
+            'password' => Hash::make('Teacher123!'),
+            'role' => 'teacher',
         ]);
 
         // Parent Account

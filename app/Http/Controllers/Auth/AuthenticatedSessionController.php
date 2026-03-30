@@ -26,10 +26,39 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        $role = auth()->user()->role;
+        $loginType = $request->input('login_type');
+
+        // If someone used the Admin form but is NOT an admin, block them
+        if ($loginType === 'admin' && $role !== 'admin') {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->withErrors([
+                'login_id' => 'Access denied. This login is for authorized personnel only.',
+            ]);
+        }
+
+        // If someone used the Parent/Teacher form but IS an admin, block them too
+        if ($loginType !== 'admin' && $role === 'admin') {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->withErrors([
+                'login_id' => 'Please use the Admin Login form.',
+            ]);
+        }
+
+        return match($role) {
+            'admin'   => redirect()->route('dashboard'),
+            'teacher' => redirect()->route('dashboard'),
+            'parent'  => redirect()->route('dashboard'),
+            default   => redirect('/'),
+        };
     }
 
     /**

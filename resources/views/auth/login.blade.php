@@ -66,6 +66,7 @@
 
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
+                    <input type="hidden" name="login_type" value="admin"> {{-- 👈 ADDED THIS LINE --}}
                     <div class="mb-5 text-left">
                         <x-input-label for="admin_id" class="text-gray-900 font-black uppercase text-[11px] tracking-widest mb-1" :value="__('Username')" />
                         <x-text-input id="admin_id" class="block mt-1 w-full border-gray-400 focus:border-black focus:ring-black rounded-md shadow-sm bg-white" type="text" name="login_id" required />
