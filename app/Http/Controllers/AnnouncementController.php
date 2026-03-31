@@ -7,23 +7,24 @@ use Illuminate\Http\Request;
 
 class AnnouncementController extends Controller
 {
-    // Show all announcements (for parents and teachers to read)
+    // Show all approved announcements
     public function index()
     {
         $announcements = Announcement::with('poster')
+            ->where('status', 'approved')
             ->orderBy('date_posted', 'desc')
             ->get();
 
         return view('announcements.index', compact('announcements'));
     }
 
-    // Show the form to create an announcement
+    // Show form to create announcement (admin only)
     public function create()
     {
         return view('announcements.create');
     }
 
-    // Save the new announcement
+    // Save new announcement
     public function store(Request $request)
     {
         $request->validate([
@@ -45,13 +46,13 @@ class AnnouncementController extends Controller
             ->with('success', 'Announcement posted successfully!');
     }
 
-    // Show the edit form
+    // Show edit form (admin only)
     public function edit(Announcement $announcement)
     {
         return view('announcements.edit', compact('announcement'));
     }
 
-    // Save the edited announcement
+    // Save edited announcement
     public function update(Request $request, Announcement $announcement)
     {
         $request->validate([
@@ -70,12 +71,12 @@ class AnnouncementController extends Controller
             ->with('success', 'Announcement updated successfully!');
     }
 
-    // Delete an announcement
-    public function destroy(Announcement $announcement)
+    // Archive an announcement (admin only)
+    public function archive(Announcement $announcement)
     {
-        $announcement->delete();
+        $announcement->update(['status' => 'archived']);
 
         return redirect()->route('announcements.index')
-            ->with('success', 'Announcement deleted successfully!');
+            ->with('success', 'Announcement archived successfully!');
     }
 }
