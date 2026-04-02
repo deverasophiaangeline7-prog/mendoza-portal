@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User; 
+use App\Models\Announcement; 
+use App\Models\AnnouncementImage; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -14,21 +16,25 @@ class UserController extends Controller
     {
         $role = auth()->user()->role;
 
+        // Fetch active announcement images for the banner slider
+        $announcementImages = AnnouncementImage::where('status', 'active')
+                                ->latest()
+                                ->get();
+
+        // Logic for Admin
         if ($role === 'admin') {
             $users = User::where('status', 'active')->get();
-            return view('dashboard', compact('users'));
+            return view('dashboard', compact('users', 'announcementImages'));
         }
 
-        if ($role === 'teacher') {
-            return view('teacher.dashboard');
-        }
-
-        if ($role === 'parent') {
-            return view('parent.dashboard');
+        // Logic for Teacher and Parent
+        if ($role === 'teacher' || $role === 'parent') {
+            $announcements = Announcement::latest()->take(5)->get();
+            return view($role . '.dashboard', compact('announcements', 'announcementImages'));
         }
 
         return redirect('/');
-    }
+    } // <--- The ONLY brace that should be here
 
     public function create()
     {
@@ -45,8 +51,6 @@ class UserController extends Controller
             'lrn' => 'nullable|string|unique:users,lrn',
         ]);
 
-        // LOGIC FIX: If they put the same email in both LRN and Email fields,
-        // we check it here to prevent a database unique constraint error.
         if ($request->filled('email') && $request->filled('lrn') && $request->email === $request->lrn) {
             return back()->withErrors(['lrn' => 'Teacher ID/LRN and Email cannot be the same.'])->withInput();
         }
@@ -57,7 +61,7 @@ class UserController extends Controller
             'lrn' => $request->lrn,
             'password' => Hash::make($request->password),
             'role' => $request->role,
-            'status' => 'active', 
+            'status' => 'active',
         ]);
 
         return redirect()->route('dashboard')->with('success', 'User created successfully!');
@@ -73,7 +77,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'role' => 'required|in:admin,teacher,parent',
-            'status' => 'required|in:active,archived', 
+            'status' => 'required|in:active,archived',
             'email' => 'nullable|email|unique:users,email,' . $user->id,
             'lrn' => 'nullable|string|unique:users,lrn,' . $user->id,
         ]);
@@ -88,4 +92,4 @@ class UserController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'User updated successfully!');
     }
-}
+} 

@@ -17,6 +17,18 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/about', function () {
+    return view('about'); 
+})->name('about');
+
+Route::get('/tuitionfee', function () {
+    return view('tuitionfee');
+})->name('tuitionfee');
+
+Route::get('/faqs', function () {
+    return view('faqs');
+})->name('faqs');
+
 // All routes inside here require the user to be logged in
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -55,6 +67,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     // Announcement Image Management (admin only)
     Route::post('/announcement-images', [AnnouncementImageController::class, 'store'])->name('announcement-images.store');
     Route::patch('/announcement-images/{announcementImage}/archive', [AnnouncementImageController::class, 'archive'])->name('announcement-images.archive');
+    Route::get('/announcement-images/archived', [AnnouncementImageController::class, 'archivedIndex'])->name('announcement-images.archived');
+    Route::patch('/announcement-images/{announcementImage}/restore', [AnnouncementImageController::class, 'restore'])->name('announcement-images.restore');
 
     // School Calendar Management (admin only)
     Route::get('/calendar/create', [SchoolCalendarController::class, 'create'])->name('calendar.create');

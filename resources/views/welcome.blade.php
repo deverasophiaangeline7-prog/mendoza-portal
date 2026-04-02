@@ -37,9 +37,9 @@
             <nav class="hidden md:flex items-center space-x-8 font-medium">
     <a href="{{ url('/') }}" class="nav-active px-6 py-2">Home</a>
     
-    <a href="#" class="hover:text-red-200 transition">About</a>
-    <a href="#" class="hover:text-red-200 transition">Tuition Fees</a>
-    <a href="#" class="hover:text-red-200 transition">FAQs</a>
+    <a href="{{ route('about') }}" class="hover:text-red-200 transition">About</a>
+    <a href="{{ url('tuitionfee') }}" class="hover:text-red-200 transition">Tuition Fees</a>
+    <a href="{{ url('faqs') }}" class="hover:text-red-200 transition">FAQs</a>
     
     <a href="{{ route('login') }}" class="bg-orange-400 text-red-900 px-6 py-2 rounded-full font-black shadow-md hover:bg-orange-300 transition">SMS / LOG IN</a>
 </nav>

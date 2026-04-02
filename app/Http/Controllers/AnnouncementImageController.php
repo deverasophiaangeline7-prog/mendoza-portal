@@ -28,10 +28,28 @@ class AnnouncementImageController extends Controller
     }
 
     // Archive an image (admin only)
-    public function archive(AnnouncementImage $announcementImage)
+    public function archive($announcementImage) 
     {
-        $announcementImage->update(['status' => 'archived']);
+        // Using findOrFail ensures we find the record using your 'image_id'
+        $image = AnnouncementImage::findOrFail($announcementImage);
+        $image->update(['status' => 'archived']);
 
         return redirect()->back()->with('success', 'Image archived successfully!');
+    }
+
+    // NEW: View the list of archived images
+    public function archivedIndex()
+    {
+        $archivedImages = AnnouncementImage::where('status', 'archived')->latest()->get();
+        return view('announcements.archived', compact('archivedImages'));
+    }
+
+    // Restore an image
+    public function restore($announcementImage)
+    {
+        $image = AnnouncementImage::findOrFail($announcementImage);
+        $image->update(['status' => 'active']);
+
+        return redirect()->route('dashboard')->with('success', 'Image restored!');
     }
 }
