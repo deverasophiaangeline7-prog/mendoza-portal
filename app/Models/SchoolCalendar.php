@@ -10,15 +10,11 @@ class SchoolCalendar extends Model
     protected $primaryKey = 'calendar_id';
 
     protected $fillable = [
-        'event_title',
-        'description',
-        'start_date',
-        'end_date',
-        'event_type',
-        'is_global',
-        'posted_by',
-        'status',
-    ];
+    'start_date',
+    'event_title',
+    'time',
+    'description', 
+];
 
     public function poster()
     {

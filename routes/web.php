@@ -33,7 +33,7 @@ Route::get('/faqs', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
 
     // The dashboard uses the index function in UserController
-    Route::get('/dashboard', [UserController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('dashboard');
 
     // Profile Routes (Default Laravel Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -52,6 +52,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
     // User Management
+    Route::get('/account-management', function () {return view('accountmanagement'); })->name('account.management');
+    Route::post('/finalize-year', [UserController::class, 'finalize'])->name('finalize.year');
     Route::get('/admin/users/create', [UserController::class, 'create'])->name('admin.users.create');
     Route::post('/admin/users', [UserController::class, 'store'])->name('admin.users.store');
     Route::get('/admin/users/{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit');
@@ -75,7 +77,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::post('/calendar', [SchoolCalendarController::class, 'store'])->name('calendar.store');
     Route::get('/calendar/{schoolCalendar}/edit', [SchoolCalendarController::class, 'edit'])->name('calendar.edit');
     Route::put('/calendar/{schoolCalendar}', [SchoolCalendarController::class, 'update'])->name('calendar.update');
-    Route::patch('/calendar/{schoolCalendar}/archive', [SchoolCalendarController::class, 'archive'])->name('calendar.archive');
+    Route::delete('/calendar/delete/{id}', [SchoolCalendarController::class, 'destroy'])->name('calendar.delete');
 
 });
 

@@ -9,18 +9,13 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
 {
     Schema::create('school_calendar', function (Blueprint $table) {
         $table->id('calendar_id');
-        $table->string('event_title', 255);
-        $table->text('description')->nullable();
-        $table->dateTime('start_date');
-        $table->dateTime('end_date')->nullable();
-        $table->enum('event_type', ['holiday', 'exam', 'activity', 'meeting', 'other']);
-        $table->tinyInteger('is_global')->default(1);
-        $table->foreignId('posted_by')->constrained('users')->onDelete('cascade');
-        $table->enum('status', ['active', 'archived'])->default('active');
+        $table->string('start_date')->unique(); // This acts as your event key
+        $table->string('event_title');
+        $table->text('description')->nullable(); // Your "PS" field
         $table->timestamps();
     });
 }

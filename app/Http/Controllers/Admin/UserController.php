@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\User; 
 use App\Models\Announcement; 
 use App\Models\AnnouncementImage; 
+use App\Models\SchoolCalendar; // Ensure this is imported
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -16,25 +18,44 @@ class UserController extends Controller
     {
         $role = auth()->user()->role;
 
-        // Fetch active announcement images for the banner slider
+        // 1. Fetch active announcement images for the banner slider
         $announcementImages = AnnouncementImage::where('status', 'active')
                                 ->latest()
                                 ->get();
 
+        // 2. Fetch and format calendar events for the dashboard
+        // We fetch all events to populate the red highlights and details box
+        $dbEvents = SchoolCalendar::all();
+        $eventsData = [];
+
+        foreach ($dbEvents as $event) {
+            // We use Carbon to ensure the date format is ALWAYS YYYY-MM-DD
+            // This matches the Alpine.js padding logic (e.g., 2026-04-09)
+            $formattedDate = Carbon::parse($event->start_date)->format('Y-m-d');
+            
+            $eventsData[$formattedDate] = [
+                'name' => $event->event_title,
+                'ps'   => $event->description,
+                'time' => $event->time, // The fix for the missing time!
+            ];
+        }
+
         // Logic for Admin
         if ($role === 'admin') {
             $users = User::where('status', 'active')->get();
-            return view('dashboard', compact('users', 'announcementImages'));
+            // Passing 'eventsData' so the admin can manage and view the calendar
+            return view('dashboard', compact('users', 'announcementImages', 'eventsData'));
         }
 
         // Logic for Teacher and Parent
         if ($role === 'teacher' || $role === 'parent') {
             $announcements = Announcement::latest()->take(5)->get();
-            return view($role . '.dashboard', compact('announcements', 'announcementImages'));
+            // Passing 'eventsData' ensures teachers/parents see the same highlights and details
+            return view($role . '.dashboard', compact('announcements', 'announcementImages', 'eventsData'));
         }
 
         return redirect('/');
-    } // <--- The ONLY brace that should be here
+    }
 
     public function create()
     {
@@ -66,6 +87,18 @@ class UserController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'User created successfully!');
     }
+    public function finalize(Request $request)
+    {
+        // 1. Logic to archive data
+        // Example: SchoolYear::where('status', 'active')->update(['status' => 'archived']);
+
+        // 2. Logic to prepare for the next year
+        // Example: Setting up SY 2026-2027
+
+        // 3. Return a response
+        return redirect()->route('account.management')
+                         ->with('success', 'School Year 2025-2026 has been successfully finalized and archived.');
+    }
 
     public function edit(User $user)
     {
@@ -92,4 +125,4 @@ class UserController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'User updated successfully!');
     }
-} 
+}
