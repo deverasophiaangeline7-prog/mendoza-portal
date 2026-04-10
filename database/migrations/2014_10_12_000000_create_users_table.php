@@ -14,10 +14,17 @@ return new class extends Migration
     Schema::create('users', function (Blueprint $table) {
         $table->id();
         $table->string('name');
-        $table->string('email')->nullable()->unique(); // Changed to nullable
-        $table->string('lrn')->unique()->nullable();   // Changed to unique
+        $table->string('username')->unique(); // Added this
+        $table->string('email')->nullable()->unique();
+        $table->string('lrn')->unique()->nullable();
         $table->string('password');
         $table->enum('role', ['admin', 'teacher', 'parent'])->default('parent');
+        
+        // Add these too so your Teacher form works perfectly:
+        $table->string('gender')->nullable();
+        $table->string('advisory')->nullable();
+        $table->string('cv_path')->nullable();
+        
         $table->timestamps();
     });
 }

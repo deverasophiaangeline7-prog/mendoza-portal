@@ -19,11 +19,14 @@ class User extends Authenticatable
      */
     protected $fillable = [
     'name',
-    'email',
-    'password',
-    'role',
-    'lrn', 
-    'status', 
+    'username',  // Add this for Teachers/Admins
+    'email',     // Used by all
+    'password',  // Used by all
+    'role',      // Used by all
+    'lrn',       // Used by Students/Parents
+    'gender',    // Add this for Teachers
+    'advisory',  // Add this for Teachers
+    'cv_path',
 ];
 
     /**

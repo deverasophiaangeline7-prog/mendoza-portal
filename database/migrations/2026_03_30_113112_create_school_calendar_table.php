@@ -15,6 +15,7 @@ return new class extends Migration
         $table->id('calendar_id');
         $table->string('start_date')->unique(); // This acts as your event key
         $table->string('event_title');
+        $table->string('time')->nullable();
         $table->text('description')->nullable(); // Your "PS" field
         $table->timestamps();
     });

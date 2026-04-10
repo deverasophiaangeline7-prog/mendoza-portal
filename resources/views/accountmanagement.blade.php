@@ -80,9 +80,24 @@
             <div class="w-full max-w-4xl">
                 <div class="flex flex-wrap justify-center items-start gap-12">
                     
-                    <a href="#" class="bg-[#ffb72b] hover:bg-yellow-500 text-black text-2xl font-bold py-5 px-12 rounded-full border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
-                        List of accounts
-                    </a>
+                    <div class="relative" x-data="{ listOpen: false }" @click.away="listOpen = false">
+    <button @click="listOpen = !listOpen" class="bg-[#ffb72b] hover:bg-yellow-500 text-black text-2xl font-bold py-5 px-12 rounded-full border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center transition-all">
+        List of accounts
+        <i class="fa-solid fa-caret-down ml-4 transition-transform duration-300" :class="listOpen ? 'rotate-180' : ''"></i>
+    </button>
+
+    <div x-show="listOpen" 
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 transform -translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-cloak 
+         class="absolute top-full mt-4 left-0 w-full bg-white border-2 border-black rounded-2xl overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] z-20">
+        
+        <a href="{{ route('teacher.list') }}" class="block px-6 py-4 text-xl font-bold border-b-2 border-black hover:bg-yellow-100 transition-colors">
+            Teacher Accounts
+        </a>
+    </div>
+</div>
 
                     <div class="relative" x-data="{ open: false }" @click.away="open = false">
                         <button @click="open = !open" class="bg-[#ffb72b] hover:bg-yellow-500 text-black text-2xl font-bold py-5 px-12 rounded-full border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center transition-all">
@@ -96,8 +111,8 @@
                              x-transition:enter-end="opacity-100 transform translate-y-0"
                              x-cloak 
                              class="absolute top-full mt-4 left-0 w-full bg-white border-2 border-black rounded-2xl overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] z-20">
-                            <a href="#" class="block px-6 py-4 text-xl font-bold border-b-2 border-black hover:bg-yellow-100 transition-colors">Teacher Account</a>
-                            <a href="#" class="block px-6 py-4 text-xl font-bold hover:bg-yellow-100 transition-colors">Parent Account</a>
+                            <a href="{{ route('teacher.create') }}" class="block px-6 py-4 text-xl font-bold border-b-2 border-black hover:bg-yellow-100 transition-colors">Teacher Account</a>
+                            <a href="{{ route('parent.create') }}" class="block px-6 py-4 text-xl font-bold hover:bg-yellow-100 transition-colors">Parent Account</a>
                         </div>
                     </div>
 
