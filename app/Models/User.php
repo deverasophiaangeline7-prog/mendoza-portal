@@ -25,6 +25,7 @@ class User extends Authenticatable
     'role',      // Used by all
     'lrn',       // Used by Students/Parents
     'gender',    // Add this for Teachers
+    'birthdate',
     'advisory',  // Add this for Teachers
     'cv_path',
 ];

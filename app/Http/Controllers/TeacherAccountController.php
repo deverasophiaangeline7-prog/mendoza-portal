@@ -15,7 +15,7 @@ class TeacherAccountController extends Controller
             'last_name'  => 'required|string|max:255',
             'username'   => 'required|unique:users,username',
             'password'   => 'required|min:8|confirmed',
-            'advisory'   => 'nullable|string', // Added validation
+            'advisory'   => 'nullable|string|unique:users,advisory',
             'gender'     => 'nullable|string',   // Added validation
             'cv'         => 'nullable|file|mimes:pdf,docx|max:2048', // Validate the file type
         ]);

@@ -60,147 +60,119 @@
                     <span class="font-semibold">Dashboard</span>
                 </a>
             </li>
-            <li>
-                <a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition">
-                    <i class="fa-solid fa-user-graduate"></i>
-                    <span>List of Students</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition">
-                    <i class="fa-solid fa-calendar-days"></i>
-                    <span>Student Calendar</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition">
-                    <i class="fa-solid fa-star"></i>
-                    <span>Report Card</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition">
-                    <i class="fa-solid fa-wallet"></i>
-                    <span>Tuition Fee</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition">
-                    <i class="fa-solid fa-calendar-check"></i>
-                    <span>Attendance</span>
-                </a>
-            </li>
+            <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-user-graduate"></i><span>List of Students</span></a></li>
+            <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-days"></i><span>Student Calendar</span></a></li>
+            <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-star"></i><span>Report Card</span></a></li>
+            <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-wallet"></i><span>Tuition Fee</span></a></li>
+            <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-check"></i><span>Attendance</span></a></li>
         </ul>
     </nav>
 
-    <main class="flex-1 p-8 bg-white">
-        <h2 class="text-3xl font-bold mb-6">Welcome, {{ Auth::user()->name ?? 'Y/N' }}</h2>
+    <main class="flex-1 p-8 bg-white" x-data="{ 
+        selectedDate: {{ now()->day }},
+        currentMonth: {{ now()->month - 1 }},
+        currentYear: {{ now()->year }},
+        events: {{ \Illuminate\Support\Js::from($eventsData) }},
+        monthNames: ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'],
+        get formattedDate() {
+            return this.currentYear + '-' + 
+                String(this.currentMonth + 1).padStart(2, '0') + '-' + 
+                String(this.selectedDate).padStart(2, '0');
+        },
+        get daysInMonth() { return new Date(this.currentYear, this.currentMonth + 1, 0).getDate(); },
+        get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); }
+    }">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-extrabold tracking-tight uppercase">Welcome, {{ Auth::user()->name ?? 'Teacher' }}</h2>
+        </div>
 
-        <div class="relative w-full h-96 bg-orange-400 rounded-3xl p-6 shadow-lg border-2 border-black mb-8" 
-             x-data="{ activeSlide: 0, total: {{ $announcementImages->count() }} }">
-            
+        <div class="relative w-full h-80 bg-orange-400 rounded-[40px] p-6 shadow-lg border-[3px] border-black mb-12" 
+            x-data="{ activeSlide: 0, total: {{ $announcementImages->count() }} }">
             <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-orange-300 relative overflow-hidden flex items-center justify-center">
-                
                 @forelse($announcementImages as $index => $image)
-                    <div x-show="activeSlide === {{ $index }}" 
-                         x-cloak
-                         x-transition:enter="transition duration-500"
-                         x-transition:enter-start="opacity-0"
-                         x-transition:enter-end="opacity-100"
-                         class="absolute inset-0">
+                    <div x-show="activeSlide === {{ $index }}" x-cloak class="absolute inset-0">
                         <img src="{{ asset('storage/' . $image->image_path) }}" class="w-full h-full object-cover">
-                        
-                        @if($image->caption)
-                            <div class="absolute bottom-4 left-4 bg-black/50 text-white px-4 py-1 rounded-lg backdrop-blur-sm">
-                                {{ $image->caption }}
-                            </div>
-                        @endif
                     </div>
                 @empty
-                    <div class="text-center text-gray-400">
-                        <i class="fa-solid fa-bullhorn text-5xl mb-2"></i>
-                        <p class="italic">No current announcements</p>
-                    </div>
+                    <div class="text-center text-gray-400 italic font-black text-xl uppercase tracking-tighter">No Active Announcements</div>
                 @endforelse
-
-                @if($announcementImages->count() > 1)
-                    <button @click="activeSlide = activeSlide === 0 ? total - 1 : activeSlide - 1" class="absolute left-4 z-10 bg-white/30 p-2 rounded-full hover:bg-white/60 transition">
-                        <i class="fa-solid fa-chevron-left text-black"></i>
-                    </button>
-                    <button @click="activeSlide = activeSlide === total - 1 ? 0 : activeSlide + 1" class="absolute right-4 z-10 bg-white/30 p-2 rounded-full hover:bg-white/60 transition">
-                        <i class="fa-solid fa-chevron-right text-black"></i>
-                    </button>
-                @endif
-            </div>
-
-            <div class="flex justify-center space-x-2 mt-4">
-                @foreach($announcementImages as $index => $image)
-                    <button @click="activeSlide = {{ $index }}" 
-                            class="h-3 rounded-full transition-all duration-300"
-                            :class="activeSlide === {{ $index }} ? 'bg-green-600 w-6' : 'bg-gray-400 w-3'">
-                    </button>
-                @endforeach
             </div>
         </div>
 
         <div class="grid grid-cols-2 gap-12 mt-12">
-                
-                <div>
-                    <h3 class="text-4xl font-black text-center mb-6 tracking-tighter uppercase">SCHOOL CALENDAR</h3>
-                    <div class="bg-[#d97706] rounded-[40px] p-6 border-[3px] border-black shadow-lg">
-                        <div class="flex justify-between items-center mb-4 px-2">
-                            <span class="text-white text-5xl font-black italic tracking-tighter leading-none" style="text-shadow: 2px 2px 0px #800000;">MARCH</span>
-                            <span class="text-white text-5xl font-black tracking-tighter leading-none">2026</span>
+            <div>
+                <h3 class="text-4xl font-black text-center mb-6 tracking-tighter uppercase">SCHOOL CALENDAR</h3>
+                <div class="bg-[#d97706] rounded-[40px] p-6 border-[3px] border-black shadow-[8px_8px_0px_rgba(0,0,0,1)]">
+                    <div class="flex justify-between items-center mb-4 px-2">
+                        <button @click="currentMonth === 0 ? (currentMonth = 11, currentYear--) : currentMonth--" class="text-white text-3xl hover:scale-125 transition">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <div class="text-center">
+                            <span class="text-white text-5xl font-black italic tracking-tighter block uppercase leading-none" style="text-shadow: 3px 3px 0px #800000;" x-text="monthNames[currentMonth]"></span>
+                            <span class="text-white text-2xl font-black tracking-tighter" x-text="currentYear"></span>
                         </div>
-                        
-                        <div class="bg-white rounded-2xl p-4 border-2 border-black">
-                            <div class="calendar-grid mb-4">
-                                @foreach(['SUN','MON','TUE','WED','THU','FRI','SAT'] as $day)
-                                    <span class="text-[#b91c1c] text-center font-black text-sm">{{ $day }}</span>
-                                @endforeach
-                            </div>
+                        <button @click="currentMonth === 11 ? (currentMonth = 0, currentYear++) : currentMonth++" class="text-white text-3xl hover:scale-125 transition">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
 
-                            <div class="calendar-grid">
-                                @for ($i = 1; $i <= 31; $i++)
-                                    <div class="aspect-square flex items-center justify-center rounded-lg border-2 border-gray-200 font-black text-xl 
-                                        {{ $i == 25 ? 'bg-red-500 text-white border-black shadow-md' : 'bg-white text-black' }}">
-                                        {{ $i }}
-                                    </div>
-                                @endfor
-                            </div>
+                    <div class="bg-white rounded-2xl p-4 border-2 border-black">
+                        <div class="calendar-grid mb-4">
+                            @foreach(['SUN','MON','TUE','WED','THU','FRI','SAT'] as $day)
+                                <span class="text-[#b91c1c] text-center font-black text-sm">{{ $day }}</span>
+                            @endforeach
+                        </div>
+
+                        <div class="calendar-grid">
+                            <template x-for="blank in startDay"><div class="aspect-square"></div></template>
+                            <template x-for="day in daysInMonth">
+                                <button @click="selectedDate = day"
+                                        class="aspect-square flex items-center justify-center rounded-lg border-2 font-black text-xl transition-all relative"
+                                        :class="{
+                                            'bg-red-500 text-white border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] scale-110 z-10': selectedDate === day,
+                                            'bg-white text-black border-gray-200 hover:bg-orange-100': selectedDate !== day,
+                                            'ring-2 ring-red-600 ring-offset-1': events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + day.toString().padStart(2, '0')]
+                                        }"
+                                        x-text="day">
+                                </button>
+                            </template>
                         </div>
                     </div>
                 </div>
-
-                <div>
-                    <h3 class="text-4xl font-black text-center mb-6 tracking-tighter uppercase">EVENTS</h3>
-                    <div class="bg-[#d97706] rounded-[40px] p-8 border-[3px] border-black shadow-lg min-h-[400px]">
-                        <a href="#" class="text-[#4ade80] text-3xl font-black italic hover:brightness-110 transition flex items-center" style="text-shadow: 1px 1px 0px black;">
-                            <span class="mr-2">+</span> Add an event
-                        </a>
-                        
-                        <div class="mt-6 space-y-4">
-                            </div>
-                    </div>
-                </div>
-
             </div>
-        </main>
-    </div>
 
-    <div x-show="openModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" x-cloak>
-        <div class="bg-white p-8 rounded-3xl w-full max-w-md border-4 border-orange-400">
-            <form action="{{ route('announcement-images.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <input type="file" name="image" class="mb-4 w-full">
-                <input type="text" name="caption" placeholder="Caption" class="w-full p-2 border rounded mb-4">
-                <div class="flex space-x-2">
-                    <button type="button" @click="openModal = false" class="bg-gray-200 px-4 py-2 rounded">Cancel</button>
-                    <button type="submit" class="bg-red-700 text-white px-4 py-2 rounded">Upload</button>
+            <div>
+                <h3 class="text-4xl font-black text-center mb-6 tracking-tighter uppercase">EVENTS</h3>
+                <div class="bg-white rounded-[40px] p-8 border-[3px] border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] min-h-[420px] flex flex-col items-center justify-center text-center">
+                    
+                    <template x-if="events[formattedDate]">
+                        <div class="w-full">
+                            <p class="font-black uppercase text-sm tracking-widest text-gray-500 mb-2">Name of the Event:</p>
+                            <h4 class="text-4xl font-black text-red-600 uppercase mb-6 italic" x-text="events[formattedDate].name"></h4>
+                            
+                            <p class="font-black uppercase text-sm tracking-widest text-gray-500 mb-2">Time:</p>
+                            <p class="text-2xl font-black italic text-red-500 mb-6" x-text="events[formattedDate].time || 'TBA'"></p>
+                            
+                            <div class="border-t-2 border-dashed border-gray-200 pt-4 mt-4">
+                                <p class="font-black uppercase text-xs tracking-widest text-gray-400 mb-1">Description:</p>
+                                <p class="text-gray-600 italic font-bold" x-text="events[formattedDate].ps || 'No description provided.'"></p>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template x-if="!events[formattedDate]">
+                        <div class="w-full">
+                            <i class="fa-solid fa-calendar-xmark text-5xl text-gray-200 mb-4"></i>
+                            <p class="text-gray-300 text-lg font-black italic uppercase">No events scheduled for</p>
+                            <p class="text-gray-400 text-2xl font-black uppercase tracking-tighter" 
+                            x-text="monthNames[currentMonth] + ' ' + selectedDate + ', ' + currentYear">
+                            </p>
+                        </div>
+                    </template>
                 </div>
-            </form>
+            </div>
         </div>
-    </div>
-
+    </main>
+</div>
 </body>
 </html>

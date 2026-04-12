@@ -41,7 +41,7 @@
     <div class="flex min-h-screen">
         <nav class="w-64 bg-[#b91c1c] text-white pt-4">
             <ul class="space-y-1">
-                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-chart-line w-6"></i><span>Dashboard</span></a></li>
+                <li><a href="{{ route('dashboard') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-chart-line w-6"></i><span>Dashboard</span></a></li>
                 <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-user-graduate w-6"></i><span>List of Students</span></a></li>
                 <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-days w-6"></i><span>Student Calendar</span></a></li>
                 <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-star w-6"></i><span>Report Card</span></a></li>
@@ -65,30 +65,44 @@
 
                 <form action="{{ route('account.parent.store') }}" method="POST">
                     @csrf
-                    <div class="grid grid-cols-2 gap-x-16 gap-y-6">
+                    <div class="grid grid-cols-2 gap-x-16 gap-y-6" x-data="{ pw: '', pw_confirm: '' }">
                         
                         <div class="space-y-5">
-                            <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">LRN:</label>
-                                <input type="text" name="lrn" class="form-input-pill" required>
+                            <div class="flex flex-col">
+                                <div class="flex items-center">
+                                    <label class="w-40 font-bold text-xl">LRN:</label>
+                                    <input type="text" name="lrn" class="form-input-pill @error('lrn') border-red-600 @enderror" value="{{ old('lrn') }}" required>
+                                </div>
+                                @error('lrn') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                             </div>
-                            <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Last name:</label>
-                                <input type="text" name="last_name" class="form-input-pill" required>
+
+                            <div class="flex flex-col">
+                                <div class="flex items-center">
+                                    <label class="w-40 font-bold text-xl">Last name:</label>
+                                    <input type="text" name="last_name" class="form-input-pill @error('last_name') border-red-600 @enderror" value="{{ old('last_name') }}" required>
+                                </div>
+                                @error('last_name') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                             </div>
-                            <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">First name:</label>
-                                <input type="text" name="first_name" class="form-input-pill" required>
+
+                            <div class="flex flex-col">
+                                <div class="flex items-center">
+                                    <label class="w-40 font-bold text-xl">First name:</label>
+                                    <input type="text" name="first_name" class="form-input-pill @error('first_name') border-red-600 @enderror" value="{{ old('first_name') }}" required>
+                                </div>
+                                @error('first_name') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                             </div>
+
                             <div>
                                 <div class="flex items-center">
                                     <label class="w-40 font-bold text-xl">Middle name:</label>
-                                        <input type="text" name="middle_name" class="form-input-pill" :disabled="noMiddleName" :class="noMiddleName ? 'bg-gray-100' : ''">                                </div>
+                                    <input type="text" name="middle_name" class="form-input-pill" :disabled="noMiddleName" :class="noMiddleName ? 'bg-gray-100' : ''">
+                                </div>
                                 <div class="ml-40 mt-2 flex items-center gap-2">
                                     <input type="checkbox" id="no_middle" name="no_middle" x-model="noMiddleName" class="w-5 h-5 accent-red-700">
                                     <label for="no_middle" class="font-bold text-lg cursor-pointer">No middle name</label>
                                 </div>
                             </div>
+
                             <div class="flex items-center">
                                 <label class="w-40 font-bold text-xl">Ext. name:</label>
                                 <input type="text" name="ext_name" class="form-input-pill">
@@ -104,21 +118,51 @@
                                     <option value="Female">Female</option>
                                 </select>
                             </div>
+
                             <div class="flex items-center">
                                 <label class="w-40 font-bold text-xl">Birthdate:</label>
                                 <input type="date" name="birthdate" class="form-input-pill">
                             </div>
-                            <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl leading-tight">Grade & Section:</label>
-                                <input type="text" name="grade_section" class="form-input-pill">
+
+                            <div class="flex flex-col">
+                                <div class="flex items-center">
+                                    <label class="w-40 font-bold text-xl leading-tight">Grade &<br>Section:</label>
+                                    <select name="advisory" class="form-input-pill bg-white cursor-pointer focus:outline-none @error('advisory') border-red-600 @enderror" required>
+                                        <option value="" disabled selected>Select Grade & Section</option>
+                                        <option value="Nursery - St. Mary">Nursery - St. Mary</option>
+                                         <option value="Kinder - St. Bridget">Kinder - St. Bridget</option>
+                                          <option value="Preparatory - St. Augustine">Preparatory - St. Augustine</option>
+                                        <option value="1 - Faith">1 - Faith</option>
+                                        <option value="2 - Hope">2 - Hope</option>
+                                        <option value="3 - Love">3 - Love</option>
+                                        <option value="4 - Grace">4 - Grace</option>
+                                        <option value="5 - Light">5 - Light</option>
+                                        <option value="6 - Wisdom">6 - Wisdom</option>
+                                    </select>
+                                </div>
+                                @error('advisory') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                             </div>
-                            <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Username:</label>
-                                <input type="text" name="username" class="form-input-pill" required>
+
+                            <div class="flex flex-col">
+                                <div class="flex items-center">
+                                    <label class="w-40 font-bold text-xl">Username:</label>
+                                    <input type="text" name="username" class="form-input-pill @error('username') border-red-600 @enderror" value="{{ old('username') }}" required>
+                                </div>
+                                @error('username') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                             </div>
-                            <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Password:</label>
-                                <input type="password" name="password" class="form-input-pill" required>
+
+                            <div class="flex flex-col space-y-5">
+                                <div class="flex items-center">
+                                    <label class="w-40 font-bold text-xl">Password:</label>
+                                    <input type="password" name="password" x-model="pw" class="form-input-pill" required>
+                                </div>
+                                <div class="flex items-center">
+                                    <label class="w-40 font-bold text-xl">Confirm:</label>
+                                    <input type="password" name="password_confirmation" x-model="pw_confirm" class="form-input-pill" required>
+                                </div>
+                                <template x-if="pw_confirm !== '' && pw !== pw_confirm">
+                                    <span class="text-red-600 text-sm ml-40 mt-[-10px] font-bold italic">Passwords do not match!</span>
+                                </template>
                             </div>
 
                             <div class="flex justify-end gap-6 pt-10">

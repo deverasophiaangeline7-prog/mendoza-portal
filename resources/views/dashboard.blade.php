@@ -133,7 +133,9 @@
                                 <i class="fa-solid fa-chevron-left"></i>
                             </button>
                             <div class="text-center">
-                                <span class="text-white text-5xl font-black italic tracking-tighter block" style="text-shadow: 2px 2px 0px #800000;" x-text="monthNames[currentMonth]"></span>
+                                <span class="text-white text-5xl font-black italic tracking-tighter block uppercase leading-none" 
+                                    style="text-shadow: 3px 3px 0px #800000;" 
+                                    x-text="monthNames[currentMonth]"></span>
                                 <span class="text-white text-2xl font-black tracking-tighter" x-text="currentYear"></span>
                             </div>
                             <button @click="nextMonth()" class="text-white text-3xl hover:scale-125 transition">
@@ -154,12 +156,17 @@
                                 </template>
 
                                 <template x-for="day in daysInMonth">
-                                    <button @click="selectedDate = day; isEditing = false"
-                                            class="aspect-square flex items-center justify-center rounded-lg border-2 font-black text-xl transition-all"
+                                    <button @click="selectedDate = day"
+                                            class="aspect-square flex items-center justify-center rounded-lg border-2 font-black text-xl transition-all relative"
                                             :class="{
-                                                'bg-red-500 text-white border-black shadow-md scale-110 z-10': selectedDate === day,
+                                                /* State: Selected Date */
+                                                'bg-red-500 text-white border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] scale-110 z-10': selectedDate === day,
+                                                
+                                                /* State: Not Selected */
                                                 'bg-white text-black border-gray-200 hover:bg-orange-100': selectedDate !== day,
-                                                'border-red-600 bg-red-50 ring-2 ring-red-600 ring-offset-1': events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + day.toString().padStart(2, '0')]
+                                                
+                                                /* State: Has Event (Red Ring indicator) */
+                                                'ring-2 ring-red-600 ring-offset-1': events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + day.toString().padStart(2, '0')]
                                             }"
                                             x-text="day">
                                     </button>

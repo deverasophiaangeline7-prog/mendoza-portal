@@ -10,7 +10,6 @@
     <style>
         .hero-gradient { background: linear-gradient(to right, #d32f2f, #8b0000); }
         [x-cloak] { display: none !important; }
-        /* Custom styles for the form inputs to match image */
         .form-input-pill {
             border: 2px solid black;
             border-radius: 0.75rem;
@@ -51,7 +50,7 @@
     <div class="flex min-h-screen">
         <nav class="w-64 bg-[#b91c1c] text-white pt-4">
             <ul class="space-y-1">
-                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-chart-line w-6"></i><span>Dashboard</span></a></li>
+                <li><a href="{{ route('dashboard') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-chart-line w-6"></i><span>Dashboard</span></a></li>
                 <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-user-graduate w-6"></i><span>List of Students</span></a></li>
                 <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-days w-6"></i><span>Student Calendar</span></a></li>
                 <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-star w-6"></i><span>Report Card</span></a></li>
@@ -86,12 +85,12 @@
                                 <label class="w-40 font-bold text-xl">First name:</label>
                                 <input type="text" name="first_name" class="form-input-pill" required>
                             </div>
-                            <div>
+                            <div x-data="{ noMiddleName: false }">
                                 <div class="flex items-center">
                                     <label class="w-40 font-bold text-xl">Middle name:</label>
-                                    <input type="text" name="middle_name" class="form-input-pill" x-bind:disabled="noMiddleName">
+                                    <input type="text" name="middle_name" class="form-input-pill" :disabled="noMiddleName" :class="noMiddleName ? 'bg-gray-100' : ''">
                                 </div>
-                                <div class="ml-40 mt-2 flex items-center gap-2" x-data="{ noMiddleName: false }">
+                                <div class="ml-40 mt-2 flex items-center gap-2">
                                     <input type="checkbox" id="no_middle" name="no_middle" x-model="noMiddleName" class="w-5 h-5 accent-red-700">
                                     <label for="no_middle" class="font-bold text-lg cursor-pointer">No middle name</label>
                                 </div>
@@ -104,57 +103,71 @@
                                 <label class="w-40 font-bold text-xl">Username:</label>
                                 <input type="text" name="username" class="form-input-pill" required>
                             </div>
-                            <div class="flex flex-col">
-                            <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Password:</label>
-                                <input type="password" name="password" x-model="pw" class="form-input-pill" required>
-                            </div>
-                            @error('password') <span class="text-red-600 text-sm ml-40 mt-1">{{ $message }}</span> @enderror
-                        </div>
 
-                        <div class="flex flex-col mt-5" x-data="{ pw: '', pw_confirm: '' }">
-                            <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Confirm:</label>
-                                <input type="password" name="password_confirmation" x-model="pw_confirm" class="form-input-pill" required>
+                            <div class="space-y-5" x-data="{ pw: '', pw_confirm: '' }">
+                                <div class="flex flex-col">
+                                    <div class="flex items-center">
+                                        <label class="w-40 font-bold text-xl">Password:</label>
+                                        <input type="password" name="password" x-model="pw" class="form-input-pill" required>
+                                    </div>
+                                    @error('password') <span class="text-red-600 text-sm ml-40 mt-1">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="flex flex-col">
+                                    <div class="flex items-center">
+                                        <label class="w-40 font-bold text-xl">Confirm:</label>
+                                        <input type="password" name="password_confirmation" x-model="pw_confirm" class="form-input-pill" required>
+                                    </div>
+                                    <template x-if="pw_confirm !== '' && pw !== pw_confirm">
+                                        <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">Passwords do not match!</span>
+                                    </template>
+                                </div>
                             </div>
-                            <template x-if="pw_confirm !== '' && pw !== pw_confirm">
-                                <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">Passwords do not match!</span>
-                            </template>
-                        </div>
                         </div>
 
                         <div class="space-y-5">
                             <div class="flex items-center">
                                 <label class="w-40 font-bold text-xl">Gender:</label>
                                 <select name="gender" class="form-input-pill bg-white cursor-pointer focus:outline-none">
-                            <option value="" disabled selected>Select Gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                        </div>
+                                    <option value="" disabled selected>Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
                             <div class="flex items-center">
                                 <label class="w-40 font-bold text-xl">Birthdate:</label>
                                 <input type="date" name="birthdate" class="form-input-pill">
                             </div>
-                            <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Advisory:</label>
-                                <select name="advisory" class="form-input-pill bg-white cursor-pointer focus:outline-none">
-                                <option value="" disabled selected>Select Section</option>
-                                <option value="NKP">NKP</option>
-                                <option value="1 - Faith">1 - Faith</option>
-                                <option value="2 - Hope">2 - Hope</option>
-                                <option value="3 - Love">3 - Love</option>
-                                <option value="4 - Grace">4 - Grace</option>
-                                <option value="5 - Light">5 - Light</option>
-                                <option value="6 - Wisdom">6 - Wisdom</option>
-                                </select>
+                            
+                            <div class="flex flex-col">
+                                <div class="flex items-center">
+                                    <label class="w-40 font-bold text-xl">Advisory:</label>
+                                    <select name="advisory" class="form-input-pill bg-white cursor-pointer focus:outline-none @error('advisory') border-red-600 @enderror">
+                                        <option value="" disabled selected>Select Section</option>
+                                        <option value="NKP">NKP</option>
+                                        <option value="1 - Faith">1 - Faith</option>
+                                        <option value="2 - Hope">2 - Hope</option>
+                                        <option value="3 - Love">3 - Love</option>
+                                        <option value="4 - Grace">4 - Grace</option>
+                                        <option value="5 - Light">5 - Light</option>
+                                        <option value="6 - Wisdom">6 - Wisdom</option>
+                                    </select>
+                                </div>
+                                @error('advisory')
+                                    <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span>
+                                @enderror
                             </div>
 
                             <div class="pt-2">
                                 <label class="block font-bold text-xl mb-2 text-black">Upload CV:</label>
-                                <div class="border-2 border-black rounded-2xl h-36 flex flex-col items-center justify-center relative hover:bg-gray-50 transition cursor-pointer">
-                                    <input type="file" name="cv" class="absolute inset-0 opacity-0 cursor-pointer">
-                                    <span class="text-xl font-bold">Add attachment</span>
+                                <div class="border-2 border-black rounded-2xl h-36 flex flex-col items-center justify-center relative hover:bg-gray-50 transition group">
+                                    <input type="file" name="cv" id="cv_input" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                                    
+                                    <span id="cv_filename" class="text-xl font-bold">Add attachment</span>
+
+                                    <button type="button" id="clear_cv" class="hidden absolute top-2 right-4 text-red-600 hover:text-red-800 z-20 transition">
+                                        <i class="fa-solid fa-circle-xmark text-2xl"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -165,11 +178,36 @@
                                 <button type="submit" class="bg-[#34C759] text-white px-10 py-2 rounded-xl font-bold text-xl shadow-md border border-black/10 hover:brightness-90 transition">
                                     Create
                                 </button>
+                            </div>
                         </div>
                     </div>
                 </form>
             </div>
         </main>
     </div>
+
+    <script>
+    const cvInput = document.getElementById('cv_input');
+    const cvName = document.getElementById('cv_filename');
+    const clearBtn = document.getElementById('clear_cv');
+
+    // Handle File Selection
+    cvInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            cvName.textContent = this.files[0].name;
+            cvName.classList.add('text-green-600'); // Optional: Change color when file exists
+            clearBtn.classList.remove('hidden');    // Show the "X" button
+        }
+    });
+
+    // Handle Clear Button Click
+    clearBtn.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent any accidental form triggers
+        cvInput.value = ""; // This physically clears the file from the input
+        cvName.textContent = "Add attachment";
+        cvName.classList.remove('text-green-600');
+        clearBtn.classList.add('hidden'); // Hide the "X" button again
+    });
+</script>
 </body>
 </html>
