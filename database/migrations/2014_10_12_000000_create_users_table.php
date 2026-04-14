@@ -22,7 +22,7 @@ return new class extends Migration
         
         // Add these too so your Teacher form works perfectly:
         $table->string('gender')->nullable();
-        $table->string('advisory')->nullable();
+        $table->string('advisory')->unique()->nullable();   
         $table->string('cv_path')->nullable();
         
         $table->timestamps();

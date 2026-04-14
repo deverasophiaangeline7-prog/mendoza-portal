@@ -78,11 +78,11 @@
                         
                         <div class="space-y-5">
                             <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Last name:</label>
+                                <label class="w-40 font-bold text-xl">Last name: <span class="text-red-600">*</span></label>
                                 <input type="text" name="last_name" class="form-input-pill" required>
                             </div>
                             <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">First name:</label>
+                                <label class="w-40 font-bold text-xl">First name: <span class="text-red-600">*</span></label>
                                 <input type="text" name="first_name" class="form-input-pill" required>
                             </div>
                             <div x-data="{ noMiddleName: false }">
@@ -100,14 +100,14 @@
                                 <input type="text" name="ext_name" class="form-input-pill">
                             </div>
                             <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Username:</label>
+                                <label class="w-40 font-bold text-xl">Username: <span class="text-red-600">*</span></label>
                                 <input type="text" name="username" class="form-input-pill" required>
                             </div>
 
                             <div class="space-y-5" x-data="{ pw: '', pw_confirm: '' }">
                                 <div class="flex flex-col">
                                     <div class="flex items-center">
-                                        <label class="w-40 font-bold text-xl">Password:</label>
+                                        <label class="w-40 font-bold text-xl">Password: <span class="text-red-600">*</label>
                                         <input type="password" name="password" x-model="pw" class="form-input-pill" required>
                                     </div>
                                     @error('password') <span class="text-red-600 text-sm ml-40 mt-1">{{ $message }}</span> @enderror
@@ -115,7 +115,7 @@
 
                                 <div class="flex flex-col">
                                     <div class="flex items-center">
-                                        <label class="w-40 font-bold text-xl">Confirm:</label>
+                                        <label class="w-40 font-bold text-xl">Confirm: <span class="text-red-600">*</label>
                                         <input type="password" name="password_confirmation" x-model="pw_confirm" class="form-input-pill" required>
                                     </div>
                                     <template x-if="pw_confirm !== '' && pw !== pw_confirm">
@@ -127,7 +127,7 @@
 
                         <div class="space-y-5">
                             <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Gender:</label>
+                                <label class="w-40 font-bold text-xl">Gender: <span class="text-red-600">*</label>
                                 <select name="gender" class="form-input-pill bg-white cursor-pointer focus:outline-none">
                                     <option value="" disabled selected>Select Gender</option>
                                     <option value="Male">Male</option>
@@ -135,13 +135,21 @@
                                 </select>
                             </div>
                             <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Birthdate:</label>
-                                <input type="date" name="birthdate" class="form-input-pill">
+                                <label class="w-40 font-bold text-xl">Birthdate: <span class="text-red-600">*</span></label>
+                                <input type="date" 
+                                    name="birthdate" 
+                                    class="form-input-pill" 
+                                    max="{{ \Carbon\Carbon::now()->subYears(18)->format('Y-m-d') }}" 
+                                    required>
                             </div>
+                            {{-- Show error message if validation fails --}}
+                            @error('birthdate')
+                                <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">Teacher must be at least 18 years old.</span>
+                            @enderror
                             
                             <div class="flex flex-col">
                                 <div class="flex items-center">
-                                    <label class="w-40 font-bold text-xl">Advisory:</label>
+                                    <label class="w-40 font-bold text-xl">Advisory: <span class="text-red-600">*</span></label>
                                     <select name="advisory" class="form-input-pill bg-white cursor-pointer focus:outline-none @error('advisory') border-red-600 @enderror">
                                         <option value="" disabled selected>Select Section</option>
                                         <option value="NKP">NKP</option>
@@ -159,14 +167,33 @@
                             </div>
 
                             <div class="pt-2">
-                                <label class="block font-bold text-xl mb-2 text-black">Upload CV:</label>
-                                <div class="border-2 border-black rounded-2xl h-36 flex flex-col items-center justify-center relative hover:bg-gray-50 transition group">
-                                    <input type="file" name="cv" id="cv_input" class="absolute inset-0 opacity-0 cursor-pointer z-10">
-                                    
-                                    <span id="cv_filename" class="text-xl font-bold">Add attachment</span>
+                                <label class="block font-bold text-xl mb-2 text-black">Upload CV: <span class="text-red-600">*</span></label>
+                                    <div class="border-2 border-black rounded-2xl h-36 flex flex-col items-center justify-center relative hover:bg-gray-50 transition group">
+                                        <input type="file" name="cv" id="cv_input" accept=".pdf" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                                        
+                                        <div class="text-center">
+                                            <span id="cv_filename" class="text-xl font-bold block">Add attachment</span>
+                                            <span id="cv_size" class="text-sm font-medium text-gray-500 block hidden"></span>
+                                        </div>
 
-                                    <button type="button" id="clear_cv" class="hidden absolute top-2 right-4 text-red-600 hover:text-red-800 z-20 transition">
-                                        <i class="fa-solid fa-circle-xmark text-2xl"></i>
+                                        <button type="button" id="clear_cv" class="hidden absolute top-2 right-4 text-red-600 hover:text-red-800 z-20 transition">
+                                            <i class="fa-solid fa-circle-xmark text-2xl"></i>
+                                        </button>
+                                    </div>
+                                    <p class="text-sm font-bold text-red-700 mt-2 italic flex items-center gap-1">
+                                        <i class="fa-solid fa-circle-info"></i> Note: Please upload PDF files only (Max 2MB).
+                                    </p>
+                            </div>
+
+                            <div id="system_modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] hidden">
+                                <div class="bg-white border-4 border-red-800 rounded-3xl p-8 w-[500px] shadow-2xl relative text-center">
+                                    <i class="fa-solid fa-triangle-exclamation text-7xl text-red-700 mb-6 block"></i>
+                                    <h3 class="text-3xl font-black text-black uppercase tracking-tight mb-3">System Warning</h3>
+                                    <p class="text-xl font-medium text-gray-700 mb-10 leading-relaxed">
+                                        Image files are not allowed for CV uploads. Please convert your document to a PDF format.
+                                    </p>
+                                    <button id="modal_ok_btn" class="bg-[#34C759] text-white px-12 py-3 rounded-xl font-bold text-2xl shadow-md border border-black/10 hover:brightness-90 transition w-full">
+                                        Understood
                                     </button>
                                 </div>
                             </div>
@@ -189,24 +216,72 @@
     <script>
     const cvInput = document.getElementById('cv_input');
     const cvName = document.getElementById('cv_filename');
+    const cvSizeDisplay = document.getElementById('cv_size');
     const clearBtn = document.getElementById('clear_cv');
+    const systemModal = document.getElementById('system_modal');
+    const modalOkBtn = document.getElementById('modal_ok_btn');
 
-    // Handle File Selection
     cvInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
-            cvName.textContent = this.files[0].name;
-            cvName.classList.add('text-green-600'); // Optional: Change color when file exists
-            clearBtn.classList.remove('hidden');    // Show the "X" button
+            const file = this.files[0];
+            // Fixed calculation: bytes to MB
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2); 
+
+            // 1. Trigger CUSTOM MODAL if it's an image
+            if (file.type.match('image.*')) {
+                showModal(); 
+                return;
+            }
+
+            // 2. Strict PDF check
+            if (file.type !== "application/pdf") {
+                alert("Invalid file type. Please upload a PDF.");
+                resetUpload();
+                return;
+            }
+
+            // 3. Size check
+            if (fileSizeMB > 2) {
+                alert("File is too large! Please upload a CV smaller than 2MB.");
+                resetUpload();
+                return;
+            }
+
+            // SUCCESS: Show file details
+            cvName.textContent = file.name;
+            cvName.classList.add('text-green-600');
+            
+            cvSizeDisplay.textContent = "(" + fileSizeMB + " MB)";
+            cvSizeDisplay.classList.remove('hidden');
+            
+            clearBtn.classList.remove('hidden');
         }
     });
 
-    // Handle Clear Button Click
-    clearBtn.addEventListener('click', function(e) {
-        e.preventDefault(); // Prevent any accidental form triggers
-        cvInput.value = ""; // This physically clears the file from the input
+    // Modal logic
+    function showModal() {
+        resetUpload(); 
+        systemModal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+        systemModal.classList.add('hidden');
+    }
+
+    modalOkBtn.addEventListener('click', closeModal);
+
+    // Reset logic
+    function resetUpload() {
+        cvInput.value = ""; 
         cvName.textContent = "Add attachment";
         cvName.classList.remove('text-green-600');
-        clearBtn.classList.add('hidden'); // Hide the "X" button again
+        cvSizeDisplay.classList.add('hidden');
+        clearBtn.classList.add('hidden');
+    }
+
+    clearBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        resetUpload();
     });
 </script>
 </body>

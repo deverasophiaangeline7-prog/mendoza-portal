@@ -17,7 +17,8 @@ class TeacherAccountController extends Controller
             'password'   => 'required|min:8|confirmed',
             'advisory'   => 'nullable|string|unique:users,advisory',
             'gender'     => 'nullable|string',   // Added validation
-            'cv'         => 'nullable|file|mimes:pdf,docx|max:2048', // Validate the file type
+            'birthdate'  => 'required|date|before_or_equal:' . now()->subYears(18)->format('Y-m-d'),
+            'cv'         => 'nullable|file|mimes:pdf|max:2048', // Validate the file type
         ]);
 
         $cvPath = null;

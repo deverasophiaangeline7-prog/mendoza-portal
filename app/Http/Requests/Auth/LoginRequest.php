@@ -36,20 +36,23 @@ public function authenticate(): void
 {
     $this->ensureIsNotRateLimited();
 
-    $loginValue = $this->input('login_id');
-    
-    // Check if it's an email (for Admin) or LRN (for Parents/Teachers)
-    $field = filter_var($loginValue, FILTER_VALIDATE_EMAIL) ? 'email' : 'lrn';
+    // Use $this->login_id (which matches your blade input name)
+    // We search BOTH columns to be safe
+    $user = \App\Models\User::where('username', $this->login_id)
+                ->orWhere('lrn', $this->login_id)
+                ->orWhere('email', $this->login_id) // Added this just in case!
+                ->first();
 
-    if (! Auth::attempt([$field => $loginValue, 'password' => $this->input('password')], $this->boolean('remember'))) {
-        RateLimiter::hit($this->throttleKey());
+    if (! $user || ! \Illuminate\Support\Facades\Hash::check($this->password, $user->password)) {
+        \Illuminate\Support\Facades\RateLimiter::hit($this->throttleKey());
 
-        throw ValidationException::withMessages([
-            'login_id' => trans('auth.failed'),
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            'login_id' => __('auth.failed'),
         ]);
     }
 
-    RateLimiter::clear($this->throttleKey());
+    \Illuminate\Support\Facades\Auth::login($user, $this->boolean('remember'));
+    \Illuminate\Support\Facades\RateLimiter::clear($this->throttleKey());
 }
 
     /**

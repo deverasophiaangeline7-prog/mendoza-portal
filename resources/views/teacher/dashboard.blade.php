@@ -83,7 +83,7 @@
         get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); }
     }">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-extrabold tracking-tight uppercase">Welcome, {{ Auth::user()->name ?? 'Teacher' }}</h2>
+            <h2 class="text-3xl font-extrabold tracking-tight uppercase">Welcome, Teacher {{ Auth::user()->name ?? 'Teacher' }}!</h2>
         </div>
 
         <div class="relative w-full h-80 bg-orange-400 rounded-[40px] p-6 shadow-lg border-[3px] border-black mb-12" 

@@ -70,7 +70,7 @@
                         <div class="space-y-5">
                             <div class="flex flex-col">
                                 <div class="flex items-center">
-                                    <label class="w-40 font-bold text-xl">LRN:</label>
+                                    <label class="w-40 font-bold text-xl">LRN: <span class="text-red-600">*</span></label>
                                     <input type="text" name="lrn" class="form-input-pill @error('lrn') border-red-600 @enderror" value="{{ old('lrn') }}" required>
                                 </div>
                                 @error('lrn') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
@@ -78,7 +78,7 @@
 
                             <div class="flex flex-col">
                                 <div class="flex items-center">
-                                    <label class="w-40 font-bold text-xl">Last name:</label>
+                                    <label class="w-40 font-bold text-xl">Last name: <span class="text-red-600">*</span></label>
                                     <input type="text" name="last_name" class="form-input-pill @error('last_name') border-red-600 @enderror" value="{{ old('last_name') }}" required>
                                 </div>
                                 @error('last_name') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
@@ -86,7 +86,7 @@
 
                             <div class="flex flex-col">
                                 <div class="flex items-center">
-                                    <label class="w-40 font-bold text-xl">First name:</label>
+                                    <label class="w-40 font-bold text-xl">First name: <span class="text-red-600">*</span></label>
                                     <input type="text" name="first_name" class="form-input-pill @error('first_name') border-red-600 @enderror" value="{{ old('first_name') }}" required>
                                 </div>
                                 @error('first_name') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
@@ -111,7 +111,7 @@
 
                         <div class="space-y-5">
                             <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Gender:</label>
+                                <label class="w-40 font-bold text-xl">Gender: <span class="text-red-600">*</span></label>
                                 <select name="gender" class="form-input-pill bg-white cursor-pointer focus:outline-none">
                                     <option value="" disabled selected>Select Gender</option>
                                     <option value="Male">Male</option>
@@ -120,13 +120,13 @@
                             </div>
 
                             <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Birthdate:</label>
+                                <label class="w-40 font-bold text-xl">Birthdate: <span class="text-red-600">*</span></label>
                                 <input type="date" name="birthdate" class="form-input-pill">
                             </div>
 
                             <div class="flex flex-col">
                                 <div class="flex items-center">
-                                    <label class="w-40 font-bold text-xl leading-tight">Grade &<br>Section:</label>
+                                    <label class="w-40 font-bold text-xl leading-tight">Grade &<br>Section: <span class="text-red-600">*</span></label>
                                     <select name="advisory" class="form-input-pill bg-white cursor-pointer focus:outline-none @error('advisory') border-red-600 @enderror" required>
                                         <option value="" disabled selected>Select Grade & Section</option>
                                         <option value="Nursery - St. Mary">Nursery - St. Mary</option>
@@ -145,7 +145,7 @@
 
                             <div class="flex flex-col">
                                 <div class="flex items-center">
-                                    <label class="w-40 font-bold text-xl">Username:</label>
+                                    <label class="w-40 font-bold text-xl">Username: <span class="text-red-600">*</span></label>
                                     <input type="text" name="username" class="form-input-pill @error('username') border-red-600 @enderror" value="{{ old('username') }}" required>
                                 </div>
                                 @error('username') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
@@ -153,11 +153,11 @@
 
                             <div class="flex flex-col space-y-5">
                                 <div class="flex items-center">
-                                    <label class="w-40 font-bold text-xl">Password:</label>
+                                    <label class="w-40 font-bold text-xl">Password: <span class="text-red-600">*</span></label>
                                     <input type="password" name="password" x-model="pw" class="form-input-pill" required>
                                 </div>
                                 <div class="flex items-center">
-                                    <label class="w-40 font-bold text-xl">Confirm:</label>
+                                    <label class="w-40 font-bold text-xl">Confirm: <span class="text-red-600">*</span></label>
                                     <input type="password" name="password_confirmation" x-model="pw_confirm" class="form-input-pill" required>
                                 </div>
                                 <template x-if="pw_confirm !== '' && pw !== pw_confirm">

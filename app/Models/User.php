@@ -30,6 +30,10 @@ class User extends Authenticatable
     'cv_path',
 ];
 
+public function username()
+{
+    return 'username';
+}
     /**
      * The attributes that should be hidden for serialization.
      *
