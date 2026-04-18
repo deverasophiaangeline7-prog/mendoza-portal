@@ -6,8 +6,10 @@ use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Models\User;
 
 class LoginRequest extends FormRequest
 {
@@ -38,18 +40,13 @@ public function authenticate(): void
 
     // Use $this->login_id (which matches your blade input name)
     // We search BOTH columns to be safe
-    $user = \App\Models\User::where('username', $this->login_id)
-                ->orWhere('lrn', $this->login_id)
-                ->orWhere('email', $this->login_id) // Added this just in case!
-                ->first();
+    $user = User::where('username', $this->login_id)->first();
 
-    if (! $user || ! \Illuminate\Support\Facades\Hash::check($this->password, $user->password)) {
-        \Illuminate\Support\Facades\RateLimiter::hit($this->throttleKey());
-
-        throw \Illuminate\Validation\ValidationException::withMessages([
-            'login_id' => __('auth.failed'),
-        ]);
-    }
+        if (! $user || ! Hash::check($this->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'login_id' => __('auth.failed'),
+            ]);
+        }
 
     \Illuminate\Support\Facades\Auth::login($user, $this->boolean('remember'));
     \Illuminate\Support\Facades\RateLimiter::clear($this->throttleKey());
@@ -82,7 +79,7 @@ public function authenticate(): void
      * Get the rate limiting throttle key for the request.
      */
     public function throttleKey(): string
-    {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
-    }
+        {
+            return Str::transliterate(Str::lower($this->string('login_id')).'|'.$this->ip());
+        }
 }

@@ -13,7 +13,7 @@ return new class extends Migration
 {
     Schema::create('announcement_images', function (Blueprint $table) {
         $table->id('image_id');
-        $table->foreignId('posted_by')->constrained('users')->onDelete('cascade');
+        $table->foreignId('posted_by')->constrained('users', 'user_id')->onDelete('cascade');
         $table->string('image_path', 255);
         $table->string('caption', 255)->nullable();
         $table->enum('status', ['active', 'archived'])->default('active');

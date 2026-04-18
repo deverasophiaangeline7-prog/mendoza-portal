@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Teacher; 
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class TeacherAccountController extends Controller
 {
@@ -15,25 +17,34 @@ class TeacherAccountController extends Controller
             'last_name'  => 'required|string|max:255',
             'username'   => 'required|unique:users,username',
             'password'   => 'required|min:8|confirmed',
-            'advisory'   => 'nullable|string|unique:users,advisory',
-            'gender'     => 'nullable|string',   // Added validation
+            // Update: We now check if the advisory (section_id) exists in the sections table
+            'advisory'   => 'nullable|exists:sections,section_id|unique:teachers,advisory', 
+            'gender'     => 'nullable|string',
             'birthdate'  => 'required|date|before_or_equal:' . now()->subYears(18)->format('Y-m-d'),
-            'cv'         => 'nullable|file|mimes:pdf|max:2048', // Validate the file type
+            'cv'         => 'nullable|file|mimes:pdf|max:2048',
         ]);
 
+        // 1. Handle the File Upload
         $cvPath = null;
         if ($request->hasFile('cv')) {
             $cvPath = $request->file('cv')->store('cvs', 'public');
         }
 
-        User::create([
-            'name'     => $request->first_name . ' ' . $request->last_name,
+        // 2. Create the User (Login Credentials)
+        $user = User::create([
             'username' => $request->username,
+            'email'    => $request->username,
             'password' => Hash::make($request->password),
             'role'     => 'teacher',
-            'advisory' => $request->advisory,
-            'gender'   => $request->gender,
-            'cv_path'  => $cvPath, // <--- ADDED THIS LINE TO SAVE THE CV
+        ]);
+
+        // 3. Create the Teacher Profile
+        Teacher::create([
+            'user_id'        => $user->user_id, 
+            'first_name'     => $request->first_name,
+            'last_name'      => $request->last_name,
+            'advisory'       => $request->advisory, // This now stores the section_id (1-9)
+            'cv_path'        => $cvPath,
         ]);
 
         return redirect()->route('account.management')->with('success', 'Teacher account created successfully!');
@@ -41,14 +52,15 @@ class TeacherAccountController extends Controller
 
     public function index()
     {
-        $teachers = User::where('role', 'teacher')->get();
+        $teachers = User::where('role', 'teacher')->with('teacher')->get();
         return view('teacher-list', compact('teachers')); 
     }
 
     public function destroy($id)
     {
-        $teacher = User::findOrFail($id);
-        $teacher->delete();
+        $user = User::findOrFail($id);
+        $user->delete();
+        
         return redirect()->back()->with('success', 'Teacher deleted successfully!');
     }
 }

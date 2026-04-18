@@ -1,7 +1,15 @@
 <x-guest-layout>
     <div class="flex-1 flex flex-col items-center justify-center w-full" x-data="{}">
         
-        <x-auth-session-status class="mb-4" :status="session('status')" />
+        @if (session('status'))
+            <div class="mb-8 flex justify-center w-full max-w-lg">
+                <div class="bg-green-600 px-10 py-5 rounded-[2rem] border-[6px] border-white shadow-2xl text-center">
+                    <span class="text-white font-black uppercase text-[12px] tracking-[0.3em] drop-shadow-lg">
+                        {{ session('status') }}
+                    </span>
+                </div>
+            </div>
+        @endif
 
         <div class="flex justify-between text-[11px] font-bold uppercase tracking-[0.2em] text-white px-2 drop-shadow-lg w-full max-w-lg mb-4">
             <span>Are you a parent/teacher?</span>
@@ -46,11 +54,7 @@
                                 class="block mt-1 w-full border-gray-300 focus:border-red-700 focus:ring-red-700 rounded-md shadow-sm bg-gray-50" 
                                 ::type="show ? 'text' : 'password'" 
                                 name="password" required />
-                            
-                            <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                <span x-show="!show" class="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-red-800">Show</span>
-                                <span x-show="show" class="text-[10px] font-bold uppercase tracking-widest text-red-800" x-cloak>Hide</span>
-                            </button>
+
                         </div>
                     </div>
 
@@ -67,17 +71,10 @@
                 </form>
 
                 <div x-data="{ resetSent: false }" class="mt-4">
-        <button type="button" @click="resetSent = true" class="text-[10px] font-black uppercase tracking-widest text-red-800 hover:underline">
-        {{ __('Forgot Password?') }}
-        </button>
-
-        <div x-show="resetSent" x-transition x-cloak class="mt-3 p-3 bg-red-50 border border-red-100 rounded-xl">
-        <p class="text-[11px] font-bold text-red-800 uppercase tracking-tighter leading-tight">
-            For password reset,<br>please report directly to the campus.
-        </p>
-        </div>
-
-</div>
+                    <a href="{{ route('password.request') }}" class="text-sm font-black uppercase tracking-widest text-[#9b1c1c] hover:underline">
+                        {{ __('Forgot Password?') }}
+                    </a>
+                </div>
             </div>
         </x-modal>
 
@@ -110,10 +107,6 @@
                                 ::type="show ? 'text' : 'password'" 
                                 name="password" required />
                             
-                            <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                <span x-show="!show" class="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-black">Show</span>
-                                <span x-show="show" class="text-[10px] font-bold uppercase tracking-widest text-black" x-cloak>Hide</span>
-                            </button>
                         </div>
                     </div>
 
@@ -130,9 +123,9 @@
                 </form>
 
                 <div x-data="{ resetSent: false }" class="mt-4">
-                    <button type="button" @click="resetSent = true" class="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-black hover:underline">
-        {{ __('Forgot Password?') }}
-                    </button>
+                    <a href="{{ route('password.request') }}" class="text-xs font-black uppercase tracking-widest text-gray-500 hover:text-black hover:underline">
+                            {{ __('Forgot Password?') }}
+                        </a>
 
                 <div x-show="resetSent" x-transition x-cloak class="mt-3 p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
                     <p class="text-[11px] font-bold text-gray-900 uppercase tracking-tighter leading-tight">

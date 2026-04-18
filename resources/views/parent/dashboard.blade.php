@@ -23,30 +23,43 @@
     events: {{ json_encode($eventsData) }}
 }">
 
-<header class="hero-gradient text-white py-4 px-6 shadow-lg">
-    <div class="container mx-auto flex justify-between items-center">
+<header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
         <div class="flex items-center space-x-3">
-            <div class="p-1 rounded shadow-sm bg-white">
-                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="h-10 w-10">
-            </div>
-            <h1 class="text-2xl font-bold tracking-tight uppercase">Mendoza Academy, Inc.</h1>
+            <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow">
+            <h1 class="text-2xl font-bold uppercase tracking-tight">Mendoza Academy, Inc.</h1>
         </div>
-    
+        
         <div class="flex items-center space-x-6 text-2xl">
-            <div class="relative cursor-pointer hover:text-orange-400 transition">
-                <i class="fa-solid fa-envelope"></i>
-                <span class="absolute -top-2 -right-2 bg-red-500 text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-[#b91c1c]">1</span>
-            </div>
-            <div class="cursor-pointer hover:text-orange-400 transition">
-                <i class="fa-solid fa-bell"></i>
-            </div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="flex items-center space-x-2 hover:text-orange-400 transition">
-                    <i class="fa-solid fa-circle-user text-orange-400 text-3xl"></i>
-                    <span class="text-sm font-bold uppercase hidden md:inline">Logout</span>
+            <i class="fa-solid fa-envelope relative cursor-pointer">
+                <span class="absolute -top-2 -right-2 bg-red-500 text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-red-700">1</span>
+            </i>
+            <i class="fa-solid fa-bell cursor-pointer"></i>
+            
+            <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
+                <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>
+            </button>
+
+            <div x-show="open" 
+                 x-transition 
+                 class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-2xl py-1 z-50 border border-gray-200 overflow-hidden"
+                 style="display: none;">
+                
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold">
+                        <i class="fa-solid fa-right-from-bracket mr-3"></i>
+                        Logout
+                    </button>
+                </form>
+
+                <hr class="border-gray-100">
+
+                <button @click="open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-xmark mr-3"></i>
+                    Cancel
                 </button>
-            </form>
+            </div>
         </div>
     </div>
 </header>

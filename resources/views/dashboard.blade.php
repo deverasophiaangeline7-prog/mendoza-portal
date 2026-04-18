@@ -19,10 +19,33 @@
     selectedDate: {{ now()->day }}, 
     isEditing: false,
     tempName: '',
-    tempTime: '',
+    tempStartTime: '', 
+    tempEndTime: '',
     tempPs: '',
-    /* Pulls initial data from the database via the controller */
-    events: {{ json_encode($eventsData) ?: '{}' }} 
+    currentMonth: {{ now()->month - 1 }}, 
+    currentYear: {{ now()->year }},
+    monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    events: {{ json_encode($eventsData) ?: '{}' }},
+
+    get daysInMonth() { return new Date(this.currentYear, this.currentMonth + 1, 0).getDate(); },
+    get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); },
+    
+    nextMonth() { if(this.currentMonth === 11) { this.currentMonth = 0; this.currentYear++; } else { this.currentMonth++; } },
+    prevMonth() { if(this.currentMonth === 0) { this.currentMonth = 11; this.currentYear--; } else { this.currentMonth--; } },
+
+    formatTime(time) {
+        if (!time) return 'No time set';
+        let parts = time.split(':');
+        let hours = parseInt(parts[0]);
+        let minutes = parts[1];
+        let ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12; 
+        return `${hours}:${minutes} ${ampm}`;
+    },
+
+    getDateKey(day) {
+        return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    }
 }">
 
     <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
@@ -37,14 +60,34 @@
             </i>
             <i class="fa-solid fa-bell cursor-pointer"></i>
             
-            <form method="POST" action="{{ route('logout') }}" class="inline">
-                @csrf
-                <button type="submit" title="Logout" class="hover:scale-110 transition-transform focus:outline-none">
-                    <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>
+            <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
+                <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>
+            </button>
+
+            <div x-show="open" 
+                 x-transition 
+                 class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-2xl py-1 z-50 border border-gray-200 overflow-hidden"
+                 style="display: none;">
+                
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold">
+                        <i class="fa-solid fa-right-from-bracket mr-3"></i>
+                        Logout
+                    </button>
+                </form>
+
+                <hr class="border-gray-100">
+
+                <button @click="open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-xmark mr-3"></i>
+                    Cancel
                 </button>
-            </form>
+            </div>
         </div>
-    </header>
+    </div>
+</header>
 
     <div class="flex min-h-screen">
         <nav class="w-64 bg-[#b91c1c] text-white pt-4">
@@ -57,9 +100,9 @@
                 </li>
                 <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-user-graduate"></i><span>List of Students</span></a></li>
                 <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-days"></i><span>Student Calendar</span></a></li>
-                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-star"></i><span>Report Card</span></a></li>
+                <li><a href="{{ route('reportcard.index') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-star"></i><span>Report Card</span></a></li>
                 <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-wallet"></i><span>Tuition Fee</span></a></li>
-                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-check"></i><span>Attendance</span></a></li>
+                <li><a href="{{ route('attendance.index') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-check"></i><span>Attendance</span></a></li>
                 <li>
                     <a href="{{ route('account.management') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition">
                         <i class="fa-solid fa-users-gear w-6"></i>
@@ -179,68 +222,51 @@
                 <div>
                     <h3 class="text-4xl font-black text-center mb-6 tracking-tighter uppercase">EVENTS</h3>
                     
-                    <div x-show="events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0')] && !isEditing" 
-                         x-cloak x-transition 
+                    <div x-show="events[getDateKey(selectedDate)] && !isEditing" x-cloak x-transition 
                          class="bg-white rounded-[40px] p-8 border-[3px] border-black shadow-lg min-h-[420px] relative flex flex-col justify-center text-center">
                         
                         <div class="absolute top-6 right-8 flex flex-col items-end space-y-1">
                             <button @click="
-                                let key = currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0');
-                                isEditing = true; 
+                                let key = getDateKey(selectedDate);
                                 tempName = events[key].name; 
-                                tempTime = events[key].time; 
+                                tempStartTime = events[key].start_time; 
+                                tempEndTime = events[key].end_time; 
                                 tempPs = events[key].ps;
+                                isEditing = true; 
                             " class="text-green-500 font-black text-lg hover:scale-110 transition">+ Edit</button>
                             
                             <button @click="
-                                if(confirm('Are you sure you want to permanently delete this event?')) {
-                                    let dateKey = currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0');
-        
-                                    fetch('/calendar/delete/' + dateKey, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                        'Accept': 'application/json'
-                                    }
-                                })
-                                .then(response => {
-                                if(response.ok) {
-                                // This removes the red highlight and info box from the screen immediately
-                                delete events[dateKey]; 
-                                } else {
-                                    alert('Error deleting the event. Please check your routes.');
+                                if(confirm('Delete this event?')) {
+                                    let key = getDateKey(selectedDate);
+                                    fetch('/calendar/delete/' + key, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } })
+                                    .then(res => res.ok && delete events[key]);
                                 }
-                                });
-                                }
-                                    " class="text-red-600 font-black text-lg hover:scale-110 transition">- Delete</button>
+                            " class="text-red-600 font-black text-lg hover:scale-110 transition">- Delete</button>
                         </div>
 
                         <div class="space-y-6">
-                            <p class="font-black text-lg text-gray-800">Name of the event:</p>
-                            <h4 class="text-red-600 text-4xl font-black uppercase leading-tight" 
-                                x-text="events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0')]?.name"></h4>
+                            <p class="font-black text-lg text-gray-800 uppercase">Event Name:</p>
+                            <h4 class="text-red-600 text-4xl font-black uppercase leading-tight" x-text="events[getDateKey(selectedDate)]?.name"></h4>
                             
-                            <p class="font-black text-lg text-gray-800">Time:</p>
-                            <p class="text-red-600 text-2xl font-black italic" 
-                                x-text="events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0')]?.time">
+                            <p class="font-black text-lg text-gray-800 uppercase">Time:</p>
+                            <p class="text-red-600 text-2xl font-black italic">
+                                <span x-text="formatTime(events[getDateKey(selectedDate)]?.start_time)"></span>
+                                <span class="text-black not-italic mx-2">-</span>
+                                <span x-text="formatTime(events[getDateKey(selectedDate)]?.end_time)"></span>
                             </p>
                             
                             <div class="mt-4 border-t pt-4 border-dashed border-black">
                                 <p class="font-black text-gray-800">PS: 
-                                    <span class="font-normal italic text-red-600" 
-                                          x-text="events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0')]?.ps"></span>
+                                    <span class="font-normal italic text-red-600" x-text="events[getDateKey(selectedDate)]?.ps || 'No description'"></span>
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div x-show="!events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0')] && !isEditing"
-                         x-cloak x-transition
+                    <div x-show="!events[getDateKey(selectedDate)] && !isEditing" x-cloak x-transition
                          class="bg-white rounded-[40px] p-8 border-[3px] border-black shadow-lg min-h-[420px] flex flex-col justify-center text-center">
-                        <p class="text-gray-400 text-2xl font-black italic mb-4">
-                            No events for <span x-text="monthNames[currentMonth]"></span> <span x-text="selectedDate"></span>, <span x-text="currentYear"></span>
-                        </p>
-                        <button @click="isEditing = true; tempName=''; tempTime=''; tempPs='';" 
+                        <p class="text-gray-400 text-2xl font-black italic mb-4">No events for <span x-text="monthNames[currentMonth]"></span> <span x-text="selectedDate"></span></p>
+                        <button @click="isEditing = true; tempName=''; tempStartTime=''; tempEndTime=''; tempPs='';" 
                                 class="text-green-500 text-3xl font-black italic hover:scale-110 transition">+ Add an event</button>
                     </div>
 
@@ -249,41 +275,45 @@
                         <h4 class="text-xl font-black uppercase border-b-2 border-black pb-2 text-red-800">
                             Set Event: <span x-text="monthNames[currentMonth]"></span> <span x-text="selectedDate"></span>
                         </h4>
-                        <input type="text" placeholder="Event Name" x-model="tempName" class="w-full p-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-orange-400">
-                        <input type="text" placeholder="Time (e.g. 8:00 AM - 12:00 PM)" x-model="tempTime" class="w-full p-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-orange-400">
-                        <textarea placeholder="Description/PS" x-model="tempPs" class="w-full p-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-orange-400"></textarea>
+                        
+                        <label class="block font-black text-xs uppercase text-gray-400">Event Name</label>
+                        <input type="text" x-model="tempName" class="w-full p-2 border-2 border-black rounded-lg">
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-black text-xs uppercase text-gray-400">Start Time</label>
+                                <input type="time" x-model="tempStartTime" class="w-full p-2 border-2 border-black rounded-lg font-bold">
+                            </div>
+                            <div>
+                                <label class="block font-black text-xs uppercase text-gray-400">Finish Time</label>
+                                <input type="time" x-model="tempEndTime" class="w-full p-2 border-2 border-black rounded-lg font-bold">
+                            </div>
+                        </div>
+
+                        <label class="block font-black text-xs uppercase text-gray-400">Notes (PS)</label>
+                        <textarea x-model="tempPs" class="w-full p-2 border-2 border-black rounded-lg"></textarea>
                         
                         <div class="flex space-x-2 pt-2">
                             <button @click="isEditing = false" class="bg-gray-200 px-4 py-2 rounded-lg font-black flex-1 border-2 border-black hover:bg-gray-300">CANCEL</button>
                             <button @click="
                                 fetch('{{ route('calendar.store') }}', {
                                     method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                        'Accept': 'application/json'
-                                    },
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                                     body: JSON.stringify({
-                                        start_date: currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0'),
+                                        start_date: getDateKey(selectedDate),
                                         event_title: tempName,
-                                        time: tempTime,
+                                        start_time: tempStartTime,
+                                        end_time: tempEndTime,
                                         description: tempPs
                                     })
                                 })
-                                .then(response => {
-    if (response.ok) {
-        let dateKey = currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0');
-        
-        // This line updates the screen immediately without needing a refresh
-        events[dateKey] = { 
-            name: tempName, 
-            time: tempTime, // <--- Ensure this is tempTime
-            ps: tempPs 
-        };
-        isEditing = false;
-    }
-})" 
-                                class="bg-red-600 text-white px-4 py-2 rounded-lg font-black flex-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-700 active:shadow-none active:translate-x-1 active:translate-y-1">
+                                .then(res => {
+                                    if(res.ok) {
+                                        events[getDateKey(selectedDate)] = { name: tempName, start_time: tempStartTime, end_time: tempEndTime, ps: tempPs };
+                                        isEditing = false;
+                                    }
+                                })" 
+                                class="bg-red-600 text-white px-4 py-2 rounded-lg font-black flex-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-700">
                                 SAVE
                             </button>
                         </div>

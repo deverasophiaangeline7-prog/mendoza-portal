@@ -5,9 +5,12 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AnnouncementImageController;
 use App\Http\Controllers\SchoolCalendarController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TeacherAccountController;
 use App\Http\Controllers\ParentAccountController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\ReportCardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,7 +35,12 @@ Route::get('/faqs', function () {
     return view('faqs');
 })->name('faqs');
 
-// Logged-in User Routes
+Route::get('forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])
+    ->name('password.request');
+Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'])
+    ->name('password.email');
+
+// --- 1. Logged-in User Routes (Accessible by Teachers and Admins) ---
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [UserController::class, 'index'])->name('dashboard');
 
@@ -42,10 +50,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
     Route::get('/calendar', [SchoolCalendarController::class, 'index'])->name('calendar.index');
+
+    // VIEW Attendance - Both can access this
+    Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('/attendance/{grade}', [AttendanceController::class, 'show'])->name('attendance.show');
+
+    // Report Card Management (Moved here so Teachers can access)
+    Route::get('/report-card', [ReportCardController::class, 'index'])->name('reportcard.index');
+    Route::get('/report-card/{grade}', [ReportCardController::class, 'show'])->name('reportcard.show');
+    Route::get('/report-card/{grade}/{student}', [ReportCardController::class, 'showStudent'])->name('reportcard.student');
 });
 
-// Admin Only Routes
-Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
+/* --- TEACHER ONLY ROUTES (Manage & Publish) --- */
+Route::middleware(['auth', 'role:teacher'])->group(function () {
+    Route::post('/attendance/{grade}/publish', [AttendanceController::class, 'publish'])->name('attendance.publish');
+    Route::post('/attendance/{grade}/update', [AttendanceController::class, 'update'])->name('attendance.update');
+});
+
+// --- 2. Admin Only Routes (Restricted to Admins) ---
+    Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
     // Account Management Overview
     Route::get('/account-management', function () {
@@ -64,7 +87,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('/create-parent-account', function () {
         return view('create-parent-account'); 
     })->name('parent.create'); 
-    Route::post('/account/parent/store', [ParentAccountController::class, 'store'])->name('account.parent.store');  
+    Route::post('/account/parent/store', [ParentAccountController::class, 'store'])->name('account.parent.store');
+    Route::get('/parent-list', [ParentAccountController::class, 'index'])->name('parent.list');
 
     // General User CRUD
     Route::post('/finalize-year', [UserController::class, 'finalize'])->name('finalize.year');
@@ -93,6 +117,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::put('/calendar/{schoolCalendar}', [SchoolCalendarController::class, 'update'])->name('calendar.update');
     Route::delete('/calendar/delete/{id}', [SchoolCalendarController::class, 'destroy'])->name('calendar.delete');
 
+    // Dynamic route for Grade Levels
+    Route::get('/account/parents/{grade}', [ParentAccountController::class, 'showGrade'])->name('grade.show');
 });
 
 require __DIR__.'/auth.php';

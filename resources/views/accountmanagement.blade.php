@@ -96,6 +96,9 @@
         <a href="{{ route('teacher.list') }}" class="block px-6 py-4 text-xl font-bold border-b-2 border-black hover:bg-yellow-100 transition-colors">
             Teacher Accounts
         </a>
+        <a href="{{ route('parent.list') }}" class="block px-6 py-4 text-xl font-bold border-b-2 border-black hover:bg-yellow-100 transition-colors">
+            Parent Accounts
+        </a>
     </div>
 </div>
 

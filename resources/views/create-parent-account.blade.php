@@ -111,9 +111,9 @@
 
                         <div class="space-y-5">
                             <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Gender: <span class="text-red-600">*</span></label>
+                                <label class="w-40 font-bold text-xl">Sex: <span class="text-red-600">*</span></label>
                                 <select name="gender" class="form-input-pill bg-white cursor-pointer focus:outline-none">
-                                    <option value="" disabled selected>Select Gender</option>
+                                    <option value="" disabled selected>Select Sex</option>
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
                                 </select>
@@ -121,26 +121,28 @@
 
                             <div class="flex items-center">
                                 <label class="w-40 font-bold text-xl">Birthdate: <span class="text-red-600">*</span></label>
-                                <input type="date" name="birthdate" class="form-input-pill">
+                                <input type="date" name="birthdate" class="form-input-pill" required>
                             </div>
 
                             <div class="flex flex-col">
                                 <div class="flex items-center">
                                     <label class="w-40 font-bold text-xl leading-tight">Grade &<br>Section: <span class="text-red-600">*</span></label>
-                                    <select name="advisory" class="form-input-pill bg-white cursor-pointer focus:outline-none @error('advisory') border-red-600 @enderror" required>
+                                    <select name="section_id" id="section_select" class="form-input-pill bg-white cursor-pointer focus:outline-none @error('section_id') border-red-600 @enderror" required>
                                         <option value="" disabled selected>Select Grade & Section</option>
-                                        <option value="Nursery - St. Mary">Nursery - St. Mary</option>
-                                         <option value="Kinder - St. Bridget">Kinder - St. Bridget</option>
-                                          <option value="Preparatory - St. Augustine">Preparatory - St. Augustine</option>
-                                        <option value="1 - Faith">1 - Faith</option>
-                                        <option value="2 - Hope">2 - Hope</option>
-                                        <option value="3 - Love">3 - Love</option>
-                                        <option value="4 - Grace">4 - Grace</option>
-                                        <option value="5 - Light">5 - Light</option>
-                                        <option value="6 - Wisdom">6 - Wisdom</option>
+                                        <option value="1">Nursery - St. Mary</option>
+                                        <option value="2">Kinder - St. Bridget</option>
+                                        <option value="3">Preparatory - St. Augustine</option>
+                                        <option value="4">Grade 1 - Faith</option>
+                                        <option value="5">Grade 2 - Hope</option>
+                                        <option value="6">Grade 3 - Love</option>
+                                        <option value="7">Grade 4 - Grace</option>
+                                        <option value="8">Grade 5 - Light</option>
+                                        <option value="9">Grade 6 - Wisdom</option>
                                     </select>
                                 </div>
-                                @error('advisory') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
+                                @error('section_id') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
+                                
+                                <input type="hidden" name="advisory" id="advisory_hidden">
                             </div>
 
                             <div class="flex flex-col">
@@ -179,5 +181,14 @@
             </div>
         </main>
     </div>
+
+    <script>
+        // Logic to extract just the Grade text for the hidden 'advisory' field
+        document.getElementById('section_select').addEventListener('change', function() {
+            const fullText = this.options[this.selectedIndex].text;
+            // Gets 'Nursery' or 'Grade 1' from the string
+            document.getElementById('advisory_hidden').value = fullText.split(' - ')[0];
+        });
+    </script>
 </body>
 </html>

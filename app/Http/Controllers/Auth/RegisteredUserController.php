@@ -28,25 +28,48 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'lrn' => ['required', 'string', 'max:255', 'unique:'.User::class], // Change 'email' to 'lrn'
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-]);
+    public function store(Request $request)
+{
+    $request->validate([
+        'username' => ['required', 'string', 'max:255', 'unique:users'],
+        'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+        'password' => ['required', 'confirmed'],
+        'role' => ['required'],
+        // Add validations for your profile fields
+        'first_name' => ['required', 'string'],
+        'last_name' => ['required', 'string'],
+    ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'lrn' => $request->lrn, // Change 'email' to 'lrn'
-            'password' => Hash::make($request->password),
-            'role' => 'parent', // This ensures they start as a Parent
-]);
+    // 1. Create the User (Login Credentials)
+    $user = User::create([
+        'username' => $request->username,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'role' => $request->role,
+    ]);
 
-        event(new Registered($user));
-
-        Auth::login($user);
-
-        return redirect(RouteServiceProvider::HOME);
+    // 2. Based on the role, create the profile
+    if ($user->role === 'student') {
+        Student::create([
+            'user_id' => $user->user_id,
+            'lrn' => $request->lrn,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'grade_level' => $request->grade_level,
+            // ... other student fields
+        ]);
+    } elseif ($user->role === 'teacher') {
+        Teacher::create([
+            'user_id' => $user->user_id,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'specialization' => $request->specialization,
+        ]);
     }
+
+    event(new Registered($user));
+    Auth::login($user);
+
+    return redirect(RouteServiceProvider::HOME);
+}
 }

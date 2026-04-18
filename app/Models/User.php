@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -12,44 +11,48 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    // 1. Tell Laravel the custom Primary Key from your ERD
+    protected $primaryKey = 'user_id';
+
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
+     * Mass assignable attributes (Only login-related data)
      */
     protected $fillable = [
-    'name',
-    'username',  // Add this for Teachers/Admins
-    'email',     // Used by all
-    'password',  // Used by all
-    'role',      // Used by all
-    'lrn',       // Used by Students/Parents
-    'gender',    // Add this for Teachers
-    'birthdate',
-    'advisory',  // Add this for Teachers
-    'cv_path',
-];
+        'username',
+        'password',
+        'email',
+        'role',
+    ];
 
-public function username()
-{
-    return 'username';
-}
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
+     * RELATIONSHIPS
+     * These allow you to do things like $user->student->lrn
      */
+
+    // Link to Student Table
+    public function student()
+    {
+        return $this->hasOne(Student::class, 'user_id');
+    }
+
+    // Link to Teacher Table
+    public function teacher()
+    {
+        return $this->hasOne(Teacher::class, 'user_id');
+    }
+
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+public function getEmailForPasswordReset()
+    {
+        return $this->username;
+    }
+
 }

@@ -12,19 +12,11 @@ return new class extends Migration
     public function up(): void
 {
     Schema::create('users', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
+        $table->id('user_id');
         $table->string('username')->unique(); // Added this
         $table->string('email')->nullable()->unique();
-        $table->string('lrn')->unique()->nullable();
         $table->string('password');
         $table->enum('role', ['admin', 'teacher', 'parent'])->default('parent');
-        
-        // Add these too so your Teacher form works perfectly:
-        $table->string('gender')->nullable();
-        $table->string('advisory')->unique()->nullable();   
-        $table->string('cv_path')->nullable();
-        
         $table->timestamps();
     });
 }
