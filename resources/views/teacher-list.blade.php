@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mendoza Academy - Teacher List</title>
+    <title>Mendoza Academy - Account Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -13,25 +13,45 @@
     </style>
 </head>
 
-<body class="bg-gray-100">
+<body class="bg-white overflow-hidden" x-data="{ finalizeModal: false }">
 
     <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
         <div class="flex items-center space-x-3">
             <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow" alt="Logo">
             <h1 class="text-2xl font-bold uppercase tracking-tight">Mendoza Academy, Inc.</h1>
         </div>
+        
         <div class="flex items-center space-x-6 text-2xl">
-            <i class="fa-solid fa-envelope"></i>
+            <div class="relative cursor-pointer">
+                <i class="fa-solid fa-envelope"></i>
+                <span class="absolute -top-2 -right-2 bg-yellow-400 text-black text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-red-700">1</span>
+            </div>
             <i class="fa-solid fa-bell cursor-pointer"></i>
-            <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>
+            
+            <form method="POST" action="{{ route('logout') }}" class="inline">
+                @csrf
+                <button type="submit" title="Logout" class="hover:scale-110 transition-transform focus:outline-none">
+                    <i class="fa-solid fa-circle-user text-yellow-500 text-4xl"></i>
+                </button>
+            </form>
         </div>
     </header>
 
-    <div class="flex min-h-screen">
+    <div class="flex h-screen">
         <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0">
             <ul class="space-y-1">
                 <li><a href="{{ route('dashboard') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-chart-line w-6"></i><span>Dashboard</span></a></li>
-                <li class="bg-orange-400 mx-2 rounded-lg"><a href="{{ route('account.management') }}" class="flex items-center p-3 space-x-3"><i class="fa-solid fa-users-gear w-6"></i><span class="font-semibold">Account Management</span></a></li>
+                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-user-graduate w-6"></i><span>List of Students</span></a></li>
+                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-days w-6"></i><span>Student Calendar</span></a></li>
+                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-star w-6"></i><span>Report Card</span></a></li>
+                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-wallet w-6"></i><span>Tuition Fee</span></a></li>
+                <li><a href="{{ route('attendance.index') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-check w-6"></i><span>Attendance</span></a></li>
+                <li class="bg-orange-400 mx-2 rounded-lg">
+                    <a href="#" class="flex items-center p-3 space-x-3 text-white">
+                        <i class="fa-solid fa-users-gear w-6"></i>
+                        <span class="font-bold">Account Management</span>
+                    </a>
+                </li>
             </ul>
         </nav>
 

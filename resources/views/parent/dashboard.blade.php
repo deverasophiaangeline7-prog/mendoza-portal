@@ -72,9 +72,14 @@
             </li>
             <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-user-graduate"></i><span>Student Information</span></a></li>
             <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-days"></i><span>Student Calendar</span></a></li>
-            <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-star"></i><span>Report Card</span></a></li>
+            <li class="{{ request()->routeIs('parent.reportcard') ? 'bg-orange-400' : '' }} mx-2 rounded-lg">
+                <a href="{{ route('parent.reportcard') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition">
+                    <i class="fa-solid fa-star w-6"></i>
+                    <span>Report Card</span>
+                </a>
+            </li>
             <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-wallet"></i><span>Tuition Fee</span></a></li>
-            <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-check"></i><span>Attendance</span></a></li>
+            <li><a href="{{ route('parent.attendance') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-check"></i><span>Attendance</span></a></li>
         </ul>
     </nav>
 

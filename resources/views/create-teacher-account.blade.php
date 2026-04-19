@@ -143,11 +143,14 @@
                             <div class="flex flex-col">
                                 <div class="flex items-center">
                                     <label class="w-40 font-bold text-xl">Advisory: <span class="text-red-600">*</span></label>
+                                    {{-- Removed 'multiple' to keep it a dropdown --}}
                                     <select name="advisory" class="form-input-pill bg-white cursor-pointer focus:outline-none @error('advisory') border-red-600 @enderror" required>
                                         <option value="" disabled selected>Select Section</option>
-                                        <option value="1">Nursery - St. Mary</option>
-                                        <option value="2">Kinder - St. Bridget</option>
-                                        <option value="3">Preparatory - St. Augustine</option>
+                                        
+                                        {{-- This is the single NKP option --}}
+                                        <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
+
+                                        {{-- Primary Grades --}}
                                         <option value="4">Grade 1 - Faith</option>
                                         <option value="5">Grade 2 - Hope</option>
                                         <option value="6">Grade 3 - Love</option>

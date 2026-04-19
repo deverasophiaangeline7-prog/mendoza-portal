@@ -10,7 +10,9 @@ use App\Http\Controllers\ParentAccountController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\ParentAttendanceController;
 use App\Http\Controllers\ReportCardController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -41,7 +43,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     ->name('password.email');
 
 // --- 1. Logged-in User Routes (Accessible by Teachers and Admins) ---
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', ])->group(function () {
     Route::get('/dashboard', [UserController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -54,15 +56,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // VIEW Attendance - Both can access this
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
     Route::get('/attendance/{grade}', [AttendanceController::class, 'show'])->name('attendance.show');
+    Route::get('/parent/attendance', [ParentAttendanceController::class, 'index'])->name('parent.attendance');
+    Route::post('/attendance/save', [AttendanceController::class, 'store'])->name('attendance.store');
 
     // Report Card Management (Moved here so Teachers can access)
     Route::get('/report-card', [ReportCardController::class, 'index'])->name('reportcard.index');
-    Route::get('/report-card/{grade}', [ReportCardController::class, 'show'])->name('reportcard.show');
-    Route::get('/report-card/{grade}/{student}', [ReportCardController::class, 'showStudent'])->name('reportcard.student');
+    Route::get('/report-card/list/{section_id}', [ReportCardController::class, 'show'])->name('reportcard.show');
+    Route::get('/report-card/view/{student_id}', [ReportCardController::class, 'showStudent'])->name('reportcard.showStudent');
+    Route::post('/report-card/save', [ReportCardController::class, 'store'])->name('reportcard.store');
+    Route::get('/my-child/report-card', [ReportCardController::class, 'showParentReportCard'])->name('parent.reportcard');
 });
-
 /* --- TEACHER ONLY ROUTES (Manage & Publish) --- */
-Route::middleware(['auth', 'role:teacher'])->group(function () {
+    Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::post('/attendance/{grade}/publish', [AttendanceController::class, 'publish'])->name('attendance.publish');
     Route::post('/attendance/{grade}/update', [AttendanceController::class, 'update'])->name('attendance.update');
 });

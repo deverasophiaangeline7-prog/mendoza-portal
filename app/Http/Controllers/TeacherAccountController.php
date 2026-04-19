@@ -11,44 +11,47 @@ use Illuminate\Support\Facades\Storage;
 class TeacherAccountController extends Controller
 {
     public function store(Request $request)
-    {
-        $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name'  => 'required|string|max:255',
-            'username'   => 'required|unique:users,username',
-            'password'   => 'required|min:8|confirmed',
-            // Update: We now check if the advisory (section_id) exists in the sections table
-            'advisory'   => 'nullable|exists:sections,section_id|unique:teachers,advisory', 
-            'gender'     => 'nullable|string',
-            'birthdate'  => 'required|date|before_or_equal:' . now()->subYears(18)->format('Y-m-d'),
-            'cv'         => 'nullable|file|mimes:pdf|max:2048',
-        ]);
+{
+    // 1. Updated Validation (Removed 'array' so it doesn't crash)
+    $request->validate([
+        'username' => 'required|unique:users',
+        'password' => 'required|confirmed',
+        'last_name' => 'required',
+        'first_name' => 'required',
+        'advisory' => 'required', 
+    ]);
 
-        // 1. Handle the File Upload
-        $cvPath = null;
-        if ($request->hasFile('cv')) {
-            $cvPath = $request->file('cv')->store('cvs', 'public');
+    // 2. Create the record in the 'users' table
+    $user = \App\Models\User::create([
+        'username' => $request->username,
+        'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+        'role' => 'teacher',
+        'status' => 'active',
+    ]);
+
+    // 3. Create the record in the 'teachers' table (This is what Micaela is missing!)
+    $teacher = \App\Models\Teacher::create([
+        'user_id' => $user->user_id, // Link to the user we just made
+        'first_name' => $request->first_name,
+        'middle_name' => $request->middle_name,
+        'last_name' => $request->last_name,
+        'advisory' => $request->advisory === 'NKP' ? '1,2,3' : $request->advisory,
+        // Add your CV upload logic here if needed
+    ]);
+
+    // 4. Link the Teacher to the Sections table
+    $sectionIds = ($request->advisory === 'NKP') ? [1, 2, 3] : [$request->advisory];
+
+    foreach ($sectionIds as $id) {
+        $section = \App\Models\Section::find($id);
+        if ($section) {
+            $section->teacher_id = $user->user_id;
+            $section->save();
         }
-
-        // 2. Create the User (Login Credentials)
-        $user = User::create([
-            'username' => $request->username,
-            'email'    => $request->username,
-            'password' => Hash::make($request->password),
-            'role'     => 'teacher',
-        ]);
-
-        // 3. Create the Teacher Profile
-        Teacher::create([
-            'user_id'        => $user->user_id, 
-            'first_name'     => $request->first_name,
-            'last_name'      => $request->last_name,
-            'advisory'       => $request->advisory, // This now stores the section_id (1-9)
-            'cv_path'        => $cvPath,
-        ]);
-
-        return redirect()->route('account.management')->with('success', 'Teacher account created successfully!');
     }
+
+    return redirect()->route('account.management')->with('success', 'Teacher created successfully!');
+}
 
     public function index()
     {

@@ -32,14 +32,20 @@ class User extends Authenticatable
     // Link to Student Table
     public function student()
     {
-        return $this->hasOne(Student::class, 'user_id');
+        return $this->hasOne(\App\Models\Student::class, 'user_id', 'user_id');
     }
 
     // Link to Teacher Table
     public function teacher()
     {
-        return $this->hasOne(Teacher::class, 'user_id');
+        return $this->hasOne(Teacher::class, 'user_id', 'user_id');
     }
+
+    public function sections()
+    {
+        return $this->hasMany(Section::class, 'teacher_id', 'user_id');
+    }
+
 
     protected $hidden = [
         'password',
