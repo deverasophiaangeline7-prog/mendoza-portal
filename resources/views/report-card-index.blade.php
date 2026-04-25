@@ -6,43 +6,106 @@
     <title>Mendoza Academy - Report Card Menu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style> 
-        .hero-gradient { background: linear-gradient(to right, #d32f2f, #8b0000); } 
+    <style>
+        .hero-gradient { background: linear-gradient(to right, #d32f2f, #8b0000); }
     </style>
 </head>
 <body class="bg-gray-100">
+    
     <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
-        <div class="flex items-center space-x-3">
-            <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow" alt="Logo">
-            <h1 class="text-2xl font-bold uppercase tracking-tight text-white">Mendoza Academy, Inc.</h1>
+    <div class="flex items-center space-x-3">
+        <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow" alt="Logo">
+        <h1 class="text-2xl font-bold uppercase tracking-tight">Mendoza Academy, Inc.</h1>
+    </div>
+    
+    <div class="flex items-center space-x-6 text-2xl">
+        <x-top-icon-button>
+            <i class="fa-solid fa-envelope relative">
+                <span class="absolute -top-2 -right-2 bg-yellow-400 text-red-700 text-xs rounded-full h-5 w-5 flex items-center justify-center border border-red-700 font-bold">1</span>
+            </i>
+        </x-top-icon-button>
+        
+        <x-top-icon-button>
+            <i class="fa-solid fa-bell"></i>
+        </x-top-icon-button>
+        
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
+                <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>
+            </button>
+
+            <div x-show="open" 
+                 x-transition 
+                 class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-2xl py-1 z-50 border border-gray-200 overflow-hidden"
+                 style="display: none;"
+                 x-cloak>
+                
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold">
+                        <i class="fa-solid fa-right-from-bracket mr-3"></i>
+                        Logout
+                    </button>
+                </form>
+
+                <hr class="border-gray-100">
+
+                <button @click="open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-xmark mr-3"></i>
+                    Cancel
+                </button>
+            </div>
         </div>
-    </header>
+    </div>
+</header>
 
     <div class="flex min-h-screen">
-        <nav class="w-64 bg-[#b91c1c] text-white pt-4">
+        <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0">
             <ul class="space-y-1">
-                <li><a href="{{ route('dashboard') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-chart-line w-6"></i><span>Dashboard</span></a></li>
-                <li class="bg-orange-400 mx-2 rounded-lg">
-                    <a href="{{ route('reportcard.index') }}" class="flex items-center p-3 space-x-3 text-black font-bold"><i class="fa-solid fa-star w-6"></i><span>Report Card</span></a>
-                </li>
+                <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
+                    Dashboard
+                </x-sidebar-link>
+                
+                <x-sidebar-link href="#" icon="fa-solid fa-user-graduate">
+                    List of Students
+                </x-sidebar-link>
+                
+                <x-sidebar-link href="#" icon="fa-solid fa-calendar-days">
+                    Student Calendar
+                </x-sidebar-link>
+                
+                <x-sidebar-link href="{{ route('reportcard.index') }}" icon="fa-solid fa-star" :active="request()->routeIs('reportcard.*')">
+                    Report Card
+                </x-sidebar-link>
+                
+                <x-sidebar-link href="{{ route('attendance.index') }}" icon="fa-solid fa-calendar-check" :active="request()->routeIs('attendance.*')">
+                    Attendance
+                </x-sidebar-link>
+                
+                {{-- Automatically hidden from teachers/parents on the backend --}}
+                @if(auth()->check() && auth()->user()->role === 'admin')
+                    <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.*') || request()->routeIs('teacher.*') || request()->routeIs('parent.*')">
+                        Account Management
+                    </x-sidebar-link>
+                @endif
             </ul>
         </nav>
-
+ 
         <main class="flex-1 p-8 bg-white">
             <div class="max-w-6xl mx-auto text-center">
                 <h2 class="text-6xl font-black text-black uppercase tracking-tighter mb-12 drop-shadow-[4px_4px_0px_rgba(255,255,255,1)]">
                     REPORT CARD
                 </h2>
-
+ 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                     @foreach($sections as $section)
-                        <a href="{{ route('reportcard.show', $section->section_id) }}" 
+                        <a href="{{ route('reportcard.show', $section->section_id) }}"
                            class="bg-[#ffb31a] border-[3px] border-black rounded-[40px] py-8 flex flex-col items-center group transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                            
+                           
                             <span class="text-4xl font-black text-black uppercase mb-1" style="-webkit-text-stroke: 1.5px white;">
                                 {{ is_numeric($section->grade_level) ? 'GRADE ' . $section->grade_level : $section->grade_level }}
                             </span>
-
+ 
                             <span class="text-xl font-bold text-black uppercase italic tracking-wider">
                                 {{ $section->section_name }}
                             </span>

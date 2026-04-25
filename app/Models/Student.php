@@ -31,5 +31,8 @@ class Student extends Model
     public function grades() {
         return $this->hasMany(\App\Models\Grade::class, 'student_id', 'student_id');
     }
-    
+
+    public function events() {
+    return $this->hasMany(EventParticipant::class, 'student_id');
+    }
 }

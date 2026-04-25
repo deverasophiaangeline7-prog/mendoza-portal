@@ -114,15 +114,16 @@ class AttendanceController extends Controller
      */
     public function store(Request $request)
     {
-        $records = $request->input('records', []);
+        // 1. Changed 'records' to 'attendance' to match your JavaScript
+        $records = $request->input('attendance', []);
 
         foreach ($records as $record) {
             // updateOrCreate ensures we don't save duplicates. 
-            // If the date exists, it updates it. If not, it creates it.
             Attendance::updateOrCreate(
                 [
                     'student_id'      => $record['student_id'],
-                    'attendance_date' => $record['attendance_date']
+                    // 2. Changed to match the 'date' key sent by your JavaScript
+                    'attendance_date' => $record['date'] 
                 ],
                 [
                     'status' => $record['status']

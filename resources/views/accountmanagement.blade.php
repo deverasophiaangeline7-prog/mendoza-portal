@@ -16,42 +16,81 @@
 <body class="bg-white overflow-hidden" x-data="{ finalizeModal: false }">
 
     <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
-        <div class="flex items-center space-x-3">
-            <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow" alt="Logo">
-            <h1 class="text-2xl font-bold uppercase tracking-tight">Mendoza Academy, Inc.</h1>
-        </div>
+    <div class="flex items-center space-x-3">
+        <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow" alt="Logo">
+        <h1 class="text-2xl font-bold uppercase tracking-tight">Mendoza Academy, Inc.</h1>
+    </div>
+    
+    <div class="flex items-center space-x-6 text-2xl">
+        <x-top-icon-button>
+            <i class="fa-solid fa-envelope relative">
+                <span class="absolute -top-2 -right-2 bg-yellow-400 text-red-700 text-xs rounded-full h-5 w-5 flex items-center justify-center border border-red-700 font-bold">1</span>
+            </i>
+        </x-top-icon-button>
         
-        <div class="flex items-center space-x-6 text-2xl">
-            <div class="relative cursor-pointer">
-                <i class="fa-solid fa-envelope"></i>
-                <span class="absolute -top-2 -right-2 bg-yellow-400 text-black text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-red-700">1</span>
-            </div>
-            <i class="fa-solid fa-bell cursor-pointer"></i>
-            
-            <form method="POST" action="{{ route('logout') }}" class="inline">
-                @csrf
-                <button type="submit" title="Logout" class="hover:scale-110 transition-transform focus:outline-none">
-                    <i class="fa-solid fa-circle-user text-yellow-500 text-4xl"></i>
+        <x-top-icon-button>
+            <i class="fa-solid fa-bell"></i>
+        </x-top-icon-button>
+        
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
+                <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>
+            </button>
+
+            <div x-show="open" 
+                 x-transition 
+                 class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-2xl py-1 z-50 border border-gray-200 overflow-hidden"
+                 style="display: none;"
+                 x-cloak>
+                
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold">
+                        <i class="fa-solid fa-right-from-bracket mr-3"></i>
+                        Logout
+                    </button>
+                </form>
+
+                <hr class="border-gray-100">
+
+                <button @click="open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-xmark mr-3"></i>
+                    Cancel
                 </button>
-            </form>
+            </div>
         </div>
-    </header>
+    </div>
+</header>
 
     <div class="flex h-screen">
         <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0">
             <ul class="space-y-1">
-                <li><a href="{{ route('dashboard') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-chart-line w-6"></i><span>Dashboard</span></a></li>
-                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-user-graduate w-6"></i><span>List of Students</span></a></li>
-                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-days w-6"></i><span>Student Calendar</span></a></li>
-                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-star w-6"></i><span>Report Card</span></a></li>
-                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-wallet w-6"></i><span>Tuition Fee</span></a></li>
-                <li><a href="{{ route('attendance.index') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-check w-6"></i><span>Attendance</span></a></li>
-                <li class="bg-orange-400 mx-2 rounded-lg">
-                    <a href="#" class="flex items-center p-3 space-x-3 text-white">
-                        <i class="fa-solid fa-users-gear w-6"></i>
-                        <span class="font-bold">Account Management</span>
-                    </a>
-                </li>
+                <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
+                    Dashboard
+                </x-sidebar-link>
+                
+                <x-sidebar-link href="#" icon="fa-solid fa-user-graduate">
+                    List of Students
+                </x-sidebar-link>
+                
+                <x-sidebar-link href="#" icon="fa-solid fa-calendar-days">
+                    Student Calendar
+                </x-sidebar-link>
+                
+                <x-sidebar-link href="{{ route('reportcard.index') }}" icon="fa-solid fa-star" :active="request()->routeIs('reportcard.*')">
+                    Report Card
+                </x-sidebar-link>
+                
+                <x-sidebar-link href="{{ route('attendance.index') }}" icon="fa-solid fa-calendar-check" :active="request()->routeIs('attendance.*')">
+                    Attendance
+                </x-sidebar-link>
+                
+                {{-- Automatically hidden from teachers/parents on the backend --}}
+                @if(auth()->check() && auth()->user()->role === 'admin')
+                    <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.*') || request()->routeIs('teacher.*') || request()->routeIs('parent.*')">
+                        Account Management
+                    </x-sidebar-link>
+                @endif
             </ul>
         </nav>
 

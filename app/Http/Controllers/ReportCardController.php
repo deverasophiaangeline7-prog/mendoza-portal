@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\Grade;
 use App\Models\Section;
+use App\Models\BehaviorReport;
+use App\Models\NkpEvaluation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,28 +14,23 @@ class ReportCardController extends Controller
 {
     /**
      * 1. THE MENU 
-     * Handles the initial click on "Report Card" in the sidebar.
      */
     public function index()
     {
         $user = Auth::user();
 
-        // ADMIN LOGIC: Show every section in the school
         if ($user->role === 'admin') {
             $sections = Section::all();
             return view('report-card-index', compact('sections'));
         }
 
-        // TEACHER LOGIC
         if ($user->role === 'teacher') {
             $sections = Section::where('teacher_id', $user->user_id)->get();
             
-            // NKP Advisor (Multiple Sections): Show the menu
             if ($sections->count() > 1) {
                 return view('report-card-index', compact('sections'));
             } 
             
-            // Grade 1-6 Teacher (Single Section): Fast-track to the student list
             if ($sections->count() === 1) {
                 return redirect()->route('reportcard.show', $sections->first()->section_id);
             }
@@ -44,14 +41,11 @@ class ReportCardController extends Controller
 
     /**
      * 2. THE STUDENT LIST
-     * Shows the Male/Female roster for a specific section.
      */
     public function show($section_id)
     {
-        // Get all students in this section
         $students = Student::where('section_id', $section_id)->get();
         $section = Section::findOrFail($section_id);
-
         $sectionName = strtoupper($section->grade_level . ' - ' . $section->section_name);
 
         return view('section-report-card', [
@@ -62,85 +56,121 @@ class ReportCardController extends Controller
     }
 
     /**
-     * 3. THE GRADE SHEET
-     * Shows the individual auto-computing table for one student.
+     * 3. THE GRADE SHEET (Branching Logic)
+     * This replaces your old showStudent method.
      */
     public function showStudent($student_id)
     {
         $student = Student::with('section')->findOrFail($student_id);
         
-        // Define your subjects list
-        $subjects = [
-            'Filipino', 'English', 'Mathematics', 'Science', 
-            'Araling Panlipunan', 'EsP', 'TLE', 'MAPEH'
-        ];
-
-        // Fetch any existing grades already saved in the DB
-        $existingGrades = Grade::where('student_id', $student_id)
-            ->get()
-            ->keyBy('subject_name')
-            ->toArray();
-
-        // Check if the current user is allowed to edit this student
+        // Security check: Only assigned teachers can manage
         $canManage = false;
         if (Auth::user()->role === 'teacher' && $student->section) {
             $canManage = $student->section->teacher_id == Auth::user()->user_id;
-        } elseif (Auth::user()->role === 'admin') {
-            $canManage = true; // Admins can always view/edit if needed
         }
+
+        $gradeLevel = strtoupper($student->section ? $student->section->grade_level : '');
+        $isNkp = in_array($gradeLevel, ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREPARATORY']);
+
+        // --- BRANCH 1: NKP STUDENTS (Nursery, Kinder, Prep) ---
+        if ($isNkp) {
+            $existingEvaluations = NkpEvaluation::where('student_id', $student_id)
+                ->get()
+                ->keyBy('skill')
+                ->toArray();
+
+            return view('nkp-report-card', [
+                'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
+                'sectionName' => $student->section ? strtoupper($gradeLevel . ' - ' . $student->section->section_name) : 'UNASSIGNED',
+                'student_id' => $student_id,
+                'savedEvaluations' => $existingEvaluations,
+                'canManage' => $canManage
+            ]);
+        }
+
+        // --- BRANCH 2: GRADE 1 TO 6 STUDENTS ---
+        $subjects = ['Language', 'English', 'Mathematics', 'Makabansa', 'GMRC', 'Music', 'Art', 'PE', 'Health'];
+        $coreValues = ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'];
+
+        $existingGrades = Grade::where('student_id', $student_id)->get()->keyBy('subject_name')->toArray();
+        $existingBehaviors = BehaviorReport::where('student_id', $student_id)->get()->keyBy('core_value')->toArray();
 
         return view('student-report-card', [
             'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
-            'sectionName' => $student->section ? strtoupper($student->section->grade_level . ' - ' . $student->section->section_name) : 'UNASSIGNED',
+            'sectionName' => $student->section ? strtoupper($gradeLevel . ' - ' . $student->section->section_name) : 'UNASSIGNED',
             'student_id' => $student_id,
             'subjects' => $subjects,
+            'coreValues' => $coreValues,
             'savedGrades' => $existingGrades,
+            'savedBehaviors' => $existingBehaviors,
             'canManage' => $canManage
         ]);
     }
 
+    public function showParentReportCard()
+    {
+        $parentId = Auth::id();
+        $student = \App\Models\Student::where('user_id', $parentId)->first();
 
+        if (!$student) {
+            return "No student record linked to Parent Account (user_id): " . $parentId;
+        }
 
-public function showParentReportCard()
-{
-    // This will now correctly grab '11' (for Jocelyn)
-    $parentId = Auth::id();
-
-    // Find the student where 'user_id' matches the parent
-    $student = \App\Models\Student::where('user_id', $parentId)->first();
-
-    if (!$student) {
-        // This is our debug message
-        return "No student record linked to Parent Account (user_id): " . $parentId;
+        return $this->showStudent($student->student_id);
     }
 
-    return $this->showStudent($student->student_id);
-}
-
-
     /**
-     * 4. THE SAVE ENGINE
-     * Handles the AJAX/Fetch request to save grades into the database.
+     * 4. THE SAVE ENGINE (Handles both standard and NKP data)
      */
     public function store(Request $request)
     {
         $student_id = $request->input('student_id');
         $grades = $request->input('grades');
+        $behaviors = $request->input('behaviors');
+        $nkpEvaluations = $request->input('nkp_evaluations'); // Added for NKP
 
-        foreach ($grades as $subject => $data) {
-            Grade::updateOrCreate(
-                ['student_id' => $student_id, 'subject_name' => $subject],
-                [
-                    'q1' => $data['q1'],
-                    'q2' => $data['q2'],
-                    'q3' => $data['q3'],
-                    'q4' => $data['q4'],
-                    'final_grade' => $data['final_grade'],
-                    'remarks' => $data['remarks']
-                ]
-            );
+        // 1. Save Numeric Grades (Grades 1-6)
+        if ($grades) {
+            foreach ($grades as $subject => $data) {
+                Grade::updateOrCreate(
+                    ['student_id' => $student_id, 'subject_name' => $subject],
+                    [
+                        'q1' => $data['q1'] ?? null, 'q2' => $data['q2'] ?? null,
+                        'q3' => $data['q3'] ?? null, 'q4' => $data['q4'] ?? null,
+                        'final_grade' => $data['final_grade'] ?? null,
+                        'remarks' => $data['remarks'] ?? null
+                    ]
+                );
+            }
         }
 
-        return response()->json(['message' => 'Grades Saved Successfully!']);
+        // 2. Save Observed Values (Grades 1-6)
+        if ($behaviors) {
+            foreach ($behaviors as $value => $data) {
+                BehaviorReport::updateOrCreate(
+                    ['student_id' => $student_id, 'core_value' => $value],
+                    [
+                        'q1' => $data['q1'] ?? null, 'q2' => $data['q2'] ?? null,
+                        'q3' => $data['q3'] ?? null, 'q4' => $data['q4'] ?? null,
+                    ]
+                );
+            }
+        }
+
+        // 3. Save NKP Checklist Evaluations (Nursery, Kinder, Prep)
+        if ($nkpEvaluations) {
+            foreach ($nkpEvaluations as $skill => $data) {
+                NkpEvaluation::updateOrCreate(
+                    ['student_id' => $student_id, 'skill' => $skill],
+                    [
+                        'category' => $data['category'] ?? 'General',
+                        'q1' => $data['q1'] ?? null, 'q2' => $data['q2'] ?? null,
+                        'q3' => $data['q3'] ?? null, 'q4' => $data['q4'] ?? null,
+                    ]
+                );
+            }
+        }
+
+        return response()->json(['message' => 'Saved Successfully!']);
     }
 }

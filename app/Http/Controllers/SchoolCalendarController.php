@@ -30,6 +30,7 @@ class SchoolCalendarController extends Controller
     return view('dashboard', compact('eventsData', 'announcementImages'));
 }
 
+
     // Save new event
     public function store(Request $request)
 {

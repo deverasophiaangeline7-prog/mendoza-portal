@@ -48,19 +48,24 @@
     }
 }">
 
-    <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
-        <div class="flex items-center space-x-3">
-            <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow">
-            <h1 class="text-2xl font-bold uppercase tracking-tight">Mendoza Academy, Inc.</h1>
-        </div>
-        
-        <div class="flex items-center space-x-6 text-2xl">
-            <i class="fa-solid fa-envelope relative cursor-pointer">
-                <span class="absolute -top-2 -right-2 bg-red-500 text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-red-700">1</span>
+<header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
+    <div class="flex items-center space-x-3">
+        <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow" alt="Logo">
+        <h1 class="text-2xl font-bold uppercase tracking-tight">Mendoza Academy, Inc.</h1>
+    </div>
+    
+    <div class="flex items-center space-x-6 text-2xl">
+        <x-top-icon-button>
+            <i class="fa-solid fa-envelope relative">
+                <span class="absolute -top-2 -right-2 bg-yellow-400 text-red-700 text-xs rounded-full h-5 w-5 flex items-center justify-center border border-red-700 font-bold">1</span>
             </i>
-            <i class="fa-solid fa-bell cursor-pointer"></i>
-            
-            <div class="relative" x-data="{ open: false }">
+        </x-top-icon-button>
+        
+        <x-top-icon-button>
+            <i class="fa-solid fa-bell"></i>
+        </x-top-icon-button>
+        
+        <div class="relative" x-data="{ open: false }">
             <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
                 <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>
             </button>
@@ -68,7 +73,8 @@
             <div x-show="open" 
                  x-transition 
                  class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-2xl py-1 z-50 border border-gray-200 overflow-hidden"
-                 style="display: none;">
+                 style="display: none;"
+                 x-cloak>
                 
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
@@ -90,25 +96,37 @@
 </header>
 
     <div class="flex min-h-screen">
-        <nav class="w-64 bg-[#b91c1c] text-white pt-4">
+        <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0">
             <ul class="space-y-1">
-                <li class="bg-orange-400 mx-2 rounded-lg">
-                    <a href="#" class="flex items-center p-3 space-x-3">
-                        <i class="fa-solid fa-chart-line"></i>
-                        <span class="font-semibold">Dashboard</span>
-                    </a>
-                </li>
-                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-user-graduate"></i><span>List of Students</span></a></li>
-                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-days"></i><span>Student Calendar</span></a></li>
-                <li><a href="{{ route('reportcard.index') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-star"></i><span>Report Card</span></a></li>
-                <li><a href="#" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-wallet"></i><span>Tuition Fee</span></a></li>
-                <li><a href="{{ route('attendance.index') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition"><i class="fa-solid fa-calendar-check"></i><span>Attendance</span></a></li>
-                <li>
-                    <a href="{{ route('account.management') }}" class="flex items-center p-3 space-x-3 hover:bg-red-800 transition">
-                        <i class="fa-solid fa-users-gear w-6"></i>
-                        <span>Account Management</span>
-                    </a>
-                </li>
+                <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
+                    Dashboard
+                </x-sidebar-link>
+                
+                <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-user-graduate">
+                    List of Students
+                </x-sidebar-link>
+                
+                <x-sidebar-link 
+                    href="{{ auth()->user()->role === 'admin' ? route('admin.student.participation') : route('student.calendar.index') }}" 
+                    icon="fa-solid fa-calendar-days" 
+                    :active="request()->routeIs('admin.student.participation') || request()->routeIs('student.calendar.index')">
+                    Student Calendar
+                </x-sidebar-link>
+                
+                <x-sidebar-link href="{{ route('reportcard.index') }}" icon="fa-solid fa-star" :active="request()->routeIs('reportcard.*')">
+                    Report Card
+                </x-sidebar-link>
+                
+                <x-sidebar-link href="{{ route('attendance.index') }}" icon="fa-solid fa-calendar-check" :active="request()->routeIs('attendance.*')">
+                    Attendance
+                </x-sidebar-link>
+                
+                {{-- Automatically hidden from teachers/parents on the backend --}}
+                @if(auth()->check() && auth()->user()->role === 'admin')
+                    <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.*') || request()->routeIs('teacher.*') || request()->routeIs('parent.*')">
+                        Account Management
+                    </x-sidebar-link>
+                @endif
             </ul>
         </nav>
 

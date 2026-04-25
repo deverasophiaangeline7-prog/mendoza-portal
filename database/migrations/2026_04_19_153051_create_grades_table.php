@@ -7,24 +7,26 @@ use Illuminate\Support\Facades\Schema;
 class CreateGradesTable extends Migration
 {
     public function up()
-    {
-        Schema::create('grades', function (Blueprint $table) {
-            $table->id('grade_id');
-            $table->unsignedBigInteger('student_id');
-            $table->string('subject_name'); 
-            
-            $table->string('q1', 10)->nullable();
-            $table->string('q2', 10)->nullable();
-            $table->string('q3', 10)->nullable();
-            $table->string('q4', 10)->nullable();
-            $table->string('final_grade', 10)->nullable();
-            $table->string('remarks', 50)->nullable();
-            
-            $table->timestamps();
-            
-            $table->foreign('student_id')->references('student_id')->on('students')->onDelete('cascade');
-        });
-    }
+{
+    Schema::create('grades', function (Blueprint $table) {
+        $table->id('grade_id');
+        $table->unsignedBigInteger('student_id');
+        $table->string('subject_name'); 
+        
+        // Changed to integer so JavaScript and PHP can calculate averages
+        $table->integer('q1')->nullable();
+        $table->integer('q2')->nullable();
+        $table->integer('q3')->nullable();
+        $table->integer('q4')->nullable();
+        $table->float('final_grade')->nullable(); 
+        
+        $table->string('remarks', 50)->nullable();
+        $table->timestamps();
+        
+        // Safely links to your custom student_id column
+        $table->foreign('student_id')->references('student_id')->on('students')->onDelete('cascade');
+    });
+}
 
     public function down()
     {
