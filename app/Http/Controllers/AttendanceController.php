@@ -13,75 +13,96 @@ class AttendanceController extends Controller
     /**
      * Display the main grid or redirect teachers.
      */
-    public function index()
-    {
-        $user = Auth::user();
+        public function index()
+{
+    $user = Auth::user();
 
-        if ($user->role === 'teacher') {
-            // Query sections based on teacher_id
-            $sections = Section::where('teacher_id', $user->user_id)->get();
+    // 1. THE PARENT REDIRECT
+    if ($user->role === 'parent') {
+        // Find the child linked to this parent's account
+        $student = \App\Models\Student::where('user_id', $user->user_id)->first();
 
-            // NKP Teacher: Show the selection grid (Image 2)
-            if ($sections->count() > 1) {
-                return view('teacher.select_section', compact('sections'));
-            } 
+        if ($student) {
+            // Convert "Grade 5" to "grade-5" to match your slug routes
+            $gradeSlug = strtolower(str_replace(' ', '-', $student->grade_level));
             
-            // Regular Teacher: Go straight to the sheet (Image 3)
-            if ($sections->count() === 1) {
-                $gradeSlug = strtolower(str_replace(' ', '-', $sections->first()->grade_level));
-                return redirect()->route('attendance.show', $gradeSlug);
-            }
+            // Redirect them straight to the sheet, bypassing the yellow grid
+            return redirect()->route('attendance.show', $gradeSlug);
         }
 
-        return view('attendance'); 
+        return "No child record found for this account.";
     }
+
+    // 2. THE TEACHER REDIRECT (Keep your existing logic here)
+    if ($user->role === 'teacher') {
+        $sections = Section::where('teacher_id', $user->user_id)->get();
+
+        if ($sections->count() > 1) {
+            return view('teacher.select_section', compact('sections'));
+        } 
+        
+        if ($sections->count() === 1) {
+            $gradeSlug = strtolower(str_replace(' ', '-', $sections->first()->grade_level));
+            return redirect()->route('attendance.show', $gradeSlug);
+        }
+    }
+
+    // 3. THE ADMIN VIEW (Image #2)
+    // Only the Admin will ever see the grid of all grades
+    return view('attendance'); 
+}
 
     /**
      * Display the attendance list for a specific grade.
      */
     public function show($grade)
     {
-        // 1. Improved Mapping to handle "kinder" slug
+        $user = Auth::user();
+
         $gradeMap = [
-            'nursery'     => 'Nursery',
-            'kinder'      => 'Kindergarten', 
-            'kindergarten'=> 'Kindergarten',
-            'preparatory' => 'Preparatory',
-            'grade-1'     => '1',
-            'grade-2'     => '2',
-            'grade-3'     => '3',
-            'grade-4'     => '4',
-            'grade-5'     => '5',
-            'grade-6'     => '6',
+            'nursery'      => 'Nursery',
+            'kinder'       => 'Kindergarten', 
+            'kindergarten' => 'Kindergarten',
+            'preparatory'  => 'Preparatory',
+            'grade-1'      => '1',
+            'grade-2'      => '2',
+            'grade-3'      => '3',
+            'grade-4'      => '4',
+            'grade-5'      => '5',
+            'grade-6'      => '6',
+            '5'            => '5',
         ];
 
-        $dbGradeLevel = $gradeMap[$grade] ?? ucfirst($grade);
+        $dbGradeLevel = $gradeMap[$grade] ?? $grade;
 
-        // 2. Search for the section
-        $section = Section::where('grade_level', 'like', "%$dbGradeLevel%")->first();
+        $query = Section::where('grade_level', 'like', "%$dbGradeLevel%");
 
-        if (!$section) {
-            return "Error: Could not find a section in the database for grade: " . $dbGradeLevel;
+        if ($user->role === 'teacher') {
+            $section = $query->where('teacher_id', $user->user_id)->first();
+        } elseif ($user->role === 'parent') {
+            $student = Student::where('user_id', $user->user_id)->first();
+            $section = Section::find($student->section_id);
+        } else {
+            $section = $query->first();
         }
 
-        // 3. Fetch Students (We need the full object so the Blade can access student_id)
+        if (!$section) {
+            return "Error: Section not found or you are not assigned to this grade.";
+        }
+
         $students = Student::where('section_id', $section->section_id)->get();
 
-        // 4. LOAD EXISTING ATTENDANCE DATA FROM DATABASE
         $attendances = Attendance::whereIn('student_id', $students->pluck('student_id'))
             ->whereMonth('attendance_date', now()->month)
             ->whereYear('attendance_date', now()->year)
             ->get();
 
-        // Grab the dates that already have attendance recorded
         $existingDates = $attendances->pluck('attendance_date')->unique()->values()->toArray();
 
-        // Create a map so the frontend knows which circles to color in
         $statusMap = ['present' => 1, 'absent' => 2, 'late' => 3, 'excused' => 4];
         $attendanceMap = [];
         
         foreach($attendances as $att) {
-            // This builds an array like: [ student_id => [ date => status_number ] ]
             $attendanceMap[$att->student_id][$att->attendance_date] = $statusMap[$att->status] ?? 0;
         }
 
@@ -91,22 +112,8 @@ class AttendanceController extends Controller
             'students'      => $students,
             'existingDates' => $existingDates,
             'attendanceMap' => $attendanceMap,
-            'canManage'     => Auth::user()->role === 'teacher' && $section->teacher_id == Auth::user()->user_id
+            'canManage'     => $user->role === 'teacher' && $section->teacher_id == $user->user_id
         ]);
-    }
-    
-    /**
-     * Legacy Create Method (Kept for your other pages)
-     */
-    public function create()
-    {
-        $user = Auth::user();
-        
-        $sectionIds = Section::where('teacher_id', $user->user_id)->pluck('section_id');
-        $students = Student::whereIn('section_id', $sectionIds)->get();
-        $date = now()->format('Y-m-d');
-        
-        return view('teacher-attendance', compact('students', 'date'));
     }
 
     /**

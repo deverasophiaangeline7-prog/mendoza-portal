@@ -38,7 +38,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
 // 2. GENERAL LOGGED-IN USERS (View Only)
 // ==========================================
     Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [UserController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [SchoolCalendarController::class, 'index'])->name('dashboard');
     Route::get('/my-calendar', [StudentCalendarController::class, 'studentCalendar'])->name('student.calendar');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -101,13 +101,13 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::get('/account-management', function () { return view('accountmanagement'); })->name('account.management');
 
     // Teacher Management
-    Route::get('/create-teacher-account', function () { return view('create-teacher-account'); })->name('teacher.create');
+    Route::get('/create-teacher-account', [TeacherAccountController::class, 'create'])->name('teacher.create');
     Route::post('/account/teacher/store', [TeacherAccountController::class, 'store'])->name('account.teacher.store'); 
     Route::get('/teacher-list', [TeacherAccountController::class, 'index'])->name('teacher.list');
     Route::delete('/teacher/{id}', [TeacherAccountController::class, 'destroy'])->name('account.teacher.destroy');
 
     // Parent Management
-    Route::get('/create-parent-account', function () { return view('create-parent-account'); })->name('parent.create'); 
+    Route::get('/create-parent-account', [ParentAccountController::class, 'create'])->name('parent.create'); 
     Route::post('/account/parent/store', [ParentAccountController::class, 'store'])->name('account.parent.store');
     Route::get('/parent-list', [ParentAccountController::class, 'index'])->name('parent.list');
     Route::get('/account/parents/{grade}', [ParentAccountController::class, 'showGrade'])->name('grade.show');

@@ -144,15 +144,32 @@
                         </button>
 
                     </div>
-                @else
-                    <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-blue-100 flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-blue-900">
-                        <i class="fa-solid fa-eye text-3xl mr-4"></i>
-                        <div>
-                            <div class="font-black text-2xl tracking-wide uppercase">Admin View-Only Mode</div>
-                            <div class="font-bold text-sm">You are viewing this attendance sheet as an administrator.</div>
+                    @elseif(auth()->user()->role === 'admin')
+                        {{-- This part ONLY shows for the Admin --}}
+                        <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-blue-100 flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-blue-900">
+                            <i class="fa-solid fa-eye text-3xl mr-4"></i>
+                            <div>
+                                <div class="font-black text-2xl tracking-wide uppercase">Admin View-Only Mode</div>
+                                <div class="font-bold text-sm">You are viewing this attendance sheet as an administrator.</div>
+                            </div>
                         </div>
-                    </div>
-                @endif
+
+                    @elseif(auth()->user()->role === 'teacher')
+                        {{-- This shows for Teachers who ARE NOT assigned to this specific section --}}
+                        <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-gray-200 flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-gray-700">
+                            <i class="fa-solid fa-lock text-3xl mr-4"></i>
+                            <div>
+                                <div class="font-black text-2xl tracking-wide uppercase">Teacher View-Only</div>
+                                <div class="font-bold text-sm">You are not the assigned adviser for this section.</div>
+                            </div>
+                        </div>
+
+                    @else
+                        {{-- This is what the Parent sees (Optional: Leave empty to show nothing) --}}
+                        <div class="mb-6">
+                            <h3 class="font-black text-2xl uppercase border-b-4 border-black inline-block">Attendance Overview</h3>
+                        </div>
+                    @endif
 
                 <div class="border-[3px] border-black overflow-x-auto rounded-[30px] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] bg-white">
                     <table class="w-full border-collapse">

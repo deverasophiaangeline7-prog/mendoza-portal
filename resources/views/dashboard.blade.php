@@ -45,6 +45,20 @@
 
     getDateKey(day) {
         return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    },
+
+    // ---> THIS IS THE NEW PART YOU NEED TO ADD <---
+    get minTimeLimit() {
+        let today = new Date();
+        if (this.currentYear === today.getFullYear() && 
+            this.currentMonth === today.getMonth() && 
+            this.selectedDate === today.getDate()) {
+            
+            let hh = today.getHours().toString().padStart(2, '0');
+            let mm = today.getMinutes().toString().padStart(2, '0');
+            return `${hh}:${mm}`;
+        }
+        return null; 
     }
 }">
 
@@ -132,7 +146,7 @@
 
         <main class="flex-1 p-8 bg-white">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-3xl font-extrabold">Welcome, Admin</h2>
+                <h2 class="text-3xl font-extrabold">Welcome, Admin!</h2>
                 <a href="{{ route('announcement-images.archived') }}" title="View Archives">
                     <i class="fa-solid fa-box-archive text-3xl text-orange-800 opacity-80 hover:opacity-100 transition cursor-pointer"></i>
                 </a>
@@ -247,8 +261,8 @@
                             <button @click="
                                 let key = getDateKey(selectedDate);
                                 tempName = events[key].name; 
-                                tempStartTime = events[key].start_time; 
-                                tempEndTime = events[key].end_time; 
+                                tempStartTime = events[key].start_time; // Ensure this matches index()
+                                tempEndTime = events[key].end_time;     // Ensure this matches index()
                                 tempPs = events[key].ps;
                                 isEditing = true; 
                             " class="text-green-500 font-black text-lg hover:scale-110 transition">+ Edit</button>
@@ -289,7 +303,7 @@
                     </div>
 
                     <div x-show="isEditing" x-cloak x-transition 
-                         class="bg-white rounded-[40px] p-8 border-[3px] border-black shadow-lg min-h-[420px] flex flex-col justify-center text-left space-y-4">
+                        class="bg-white rounded-[40px] p-8 border-[3px] border-black shadow-lg min-h-[420px] flex flex-col justify-center text-left space-y-4">
                         <h4 class="text-xl font-black uppercase border-b-2 border-black pb-2 text-red-800">
                             Set Event: <span x-text="monthNames[currentMonth]"></span> <span x-text="selectedDate"></span>
                         </h4>
@@ -304,15 +318,19 @@
                             </div>
                             <div>
                                 <label class="block font-black text-xs uppercase text-gray-400">Finish Time</label>
-                                <input type="time" x-model="tempEndTime" class="w-full p-2 border-2 border-black rounded-lg font-bold">
+                                <input type="time" 
+                                    x-model="tempEndTime" 
+                                    :min="tempStartTime" 
+                                    @change="if(tempStartTime && tempEndTime < tempStartTime) { tempEndTime = tempStartTime; triggerNotification('Finish time cannot be earlier than the start time.'); }"
+                                    class="w-full p-2 border-2 border-black rounded-lg font-bold">
                             </div>
                         </div>
 
                         <label class="block font-black text-xs uppercase text-gray-400">Notes (PS)</label>
                         <textarea x-model="tempPs" class="w-full p-2 border-2 border-black rounded-lg"></textarea>
                         
-                        <div class="flex space-x-2 pt-2">
-                            <button @click="isEditing = false" class="bg-gray-200 px-4 py-2 rounded-lg font-black flex-1 border-2 border-black hover:bg-gray-300">CANCEL</button>
+                        <div class="flex space-x-2 pt-2 w-full">
+                            <button @click="isEditing = false" class="bg-gray-200 px-4 py-2 rounded-lg font-black flex-1 border-2 border-black hover:bg-gray-300 transition">CANCEL</button>
                             <button @click="
                                 fetch('{{ route('calendar.store') }}', {
                                     method: 'POST',
@@ -327,11 +345,16 @@
                                 })
                                 .then(res => {
                                     if(res.ok) {
-                                        events[getDateKey(selectedDate)] = { name: tempName, start_time: tempStartTime, end_time: tempEndTime, ps: tempPs };
+                                        events[getDateKey(selectedDate)] = { 
+                                            name: tempName, 
+                                            start_time: tempStartTime, 
+                                            end_time: tempEndTime, 
+                                            ps: tempPs 
+                                        };
                                         isEditing = false;
                                     }
                                 })" 
-                                class="bg-red-600 text-white px-4 py-2 rounded-lg font-black flex-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-700">
+                                class="bg-red-600 text-white px-4 py-2 rounded-lg font-black flex-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-700 transition">
                                 SAVE
                             </button>
                         </div>
@@ -359,7 +382,22 @@
                     <button type="submit" class="flex-1 px-4 py-3 bg-red-700 text-white font-bold rounded-xl shadow-lg">UPLOAD</button>
                 </div>
             </form>
+
         </div>
     </div>
+
+<div x-show="showNotification" 
+     x-cloak 
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 translate-y-10"
+     x-transition:enter-end="opacity-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-300"
+     x-transition:leave-start="opacity-100 translate-y-0"
+     x-transition:leave-end="opacity-0 translate-y-10"
+     class="fixed bottom-10 right-10 bg-red-600 text-white font-black px-6 py-4 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black z-[200] flex items-center space-x-3">
+    <i class="fa-solid fa-circle-exclamation text-2xl"></i>
+    <span x-text="notificationMessage"></span>
+</div>
+
 </body>
 </html>

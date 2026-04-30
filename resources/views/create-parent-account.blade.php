@@ -142,10 +142,6 @@
                                     <label class="w-40 font-bold text-xl">Middle name:</label>
                                     <input type="text" name="middle_name" class="form-input-pill" :disabled="noMiddleName" :class="noMiddleName ? 'bg-gray-100' : ''">
                                 </div>
-                                <div class="ml-40 mt-2 flex items-center gap-2">
-                                    <input type="checkbox" id="no_middle" name="no_middle" x-model="noMiddleName" class="w-5 h-5 accent-red-700">
-                                    <label for="no_middle" class="font-bold text-lg cursor-pointer">No middle name</label>
-                                </div>
                             </div>
 
                             <div class="flex items-center">
@@ -172,22 +168,21 @@
                             <div class="flex flex-col">
                                 <div class="flex items-center">
                                     <label class="w-40 font-bold text-xl leading-tight">Grade &<br>Section: <span class="text-red-600">*</span></label>
-                                    <select name="section_id" id="section_select" class="form-input-pill bg-white cursor-pointer focus:outline-none @error('section_id') border-red-600 @enderror" required>
-                                        <option value="" disabled selected>Select Grade & Section</option>
-                                        <option value="1">Nursery - St. Mary</option>
-                                        <option value="2">Kinder - St. Bridget</option>
-                                        <option value="3">Preparatory - St. Augustine</option>
-                                        <option value="4">Grade 1 - Faith</option>
-                                        <option value="5">Grade 2 - Hope</option>
-                                        <option value="6">Grade 3 - Love</option>
-                                        <option value="7">Grade 4 - Grace</option>
-                                        <option value="8">Grade 5 - Light</option>
-                                        <option value="9">Grade 6 - Wisdom</option>
-                                    </select>
+                                    <select name="section_id" 
+                                        class="border-2 border-black rounded-xl p-2 w-full font-bold"
+                                        @change="$el.form.grade_level.value = $el.options[$el.selectedIndex].getAttribute('data-grade')">
+                                    <option value="">Select Grade & Section</option>
+                                    @foreach($sections as $section)
+                                        <option value="{{ $section->section_id }}" data-grade="{{ $section->grade_level }}">
+                                            {{ $section->grade_level }} - {{ $section->section_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+
+                                {{-- Hidden input to catch the grade level string --}}
+                                <input type="hidden" name="grade_level">
                                 </div>
                                 @error('section_id') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
-                                
-                                <input type="hidden" name="advisory" id="advisory_hidden">
                             </div>
 
                             <div class="flex flex-col">

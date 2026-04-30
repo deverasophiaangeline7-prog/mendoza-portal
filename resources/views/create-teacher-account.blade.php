@@ -126,10 +126,6 @@
                                     <label class="w-40 font-bold text-xl">Middle name:</label>
                                     <input type="text" name="middle_name" class="form-input-pill" :disabled="noMiddleName" :class="noMiddleName ? 'bg-gray-100' : ''">
                                 </div>
-                                <div class="ml-40 mt-2 flex items-center gap-2">
-                                    <input type="checkbox" id="no_middle" name="no_middle" x-model="noMiddleName" class="w-5 h-5 accent-red-700">
-                                    <label for="no_middle" class="font-bold text-lg cursor-pointer">No middle name</label>
-                                </div>
                             </div>
                             <div class="flex items-center">
                                 <label class="w-40 font-bold text-xl">Ext. name:</label>
@@ -186,16 +182,17 @@
                                     <select name="advisory" class="form-input-pill bg-white cursor-pointer focus:outline-none @error('advisory') border-red-600 @enderror" required>
                                         <option value="" disabled selected>Select Section</option>
                                         
-                                        {{-- This is the single NKP option --}}
-                                        <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
+                                        {{-- Your special grouped NKP Option --}}
+                                        <option value="NKP" {{ old('advisory') == 'NKP' ? 'selected' : '' }}>
+                                            NKP (Nursery, Kinder, Prep)
+                                        </option>
 
-                                        {{-- Primary Grades --}}
-                                        <option value="4">Grade 1 - Faith</option>
-                                        <option value="5">Grade 2 - Hope</option>
-                                        <option value="6">Grade 3 - Love</option>
-                                        <option value="7">Grade 4 - Grace</option>
-                                        <option value="8">Grade 5 - Light</option>
-                                        <option value="9">Grade 6 - Wisdom</option>
+                                        {{-- The dynamic loop for all the other grades (Grade 1, Grade 2, etc.) --}}
+                                        @foreach($sections as $section)
+                                            <option value="{{ $section->section_id }}" {{ old('advisory') == $section->section_id ? 'selected' : '' }}>
+                                                {{ $section->grade_level }} - {{ $section->section_name }}
+                                            </option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 @error('advisory')

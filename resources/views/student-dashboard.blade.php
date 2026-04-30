@@ -116,23 +116,23 @@
                 
                 <div class="mb-5">
                     <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Grade Level</label>
-                    <select name="grade_level" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold uppercase focus:outline-none focus:ring-4 focus:ring-yellow-400 bg-white cursor-pointer appearance-none">
+                    <select name="grade_level" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-yellow-400 bg-white cursor-pointer appearance-none">
                         <option value="" disabled selected>Select Grade Level</option>
                         <option value="NURSERY">Nursery</option>
                         <option value="KINDER">Kinder</option>
                         <option value="PREPARATORY">Preparatory</option>
-                        <option value="GRADE 1">Grade 1</option>
-                        <option value="GRADE 2">Grade 2</option>
-                        <option value="GRADE 3">Grade 3</option>
-                        <option value="GRADE 4">Grade 4</option>
-                        <option value="GRADE 5">Grade 5</option>
-                        <option value="GRADE 6">Grade 6</option>
+                        <option value="1">Grade 1</option>
+                        <option value="2">Grade 2</option>
+                        <option value="3">Grade 3</option>
+                        <option value="4">Grade 4</option>
+                        <option value="5">Grade 5</option>
+                        <option value="6">Grade 6</option>
                     </select>
                 </div>
 
                 <div class="mb-8">
                     <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Section Name</label>
-                    <input type="text" name="section_name" placeholder="e.g. FAITH" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold uppercase focus:outline-none focus:ring-4 focus:ring-yellow-400">
+                    <input type="text" name="section_name" placeholder="e.g. FAITH" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-yellow-400">
                 </div>
 
                 <div class="flex justify-end space-x-4">

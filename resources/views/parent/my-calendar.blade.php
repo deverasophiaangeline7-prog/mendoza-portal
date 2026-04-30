@@ -73,7 +73,9 @@
                 Student Information
             </x-sidebar-link>
             
-            <x-sidebar-link href="{{ route('student.calendar') }}" icon="fa-solid fa-calendar-days">
+            <x-sidebar-link href="{{ route('student.calendar') }}" 
+                icon="fa-solid fa-calendar-days" 
+                :active="request()->routeIs('student.calendar')">
                 Student Calendar
             </x-sidebar-link>
             

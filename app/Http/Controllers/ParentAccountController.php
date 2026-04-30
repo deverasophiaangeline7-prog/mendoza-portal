@@ -2,104 +2,83 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Section;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Student;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class ParentAccountController extends Controller
 {
     /**
-     * Store a newly created parent account in storage.
+     * Show the form to create a new parent account.
+     */
+    public function create()
+    {
+        $sections = Section::orderByRaw("
+        CASE 
+            WHEN grade_level = 'Nursery' THEN 1
+            WHEN grade_level = 'Kindergarten' THEN 2
+            WHEN grade_level = 'Preparatory' THEN 3
+            ELSE 4 
+        END ASC
+    ")
+    ->orderBy('grade_level', 'asc') // This sorts the numeric grades (1, 2, 3...) after the first three
+    ->get();
+
+    return view('create-parent-account', compact('sections'));
+    }
+
+    /**
+     * Store a newly created parent account and student record.
      */
     public function store(Request $request)
     {
+        // 1. Validation (Matches your Blade input 'name' attributes)
         $request->validate([
-            'lrn'        => 'required|string|unique:students,lrn', // Check uniqueness in students table
-            'last_name'  => 'required|string|max:255',
-            'first_name' => 'required|string|max:255',
-            'username'   => 'required|string|unique:users,username',
-            'password'   => 'required|string|min:8|confirmed',
-            'gender'     => 'required|in:Male,Female',
-            'birthdate'  => 'required|date',
-            'section_id' => 'required|exists:sections,section_id', // Ensure the section exists
-            'advisory'   => 'required|string', // This represents the 'grade_level' in your logic
+            'username'    => 'required|unique:users,username',
+            'password'    => 'required|min:6|confirmed',
+            'lrn'         => 'required|numeric|digits:12|unique:students,lrn',
+            'first_name'  => 'required',
+            'last_name'   => 'required',
+            'section_id'  => 'required',
+            'gender'      => 'required',
+            'birthdate'   => 'required|date',
         ]);
 
-        // 1. Create the User (Login Credentials)
+        // 2. CREATE THE USER FIRST (The Parent)
+        // Note: Using 'id' is standard, but if your User model uses 'user_id', change it here
         $user = User::create([
             'username' => $request->username,
-            'email'    => $request->username,
             'password' => Hash::make($request->password),
             'role'     => 'parent',
         ]);
 
-        // 2. Create the Student Profile linked to this User and the chosen Section
+        // 3. CREATE THE STUDENT SECOND
+        // We link the student to the parent using the ID we just created
         Student::create([
-            'user_id'     => $user->user_id,
-            'section_id'  => $request->section_id, // Link to the section_id from your form
+            'user_id'     => $user->user_id, // Use $user->user_id if that is your User PK
             'lrn'         => $request->lrn,
             'first_name'  => $request->first_name,
+            'middle_name' => $request->middle_name,
             'last_name'   => $request->last_name,
+            'ext_name'    => $request->ext_name,
             'gender'      => $request->gender,
-            'birth_date'  => $request->birthdate,
-            'grade_level' => $request->advisory, // Store 'Nursery', '1', etc.
+            'birth_date'  => $request->birthdate, // Matches 'birthdate' from form to 'birth_date' in DB
+            'grade_level' => $request->grade_level,
+            'section_id'  => $request->section_id,
         ]);
 
-        return redirect()->route('account.management')
-            ->with('success', 'Parent account for ' . $request->first_name . ' has been created!');
+        return redirect()->route('account.management')->with('success', 'Parent account and Student record created successfully!');
     }
 
     /**
-     * List all parents for the general management view.
+     * Optional: List all parents if needed for the management page.
      */
     public function index()
     {
-        // Eager load 'student.section' to show names and sections in the list
-        $parents = User::where('role', 'parent')->with('student.section')->get();
-        return view('parent-list', compact('parents')); 
-    }
-
-    /**
-     * Display students based on the grade slug clicked (e.g., 'grade-1').
-     */
-    public function showGrade($grade)
-    {
-        // This maps the button IDs to the actual database values
-        $lookup = [
-            'nursery'     => 'Nursery',
-            'kinder'      => 'Kindergarten',
-            'preparatory' => 'Preparatory',
-            'grade-1'     => '1',
-            'grade-2'     => '2',
-            'grade-3'     => '3',
-            'grade-4'     => '4',
-            'grade-5'     => '5',
-            'grade-6'     => '6',
-        ];
-
-        // Get the database value. If not found, use the input itself.
-        $dbValue = $lookup[$grade] ?? $grade;
-
-        // Get students where 'grade_level' matches our translated value
-        $students = Student::where('grade_level', $dbValue)
-                           ->with('section') // Include section details (St. Mary, Faith, etc.)
-                           ->orderBy('last_name', 'asc')
-                           ->get();
-
-        // Split by gender for the view
-        $males = $students->where('gender', 'Male');
-        $females = $students->where('gender', 'Female');
-
-        // Get section info from the first student if available
-        $section = $students->first()->section ?? null;
-
-        return view('sections', [
-            'students' => $students,
-            'grade'    => strtoupper(str_replace('-', ' ', $grade)), // Formats 'grade-1' to 'GRADE 1'
-            'section'  => $section,
-            'males'    => $males,
-            'females'  => $females
-        ]);
+        $students = Student::with('user', 'section')->get();
+        return view('account-management', compact('students'));
     }
 }

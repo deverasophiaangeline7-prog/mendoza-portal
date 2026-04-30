@@ -76,10 +76,13 @@
             <x-sidebar-link href="#" icon="fa-solid fa-user-graduate">
                 List of Students
             </x-sidebar-link>
-            <x-sidebar-link href="#" icon="fa-solid fa-calendar-days">
+            <x-sidebar-link href="{{ route('student.calendar') }}" 
+                icon="fa-solid fa-calendar-days" 
+                :active="request()->routeIs('student.calendar')">
                 Student Calendar
             </x-sidebar-link>
-            <x-sidebar-link href="{{ route('reportcard.index') }}" icon="fa-solid fa-star" :active="request()->routeIs('reportcard.*')">
+            <x-sidebar-link 
+                href="{{ route('reportcard.index') }}" icon="fa-solid fa-star" :active="request()->routeIs('reportcard.*') || request()->routeIs('parent.reportcard')">
                 Report Card
             </x-sidebar-link>
             <x-sidebar-link href="{{ route('attendance.index') }}" icon="fa-solid fa-calendar-check" :active="request()->routeIs('attendance.*')">

@@ -4,97 +4,99 @@ namespace App\Http\Controllers;
 
 use App\Models\SchoolCalendar;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class SchoolCalendarController extends Controller
 {
-    // Get all active events (used by the calendar)
     public function index()
 {
-    // 1. Fetch the events from the DB
+    $user = auth()->user();
     $dbEvents = \App\Models\SchoolCalendar::all();
-
-    // 2. Prepare the array for Alpine.js
     $eventsData = [];
+
     foreach ($dbEvents as $event) {
+        $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
         $eventsData[$event->start_date] = [
-            'name' => $event->event_title,
-            'time' => $event->time,
-            'ps'   => $event->description,
+            'name'       => $event->event_title,
+            'start_time' => $timeParts[0] ?? '',
+            'end_time'   => $timeParts[1] ?? '',
+            'ps'         => $event->description,
         ];
     }
 
-    // 3. Fetch your announcements (keep your existing logic here)
     $announcementImages = \App\Models\AnnouncementImage::where('status', 'active')->get();
 
-    // 4. Pass EVERYTHING to the view
-    return view('dashboard', compact('eventsData', 'announcementImages'));
+    // --- ROLE-BASED TRAFFIC CONTROL ---
+    if ($user->role === 'admin') {
+        return view('dashboard', compact('eventsData', 'announcementImages', 'user'));
+    } 
+    
+    if ($user->role === 'teacher') {
+        return view('teacher.dashboard', compact('eventsData', 'announcementImages', 'user'));
+    }
+
+    if ($user->role === 'parent') {
+        // Since you are using user_id for parents, we find the student linked to this ID
+        $student = \App\Models\Student::where('user_id', $user->user_id)->first();
+
+        // If no student is found, you might want to handle that error
+        if (!$student) {
+            return "Error: No student record linked to this parent account.";
+        }
+
+        // We pass the $student variable so the parent dashboard can show their name/grade
+        return view('parent.dashboard', compact('eventsData', 'announcementImages', 'user', 'student'));
+    }
+
+    return redirect('/');
 }
 
-
-    // Save new event
     public function store(Request $request)
-{
-    // 1. Validate only the fields we kept
-    $request->validate([
-        'event_title' => 'required|string|max:255',
-        'time' => 'nullable|string',
-        'description' => 'nullable|string',
-        'start_date'  => 'required|date',
-    ]);
+    {
+        $combinedTime = $request->start_time . ' - ' . $request->end_time;
 
-    // 2. Use updateOrCreate to prevent duplicate rows for the same date
-    \App\Models\SchoolCalendar::updateOrCreate(
-        ['start_date' => $request->start_date],
-        [
-            'event_title' => $request->event_title,
-            'description' => $request->description,
-            'time'        => $request->time,
-        ]
-    );
+        \App\Models\SchoolCalendar::updateOrCreate(
+            ['start_date' => $request->start_date],
+            [
+                'event_title' => $request->event_title,
+                'description' => $request->description,
+                'time'        => $combinedTime,
+            ]
+        );
 
-    // 3. Return a JSON response for Alpine.js
-    return response()->json(['message' => 'Event saved!']);
-}
+        return response()->json(['message' => 'Event saved!']);
+    }
 
-    // Show edit form (admin only)
+    // ADDED THESE BACK FOR YOUR WEB.PHP ROUTES
     public function edit(SchoolCalendar $schoolCalendar)
     {
         return view('calendar.edit', compact('schoolCalendar'));
     }
 
-    // Save edited event
     public function update(Request $request, SchoolCalendar $schoolCalendar)
     {
         $request->validate([
             'event_title' => 'required|string|max:255',
-            'description' => 'nullable|string',
             'start_date'  => 'required|date',
-            'end_date'    => 'nullable|date|after_or_equal:start_date',
-            'event_type'  => 'required|in:holiday,exam,activity,meeting,other',
         ]);
 
         $schoolCalendar->update([
             'event_title' => $request->event_title,
             'description' => $request->description,
             'start_date'  => $request->start_date,
-            'end_date'    => $request->end_date,
-            'event_type'  => $request->event_type,
+            'time'        => $request->start_time . ' - ' . $request->end_time,
         ]);
 
-        return redirect()->route('calendar.index')
-            ->with('success', 'Event updated successfully!');
+        return redirect()->route('dashboard')->with('success', 'Event updated!');
     }
 
     public function destroy($date)
-{
-    // Find the event by the date string sent from the frontend
-    $event = \App\Models\SchoolCalendar::where('start_date', $date)->first();
-
-    if ($event) {
-        $event->delete();
-        return response()->json(['success' => true]);
+    {
+        $event = \App\Models\SchoolCalendar::where('start_date', $date)->first();
+        if ($event) {
+            $event->delete();
+            return response()->json(['success' => true]);
+        }
+        return response()->json(['error' => 'Event not found'], 404);
     }
-
-    return response()->json(['error' => 'Event not found'], 404);
-}
 }
