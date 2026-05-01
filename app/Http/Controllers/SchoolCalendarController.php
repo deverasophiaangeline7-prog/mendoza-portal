@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\SchoolCalendar;
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Student;
 use Illuminate\Support\Facades\Auth;
 
 class SchoolCalendarController extends Controller
@@ -55,6 +57,7 @@ class SchoolCalendarController extends Controller
     {
         $combinedTime = $request->start_time . ' - ' . $request->end_time;
 
+        // 1. Save or Update the Event
         \App\Models\SchoolCalendar::updateOrCreate(
             ['start_date' => $request->start_date],
             [
@@ -64,10 +67,23 @@ class SchoolCalendarController extends Controller
             ]
         );
 
-        return response()->json(['message' => 'Event saved!']);
+        // 2. TRIGGER NOTIFICATIONS
+        // Typically, School Calendar events apply to the whole school.
+        // We find all users with the 'parent' role to notify them.
+        $parents = User::where('role', 'parent')->get();
+
+        foreach ($parents as $parent) {
+            $parent->notifyUser(
+                'New School Event', 
+                "A new event has been added to the calendar: " . $request->event_title, 
+                'announcement'
+            );
+        }
+
+        // 3. RETURN RESPONSE (Must be last!)
+        return response()->json(['message' => 'Event saved and parents notified!']);
     }
 
-    // ADDED THESE BACK FOR YOUR WEB.PHP ROUTES
     public function edit(SchoolCalendar $schoolCalendar)
     {
         return view('calendar.edit', compact('schoolCalendar'));

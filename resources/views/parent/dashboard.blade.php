@@ -36,10 +36,63 @@
             </i>
         </x-top-icon-button>
         
-        <x-top-icon-button>
-            <i class="fa-solid fa-bell"></i>
-        </x-top-icon-button>
+      <!-- PARENT CONTAINER -->
+<div class="relative inline-block" x-data="{ notifOpen: false }">
+    
+    <!-- BELL BUTTON -->
+    <button @click="notifOpen = !notifOpen" @click.away="notifOpen = false" class="relative z-[70] focus:outline-none p-2">
+        <i class="fa-solid fa-bell text-2xl text-white"></i>
         
+        <!-- RED BADGE -->
+        @if(auth()->user()->customNotifications && auth()->user()->customNotifications->count() > 0)
+            <span class="absolute top-0 right-0 bg-yellow-400 text-red-700 text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold border border-black">
+                {{ auth()->user()->customNotifications->count() }}
+            </span>
+        @endif
+    </button>
+
+    <!-- DROPDOWN MENU -->
+    <div x-show="notifOpen" 
+         x-transition
+         class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border-[3px] border-black z-[100] overflow-hidden"
+         style="display: none;" 
+         x-cloak>
+        
+        <div class="bg-gray-100 border-b-[3px] border-black px-4 py-2">
+            <span class="font-black text-black uppercase text-xs tracking-widest">Notifications</span>
+        </div>
+                <div class="max-h-64 overflow-y-auto">
+    @forelse(auth()->user()->customNotifications as $notification)
+        <!-- 1. We changed 'div' to 'a' -->
+        <!-- 2. We added the 'href' logic -->
+        <!-- 3. We added 'cursor-pointer' and 'block' -->
+        <a href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}" 
+           class="block p-4 border-b border-gray-200 hover:bg-gray-50 transition cursor-pointer no-underline">
+            
+            <div class="pointer-events-none"> <!-- Keeps the text from interfering with the click -->
+                <p class="text-[10px] font-black text-orange-600 uppercase">
+                    {{ $notification->title }}
+                </p>
+                
+                <p class="text-sm font-bold text-black leading-tight">
+                    {{ $notification->message }}
+                </p>
+                
+                <p class="text-[10px] text-gray-400 mt-2">
+                    {{ $notification->created_at->diffForHumans() }}
+                </p>
+            </div>
+        </a>
+    @empty
+        <div class="p-6 text-center">
+            <p class="text-gray-500 font-bold uppercase text-xs">No Notifications Found</p>
+        </div>
+    @endforelse
+        </div>
+    </div>
+</div>
+        
+<!-- Log out -->
         <div class="relative" x-data="{ open: false }">
             <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
                 <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>

@@ -161,4 +161,26 @@ class StudentController extends Controller
         // Redirect back with a success alert
         return redirect()->back()->with('success', 'Message sent to parent successfully!');
     }
+
+    public function finalizeSchoolYear()
+{
+    // 1. Get all students waiting for promotion
+    $pendingStudents = Student::where('promotion_status', 'pending')->get();
+
+    if ($pendingStudents->isEmpty()) {
+        return back()->with('info', 'There are no pending promotions to finalize.');
+    }
+
+    // 2. Loop through and officially promote them
+    foreach ($pendingStudents as $student) {
+        $student->update([
+            'grade_level'      => $student->next_grade_level, // Make it official
+            'section_id'       => null, // Remove them from their old section!
+            'promotion_status' => 'promoted', // Clear the pending status
+            'next_grade_level' => null // Reset
+        ]);
+    }
+
+    return back()->with('success', 'School year finalized! All pending students have been promoted.');
+}
 }

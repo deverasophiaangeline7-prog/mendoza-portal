@@ -17,7 +17,9 @@ class Student extends Model
         'gender',
         'birth_date',
         'grade_level',
-        'section_id'
+        'section_id',
+        'promotion_status',
+        'next_grade_level'
     ];
 
     public function user(){

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SchoolCalendar;
 use App\Models\Student;
+use App\Models\User;
 use App\Models\EventParticipant;
 use Illuminate\Http\Request;
 
@@ -45,30 +46,49 @@ public function studentCalendar()
 
     public function addParticipant(Request $request)
     {
-    if (auth()->user()->role === 'admin') { 
-        abort(403, 'Admins cannot modify student participation.');
-    }
-    $request->validate([
-        'event_id'    => 'required',
-        'student_ids' => 'required|array',
-        'roles'       => 'nullable|array', // CHANGE THIS FROM 'required' TO 'nullable'
-    ]);
-
-    // If the teacher didn't pick a role, we use [null] so the loop still runs once
-    $roles = $request->roles ?? [null]; 
-
-    foreach ($request->student_ids as $student_id) {
-        foreach ($roles as $role) {
-            \App\Models\EventParticipant::firstOrCreate([
-                'event_id'   => $request->event_id,
-                'student_id' => $student_id,
-                'role'       => $role,
-            ]);
+        if (auth()->user()->role === 'admin') { 
+            abort(403, 'Admins cannot modify student participation.');
         }
-    }
 
-    return back()->with('success', 'Student assignments updated!');
-}
+        $request->validate([
+            'event_id'    => 'required',
+            'student_ids' => 'required|array',
+            'roles'       => 'nullable|array',
+        ]);
+
+        // 1. Fetch the event details to include the title in the message
+        $event = SchoolCalendar::find($request->event_id);
+        $roles = $request->roles ?? [null]; 
+
+        foreach ($request->student_ids as $student_id) {
+            // 2. Fetch the student record to find the linked parent (user_id)
+            $student = Student::find($student_id);
+
+            foreach ($roles as $role) {
+                \App\Models\EventParticipant::firstOrCreate([
+                    'event_id'   => $request->event_id,
+                    'student_id' => $student_id,
+                    'role'       => $role,
+                ]);
+            }
+
+            // 3. TRIGGER NOTIFICATION
+            // We place this inside the student loop but outside the role loop 
+            // so the parent receives only one notification per student.
+            if ($student && $student->user_id) {
+                $parent = User::find($student->user_id);
+                if ($parent) {
+                    $parent->notifyUser(
+                        'Event Participation',
+                        "{$student->first_name} has been assigned a role in the event: " . ($event->event_title ?? 'School Event'),
+                        'event_participation'
+                    );
+                }
+            }
+        }
+
+        return back()->with('success', 'Student assignments updated!');
+    }
 
 public function destroyParticipant($id)
 {

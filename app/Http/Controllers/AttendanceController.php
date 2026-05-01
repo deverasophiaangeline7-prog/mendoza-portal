@@ -6,6 +6,7 @@ use App\Models\Attendance; // IMPORTANT: This connects the new table
 use Illuminate\Http\Request;
 use App\Models\Student;
 use App\Models\Section;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class AttendanceController extends Controller
@@ -119,23 +120,48 @@ class AttendanceController extends Controller
     /**
      * THE NEW SAVE FUNCTION: Stores the clicks into the database
      */
+    /**
+     * THE UPDATED SAVE ENGINE
+     * Now handles both Absence and Tardiness notifications.
+     */
     public function store(Request $request)
     {
-        // 1. Changed 'records' to 'attendance' to match your JavaScript
         $records = $request->input('attendance', []);
 
         foreach ($records as $record) {
-            // updateOrCreate ensures we don't save duplicates. 
+            // 1. Save or Update the record
             Attendance::updateOrCreate(
                 [
                     'student_id'      => $record['student_id'],
-                    // 2. Changed to match the 'date' key sent by your JavaScript
                     'attendance_date' => $record['date'] 
                 ],
                 [
                     'status' => $record['status']
                 ]
             );
+
+            // 2. NOTIFICATION LOGIC
+            $status = strtolower($record['status'] ?? '');
+            
+            // We check for Absent (2) or Late (3)
+            if (in_array($status, ['absent', '2', 'late', '3'])) {
+                $student = Student::find($record['student_id']);
+                
+                if ($student && $student->user_id) {
+                    $parent = User::find($student->user_id);
+                    
+                    if ($parent) {
+                        // Determine the wording based on the status
+                        $typeLabel = ($status === 'late' || $status === '3') ? 'LATE' : 'ABSENT';
+
+                        $parent->notifyUser(
+                            'Attendance Alert', 
+                            "Notice: {$student->first_name} was marked {$typeLabel} today.", 
+                            'attendance'
+                        );
+                    }
+                }
+            }
         }
 
         return response()->json(['message' => 'Saved Successfully!']);

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Notification;
 
 class User extends Authenticatable
 {
@@ -62,4 +63,25 @@ public function getEmailForPasswordReset()
         return $this->username;
     }
 
+    public function customNotifications()
+{
+    return $this->hasMany(Notification::class, 'user_id')
+                ->where('is_read', 0)
+                ->orderBy('created_at', 'desc');
+}
+
+/**
+ * Reusable notification helper
+ */
+public function notifyUser($title, $message, $type = 'general')
+{
+    return \App\Models\Notification::create([
+        'user_id'    => $this->user_id, // Uses the primary key of the user being notified
+        'title'      => $title,
+        'message'    => $message,
+        'type'       => $type,
+        'is_read'    => 0,
+        'created_at' => now(),
+    ]);
+}
 }

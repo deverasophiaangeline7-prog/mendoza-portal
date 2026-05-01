@@ -7,8 +7,11 @@ use App\Models\Grade;
 use App\Models\Section;
 use App\Models\BehaviorReport;
 use App\Models\NkpEvaluation;
+use App\Models\User; // Added for Notifications
+use App\Notifications\GradeUploaded; // Added for Notifications
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification; // Added for Notifications
 
 class ReportCardController extends Controller
 {
@@ -57,7 +60,6 @@ class ReportCardController extends Controller
 
     /**
      * 3. THE GRADE SHEET (Branching Logic)
-     * This replaces your old showStudent method.
      */
     public function showStudent($student_id)
     {
@@ -127,7 +129,7 @@ class ReportCardController extends Controller
         $student_id = $request->input('student_id');
         $grades = $request->input('grades');
         $behaviors = $request->input('behaviors');
-        $nkpEvaluations = $request->input('nkp_evaluations'); // Added for NKP
+        $nkpEvaluations = $request->input('nkp_evaluations');
 
         // 1. Save Numeric Grades (Grades 1-6)
         if ($grades) {
@@ -170,6 +172,20 @@ class ReportCardController extends Controller
                 );
             }
         }
+
+        // 4. NOTIFY THE PARENT (Custom Table Logic)
+        $student = Student::find($student_id);
+
+if ($student && $student->user_id) {
+    \App\Models\Notification::create([
+        'user_id'    => $student->user_id,
+        'title'      => 'Grades Uploaded',
+        'message'    => 'New grades have been posted for ' . $student->first_name . '.',
+        'type'       => 'grade_upload',
+        'is_read'    => 0,
+        'created_at' => now(), // Manually set the time
+    ]);
+}
 
         return response()->json(['message' => 'Saved Successfully!']);
     }

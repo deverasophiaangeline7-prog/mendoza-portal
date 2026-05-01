@@ -18,8 +18,64 @@
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <!-- Right Side: Bell and Settings -->
+            <div class="hidden sm:flex sm:items-center sm:ms-6 space-x-4">
+                
+                <!-- 🔔 NOTIFICATION BELL WIDGET START -->
+                <div class="relative" x-data="{ notifOpen: false }">
+                    <button @click="notifOpen = !notifOpen" @click.away="notifOpen = false" class="text-gray-500 hover:text-gray-700 transition relative p-2 focus:outline-none">
+                        <i class="fa-solid fa-bell text-xl"></i>
+                        
+                        <!-- Red/Yellow Badge -->
+                        @if(auth()->user()->customNotifications && auth()->user()->customNotifications->count() > 0)
+                            <span class="absolute top-1 right-1 bg-yellow-400 text-red-700 text-[10px] rounded-full h-4 w-4 flex items-center justify-center border border-white font-bold shadow-sm">
+                                {{ auth()->user()->customNotifications->count() }}
+                            </span>
+                        @endif
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div x-show="notifOpen" 
+                         x-transition 
+                         class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-[3px] border-black py-0 z-50 overflow-hidden" 
+                         style="display: none;" 
+                         x-cloak>
+                        
+                        <div class="bg-gray-200 border-b-[3px] border-black px-4 py-3">
+                            <h3 class="font-black uppercase tracking-wider text-black text-xs">Notifications</h3>
+                        </div>
+
+                        <div class="max-h-80 overflow-y-auto">
+                            @forelse(auth()->user()->customNotifications as $notification)
+                                <!-- FIXED: Pointing to markRead route instead of hardcoding Report Card -->
+                                <a href="{{ route('notifications.markRead', $notification->notification_id) }}" 
+                                   class="block w-full p-4 border-b-2 border-gray-200 hover:bg-gray-50 transition cursor-pointer relative z-[110] no-underline text-left">
+                                   
+                                   <div class="pointer-events-none">
+                                       <p class="text-[10px] font-black text-orange-600 uppercase mb-1">
+                                           {{ $notification->title }}
+                                       </p>
+                                       
+                                       <p class="text-sm font-bold text-black leading-tight">
+                                           {{ $notification->message }}
+                                       </p>
+                                       
+                                       <p class="text-[10px] text-gray-400 mt-2">
+                                           {{ $notification->created_at->diffForHumans() }}
+                                       </p>
+                                   </div>
+                                </a>
+                            @empty
+                                <div class="px-4 py-8 text-center">
+                                    <p class="text-gray-500 font-bold uppercase text-xs">No notifications found</p>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+                <!-- 🔔 NOTIFICATION BELL WIDGET END -->
+
+                <!-- Settings Dropdown -->
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
@@ -52,7 +108,7 @@
                 </x-dropdown>
             </div>
 
-            <!-- Hamburger -->
+            <!-- Hamburger (Mobile) -->
             <div class="-me-2 flex items-center sm:hidden">
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
@@ -87,7 +143,6 @@
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
                     <x-responsive-nav-link :href="route('logout')"
                             onclick="event.preventDefault();
                                         this.closest('form').submit();">

@@ -15,6 +15,9 @@ use App\Http\Controllers\ReportCardController;
 use App\Http\Controllers\StudentCalendarController;
 use App\Http\Controllers\ParentController;
 use App\Http\Controllers\Admin\StudentController;
+use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\ClassroomAnnouncementController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -61,7 +64,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::get('/report-card/list/{section_id}', [ReportCardController::class, 'show'])->name('reportcard.show');
     Route::get('/report-card/view/{student_id}', [ReportCardController::class, 'showStudent'])->name('reportcard.showStudent');
     Route::get('/my-child/report-card', [ReportCardController::class, 'showParentReportCard'])->name('parent.reportcard');
-    
+
     });
 
 // ==========================================
@@ -85,6 +88,9 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
 
     Route::post('/teacher/students/add', [App\Http\Controllers\Teacher\StudentController::class, 'storeStudent'])->name('teacher.students.store');
     Route::delete('/teacher/students/delete/{id}', [App\Http\Controllers\Teacher\StudentController::class, 'destroyStudent'])->name('teacher.students.destroy');
+    
+    Route::post('/teacher/promote/{id}', [TeacherController::class, 'promoteStudent'])->name('teacher.promote');
+    Route::post('/teacher/announcement', [ClassroomAnnouncementController::class, 'store'])->name('teacher.announcement.store');
     });
 
 
@@ -147,6 +153,8 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
 
     Route::post('/admin/students/add', [App\Http\Controllers\Admin\StudentController::class, 'storeStudent'])->name('admin.students.store');
     Route::delete('/admin/students/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroyStudent'])->name('admin.students.destroy');
+    
+    Route::post('/admin/finalize-year', [StudentController::class, 'finalizeSchoolYear'])->name('admin.finalize_year');
     });
 
     // Both Admins and Teachers are allowed inside this group!
@@ -160,6 +168,9 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::middleware(['auth', 'role:parent'])->group(function () {
     // The name here has a DOT, so the route() call must have a DOT
     Route::get('/student-view', [ParentAccountController::class, 'showStudentProfile'])->name('student.view');
+    
+    Route::get('/notifications/read/{id}', [App\Http\Controllers\NotificationController::class, 'markAsRead'])
+    ->name('notifications.read');
     });
 
 require __DIR__.'/auth.php';

@@ -13,7 +13,7 @@
     </style>
 </head>
 
-<body class="bg-gray-100" x-data="{ openModal: false, messageModal: false, studentName: '', studentId: '' }">
+<body class="bg-gray-100" x-data="{ openModal: false, messageModal: false, promoteModal: false, studentName: '', studentId: '', promoteUrl: '' }">
 
     <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
         <div class="flex items-center space-x-3">
@@ -165,12 +165,13 @@
                                 <th class="p-4 border-r-2 border-black w-40">LRN</th>
                                 <th class="p-4 border-r-2 border-black">Learner</th>
                                 <th class="p-4 border-r-2 border-black text-center w-48">Birthdate</th>
-                                <th class="p-4 text-center w-20">Message</th>
+                                <th class="p-4 border-r-2 border-black text-center w-20">Message</th>
+                                <th class="p-4 text-center w-32">Promotion</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr class="bg-gray-300 font-bold border-b-2 border-black uppercase tracking-widest">
-                                <td colspan="5" class="p-2 pl-4 italic">Male</td>
+                                <td colspan="6" class="p-2 pl-4 italic">Male</td>
                             </tr>
                             @forelse($males as $index => $student)
                                 <tr class="border-b-2 border-black hover:bg-gray-50 transition cursor-pointer" onclick="window.location.href='{{ route('students.showStudent', $student->student_id ?? $student->id) }}'">
@@ -180,20 +181,39 @@
                                     <td class="p-4 border-r-2 border-black text-center font-medium">
                                         {{ $student->birth_date ? \Carbon\Carbon::parse($student->birth_date)->format('d/m/Y') : 'dd/mm/yyyy' }}
                                     </td>
-                                    <td class="p-2 text-center">
+                                    <td class="p-2 border-r-2 border-black text-center">
                                         <button type="button" @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; studentId = '{{ $student->student_id ?? $student->id }}'; messageModal = true;" class="bg-blue-500 text-white w-9 h-9 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-600 active:translate-y-1 active:shadow-none transition-all text-base" title="Message Parent">
                                             <i class="fa-solid fa-envelope"></i>
                                         </button>
                                     </td>
+                                    <td class="p-2 text-center">
+                                        @if($student->promotion_status === 'pending')
+                                            <!-- Added onclick to stop the row from clicking, and cursor-default to turn the mouse pointer back to a normal arrow -->
+                                            <div class="flex flex-col items-center justify-center cursor-default" onclick="event.stopPropagation();">
+                                                <i class="fa-solid fa-clock-rotate-left text-orange-500 mb-1"></i>
+                                                <span class="text-orange-600 font-bold italic text-[10px] uppercase tracking-wider">
+                                                    Pending: {{ is_numeric($student->next_grade_level) ? 'Grade ' . $student->next_grade_level : $student->next_grade_level }}
+                                                </span>
+                                            </div>
+                                        @else
+                                                <!-- Notice the onclick="event.stopPropagation();" here -->
+                                                <button type="button" 
+                                                        @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; promoteUrl = '{{ route('teacher.promote', $student->student_id ?? $student->id) }}'; promoteModal = true;" 
+                                                        class="bg-[#8cc63f] text-black text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
+                                                    Promote
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr class="border-b-2 border-black">
-                                    <td colspan="5" class="p-4 text-center font-bold text-gray-500">No male students found.</td>
+                                    <td colspan="6" class="p-4 text-center font-bold text-gray-500">No male students found.</td>
                                 </tr>
                             @endforelse
 
                             <tr class="bg-gray-300 font-bold border-b-2 border-black uppercase tracking-widest">
-                                <td colspan="5" class="p-2 pl-4 italic">Female</td>
+                                <td colspan="6" class="p-2 pl-4 italic">Female</td>
                             </tr>
                             @forelse($females as $index => $student)
                                 <tr class="border-b-2 border-black hover:bg-gray-50 transition cursor-pointer" onclick="window.location.href='{{ route('students.showStudent', $student->student_id ?? $student->id) }}'">
@@ -203,15 +223,34 @@
                                     <td class="p-4 border-r-2 border-black text-center font-medium">
                                         {{ $student->birth_date ? \Carbon\Carbon::parse($student->birth_date)->format('d/m/Y') : 'dd/mm/yyyy' }}
                                     </td>
-                                    <td class="p-2 text-center">
+                                    <td class="p-2 border-r-2 border-black text-center">
                                         <button type="button" @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; studentId = '{{ $student->student_id ?? $student->id }}'; messageModal = true;" class="bg-blue-500 text-white w-9 h-9 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-600 active:translate-y-1 active:shadow-none transition-all text-base" title="Message Parent">
                                             <i class="fa-solid fa-envelope"></i>
                                         </button>
                                     </td>
+                                    <td class="p-2 text-center">
+                                        @if($student->promotion_status === 'pending')
+                                            <!-- Added onclick to stop the row from clicking, and cursor-default to turn the mouse pointer back to a normal arrow -->
+                                            <div class="flex flex-col items-center justify-center cursor-default" onclick="event.stopPropagation();">
+                                                <i class="fa-solid fa-clock-rotate-left text-orange-500 mb-1"></i>
+                                                <span class="text-orange-600 font-bold italic text-[10px] uppercase tracking-wider">
+                                                    Pending: {{ is_numeric($student->next_grade_level) ? 'Grade ' . $student->next_grade_level : $student->next_grade_level }}
+                                                </span>
+                                            </div>
+                                        @else
+                                                <!-- Notice the onclick="event.stopPropagation();" here -->
+                                                <button type="button" 
+                                                        @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; promoteUrl = '{{ route('teacher.promote', $student->student_id ?? $student->id) }}'; promoteModal = true;" 
+                                                        class="bg-[#8cc63f] text-black text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
+                                                    Promote
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr class="border-b-2 border-black">
-                                    <td colspan="5" class="p-4 text-center font-bold text-gray-500">No female students found.</td>
+                                    <td colspan="6" class="p-4 text-center font-bold text-gray-500">No female students found.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -255,7 +294,26 @@
                 </div>
             </form>
         </div>
+</div>
+
+        <!-- PROMOTION CONFIRMATION MODAL -->
+<div x-show="promoteModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity">
+    <div @click.away="promoteModal = false" class="bg-white border-[3px] border-black rounded-[30px] p-8 w-full max-w-md shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] text-center">
+        
+        <i class="fa-solid fa-circle-exclamation text-orange-500 text-6xl mb-4"></i>
+        <h2 class="text-3xl font-black uppercase text-black mb-2">Confirm Promotion</h2>
+        <p class="text-gray-600 font-bold mb-8">Are you sure you want to queue <span class="text-blue-600 uppercase" x-text="studentName"></span> for the next grade level?</p>
+
+        <!-- The actual form that submits the request -->
+        <form :action="promoteUrl" method="POST" class="flex justify-center space-x-4">
+            @csrf
+            <button type="button" @click="promoteModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4">Cancel</button>
+            <button type="submit" class="bg-[#8cc63f] text-black font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
+                Yes, Promote
+            </button>
+        </form>
     </div>
+</div>
 
 </body>
 </html>
