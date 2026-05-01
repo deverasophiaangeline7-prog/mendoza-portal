@@ -110,12 +110,18 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::post('/account/teacher/store', [TeacherAccountController::class, 'store'])->name('account.teacher.store'); 
     Route::get('/teacher-list', [TeacherAccountController::class, 'index'])->name('teacher.list');
     Route::delete('/teacher/{id}', [TeacherAccountController::class, 'destroy'])->name('account.teacher.destroy');
+    Route::patch('/teacher/{id}/archive', [TeacherAccountController::class, 'archive'])->name('account.teacher.archive');
+    Route::get('/teacher-list/archived', [TeacherAccountController::class, 'archivedIndex'])->name('teacher.archived');
+    Route::patch('/teacher/{id}/restore', [TeacherAccountController::class, 'restore'])->name('account.teacher.restore');
 
     // Parent Management
     Route::get('/create-parent-account', [ParentAccountController::class, 'create'])->name('parent.create'); 
     Route::post('/account/parent/store', [ParentAccountController::class, 'store'])->name('account.parent.store');
     Route::get('/parent-list', [ParentAccountController::class, 'index'])->name('parent.list');
     Route::get('/account/parents/{grade}', [ParentAccountController::class, 'showGrade'])->name('grade.show');
+    Route::patch('/account/parent/{id}/archive', [ParentAccountController::class, 'archive'])->name('account.parent.archive');
+    Route::patch('/account/parent/{id}/restore', [ParentAccountController::class, 'restore'])->name('account.parent.restore');
+    Route::get('/parent-list/archived', [ParentAccountController::class, 'archivedIndex'])->name('parent.archived');
 
     // User General CRUD
     Route::post('/finalize-year', [UserController::class, 'finalize'])->name('finalize.year');

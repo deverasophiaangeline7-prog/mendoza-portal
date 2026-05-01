@@ -63,8 +63,42 @@ class TeacherAccountController extends Controller
 
     public function index()
     {
-        $teachers = User::where('role', 'teacher')->with('teacher')->get();
+        $teachers = User::where('role', 'teacher')
+                    ->where('status', 'active')
+                    ->with('teacher')
+                    ->get();
+                    
         return view('teacher-list', compact('teachers')); 
+    }
+
+    public function archive($id)
+    {
+        $user = User::findOrFail($id);
+        $user->status = 'archived'; // Update the status instead of deleting
+        $user->save();
+        
+        return redirect()->back()->with('success', 'Teacher account archived successfully!');
+    }
+
+    public function archivedIndex()
+    {
+        // Notice we are looking for 'archived' instead of 'active' here!
+        $archivedTeachers = User::where('role', 'teacher')
+                        ->where('status', 'archived')
+                        ->with('teacher')
+                        ->get();
+                        
+        // We will send this data to a new blade file
+        return view('teacher-archived-list', compact('archivedTeachers')); 
+    }
+
+    public function restore($id)
+    {
+        $user = User::findOrFail($id);
+        $user->status = 'active'; // Change them back to active!
+        $user->save();
+        
+        return redirect()->back()->with('success', 'Teacher account restored successfully!');
     }
 
     public function destroy($id)

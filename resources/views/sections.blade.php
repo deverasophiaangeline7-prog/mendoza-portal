@@ -20,7 +20,8 @@
     </style>
 </head>
 
-<body class="bg-gray-100" x-data="{ openModal: false }">
+<!-- Alpine variables updated here! -->
+<body class="bg-gray-100" x-data="{ openModal: false, archiveModal: false, archiveUrl: '' }">
 
     <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
     <div class="flex items-center space-x-3">
@@ -72,26 +73,22 @@
     <div class="flex min-h-screen">
         <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
     <ul class="space-y-1">
-        <!-- Dashboard -->
         <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
             Dashboard
         </x-sidebar-link>
 
-        <!-- Student Information: ONLY for Parents -->
         @if(auth()->user()->role === 'parent')
             <x-sidebar-link href="{{ route('student.view') }}" icon="fa-solid fa-user-graduate" :active="request()->routeIs('student.view')">
                 Student Information
             </x-sidebar-link>
         @endif
 
-        <!-- Advisory Class: ONLY for Teachers -->
         @if(auth()->user()->role === 'teacher')
             <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-chalkboard-user" :active="request()->routeIs('students.*')">
                 Advisory Class
             </x-sidebar-link>
         @endif
 
-        <!-- Student Calendar: Role-Based Routing -->
         @php
             $calendarRoute = match(auth()->user()->role) {
                 'admin' => route('admin.student.participation'),
@@ -105,7 +102,6 @@
             Student Calendar
         </x-sidebar-link>
 
-        <!-- Report Card: Role-Based Routing -->
         <x-sidebar-link 
             href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}" 
             icon="fa-solid fa-star" 
@@ -113,7 +109,6 @@
             Report Card
         </x-sidebar-link>
         
-        <!-- Attendance: Role-Based Routing -->
         <x-sidebar-link 
             href="{{ auth()->user()->role === 'parent' ? route('parent.attendance') : route('attendance.index') }}" 
             icon="fa-solid fa-calendar-check" 
@@ -121,7 +116,6 @@
             Attendance
         </x-sidebar-link>
 
-        <!-- Account Management: ONLY for Admin -->
         @if(auth()->user()->role === 'admin')
             <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.management')">
                 Account Management
@@ -131,11 +125,23 @@
 </nav>
 
         <main class="flex-1 p-8">
-            <div class="mb-8">
-                <h2 class="text-4xl font-black text-black uppercase">Account Management</h2>
-                <h3 class="text-3xl font-black text-orange-400 italic uppercase" style="-webkit-text-stroke: 1.5px black;">
-                    {{ str_replace('-', ' ', $grade) }} - {{ $section->section_name ?? 'General' }}
-                </h3>
+            <!-- Header section updated with buttons! -->
+            <div class="mb-8 flex justify-between items-center">
+                <div>
+                    <h2 class="text-4xl font-black text-black uppercase">Account Management</h2>
+                    <h3 class="text-3xl font-black text-orange-400 italic uppercase" style="-webkit-text-stroke: 1.5px black;">
+                        {{ str_replace('-', ' ', $grade) }} - {{ $section->section_name ?? 'General' }}
+                    </h3>
+                </div>
+                
+                <div class="flex gap-4">
+                    <a href="{{ route('parent.archived') }}" class="bg-gray-200 hover:bg-gray-300 text-black px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black">
+                        <i class="fa-solid fa-box-archive"></i> View Archives
+                    </a>
+                    <a href="{{ route('parent.list') }}" class="bg-gray-800 hover:bg-black text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Grades
+                    </a>
+                </div>
             </div>
 
             <div class="border-2 border-black rounded-lg overflow-hidden bg-white">
@@ -145,7 +151,7 @@
                             <th class="p-4 border-r-2 border-black text-center w-24">No.</th>
                             <th class="p-4 border-r-2 border-black w-40">LRN</th>
                             <th class="p-4">Learner</th>
-                            <th class="p-4 w-32 text-center">Action</th>
+                            <th class="p-4 w-40 text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -155,7 +161,19 @@
                                 <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
                                 <td class="p-4 border-r-2 border-black font-bold">{{ $student->lrn }}</td>
                                 <td class="p-4 font-bold uppercase">{{ $student->first_name }} {{ $student->last_name }}</td>
-                                <td class="p-4 text-center"><button class="bg-green-500 text-white px-4 py-1 rounded-lg font-bold border border-black/20">Edit</button></td>
+                                <td class="p-4">
+                                    <div class="flex justify-center gap-2 items-center">
+                                        <button class="bg-green-500 text-white px-4 py-1 rounded-lg font-bold border border-black/20">Edit</button>
+                                        
+                                        <!-- ARCHIVE BUTTON FOR MALES -->
+                                        <button type="button" 
+                                            @click="archiveModal = true; archiveUrl = '{{ route('account.parent.archive', $student->user_id) }}'" 
+                                            title="Archive" 
+                                            class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
+                                            <i class="fa-solid fa-box-archive"></i>
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
                         @endforeach
 
@@ -165,13 +183,54 @@
                                 <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
                                 <td class="p-4 border-r-2 border-black font-bold">{{ $student->lrn }}</td>
                                 <td class="p-4 font-bold uppercase">{{ $student->first_name }} {{ $student->last_name }}</td>
-                                <td class="p-4 text-center"><button class="bg-green-500 text-white px-4 py-1 rounded-lg font-bold border border-black/20">Edit</button></td>
+                                <td class="p-4">
+                                    <div class="flex justify-center gap-2 items-center">
+                                        <button class="bg-green-500 text-white px-4 py-1 rounded-lg font-bold border border-black/20">Edit</button>
+                                        
+                                        <!-- ARCHIVE BUTTON FOR FEMALES -->
+                                        <button type="button" 
+                                            @click="archiveModal = true; archiveUrl = '{{ route('account.parent.archive', $student->user_id) }}'" 
+                                            title="Archive" 
+                                            class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
+                                            <i class="fa-solid fa-box-archive"></i>
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
         </main>
+    </div>
+
+    <!-- Archive Confirmation Modal -->
+    <div x-show="archiveModal" 
+         x-transition:opacity
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" 
+         x-cloak>
+        <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]" 
+             @click.away="archiveModal = false">
+            <div class="text-center">
+                <i class="fa-solid fa-box-archive text-6xl text-[#ffb72b] mb-6"></i>
+                <h2 class="text-3xl font-black mb-4 uppercase">Archive Account?</h2>
+                <p class="text-lg font-medium text-gray-600 mb-8 leading-tight">
+                    Are you sure you want to archive this parent account? The student will be hidden from the active list.
+                </p>
+                <div class="flex flex-col gap-4">
+                    <form :action="archiveUrl" method="POST">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="w-full bg-[#ffb72b] text-black font-black py-4 rounded-full border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-500 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
+                            YES, ARCHIVE
+                        </button>
+                    </form>
+                    <button @click="archiveModal = false" type="button" class="w-full bg-gray-100 text-gray-700 font-black py-4 rounded-full border-2 border-black hover:bg-gray-200 transition-all">
+                        CANCEL
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>

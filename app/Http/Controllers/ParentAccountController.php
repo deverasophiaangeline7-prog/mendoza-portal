@@ -102,8 +102,12 @@ class ParentAccountController extends Controller
 
     $dbValue = $lookup[$grade] ?? $grade;
 
+    // Updated to only fetch students where the linked user is 'active'
     $students = Student::where('grade_level', $dbValue)
-                       ->with('section')
+                       ->whereHas('user', function($query) {
+                           $query->where('status', 'active');
+                       })
+                       ->with('section', 'user')
                        ->orderBy('last_name', 'asc')
                        ->get();
 
@@ -133,5 +137,36 @@ public function showStudentProfile()
     }
 
     return view('student-view', compact('student'));
+}
+
+public function archive($id)
+{
+    $user = User::findOrFail($id);
+    $user->status = 'archived'; 
+    $user->save();
+    
+    return redirect()->back()->with('success', 'Parent account archived successfully!');
+}
+
+public function restore($id)
+{
+    $user = User::findOrFail($id);
+    $user->status = 'active'; 
+    $user->save();
+    
+    return redirect()->back()->with('success', 'Parent account restored successfully!');
+}
+
+public function archivedIndex()
+{
+    // Fetch students where the linked parent user is 'archived'
+    $archivedStudents = Student::whereHas('user', function($query) {
+                            $query->where('status', 'archived');
+                        })
+                        ->with('section', 'user')
+                        ->orderBy('last_name', 'asc')
+                        ->get();
+                        
+    return view('parent-archived-list', compact('archivedStudents')); 
 }
 }
