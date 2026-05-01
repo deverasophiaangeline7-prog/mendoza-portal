@@ -63,36 +63,44 @@
 </header>
 
     <div class="flex h-screen">
-        <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0">
-            <ul class="space-y-1">
-                <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
-                    Dashboard
-                </x-sidebar-link>
-                
-                <x-sidebar-link href="#" icon="fa-solid fa-user-graduate">
-                    List of Students
-                </x-sidebar-link>
-                
-                <x-sidebar-link href="#" icon="fa-solid fa-calendar-days">
-                    Student Calendar
-                </x-sidebar-link>
-                
-                <x-sidebar-link href="{{ route('reportcard.index') }}" icon="fa-solid fa-star" :active="request()->routeIs('reportcard.*')">
-                    Report Card
-                </x-sidebar-link>
-                
-                <x-sidebar-link href="{{ route('attendance.index') }}" icon="fa-solid fa-calendar-check" :active="request()->routeIs('attendance.*')">
-                    Attendance
-                </x-sidebar-link>
-                
-                {{-- Automatically hidden from teachers/parents on the backend --}}
-                @if(auth()->check() && auth()->user()->role === 'admin')
-                    <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.*') || request()->routeIs('teacher.*') || request()->routeIs('parent.*')">
-                        Account Management
-                    </x-sidebar-link>
-                @endif
-            </ul>
-        </nav>
+        <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
+    <ul class="space-y-1">
+        <!-- Dashboard: Accessible to all -->
+        <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line">
+            Dashboard
+        </x-sidebar-link>
+
+        <!--Hidden from Admin, Visible to Teacher -->
+        @if(auth()->user()->role !== 'admin')
+            <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-user-graduate" :active="request()->routeIs('students.index')">
+                Advisory Class
+            </x-sidebar-link>
+        @endif
+
+        <!-- Student Calendar: Dynamic Route based on Role -->
+        <x-sidebar-link href="{{ auth()->user()->role === 'admin' ? route('admin.student.participation') : route('student.calendar.index') }}" 
+            icon="fa-solid fa-calendar-days" 
+            :active="request()->routeIs('admin.student.participation') || request()->routeIs('student.calendar.index')">
+            Student Calendar
+        </x-sidebar-link>
+
+        <!-- Academic Features -->
+        <x-sidebar-link href="{{ route('reportcard.index') }}" icon="fa-solid fa-star">
+            Report Card
+        </x-sidebar-link>
+        
+        <x-sidebar-link href="{{ route('attendance.index') }}" icon="fa-solid fa-calendar-check">
+            Attendance
+        </x-sidebar-link>
+
+        <!-- Account Management: Admin Only -->
+        @if(auth()->user()->role === 'admin')
+            <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.management')">
+                Account Management
+            </x-sidebar-link>
+        @endif
+    </ul>
+</nav>
 
         <main class="flex-1 bg-white relative p-8 flex flex-col items-center justify-center">
             

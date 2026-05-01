@@ -64,7 +64,6 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     
     });
 
-
 // ==========================================
 // 3. TEACHER ONLY ROUTES (Data Entry/Updates)
 // ==========================================
@@ -155,6 +154,12 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::post('/students/add', [App\Http\Controllers\Admin\StudentController::class, 'storeStudent'])->name('students.store');
     Route::delete('/students/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroyStudent'])->name('students.destroy');
     
+    });
+
+    // Only users with the 'parent' role can access these routes
+    Route::middleware(['auth', 'role:parent'])->group(function () {
+    // The name here has a DOT, so the route() call must have a DOT
+    Route::get('/student-view', [ParentAccountController::class, 'showStudentProfile'])->name('student.view');
     });
 
 require __DIR__.'/auth.php';

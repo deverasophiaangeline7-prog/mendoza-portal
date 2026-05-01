@@ -70,36 +70,65 @@
 </header>
 
     <div class="flex min-h-screen">
-        <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0">
-            <ul class="space-y-1">
-                <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
-                    Dashboard
-                </x-sidebar-link>
-                
-                <x-sidebar-link href="#" icon="fa-solid fa-user-graduate">
-                    List of Students
-                </x-sidebar-link>
-                
-                <x-sidebar-link href="#" icon="fa-solid fa-calendar-days">
-                    Student Calendar
-                </x-sidebar-link>
-                
-                <x-sidebar-link href="{{ route('reportcard.index') }}" icon="fa-solid fa-star" :active="request()->routeIs('reportcard.*')">
-                    Report Card
-                </x-sidebar-link>
-                
-                <x-sidebar-link href="{{ route('attendance.index') }}" icon="fa-solid fa-calendar-check" :active="request()->routeIs('attendance.*')">
-                    Attendance
-                </x-sidebar-link>
-                
-                {{-- Automatically hidden from teachers/parents on the backend --}}
-                @if(auth()->check() && auth()->user()->role === 'admin')
-                    <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.*') || request()->routeIs('teacher.*') || request()->routeIs('parent.*')">
-                        Account Management
-                    </x-sidebar-link>
-                @endif
-            </ul>
-        </nav>
+        <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
+    <ul class="space-y-1">
+        <!-- Dashboard -->
+        <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
+            Dashboard
+        </x-sidebar-link>
+
+        <!-- Student Information: ONLY for Parents -->
+        @if(auth()->user()->role === 'parent')
+            <x-sidebar-link href="{{ route('student.view') }}" icon="fa-solid fa-user-graduate" :active="request()->routeIs('student.view')">
+                Student Information
+            </x-sidebar-link>
+        @endif
+
+        <!-- Advisory Class: ONLY for Teachers -->
+        @if(auth()->user()->role === 'teacher')
+            <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-chalkboard-user" :active="request()->routeIs('students.*')">
+                Advisory Class
+            </x-sidebar-link>
+        @endif
+
+        <!-- Student Calendar: Role-Based Routing -->
+        @php
+            $calendarRoute = match(auth()->user()->role) {
+                'admin' => route('admin.student.participation'),
+                'parent' => route('student.calendar'),
+                default => route('student.calendar.index'),
+            };
+        @endphp
+        <x-sidebar-link href="{{ $calendarRoute }}" 
+            icon="fa-solid fa-calendar-days" 
+            :active="request()->routeIs('admin.student.participation') || request()->routeIs('student.calendar*')">
+            Student Calendar
+        </x-sidebar-link>
+
+        <!-- Report Card: Role-Based Routing -->
+        <x-sidebar-link 
+            href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}" 
+            icon="fa-solid fa-star" 
+            :active="request()->routeIs('reportcard.*') || request()->routeIs('parent.reportcard')">
+            Report Card
+        </x-sidebar-link>
+        
+        <!-- Attendance: Role-Based Routing -->
+        <x-sidebar-link 
+            href="{{ auth()->user()->role === 'parent' ? route('parent.attendance') : route('attendance.index') }}" 
+            icon="fa-solid fa-calendar-check" 
+            :active="request()->routeIs('attendance.*') || request()->routeIs('parent.attendance')">
+            Attendance
+        </x-sidebar-link>
+
+        <!-- Account Management: ONLY for Admin -->
+        @if(auth()->user()->role === 'admin')
+            <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.management')">
+                Account Management
+            </x-sidebar-link>
+        @endif
+    </ul>
+</nav>
 
         <main class="flex-1 p-12 bg-white">
             <div class="max-w-5xl mx-auto">
@@ -108,7 +137,8 @@
                     <p class="text-3xl font-bold text-black mt-2">Parent</p>
                 </div>
 
-                <form action="{{ route('account.parent.store') }}" method="POST">
+                <!-- enctype added for file upload -->
+                <form action="{{ route('account.parent.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="grid grid-cols-2 gap-x-16 gap-y-6" x-data="{ pw: '', pw_confirm: '' }">
                         
@@ -148,7 +178,52 @@
                                 <label class="w-40 font-bold text-xl">Ext. name:</label>
                                 <input type="text" name="ext_name" class="form-input-pill">
                             </div>
-                        </div>
+
+                            <!-- Profile Photo -->
+                            <div class="flex flex-col" x-data="{ fileError: false }">
+                                <div class="flex items-center">
+                                    <label class="w-40 font-bold text-xl">Profile Photo:</label>
+                                    <div class="flex flex-col w-full">
+                                        <!-- File Input with instant check -->
+                                        <input type="file" 
+                                            name="profile_photo" 
+                                            id="profile_photo"
+                                            accept=".png, .jpg, .jpeg" 
+                                            class="form-input-pill bg-white py-1 transition-colors"
+                                            :class="fileError ? 'border-red-600 ring-1 ring-red-600' : 'border-black'"
+                                            @change="
+                                                    const file = $event.target.files[0];
+                                                    if (file) {
+                                                        const type = file.type;
+                                                        const validTypes = ['image/png', 'image/jpg', 'image/jpeg'];
+                                                        // Check if file is an image and matching types
+                                                        fileError = !validTypes.includes(type);
+                                                        
+                                                        if(fileError) {
+                                                            $event.target.value = ''; // Clear the input if it's a PDF/invalid
+                                                        }
+                                                    }
+                                            ">
+                                        
+                                        <p class="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-wider">
+                                            Max size: 2MB (.png, .jpg, .jpeg only)
+                                        </p>
+
+                                        <!-- Instant Client-Side Error Message -->
+                                        <template x-if="fileError">
+                                            <span class="text-red-600 text-sm font-bold italic mt-1">
+                                                The profile photo field must be an image.
+                                            </span>
+                                        </template>
+                                    </div>
+                                </div>
+                                
+                                <!-- Server-Side Error (Keep this for traditional Laravel validation) -->
+                                @error('profile_photo') 
+                                    <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> 
+                                @enderror
+                            </div>
+                            </div>
 
                         <div class="space-y-5">
                             <div class="flex items-center">
@@ -169,18 +244,16 @@
                                 <div class="flex items-center">
                                     <label class="w-40 font-bold text-xl leading-tight">Grade &<br>Section: <span class="text-red-600">*</span></label>
                                     <select name="section_id" 
-                                        class="border-2 border-black rounded-xl p-2 w-full font-bold"
-                                        @change="$el.form.grade_level.value = $el.options[$el.selectedIndex].getAttribute('data-grade')">
-                                    <option value="">Select Grade & Section</option>
-                                    @foreach($sections as $section)
-                                        <option value="{{ $section->section_id }}" data-grade="{{ $section->grade_level }}">
-                                            {{ $section->grade_level }} - {{ $section->section_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-
-                                {{-- Hidden input to catch the grade level string --}}
-                                <input type="hidden" name="grade_level">
+                                            class="border-2 border-black rounded-xl p-2 w-full font-bold"
+                                            @change="$el.form.grade_level.value = $el.options[$el.selectedIndex].getAttribute('data-grade')">
+                                        <option value="">Select Grade & Section</option>
+                                        @foreach($sections as $section)
+                                            <option value="{{ $section->section_id }}" data-grade="{{ $section->grade_level }}">
+                                                {{ $section->grade_level }} - {{ $section->section_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <input type="hidden" name="grade_level">
                                 </div>
                                 @error('section_id') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                             </div>
@@ -221,14 +294,5 @@
             </div>
         </main>
     </div>
-
-    <script>
-        // Logic to extract just the Grade text for the hidden 'advisory' field
-        document.getElementById('section_select').addEventListener('change', function() {
-            const fullText = this.options[this.selectedIndex].text;
-            // Gets 'Nursery' or 'Grade 1' from the string
-            document.getElementById('advisory_hidden').value = fullText.split(' - ')[0];
-        });
-    </script>
 </body>
 </html>

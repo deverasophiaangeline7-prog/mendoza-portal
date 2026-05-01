@@ -10,118 +10,149 @@
     <style>
         [x-cloak] { display: none !important; }
         .hero-gradient { background: linear-gradient(to right, #d32f2f, #8b0000); }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
     </style>
 </head>
 
 <body class="bg-gray-100 h-screen overflow-hidden flex flex-col" x-data="{ open: false }">
 
+    <!-- Top Header -->
     <header class="hero-gradient text-white py-3 px-6 shadow-md flex justify-between items-center relative z-50 flex-shrink-0">
         <div class="flex items-center space-x-3">
             <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow" alt="Logo">
-            <h1 class="text-2xl font-bold uppercase tracking-tight">Mendoza Academy, Inc.</h1>
+            <h1 class="text-2xl font-bold uppercase tracking-tight italic">Mendoza Academy, Inc.</h1>
         </div>
         
         <div class="flex items-center space-x-6 text-2xl">
-            <x-top-icon-button>
-                <i class="fa-solid fa-envelope relative">
-                    <span class="absolute -top-2 -right-2 bg-yellow-400 text-red-700 text-xs rounded-full h-5 w-5 flex items-center justify-center border border-red-700 font-bold">1</span>
-                </i>
-            </x-top-icon-button>
+            <x-top-icon-button><i class="fa-solid fa-envelope"></i></x-top-icon-button>
             <x-top-icon-button><i class="fa-solid fa-bell"></i></x-top-icon-button>
-            <i class="fa-solid fa-circle-user text-[#ffb31a] text-4xl"></i>
+            <i class="fa-solid fa-circle-user text-[#ffb31a] text-4xl shadow-sm"></i>
         </div>
     </header>
 
     <div class="flex flex-1 overflow-hidden">
         
         <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
-            <ul class="space-y-1">
-                <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line">Dashboard</x-sidebar-link>
-                <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-user-graduate" :active="true">List of Students</x-sidebar-link>
-                <x-sidebar-link href="#" icon="fa-solid fa-calendar-days">Student Calendar</x-sidebar-link>
-                <x-sidebar-link href="{{ route('reportcard.index') }}" icon="fa-solid fa-star">Report Card</x-sidebar-link>
-                <x-sidebar-link href="{{ route('attendance.index') }}" icon="fa-solid fa-calendar-check">Attendance</x-sidebar-link>
-                @if(auth()->check() && auth()->user()->role === 'admin')
-                    <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear">Account Management</x-sidebar-link>
-                @endif
-            </ul>
-        </nav>
+    <ul class="space-y-1">
+        <!-- Dashboard -->
+        <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
+            Dashboard
+        </x-sidebar-link>
 
-        <main class="flex-1 bg-white flex flex-col p-12 relative overflow-y-auto">
+        <!-- Student Information: ONLY for Parents -->
+        @if(auth()->user()->role === 'parent')
+            <x-sidebar-link href="{{ route('student.view') }}" icon="fa-solid fa-user-graduate" :active="request()->routeIs('student.view')">
+                Student Information
+            </x-sidebar-link>
+        @endif
+
+        <!-- Advisory Class: ONLY for Teachers -->
+        @if(auth()->user()->role === 'teacher')
+            <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-chalkboard-user" :active="request()->routeIs('students.*')">
+                Advisory Class
+            </x-sidebar-link>
+        @endif
+
+        <!-- Student Calendar: Role-Based Routing -->
+        @php
+            $calendarRoute = match(auth()->user()->role) {
+                'admin' => route('admin.student.participation'),
+                'parent' => route('student.calendar'),
+                default => route('student.calendar.index'),
+            };
+        @endphp
+        <x-sidebar-link href="{{ $calendarRoute }}" 
+            icon="fa-solid fa-calendar-days" 
+            :active="request()->routeIs('admin.student.participation') || request()->routeIs('student.calendar*')">
+            Student Calendar
+        </x-sidebar-link>
+
+        <!-- Report Card: Role-Based Routing -->
+        <x-sidebar-link 
+            href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}" 
+            icon="fa-solid fa-star" 
+            :active="request()->routeIs('reportcard.*') || request()->routeIs('parent.reportcard')">
+            Report Card
+        </x-sidebar-link>
+        
+        <!-- Attendance: Role-Based Routing -->
+        <x-sidebar-link 
+            href="{{ auth()->user()->role === 'parent' ? route('parent.attendance') : route('attendance.index') }}" 
+            icon="fa-solid fa-calendar-check" 
+            :active="request()->routeIs('attendance.*') || request()->routeIs('parent.attendance')">
+            Attendance
+        </x-sidebar-link>
+
+        <!-- Account Management: ONLY for Admin -->
+        @if(auth()->user()->role === 'admin')
+            <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.management')">
+                Account Management
+            </x-sidebar-link>
+        @endif
+    </ul>
+</nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 bg-white p-10 relative overflow-y-auto custom-scrollbar">
             
-            <a href="javascript:history.back()" class="absolute top-6 left-8 text-gray-400 hover:text-red-600 transition flex items-center font-bold">
-                <i class="fa-solid fa-arrow-left-long mr-2"></i> Back
-            </a>
-
-            <div class="max-w-4xl mx-auto w-full mt-8">
+            <div class="max-w-4xl mx-auto w-full mt-4">
                 
-                <div class="flex items-center space-x-8 mb-10 pl-4">
-                    <div class="w-40 h-40 rounded-full border-2 border-transparent overflow-hidden relative bg-[#def4ff] flex-shrink-0 shadow-inner">
-                        <div class="absolute bottom-0 w-full h-1/3 bg-[#8cc63f] rounded-t-[50%]"></div>
-                        <i class="fa-solid fa-cloud text-white absolute top-8 left-1/2 transform -translate-x-1/2 text-4xl opacity-80"></i>
+                <!-- Student Identity Header -->
+                <div class="flex flex-col md:flex-row items-center gap-8 mb-12 pl-4">
+                    <!-- Profile Avatar Box -->
+                    <div class="w-44 h-44 bg-orange-400 border-[4px] border-black rounded-[2rem] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center flex-shrink-0 rotate-[-2deg]">
+                        @if($student->parent && $student->parent->profile_photo_path)
+                            <img src="{{ asset('storage/' . $student->parent->profile_photo_path) }}" 
+                                class="w-full h-full object-cover">
+                        @else
+                            <i class="fa-solid fa-user-graduate text-7xl text-black"></i>
+                        @endif
                     </div>
 
-                    <div class="flex flex-col text-black">
-                        <h2 class="text-3xl font-black uppercase tracking-wide">
-                            {{ $student->last_name }}, {{ $student->first_name }}, {{ $student->middle_initial ?? '' }}
+                    <div class="text-center md:text-left">
+                        <h2 class="text-6xl font-black uppercase italic tracking-tighter leading-none text-black">
+                            {{ $student->last_name }}, {{ $student->first_name }} {{ $student->ext_name ?? '' }}
                         </h2>
-                        <h3 class="text-xl font-bold uppercase mt-3">
-                            LRN: {{ $student->lrn }}
-                        </h3>
-                        <h3 class="text-xl font-bold uppercase mt-1">
-                            {{ $student->grade_level }} {{ $student->section->section_name ?? '' }}
-                        </h3>
+                        <!-- Your liked gray text style applied here -->
+                        <div class="font-bold text-gray-400 mt-4 italic uppercase tracking-widest text-2xl">
+                            {{ $student->grade_level }} - {{ $student->section->section_name ?? 'NO SECTION' }}
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-[#d48112] border-[3px] border-black p-8">
-                    <div class="grid grid-cols-2 gap-y-8 gap-x-12 text-black">
+                <!-- Main Information Box -->
+                <div class="bg-white border-[5px] border-black p-10 rounded-[3rem] shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] mb-10">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-12">
                         
-                        <div class="space-y-8">
+                        <!-- Column 1 -->
+                        <div class="space-y-10">
                             <div>
-                                <div class="font-bold text-2xl tracking-wide mb-1">Birthdate:</div>
-                                <div class="text-xl font-medium pl-8">
-                                    {{ $student->birth_date ? \Carbon\Carbon::parse($student->birth_date)->format('d/m/Y') : 'dd/mm/yyyy' }}
-                                </div>
+                                <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Learner Reference Number (LRN)</label>
+                                <p class="text-3xl font-black uppercase italic">{{ $student->lrn }}</p>
                             </div>
+
                             <div>
-                                <div class="font-bold text-2xl tracking-wide mb-1">Latest Enrolment:</div>
-                                <div class="text-xl font-medium pl-8">
-                                    SY {{ $student->enrollment_year ?? '2025-2026' }}
-                                </div>
-                            </div>
-                            <div>
-                                <div class="font-bold text-2xl tracking-wide mb-1">Adviser:</div>
-                                <div class="text-xl font-medium pl-8">
-                                    {{ $student->adviser_name ?? 'Surname, First Name, MI' }}
-                                </div>
+                                <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Class Adviser</label>
+                                <p class="text-3xl font-black uppercase italic">{{ $student->adviser_name ?? 'NOT ASSIGNED' }}</p>
                             </div>
                         </div>
 
-                        <div class="space-y-8">
+                        <!-- Column 2 -->
+                        <div class="space-y-10">
                             <div>
-                                <div class="font-bold text-2xl tracking-wide mb-1">Mother's Maiden Name:</div>
-                                <div class="text-xl font-medium pl-8">
-                                    {{ $student->mother_name ?? 'Surname, First Name, MI' }}
-                                </div>
+                                <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Biological Sex</label>
+                                <p class="text-3xl font-black uppercase italic">{{ $student->gender }}</p>
                             </div>
+
                             <div>
-                                <div class="font-bold text-2xl tracking-wide mb-1">Father's Name:</div>
-                                <div class="text-xl font-medium pl-8">
-                                    {{ $student->father_name ?? 'Surname, First Name, MI' }}
-                                </div>
-                            </div>
-                            <div>
-                                <div class="font-bold text-2xl tracking-wide mb-1">Guardian's Name:</div>
-                                <div class="text-xl font-medium pl-8">
-                                    {{ $student->guardian_name ?? 'Surname, First Name, MI' }}
-                                </div>
+                                <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Date of Birth</label>
+                                <p class="text-3xl font-black uppercase italic">{{ \Carbon\Carbon::parse($student->birth_date)->format('F d, Y') }}</p>
                             </div>
                         </div>
 
                     </div>
                 </div>
-
             </div>
         </main>
     </div>
