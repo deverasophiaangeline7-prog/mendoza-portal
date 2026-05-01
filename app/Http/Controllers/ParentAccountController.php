@@ -6,6 +6,7 @@ use App\Models\Section;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Student;
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 
@@ -78,6 +79,12 @@ class ParentAccountController extends Controller
             'section_id'  => $request->section_id,
         ]);
 
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Create Parent',
+            'description' => Auth::user()->username . ' created a new Parent/Student account for LRN: ' . $request->lrn
+        ]);
+
         return redirect()->route('account.management')->with('success', 'Parent account and Student record created successfully!');
     }
 
@@ -145,6 +152,13 @@ public function archive($id)
     $user->status = 'archived'; 
     $user->save();
     
+
+    AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Archive Parent',
+            'description' => Auth::user()->username . ' archived Parent account ID: ' . $id
+        ]);
+
     return redirect()->back()->with('success', 'Parent account archived successfully!');
 }
 
@@ -154,6 +168,12 @@ public function restore($id)
     $user->status = 'active'; 
     $user->save();
     
+AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Restore Parent',
+            'description' => Auth::user()->username . ' restored Parent account ID: ' . $id
+        ]);
+
     return redirect()->back()->with('success', 'Parent account restored successfully!');
 }
 

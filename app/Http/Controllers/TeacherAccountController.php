@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Teacher; 
 use App\Models\Section;
+use App\Models\AuditLog;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
@@ -39,6 +41,7 @@ class TeacherAccountController extends Controller
             'status' => 'active',
         ]);
 
+
         $teacher = Teacher::create([
             'user_id' => $user->user_id, 
             'first_name' => $request->first_name,
@@ -57,6 +60,13 @@ class TeacherAccountController extends Controller
                 $section->save();
             }
         }
+
+        // --- NEW AUDIT LOG FOR CREATING ---
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Create Teacher',
+            'description' => Auth::user()->username . ' created a new Teacher account for: ' . $request->first_name . ' ' . $request->last_name
+        ]);
 
         return redirect()->route('account.management')->with('success', 'Teacher created successfully!');
     }
@@ -77,18 +87,23 @@ class TeacherAccountController extends Controller
         $user->status = 'archived'; // Update the status instead of deleting
         $user->save();
         
+        // --- AUDIT LOG FOR ARCHIVING (You already had this one!) ---
+        AuditLog::create([
+            'user_id' => Auth::id(), 
+            'action' => 'Archive Teacher',
+            'description' => Auth::user()->username . ' successfully archived Teacher account ID: ' . $id
+        ]);
+
         return redirect()->back()->with('success', 'Teacher account archived successfully!');
     }
 
     public function archivedIndex()
     {
-        // Notice we are looking for 'archived' instead of 'active' here!
         $archivedTeachers = User::where('role', 'teacher')
                         ->where('status', 'archived')
                         ->with('teacher')
                         ->get();
                         
-        // We will send this data to a new blade file
         return view('teacher-archived-list', compact('archivedTeachers')); 
     }
 
@@ -98,6 +113,13 @@ class TeacherAccountController extends Controller
         $user->status = 'active'; // Change them back to active!
         $user->save();
         
+        // --- NEW AUDIT LOG FOR RESTORING ---
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Restore Teacher',
+            'description' => Auth::user()->username . ' successfully restored Teacher account ID: ' . $id
+        ]);
+
         return redirect()->back()->with('success', 'Teacher account restored successfully!');
     }
 
@@ -106,6 +128,13 @@ class TeacherAccountController extends Controller
         $user = User::findOrFail($id);
         $user->delete();
         
+        // --- NEW AUDIT LOG FOR PERMANENT DELETION ---
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Delete Teacher',
+            'description' => Auth::user()->username . ' permanently deleted Teacher account ID: ' . $id
+        ]);
+
         return redirect()->back()->with('success', 'Teacher deleted successfully!');
     }
 }

@@ -127,33 +127,37 @@ class AttendanceController extends Controller
     public function store(Request $request)
     {
         $records = $request->input('attendance', []);
+        if (empty($records)) {
+            return response()->json(['message' => 'No records to save.'], 400);
+        }
+
+        // 1. Identify the Section & Date for the Audit Log (Only once!)
+        $firstRecord = $records[0];
+        $sampleStudent = Student::find($firstRecord['student_id']);
+        $sectionName = $sampleStudent->section->section_name ?? 'Unknown Section';
+        $gradeLevel = $sampleStudent->grade_level ?? '';
+        $attendanceDate = $firstRecord['date'];
 
         foreach ($records as $record) {
-            // 1. Save or Update the record
+            // 2. Save or Update the record (FIXED SYNTAX)
             Attendance::updateOrCreate(
                 [
                     'student_id'      => $record['student_id'],
-                    'attendance_date' => $record['date'] 
+                    'attendance_date' => $record['date']
                 ],
                 [
                     'status' => $record['status']
                 ]
             );
 
-            // 2. NOTIFICATION LOGIC
+            // 3. NOTIFICATION LOGIC
             $status = strtolower($record['status'] ?? '');
-            
-            // We check for Absent (2) or Late (3)
             if (in_array($status, ['absent', '2', 'late', '3'])) {
                 $student = Student::find($record['student_id']);
-                
                 if ($student && $student->user_id) {
                     $parent = User::find($student->user_id);
-                    
                     if ($parent) {
-                        // Determine the wording based on the status
                         $typeLabel = ($status === 'late' || $status === '3') ? 'LATE' : 'ABSENT';
-
                         $parent->notifyUser(
                             'Attendance Alert', 
                             "Notice: {$student->first_name} was marked {$typeLabel} today.", 
@@ -162,7 +166,15 @@ class AttendanceController extends Controller
                     }
                 }
             }
+            // --- REMOVED AUDIT LOG FROM HERE ---
         }
+
+        // 4. CREATE THE BATCH AUDIT LOG (OUTSIDE THE LOOP)
+        \App\Models\AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Attendance Submitted',
+            'description' => Auth::user()->username . " submitted attendance for {$gradeLevel} - {$sectionName} on {$attendanceDate}."
+        ]);
 
         return response()->json(['message' => 'Saved Successfully!']);
     }

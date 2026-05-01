@@ -8,6 +8,7 @@ use App\Models\Section;
 use App\Models\BehaviorReport;
 use App\Models\NkpEvaluation;
 use App\Models\User; // Added for Notifications
+use App\Models\AuditLog;
 use App\Notifications\GradeUploaded; // Added for Notifications
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -186,6 +187,18 @@ if ($student && $student->user_id) {
         'created_at' => now(), // Manually set the time
     ]);
 }
+
+if ($student) {
+            // We format the names to look clean in the log table
+            $studentName = strtoupper($student->last_name . ', ' . $student->first_name);
+            $sectionName = $student->section ? strtoupper($student->section->grade_level . ' - ' . $student->section->section_name) : 'UNASSIGNED';
+
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'Report Card Updated',
+                'description' => Auth::user()->username . " updated the report card for {$studentName} ({$sectionName})."
+            ]);
+        }
 
         return response()->json(['message' => 'Saved Successfully!']);
     }

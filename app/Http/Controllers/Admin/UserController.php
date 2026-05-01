@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\User; 
 use App\Models\Announcement; 
 use App\Models\AnnouncementImage; 
 use App\Models\SchoolCalendar; // Ensure this is imported
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class UserController extends Controller
@@ -85,6 +87,12 @@ class UserController extends Controller
             'status' => 'active',
         ]);
 
+       AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Account Created',
+            'description' => Auth::user()->username . " created a new account with role [" . $user->role . "] for: " . $user->username
+        ]);
+
         return redirect()->route('dashboard')->with('success', 'User created successfully!');
     }
     public function finalize(Request $request)
@@ -125,4 +133,26 @@ class UserController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'User updated successfully!');
     }
+
+    public function logs(Request $request)
+{
+    $search = $request->query('search');
+
+    $logs = \App\Models\AuditLog::with('user')
+        ->when($search, function ($query, $search) {
+            return $query->where(function($q) use ($search) {
+                $q->where('action', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  // This also lets you search by the actual timestamp date
+                  ->orWhere('created_at', 'like', "%{$search}%") 
+                  ->orWhereHas('user', function ($subQ) use ($search) {
+                      $subQ->where('username', 'like', "%{$search}%");
+                  });
+            });
+        })
+        ->orderBy('created_at', 'desc')
+        ->paginate(15);
+
+    return view('audit-logs', compact('logs', 'search'));
+}
 }

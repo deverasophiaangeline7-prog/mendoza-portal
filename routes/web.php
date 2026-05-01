@@ -104,6 +104,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
 
     // Accounts Overview
     Route::get('/account-management', function () { return view('accountmanagement'); })->name('account.management');
+    Route::get('/admin/audit-logs', [App\Http\Controllers\Admin\UserController::class, 'logs'])->name('admin.audit_logs');
 
     // Teacher Management
     Route::get('/create-teacher-account', [TeacherAccountController::class, 'create'])->name('teacher.create');

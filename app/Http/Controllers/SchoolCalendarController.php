@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Student;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AuditLog;
 
 class SchoolCalendarController extends Controller
 {
@@ -58,7 +59,7 @@ class SchoolCalendarController extends Controller
         $combinedTime = $request->start_time . ' - ' . $request->end_time;
 
         // 1. Save or Update the Event
-        \App\Models\SchoolCalendar::updateOrCreate(
+        $event = \App\Models\SchoolCalendar::updateOrCreate(
             ['start_date' => $request->start_date],
             [
                 'event_title' => $request->event_title,
@@ -67,23 +68,34 @@ class SchoolCalendarController extends Controller
             ]
         );
 
+        // --- NEW AUDIT LOG LOGIC ---
+        // We check if Laravel created a brand new row, or just updated an old one
+        $actionType = $event->wasRecentlyCreated ? 'Create Event' : 'Update Event';
+        $logDescription = $event->wasRecentlyCreated 
+            ? Auth::user()->username . ' created a new calendar event: ' . $request->event_title 
+            : Auth::user()->username . ' updated the calendar event: ' . $request->event_title;
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => $actionType,
+            'description' => $logDescription
+        ]);
+        // ---------------------------
+
         // 2. TRIGGER NOTIFICATIONS
-        // Typically, School Calendar events apply to the whole school.
-        // We find all users with the 'parent' role to notify them.
         $parents = User::where('role', 'parent')->get();
 
         foreach ($parents as $parent) {
             $parent->notifyUser(
                 'New School Event', 
-                "A new event has been added to the calendar: " . $request->event_title, 
+                "A calendar event has been set: " . $request->event_title, 
                 'announcement'
             );
         }
 
-        // 3. RETURN RESPONSE (Must be last!)
-        return response()->json(['message' => 'Event saved and parents notified!']);
+        // 3. RETURN RESPONSE
+        return response()->json(['message' => 'Event saved and tracked!']);
     }
-
     public function edit(SchoolCalendar $schoolCalendar)
     {
         return view('calendar.edit', compact('schoolCalendar'));
@@ -109,10 +121,20 @@ class SchoolCalendarController extends Controller
     public function destroy($date)
     {
         $event = \App\Models\SchoolCalendar::where('start_date', $date)->first();
+        
         if ($event) {
+            // --- NEW AUDIT LOG LOGIC ---
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'Delete Event',
+                'description' => Auth::user()->username . ' deleted the calendar event: ' . $event->event_title . ' (' . $date . ')'
+            ]);
+            // ---------------------------
+
             $event->delete();
             return response()->json(['success' => true]);
         }
+        
         return response()->json(['error' => 'Event not found'], 404);
     }
 }

@@ -166,7 +166,13 @@
                         </div>
                     </div>
 
-                    <div class="w-full flex justify-center mt-4">
+                    <div class="grid grid-cols-2 gap-8 max-w-3xl mx-auto mt-8 mb-12">
+                    
+                        <a href="{{ route('admin.audit_logs') }}" 
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-black text-2xl font-bold py-5 rounded-full border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center text-center">
+                            View Audit Logs
+                        </a>
+                    
                         <button @click="finalizeModal = true" class="bg-[#4caf50] hover:bg-green-600 text-black text-2xl font-bold py-5 px-16 rounded-full border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
                             Finalize School Year
                         </button>
