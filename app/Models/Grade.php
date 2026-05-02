@@ -13,12 +13,13 @@ class Grade extends Model
 
     protected $fillable = [
         'student_id', 
+        'school_year_id',
         'subject_name', 
         'q1', 
         'q2', 
         'q3', 
         'q4', 
         'final_grade', 
-        'remarks'
+        'remarks',
     ];
 }

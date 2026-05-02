@@ -7,6 +7,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Student;
+use App\Models\StudentHistory;
+use App\Models\SchoolYear;
+use Illuminate\Support\Facades\DB;
+use App\Models\AuditLog;
 
 class StudentController extends Controller
 {
@@ -31,12 +35,10 @@ class StudentController extends Controller
             'GRADE 6'      => 9,
         ];
 
-        // ROLE-BASED CHECK: Admin sees all, Teachers see only their section
         if (auth()->user()->role === 'admin') {
             $sectionsQuery = \App\Models\Section::orderBy('section_name', 'asc')->get();
         } else {
-
-        $sectionsQuery = \App\Models\Section::where('teacher_id', auth()->id())
+            $sectionsQuery = \App\Models\Section::where('teacher_id', auth()->id())
                                                 ->orderBy('section_name', 'asc')
                                                 ->get();
         }
@@ -98,13 +100,8 @@ class StudentController extends Controller
         return view('student-view', compact('student'));
     }
 
-    // ==========================================
-    // NEW METHODS FOR ADDING & DELETING STUDENTS
-    // ==========================================
-
     public function storeStudent(Request $request)
     {
-        // 1. Validate the incoming data from your modal
         $request->validate([
             'lrn'         => 'required|string|max:255',
             'first_name'  => 'required|string|max:255',
@@ -115,10 +112,10 @@ class StudentController extends Controller
             'grade_level' => 'required|string'
         ]);
 
-        // 2. Save the new student to the database
         Student::create([
             'lrn'         => $request->lrn,
-            'first_name'  => strtoupper($request->first_name), // Forces names to be ALL CAPS
+            'first_name'  => strtoupper($request->first_name),
+            'middle_name' => strtoupper($request->middle_name),
             'last_name'   => strtoupper($request->last_name),
             'gender'      => ucfirst($request->gender),
             'birth_date'  => $request->birth_date,
@@ -126,18 +123,50 @@ class StudentController extends Controller
             'grade_level' => $request->grade_level,
         ]);
 
-        // 3. Reload the page so the student appears in the table
         return redirect()->back();
     }
 
     public function destroyStudent($id)
     {
-        // Find the specific student by their primary key and delete them
         Student::findOrFail($id)->delete();
-        
         return redirect()->back();
     }
-    // ADD THIS TO THE BOTTOM OF YOUR STUDENT CONTROLLER
+
+    /**
+     * Updated: Edit student with Middle Name and Section assignment
+     */
+    public function updateStudent(Request $request, $id)
+    {
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'section_id' => 'required|integer',
+        ]);
+
+        $student = Student::findOrFail($id);
+        
+        $student->update([
+            'first_name'  => strtoupper($request->first_name),
+            'middle_name' => strtoupper($request->middle_name),
+            'last_name'   => strtoupper($request->last_name),
+            'section_id'  => $request->section_id,
+        ]);
+
+        if ($student->user) {
+            $student->user->update([
+                'name' => strtoupper($request->first_name . ' ' . $request->last_name)
+            ]);
+        }
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Edit Student',
+            'description' => auth()->user()->username . ' updated profile for: ' . $student->first_name . ' ' . $student->last_name
+        ]);
+
+        return redirect()->back()->with('success', 'Student profile updated successfully!');
+    }
+
     public function sendMessage(Request $request)
     {
         $request->validate([
@@ -146,41 +175,71 @@ class StudentController extends Controller
             'message'    => 'required|string',
         ]);
 
-        // Right now, this simulates a successful send for your system build.
-        // Once you have a 'messages' database table set up, you will replace 
-        // this comment with the actual database save command!
-
-        // Example for later: 
-        // \App\Models\Message::create([
-        //     'sender_id' => auth()->id(),
-        //     'student_id' => $request->student_id,
-        //     'subject' => $request->subject,
-        //     'content' => $request->message,
-        // ]);
-
-        // Redirect back with a success alert
         return redirect()->back()->with('success', 'Message sent to parent successfully!');
     }
 
+    /**
+     * Updated: Automates Section Assignment and Archives Section History
+     */
     public function finalizeSchoolYear()
-{
-    // 1. Get all students waiting for promotion
-    $pendingStudents = Student::where('promotion_status', 'pending')->get();
+    {
+        $currentYear = SchoolYear::where('status', 'active')->first();
+        if (!$currentYear) return back()->with('error', 'No active school year found.');
 
-    if ($pendingStudents->isEmpty()) {
-        return back()->with('info', 'There are no pending promotions to finalize.');
+        // 1. Get all students waiting for promotion (pending or promoted)
+        $pendingStudents = Student::with('section')->whereIn('promotion_status', ['pending', 'promoted'])->get();
+
+        if ($pendingStudents->isEmpty()) {
+            return back()->with('info', 'There are no pending promotions to finalize.');
+        }
+
+        DB::beginTransaction();
+        try {
+            foreach ($pendingStudents as $student) {
+                // A. Archive their current section history before wiping it
+                if ($student->section) {
+                    StudentHistory::create([
+                        'student_id' => $student->student_id,
+                        'school_year_id' => $currentYear->id,
+                        'section_name' => strtoupper($student->section->grade_level . ' - ' . $student->section->section_name)
+                    ]);
+                }
+
+                // B. Handle Graduation for Grade 6
+                if ($student->grade_level == '6') {
+                    if ($student->user) {
+                        $student->user->update(['status' => 'archived']);
+                    }
+                    $student->update([
+                        'section_id' => null,
+                        'promotion_status' => 'none',
+                        'next_grade_level' => null
+                    ]);
+                } else {
+                    // C. Promote others and Auto-Assign a section in the new grade
+                    $targetGrade = $student->next_grade_level;
+                    $newSection = Section::where('grade_level', $targetGrade)->first();
+
+                    $student->update([
+                        'grade_level'      => $targetGrade,
+                        'section_id'       => $newSection ? $newSection->section_id : null,
+                        'promotion_status' => 'none',
+                        'next_grade_level' => null
+                    ]);
+                }
+            }
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'Year Finalized',
+                'description' => auth()->user()->username . ' finalized school year and auto-assigned students to new grades.'
+            ]);
+
+            DB::commit();
+            return back()->with('success', 'School year finalized! Students promoted and auto-assigned to sections.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error: ' . $e->getMessage());
+        }
     }
-
-    // 2. Loop through and officially promote them
-    foreach ($pendingStudents as $student) {
-        $student->update([
-            'grade_level'      => $student->next_grade_level, // Make it official
-            'section_id'       => null, // Remove them from their old section!
-            'promotion_status' => 'promoted', // Clear the pending status
-            'next_grade_level' => null // Reset
-        ]);
-    }
-
-    return back()->with('success', 'School year finalized! All pending students have been promoted.');
-}
 }

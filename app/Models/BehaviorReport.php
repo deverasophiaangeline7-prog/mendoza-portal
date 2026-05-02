@@ -12,6 +12,7 @@ class BehaviorReport extends Model
     // Add this entire block:
     protected $fillable = [
         'student_id',
+        'school_year_id',
         'core_value',
         'q1',
         'q2',

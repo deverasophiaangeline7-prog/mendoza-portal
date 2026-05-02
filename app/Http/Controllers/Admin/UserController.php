@@ -7,7 +7,14 @@ use App\Models\AuditLog;
 use App\Models\User; 
 use App\Models\Announcement; 
 use App\Models\AnnouncementImage; 
-use App\Models\SchoolCalendar; // Ensure this is imported
+use App\Models\SchoolCalendar; 
+use App\Models\Grade;
+use App\Models\BehaviorReport;
+use App\Models\NkpEvaluation;
+use App\Models\Student;
+use App\Models\SchoolYear;
+use App\Models\Attendance;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -78,7 +85,7 @@ class UserController extends Controller
             return back()->withErrors(['lrn' => 'Teacher ID/LRN and Email cannot be the same.'])->withInput();
         }
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'lrn' => $request->lrn,
@@ -87,25 +94,107 @@ class UserController extends Controller
             'status' => 'active',
         ]);
 
-       AuditLog::create([
+        AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Account Created',
-            'description' => Auth::user()->username . " created a new account with role [" . $user->role . "] for: " . $user->username
+            'description' => Auth::user()->username . " created a new account with role [" . $user->role . "] for: " . $user->name
         ]);
 
         return redirect()->route('dashboard')->with('success', 'User created successfully!');
     }
+
     public function finalize(Request $request)
     {
-        // 1. Logic to archive data
-        // Example: SchoolYear::where('status', 'active')->update(['status' => 'archived']);
+        // 1. VALIDATE PASSWORD
+        $request->validate([
+            'admin_password' => 'required|string'
+        ]);
 
-        // 2. Logic to prepare for the next year
-        // Example: Setting up SY 2026-2027
+        if (!Hash::check($request->admin_password, Auth::user()->password)) {
+            return back()->withErrors(['admin_password' => 'Incorrect Admin Password. Finalization aborted.']);
+        }
 
-        // 3. Return a response
-        return redirect()->route('account.management')
-                         ->with('success', 'School Year 2025-2026 has been successfully finalized and archived.');
+        DB::beginTransaction();
+
+        try {
+            // --- 2. HANDLE THE SCHOOL YEAR TRANSITION ---
+            $currentYear = \App\Models\SchoolYear::where('status', 'active')->first();
+            if (!$currentYear) throw new \Exception("No active school year found.");
+
+            $years = explode('-', $currentYear->school_year);
+            $nextYearString = ((int)$years[0] + 1) . '-' . ((int)$years[1] + 1);
+
+            $currentYear->update(['status' => 'archived']);
+            \App\Models\SchoolYear::create([
+                'school_year' => $nextYearString,
+                'status' => 'active'
+            ]);
+
+            // --- 3. THE "MIXED" WIPE (Crucial Step!) ---
+            \App\Models\AuditLog::query()->delete(); 
+            \App\Models\Attendance::query()->delete(); 
+            \App\Models\SchoolCalendar::query()->delete();
+            
+            // Notice: We are NOT truncating Grades, BehaviorReports, or NkpEvaluations!
+            // They stay in the database safely linked to their old school_year_id.
+
+            // --- 4. PROMOTE STUDENTS ---
+            // Changed from ::all() to ::with('section')->get() so we can fetch the section names
+            $students = \App\Models\Student::with('section')->get();
+
+            foreach ($students as $student) {
+                
+                // 1. TAKE A SNAPSHOT OF THEIR SECTION BEFORE WIPING IT
+                if ($student->section) {
+                    \App\Models\StudentHistory::create([
+                        'student_id' => $student->student_id,
+                        'school_year_id' => $currentYear->id,
+                        'section_name' => strtoupper($student->section->grade_level . ' - ' . $student->section->section_name)
+                    ]);
+                }
+
+                // 2. THE PROMOTION SHIFT
+                if (in_array($student->promotion_status, ['promoted', 'pending']) && $student->next_grade_level) {
+                    $student->grade_level = $student->next_grade_level;
+                } elseif ($student->grade_level == '6' && in_array($student->promotion_status, ['promoted', 'pending'])) {
+                    $student->user->status = 'archived'; 
+                    $student->user->save();
+                }
+
+                // 3. THE AUTO-ASSIGN LOGIC (Replaces the 'null' wipe)
+                if ($student->user->status !== 'archived') {
+                    // Find the first available section for their new grade level
+                    $newSection = \App\Models\Section::where('grade_level', $student->grade_level)->first();
+                    
+                    // Assign them to it! (If no section exists yet, it safely falls back to null)
+                    // Make sure 'id' matches the primary key of your sections table (e.g., 'id' or 'section_id')
+                    $student->section_id = $newSection ? $newSection->section_id : null; 
+                } else {
+                    $student->section_id = null; // Graduates don't need a room
+                }
+
+                // 4. RESET STATUSES FOR THE NEW YEAR
+                $student->promotion_status = 'none';
+                $student->next_grade_level = null;
+                $student->save();
+            }
+
+            // --- 5. LOG IT ---
+            \App\Models\AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'Year Finalized',
+                'description' => Auth::user()->username . " finalized {$currentYear->school_year}. Attendance wiped, Grades preserved."
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('account.management')
+                ->with('success', "Data handled successfully. Welcome to SY {$nextYearString}!");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'System Error: ' . $e->getMessage());
+        }
     }
 
     public function edit(User $user)
@@ -147,24 +236,50 @@ class UserController extends Controller
     }
 
     public function logs(Request $request)
-{
-    $search = $request->query('search');
+    {
+        $search = $request->query('search');
 
-    $logs = \App\Models\AuditLog::with('user')
-        ->when($search, function ($query, $search) {
-            return $query->where(function($q) use ($search) {
-                $q->where('action', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  // This also lets you search by the actual timestamp date
-                  ->orWhere('created_at', 'like', "%{$search}%") 
-                  ->orWhereHas('user', function ($subQ) use ($search) {
-                      $subQ->where('username', 'like', "%{$search}%");
-                  });
-            });
-        })
-        ->orderBy('created_at', 'desc')
-        ->paginate(15);
+        $logs = \App\Models\AuditLog::with('user')
+            ->when($search, function ($query, $search) {
+                return $query->where(function($q) use ($search) {
+                    $q->where('action', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%")
+                      // This also lets you search by the actual timestamp date
+                      ->orWhere('created_at', 'like', "%{$search}%") 
+                      ->orWhereHas('user', function ($subQ) use ($search) {
+                          $subQ->where('username', 'like', "%{$search}%");
+                      });
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
-    return view('audit-logs', compact('logs', 'search'));
-}
+        return view('audit-logs', compact('logs', 'search'));
+    }
+
+public function updateStudent(Request $request, $id)
+    {
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'lrn' => 'required|string',
+        ]);
+
+        $student = Student::findOrFail($id);
+        
+        $student->update([
+            'first_name' => strtoupper($request->first_name),
+            'last_name' => strtoupper($request->last_name),
+            'lrn' => $request->lrn,
+        ]);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Edit Student',
+            'description' => auth()->user()->username . ' updated student record for LRN: ' . $request->lrn
+        ]);
+
+        return redirect()->back()->with('success', 'Student updated successfully!');
+    }
+
 }

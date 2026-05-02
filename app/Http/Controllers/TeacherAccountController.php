@@ -137,4 +137,65 @@ class TeacherAccountController extends Controller
 
         return redirect()->back()->with('success', 'Teacher deleted successfully!');
     }
+
+    public function update(Request $request, $id)
+{
+    $request->validate([
+        'first_name' => 'required|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'advisory' => 'required' 
+    ]);
+
+    $targetAdvisory = ($request->advisory === 'NKP') ? '1,2,3' : $request->advisory;
+
+    // Use a Transaction to wrap the whole switch
+    \Illuminate\Support\Facades\DB::transaction(function () use ($request, $id, $targetAdvisory) {
+        
+        // 1. Find the "Other" teacher who currently has the room you want
+        $otherTeacher = \App\Models\Teacher::where('advisory', $targetAdvisory)
+            ->where('user_id', '!=', $id)
+            ->first();
+
+        // 2. If someone else is there, "Kick them out" (set to null) to free the seat
+        if ($otherTeacher) {
+            $otherTeacher->update(['advisory' => null]);
+            
+            // Also clear them from the sections table
+            \App\Models\Section::where('teacher_id', $otherTeacher->user_id)
+                ->update(['teacher_id' => null]);
+        }
+
+        // 3. Clear the Current Teacher's OLD assignments
+        \App\Models\Section::where('teacher_id', $id)->update(['teacher_id' => null]);
+
+        // 4. Assign the Current Teacher to the NEW section(s)
+        $sectionIds = ($request->advisory === 'NKP') ? [1, 2, 3] : [$request->advisory];
+        foreach ($sectionIds as $secId) {
+            $section = \App\Models\Section::where('section_id', $secId)->first();
+            if ($section) {
+                $section->teacher_id = $id;
+                $section->save();
+            }
+        }
+
+        // 5. Finally, update the Teacher's record
+        $teacher = \App\Models\Teacher::where('user_id', $id)->first();
+        if ($teacher) {
+            $teacher->update([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'advisory' => $targetAdvisory,
+            ]);
+        }
+    });
+
+    // Log the successful switch
+    \App\Models\AuditLog::create([
+        'user_id' => \Illuminate\Support\Facades\Auth::id(),
+        'action' => 'Teacher Swapped',
+        'description' => \Illuminate\Support\Facades\Auth::user()->username . " reassigned Teacher ID {$id} to Advisory {$targetAdvisory}."
+    ]);
+
+    return redirect()->back()->with('success', 'Teacher reassigned! (Note: The previous teacher is now unassigned).');
+}
 }

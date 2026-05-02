@@ -11,6 +11,7 @@ class NkpEvaluation extends Model
 
     protected $fillable = [
         'student_id',
+        'school_year_id',
         'category',
         'skill',
         'q1',

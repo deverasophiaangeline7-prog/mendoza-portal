@@ -10,6 +10,7 @@ use App\Models\NkpEvaluation;
 use App\Models\User; // Added for Notifications
 use App\Models\AuditLog;
 use App\Notifications\GradeUploaded; // Added for Notifications
+use App\Models\SchoolYear;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification; // Added for Notifications
@@ -66,7 +67,7 @@ class ReportCardController extends Controller
     {
         $student = Student::with('section')->findOrFail($student_id);
         
-        // Security check: Only assigned teachers can manage
+        // Security check
         $canManage = false;
         if (Auth::user()->role === 'teacher' && $student->section) {
             $canManage = $student->section->teacher_id == Auth::user()->user_id;
@@ -75,9 +76,15 @@ class ReportCardController extends Controller
         $gradeLevel = strtoupper($student->section ? $student->section->grade_level : '');
         $isNkp = in_array($gradeLevel, ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREPARATORY']);
 
-        // --- BRANCH 1: NKP STUDENTS (Nursery, Kinder, Prep) ---
+        // --- NEW: GET THE ACTIVE SCHOOL YEAR ---
+        $activeYear = SchoolYear::where('status', 'active')->first();
+        $activeYearId = $activeYear ? $activeYear->id : null;
+
+        // --- BRANCH 1: NKP STUDENTS ---
         if ($isNkp) {
+            // NEW: Added the where('school_year_id') filter
             $existingEvaluations = NkpEvaluation::where('student_id', $student_id)
+                ->where('school_year_id', $activeYearId) 
                 ->get()
                 ->keyBy('skill')
                 ->toArray();
@@ -95,8 +102,14 @@ class ReportCardController extends Controller
         $subjects = ['Language', 'English', 'Mathematics', 'Makabansa', 'GMRC', 'Music', 'Art', 'PE', 'Health'];
         $coreValues = ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'];
 
-        $existingGrades = Grade::where('student_id', $student_id)->get()->keyBy('subject_name')->toArray();
-        $existingBehaviors = BehaviorReport::where('student_id', $student_id)->get()->keyBy('core_value')->toArray();
+        // NEW: Added the where('school_year_id') filters
+        $existingGrades = Grade::where('student_id', $student_id)
+            ->where('school_year_id', $activeYearId)
+            ->get()->keyBy('subject_name')->toArray();
+            
+        $existingBehaviors = BehaviorReport::where('student_id', $student_id)
+            ->where('school_year_id', $activeYearId)
+            ->get()->keyBy('core_value')->toArray();
 
         return view('student-report-card', [
             'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
@@ -132,11 +145,22 @@ class ReportCardController extends Controller
         $behaviors = $request->input('behaviors');
         $nkpEvaluations = $request->input('nkp_evaluations');
 
+        // --- NEW: GET THE ACTIVE SCHOOL YEAR ---
+        $activeYear = SchoolYear::where('status', 'active')->first();
+        
+        // Safety check: if no active year exists, stop them from saving
+        if (!$activeYear) {
+            return response()->json(['message' => 'Error: No active school year found!'], 400);
+        }
+        
+        $activeYearId = $activeYear->id;
+
         // 1. Save Numeric Grades (Grades 1-6)
         if ($grades) {
             foreach ($grades as $subject => $data) {
+                // Notice we added school_year_id to the first array!
                 Grade::updateOrCreate(
-                    ['student_id' => $student_id, 'subject_name' => $subject],
+                    ['student_id' => $student_id, 'subject_name' => $subject, 'school_year_id' => $activeYearId],
                     [
                         'q1' => $data['q1'] ?? null, 'q2' => $data['q2'] ?? null,
                         'q3' => $data['q3'] ?? null, 'q4' => $data['q4'] ?? null,
@@ -151,7 +175,7 @@ class ReportCardController extends Controller
         if ($behaviors) {
             foreach ($behaviors as $value => $data) {
                 BehaviorReport::updateOrCreate(
-                    ['student_id' => $student_id, 'core_value' => $value],
+                    ['student_id' => $student_id, 'core_value' => $value, 'school_year_id' => $activeYearId],
                     [
                         'q1' => $data['q1'] ?? null, 'q2' => $data['q2'] ?? null,
                         'q3' => $data['q3'] ?? null, 'q4' => $data['q4'] ?? null,
@@ -164,7 +188,7 @@ class ReportCardController extends Controller
         if ($nkpEvaluations) {
             foreach ($nkpEvaluations as $skill => $data) {
                 NkpEvaluation::updateOrCreate(
-                    ['student_id' => $student_id, 'skill' => $skill],
+                    ['student_id' => $student_id, 'skill' => $skill, 'school_year_id' => $activeYearId],
                     [
                         'category' => $data['category'] ?? 'General',
                         'q1' => $data['q1'] ?? null, 'q2' => $data['q2'] ?? null,
@@ -201,5 +225,75 @@ if ($student) {
         }
 
         return response()->json(['message' => 'Saved Successfully!']);
+    }
+
+    public function archivedIndex($school_year_id)
+    {
+        $schoolYear = SchoolYear::findOrFail($school_year_id);
+        
+        // Find all student IDs that have grades OR NKP evaluations in this specific year
+        $gradeStudentIds = Grade::where('school_year_id', $school_year_id)->pluck('student_id')->toArray();
+        $nkpStudentIds = NkpEvaluation::where('school_year_id', $school_year_id)->pluck('student_id')->toArray();
+        
+        // Combine them and remove duplicates
+        $allStudentIds = array_unique(array_merge($gradeStudentIds, $nkpStudentIds));
+        
+        // Fetch those specific students
+        $students = Student::whereIn('student_id', $allStudentIds)->orderBy('last_name')->get();
+        
+        $histories = \App\Models\StudentHistory::where('school_year_id', $school_year_id)
+            ->whereIn('student_id', $allStudentIds)
+            ->get()
+            ->keyBy('student_id');
+        
+        return view('archived-students-list', compact('students', 'schoolYear', 'histories'));
+    }
+
+    /**
+     * VIEW AN ARCHIVED REPORT CARD (READ-ONLY)
+     */
+    public function archivedShowStudent($student_id, $school_year_id)
+    {
+        $student = Student::findOrFail($student_id);
+        $schoolYear = SchoolYear::findOrFail($school_year_id);
+        
+        // Check if they have NKP evaluations for this year
+        $hasNkp = NkpEvaluation::where('student_id', $student_id)->where('school_year_id', $school_year_id)->exists();
+
+        // Admin is viewing past records, so managing/editing is strictly disabled
+        $canManage = false; 
+
+        if ($hasNkp) {
+            $existingEvaluations = NkpEvaluation::where('student_id', $student_id)
+                ->where('school_year_id', $school_year_id) 
+                ->get()->keyBy('skill')->toArray();
+            
+            return view('nkp-report-card', [
+                'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
+                'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year, // Shows it is an old record
+                'student_id' => $student_id,
+                'savedEvaluations' => $existingEvaluations,
+                'canManage' => $canManage
+            ]);
+        } else {
+             $existingGrades = Grade::where('student_id', $student_id)
+                ->where('school_year_id', $school_year_id)
+                ->get()->keyBy('subject_name')->toArray();
+                
+            $existingBehaviors = BehaviorReport::where('student_id', $student_id)
+                ->where('school_year_id', $school_year_id)
+                ->get()->keyBy('core_value')->toArray();
+
+             return view('student-report-card', [
+                'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
+                'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year, // Shows it is an old record
+                'student_id' => $student_id,
+                'subjects' => ['Language', 'English', 'Mathematics', 'Makabansa', 'GMRC', 'Music', 'Art', 'PE', 'Health'],
+                'coreValues' => ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'],
+                'savedGrades' => $existingGrades,
+                'savedBehaviors' => $existingBehaviors,
+                'canManage' => $canManage
+            ]);
+        }
     }
 }

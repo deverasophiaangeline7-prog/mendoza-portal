@@ -101,9 +101,15 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     
     Route::get('/admin/student-participation', [StudentCalendarController::class, 'index'])->name('admin.student.participation');
     Route::get('/students/view/{id}', [App\Http\Controllers\Admin\StudentController::class, 'showStudent'])->name('students.showStudent');
-
+    Route::get('/archives/report-cards/{school_year_id}', [ReportCardController::class, 'archivedIndex'])->name('archives.reportcards');
+    Route::get('/archives/report-cards/view/{student_id}/{school_year_id}', [ReportCardController::class, 'archivedShowStudent'])->name('archives.reportcards.showStudent');
+    
     // Accounts Overview
-    Route::get('/account-management', function () { return view('accountmanagement'); })->name('account.management');
+    Route::get('/account-management', function () { 
+    $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
+    $archivedYears = \App\Models\SchoolYear::where('status', 'archived')->orderBy('id', 'desc')->get();
+    return view('accountmanagement', compact('activeYear' , 'archivedYears')); 
+})->name('account.management');
     Route::get('/admin/audit-logs', [App\Http\Controllers\Admin\UserController::class, 'logs'])->name('admin.audit_logs');
 
     // Teacher Management
@@ -114,7 +120,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::patch('/teacher/{id}/archive', [TeacherAccountController::class, 'archive'])->name('account.teacher.archive');
     Route::get('/teacher-list/archived', [TeacherAccountController::class, 'archivedIndex'])->name('teacher.archived');
     Route::patch('/teacher/{id}/restore', [TeacherAccountController::class, 'restore'])->name('account.teacher.restore');
-
+    Route::put('/account/teacher/{id}/edit', [App\Http\Controllers\TeacherAccountController::class, 'update'])->name('account.teacher.update');
     // Parent Management
     Route::get('/create-parent-account', [ParentAccountController::class, 'create'])->name('parent.create'); 
     Route::post('/account/parent/store', [ParentAccountController::class, 'store'])->name('account.parent.store');
@@ -123,6 +129,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::patch('/account/parent/{id}/archive', [ParentAccountController::class, 'archive'])->name('account.parent.archive');
     Route::patch('/account/parent/{id}/restore', [ParentAccountController::class, 'restore'])->name('account.parent.restore');
     Route::get('/parent-list/archived', [ParentAccountController::class, 'archivedIndex'])->name('parent.archived');
+   Route::put('/admin/students/{id}/edit', [App\Http\Controllers\Admin\StudentController::class, 'updateStudent'])->name('admin.students.update');
 
     // User General CRUD
     Route::post('/finalize-year', [UserController::class, 'finalize'])->name('finalize.year');
