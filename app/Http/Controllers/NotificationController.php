@@ -17,10 +17,10 @@ class NotificationController extends Controller
 
     // SMART REDIRECT
     return match($notification->type) {
-        'attendance'   => redirect()->route('attendance'),
+        'attendance'   => redirect()->route('attendance.index'),
         'announcement' => redirect()->route('dashboard'),
-        'grade_upload' => redirect()->route('report-card'),
-        'event_participation' => redirect()->route('teacher-calendar'),
+        'grade_upload' => redirect()->route('parent.reportcard'),
+        'event_participation' => redirect()->route('student.calendar'),
         default               => redirect()->route('dashboard')
     };
 }

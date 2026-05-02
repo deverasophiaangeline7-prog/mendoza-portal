@@ -83,10 +83,10 @@ class SchoolCalendarController extends Controller
         // ---------------------------
 
         // 2. TRIGGER NOTIFICATIONS
-        $parents = User::where('role', 'parent')->get();
+        $usersToNotify = User::whereIn('role', ['parent', 'teacher'])->get();
 
-        foreach ($parents as $parent) {
-            $parent->notifyUser(
+        foreach ($usersToNotify as $user) {
+            $user->notifyUser(
                 'New School Event', 
                 "A calendar event has been set: " . $request->event_title, 
                 'announcement'

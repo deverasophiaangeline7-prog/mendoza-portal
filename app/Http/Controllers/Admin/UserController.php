@@ -123,6 +123,8 @@ class UserController extends Controller
             'lrn' => 'nullable|string|unique:users,lrn,' . $user->id,
         ]);
 
+        $oldStatus = $user->status;
+
         $user->update([
             'name' => $request->name,
             'role' => $request->role,
@@ -130,6 +132,16 @@ class UserController extends Controller
             'email' => $request->email,
             'lrn' => $request->lrn,
         ]);
+
+        if ($oldStatus !== $request->status) {
+            $actionName = $request->status === 'archived' ? 'Archive User' : 'Restore User';
+            
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => $actionName,
+                'description' => Auth::user()->username . " changed the status of {$user->name} to {$request->status}."
+            ]);
+        }
 
         return redirect()->route('dashboard')->with('success', 'User updated successfully!');
     }

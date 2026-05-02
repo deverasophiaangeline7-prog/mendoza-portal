@@ -75,10 +75,6 @@
             </i>
         </x-top-icon-button>
         
-        <x-top-icon-button>
-            <i class="fa-solid fa-bell"></i>
-        </x-top-icon-button>
-        
         <div class="relative" x-data="{ open: false }">
             <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
                 <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>

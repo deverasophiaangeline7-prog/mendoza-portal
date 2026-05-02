@@ -176,8 +176,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     // The name here has a DOT, so the route() call must have a DOT
     Route::get('/student-view', [ParentAccountController::class, 'showStudentProfile'])->name('student.view');
     
-    Route::get('/notifications/read/{id}', [App\Http\Controllers\NotificationController::class, 'markAsRead'])
-    ->name('notifications.read');
+    Route::get('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     });
 
 require __DIR__.'/auth.php';

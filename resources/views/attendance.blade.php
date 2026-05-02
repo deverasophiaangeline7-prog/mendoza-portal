@@ -38,10 +38,8 @@
                 <span class="absolute -top-2 -right-2 bg-yellow-400 text-red-700 text-xs rounded-full h-5 w-5 flex items-center justify-center border border-red-700 font-bold">1</span>
             </i>
         </x-top-icon-button>
-        
-        <x-top-icon-button>
-            <i class="fa-solid fa-bell"></i>
-        </x-top-icon-button>
+
+    @include('components.notification-bell')
         
         <div class="relative" x-data="{ open: false }">
             <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
