@@ -235,10 +235,43 @@
                                 </select>
                             </div>
 
-                            <div class="flex items-center">
-                                <label class="w-40 font-bold text-xl">Birthdate: <span class="text-red-600">*</span></label>
-                                <input type="date" name="birthdate" class="form-input-pill" required>
-                            </div>
+                            <div class="flex flex-col">
+    <div class="flex items-center">
+        <label class="w-40 font-bold text-xl">Birthdate: <span class="text-red-600">*</span></label>
+        
+        @php
+    // 1. Get the target year from the database
+    $activeSy = \App\Models\SchoolYear::where('status', 'active')->first();
+    $targetYear = now()->year; // Fallback to current year just in case
+
+    if ($activeSy) {
+        // EXACT COLUMN NAME APPLIED HERE:
+        $syText = $activeSy->school_year; 
+        preg_match('/\d{4}/', $syText, $matches);
+        $targetYear = $matches[0] ?? now()->year; 
+    }
+
+    // 2. Calculate min and max based on the TARGET year
+    $minDate = \Carbon\Carbon::create($targetYear - 17, 1, 1)->format('Y-m-d');
+    $maxDate = \Carbon\Carbon::create($targetYear - 3, 12, 31)->format('Y-m-d');
+@endphp
+
+        <input type="date" 
+               name="birthdate" 
+               class="form-input-pill @error('birthdate') border-red-600 @enderror" 
+               value="{{ old('birthdate') }}"
+               min="{{ $minDate }}" 
+               max="{{ $maxDate }}" 
+               required>
+    </div>
+
+    @error('birthdate')
+        <span class="text-red-600 text-[10px] font-black uppercase italic mt-1 ml-40 flex items-center">
+            <i class="fa-solid fa-circle-exclamation mr-1 text-xs"></i>
+            {{ $message }}
+        </span>
+    @enderror
+</div>
 
                             <div class="flex flex-col">
                                 <div class="flex items-center">

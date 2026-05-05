@@ -117,26 +117,15 @@
                 </h3>
             </div>
 
-            <!-- 2. THE BUTTONS: Aligned to the Top Right -->
-            <!-- We use pt-2 (padding-top) to nudge the buttons down so they center perfectly with the big H2 text -->
-            <div class="flex items-center gap-4 pt-2" x-data="{ showSearch: false }">
+            <div class="flex items-center gap-4 pt-2">
                 
-                <!-- Expanding Search Form -->
-                <form action="{{ route('admin.audit_logs') }}" method="GET" 
-                      x-show="showSearch" 
-                      x-cloak
-                      @click.outside="showSearch = false"
-                      x-transition:enter="transition ease-out duration-300"
-                      x-transition:enter-start="opacity-0 scale-95 translate-x-10"
-                      x-transition:enter-end="opacity-100 scale-100 translate-x-0"
-                      class="flex items-center gap-3">
-                    
+                <form action="{{ route('admin.audit_logs') }}" method="GET" class="flex items-center gap-3">
                     <div class="relative">
-                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <i class="fa-solid fa-filter absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         <input type="text" 
                                name="search" 
                                value="{{ request('search') }}"
-                               placeholder="Search name, action, or date..." 
+                               placeholder="Filter by name, action, or date..." 
                                class="w-80 pl-12 pr-4 py-3 border-[3px] border-black rounded-full font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all">
                     </div>
 
@@ -146,17 +135,12 @@
                     </button>
                 </form>
 
-                <!-- Search Toggle Button -->
-                <button x-show="!showSearch" @click="showSearch = true" x-cloak
-                        class="bg-blue-500 hover:bg-blue-600 text-black w-14 h-14 rounded-full border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center hover:scale-110 transition active:shadow-none active:translate-x-[2px] active:translate-y-[2px]">
-                    <i class="fa-solid fa-magnifying-glass text-2xl"></i>
-                </button>
-
                 <!-- Back Button -->
                 <button onclick="window.history.back()" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
                     <i class="fa-solid fa-circle-left"></i>
                 </button>
             </div>
+            
         </div>
 
         <!-- 3. THE TABLE: Starts below the header -->
@@ -165,9 +149,9 @@
                 <thead class="bg-[#f59e0b] border-b-[3px] border-black text-black uppercase">
                 <tr>
                     <th class="p-4 border-r-[3px] border-black w-48 text-center font-black text-lg">Date & Time</th>
-                    <th class="p-4 border-r-[3px] border-black w-64 font-black text-lg">User</th>
+                    <th class="p-4 border-r-[3px] border-black w-64 text-center font-black text-lg">User</th>
                     <th class="p-4 border-r-[3px] border-black w-64 text-center font-black text-lg">Action</th>
-                    <th class="p-4 font-black text-lg">Description</th>
+                    <th class="p-4 font-black text-center text-lg">Description</th>
                 </tr>
             </thead>
             <tbody class="divide-y-[3px] divide-black">

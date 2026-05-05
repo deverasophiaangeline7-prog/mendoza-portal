@@ -222,7 +222,7 @@
                     Finalizing will archive all records for <span class="text-red-600 underline">SY {{ $activeYear ? $activeYear->school_year : 'N/A' }}</span>. This action cannot be undone.
                 </p>
 
-                <form action="{{ route('finalize.year') }}" method="POST">
+                <form action="{{ route('admin.finalize_year') }}" method="POST">
                     @csrf
                     
                     <div class="mb-6 text-left">

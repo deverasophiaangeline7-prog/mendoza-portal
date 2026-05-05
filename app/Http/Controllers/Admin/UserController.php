@@ -244,8 +244,16 @@ class UserController extends Controller
                 return $query->where(function($q) use ($search) {
                     $q->where('action', 'like', "%{$search}%")
                       ->orWhere('description', 'like', "%{$search}%")
-                      // This also lets you search by the actual timestamp date
-                      ->orWhere('created_at', 'like', "%{$search}%") 
+                      
+                      // Format 1: Matches "May 05, 2026" (Full month name)
+                      ->orWhereRaw("DATE_FORMAT(created_at, '%M %d, %Y') LIKE ?", ["%{$search}%"])
+                      
+                      // Format 2: Matches "May 05, 2026" or "Aug 05, 2026" (Short month name)
+                      ->orWhereRaw("DATE_FORMAT(created_at, '%b %d, %Y') LIKE ?", ["%{$search}%"])
+                      
+                      // Format 3: Matches "05-05-2026" (Numbers with dashes)
+                      ->orWhereRaw("DATE_FORMAT(created_at, '%m-%d-%Y') LIKE ?", ["%{$search}%"]) 
+                      
                       ->orWhereHas('user', function ($subQ) use ($search) {
                           $subQ->where('username', 'like', "%{$search}%");
                       });

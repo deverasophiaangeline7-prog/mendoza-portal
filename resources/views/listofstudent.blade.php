@@ -188,7 +188,6 @@
                                     </td>
                                     <td class="p-2 text-center">
                                         @if($student->promotion_status === 'pending')
-                                            <!-- Added onclick to stop the row from clicking, and cursor-default to turn the mouse pointer back to a normal arrow -->
                                             <div class="flex flex-col items-center justify-center cursor-default" onclick="event.stopPropagation();">
                                                 <i class="fa-solid fa-clock-rotate-left text-orange-500 mb-1"></i>
                                                 <span class="text-orange-600 font-bold italic text-[10px] uppercase tracking-wider">
@@ -196,13 +195,34 @@
                                                 </span>
                                             </div>
                                         @else
-                                                <!-- Notice the onclick="event.stopPropagation();" here -->
+                                            @php
+                                                // MATCHED TO YOUR DB: 9 subjects and final_grade column
+                                                $requiredSubjects = 9; 
+                                                $passingMark = 75;
+
+                                                $gradesCount = $student->grades->count();
+                                                
+                                                // FIXED: Uses 'final_grade' to match your ma_db structure
+                                                $failingGrade = $student->grades->first(fn($g) => $g->final_grade < $passingMark);
+                                                
+                                                $isComplete = $gradesCount >= $requiredSubjects;
+                                                $isPassed = $isComplete && !$failingGrade;
+                                            @endphp
+
+                                            @if($isPassed)
                                                 <button type="button" 
                                                         @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; promoteUrl = '{{ route('teacher.promote', $student->student_id ?? $student->id) }}'; promoteModal = true;" 
                                                         class="bg-[#8cc63f] text-black text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
                                                     Promote
                                                 </button>
-                                            </form>
+                                            @else
+                                                <button type="button" 
+                                                        onclick="event.stopPropagation();"
+                                                        class="bg-gray-400 text-gray-600 text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-gray-500 opacity-60 cursor-not-allowed shadow-none"
+                                                        title="{{ !$isComplete ? 'Grades incomplete' : 'Student has failing grades' }}">
+                                                    Promote
+                                                </button>
+                                            @endif
                                         @endif
                                     </td>
                                 </tr>
@@ -230,7 +250,6 @@
                                     </td>
                                     <td class="p-2 text-center">
                                         @if($student->promotion_status === 'pending')
-                                            <!-- Added onclick to stop the row from clicking, and cursor-default to turn the mouse pointer back to a normal arrow -->
                                             <div class="flex flex-col items-center justify-center cursor-default" onclick="event.stopPropagation();">
                                                 <i class="fa-solid fa-clock-rotate-left text-orange-500 mb-1"></i>
                                                 <span class="text-orange-600 font-bold italic text-[10px] uppercase tracking-wider">
@@ -238,13 +257,32 @@
                                                 </span>
                                             </div>
                                         @else
-                                                <!-- Notice the onclick="event.stopPropagation();" here -->
+                                            @php
+                                                // IDENTICAL LOGIC for Female Loop
+                                                $requiredSubjects = 9; 
+                                                $passingMark = 75;
+
+                                                $gradesCount = $student->grades->count();
+                                                $failingGrade = $student->grades->first(fn($g) => $g->final_grade < $passingMark);
+                                                
+                                                $isComplete = $gradesCount >= $requiredSubjects;
+                                                $isPassed = $isComplete && !$failingGrade;
+                                            @endphp
+
+                                            @if($isPassed)
                                                 <button type="button" 
                                                         @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; promoteUrl = '{{ route('teacher.promote', $student->student_id ?? $student->id) }}'; promoteModal = true;" 
                                                         class="bg-[#8cc63f] text-black text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
                                                     Promote
                                                 </button>
-                                            </form>
+                                            @else
+                                                <button type="button" 
+                                                        onclick="event.stopPropagation();"
+                                                        class="bg-gray-400 text-gray-600 text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-gray-500 opacity-60 cursor-not-allowed shadow-none"
+                                                        title="{{ !$isComplete ? 'Grades incomplete' : 'Student has failing grades' }}">
+                                                    Promote
+                                                </button>
+                                            @endif
                                         @endif
                                     </td>
                                 </tr>
