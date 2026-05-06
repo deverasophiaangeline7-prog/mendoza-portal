@@ -63,6 +63,9 @@ class ReportCardController extends Controller
     /**
      * 3. THE GRADE SHEET (Branching Logic)
      */
+    /**
+     * 3. THE GRADE SHEET (Branching Logic)
+     */
     public function showStudent($student_id)
     {
         $student = Student::with('section')->findOrFail($student_id);

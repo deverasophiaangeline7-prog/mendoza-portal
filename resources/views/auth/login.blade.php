@@ -26,7 +26,8 @@
             </button>
         </div>
 
-        <x-modal name="parent-login" :show="$errors->has('login_id')" maxWidth="md" focusable>
+        <!-- PARENT / TEACHER MODAL -->
+        <x-modal name="parent-login" :show="$errors->has('login_id') && request('login_type') !== 'admin'" maxWidth="md" focusable>
             <div class="p-8 bg-white rounded-2xl border-t-8 border-red-800 shadow-2xl text-center relative">
                 <button @click="$dispatch('close-modal', 'parent-login')" class="absolute top-4 right-4 text-gray-400 hover:text-red-800 transition-colors">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -41,21 +42,30 @@
 
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
+                    <!-- ADDED: Hidden input to tell the controller which form this is -->
+                    <input type="hidden" name="login_type" value="parent_teacher">
+                    
                     <div class="mb-5 text-left">
                         <x-input-label for="parent_id" class="text-red-800 font-black uppercase text-[11px] tracking-widest mb-1" :value="__('Child\'s LRN or Email')" />
+                        <!-- FIXED: name="login_id" is perfect here -->
                         <x-text-input id="parent_id" class="block mt-1 w-full border-gray-300 focus:border-red-700 focus:ring-red-700 rounded-md shadow-sm bg-gray-50" type="text" name="login_id" required autofocus />
                         <x-input-error :messages="$errors->get('login_id')" class="mt-2" />
                     </div>
 
                     <div class="mb-6 text-left" x-data="{ show: false }">
                         <x-input-label for="parent_pass" class="text-red-800 font-black uppercase text-[11px] tracking-widest mb-1" :value="__('Password')" />
-                        <div class="relative">
+                        <div class="relative flex items-center">
                             <x-text-input id="parent_pass" 
-                                class="block mt-1 w-full border-gray-300 focus:border-red-700 focus:ring-red-700 rounded-md shadow-sm bg-gray-50" 
+                                class="block mt-1 w-full border-gray-300 focus:border-red-700 focus:ring-red-700 rounded-md shadow-sm bg-gray-50 pr-10" 
                                 ::type="show ? 'text' : 'password'" 
                                 name="password" required />
-
+                            
+                            <!-- ADDED: The clickable eye icon to toggle the password -->
+                            <button type="button" @click="show = !show" class="absolute right-3 mt-1 text-gray-400 hover:text-red-800 focus:outline-none transition-colors">
+                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
                         </div>
+                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
                     </div>
 
                     <div class="block mb-6 text-left">
@@ -78,7 +88,8 @@
             </div>
         </x-modal>
 
-        <x-modal name="admin-login" :show="false" maxWidth="md" focusable>
+        <!-- ADMIN MODAL -->
+        <x-modal name="admin-login" :show="$errors->has('login_id') && request('login_type') === 'admin'" maxWidth="md" focusable>
             <div class="p-8 bg-gray-50 rounded-2xl border-t-8 border-gray-900 shadow-2xl text-center relative">
                 <button @click="$dispatch('close-modal', 'admin-login')" class="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -94,20 +105,30 @@
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
                     <input type="hidden" name="login_type" value="admin">
+                    
                     <div class="mb-5 text-left">
                         <x-input-label for="admin_id" class="text-gray-900 font-black uppercase text-[11px] tracking-widest mb-1" :value="__('Username')" />
+                        <!-- FIXED: name="login_id" is perfect here -->
                         <x-text-input id="admin_id" class="block mt-1 w-full border-gray-400 focus:border-black focus:ring-black rounded-md shadow-sm bg-white" type="text" name="login_id" required />
+                        <!-- ADDED: Error message catcher for the Admin ID -->
+                        <x-input-error :messages="$errors->get('login_id')" class="mt-2" />
                     </div>
 
                     <div class="mb-6 text-left" x-data="{ show: false }">
                         <x-input-label for="admin_pass" class="text-gray-900 font-black uppercase text-[11px] tracking-widest mb-1" :value="__('Password')" />
-                        <div class="relative">
+                        <div class="relative flex items-center">
                             <x-text-input id="admin_pass" 
-                                class="block mt-1 w-full border-gray-400 focus:border-black focus:ring-black rounded-md shadow-sm bg-white" 
+                                class="block mt-1 w-full border-gray-400 focus:border-black focus:ring-black rounded-md shadow-sm bg-white pr-10" 
                                 ::type="show ? 'text' : 'password'" 
                                 name="password" required />
                             
+                            <!-- ADDED: The clickable eye icon to toggle the password -->
+                            <button type="button" @click="show = !show" class="absolute right-3 mt-1 text-gray-400 hover:text-black focus:outline-none transition-colors">
+                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
                         </div>
+                        <!-- ADDED: Error message catcher for the Admin Password -->
+                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
                     </div>
 
                     <div class="block mb-6 text-left">
@@ -124,15 +145,15 @@
 
                 <div x-data="{ resetSent: false }" class="mt-4">
                     <a href="{{ route('password.request') }}" class="text-xs font-black uppercase tracking-widest text-gray-500 hover:text-black hover:underline">
-                            {{ __('Forgot Password?') }}
-                        </a>
+                        {{ __('Forgot Password?') }}
+                    </a>
 
-                <div x-show="resetSent" x-transition x-cloak class="mt-3 p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
-                    <p class="text-[11px] font-bold text-gray-900 uppercase tracking-tighter leading-tight">
-            Log In confirmation has been sent<br>to your school e-mail address.
-                    </p>
-        </div>
-        </div>
+                    <div x-show="resetSent" x-transition x-cloak class="mt-3 p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
+                        <p class="text-[11px] font-bold text-gray-900 uppercase tracking-tighter leading-tight">
+                            Log In confirmation has been sent<br>to your school e-mail address.
+                        </p>
+                    </div>
+                </div>
 
             </div>
         </x-modal>

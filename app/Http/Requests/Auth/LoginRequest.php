@@ -35,22 +35,34 @@ class LoginRequest extends FormRequest
 }
 
 public function authenticate(): void
-{
-    $this->ensureIsNotRateLimited();
+    {
+        $this->ensureIsNotRateLimited();
 
-    // Use $this->login_id (which matches your blade input name)
-    // We search BOTH columns to be safe
-    $user = User::where('username', $this->login_id)->first();
+        // 1. Grab what the user typed in the box (LRN or Email)
+        $loginField = $this->input('login_id');
 
-        if (! $user || ! Hash::check($this->password, $user->password)) {
+        // 2. If they typed numbers (an LRN), translate it!
+        if (is_numeric($loginField)) {
+            $student = \App\Models\Student::where('lrn', $loginField)->first();
+            
+            // Safely swap the LRN for the Parent's email/username
+            if ($student && $student->user) {
+                $loginField = $student->user->username; 
+            }
+        }
+
+        // 3. THE FIX: ALWAYS search the 'username' column!
+        // Because in your database, even emails are saved under 'username'.
+        if (! Auth::attempt(['username' => $loginField, 'password' => $this->input('password')], $this->boolean('remember'))) {
+            RateLimiter::hit($this->throttleKey());
+
             throw ValidationException::withMessages([
                 'login_id' => __('auth.failed'),
             ]);
         }
 
-    \Illuminate\Support\Facades\Auth::login($user, $this->boolean('remember'));
-    \Illuminate\Support\Facades\RateLimiter::clear($this->throttleKey());
-}
+        RateLimiter::clear($this->throttleKey());
+    }
 
     /**
      * Ensure the login request is not rate limited.

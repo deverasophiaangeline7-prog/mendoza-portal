@@ -279,13 +279,20 @@ class StudentController extends Controller
             }
         }
 
-        // 3. Block if any incomplete students were found in EITHER group
-        if ($incompleteElementaryCount > 0) {
-            return back()->with('error', "FINALIZATION BLOCKED: There are {$incompleteElementaryCount} active Elementary student(s) with missing or incomplete grades. They must have exactly {$requiredSubjects} grades inputted.");
-        }
+        // 3. Combine errors so the Admin sees EVERYTHING at once
+        if ($incompleteElementaryCount > 0 || $incompleteNkpCount > 0) {
+            $errorMessage = "FINALIZATION BLOCKED: ";
+            
+            if ($incompleteElementaryCount > 0) {
+                $errorMessage .= "{$incompleteElementaryCount} Elementary student(s) missing grades. ";
+            }
+            if ($incompleteNkpCount > 0) {
+                $errorMessage .= "{$incompleteNkpCount} NKP student(s) missing evaluations. ";
+            }
+            
+            $errorMessage .= "Please complete these records before closing the year.";
 
-        if ($incompleteNkpCount > 0) {
-            return back()->with('error', "FINALIZATION BLOCKED: There are {$incompleteNkpCount} active NKP student(s) with missing evaluations. All NKP students must be evaluated before closing the year.");
+            return back()->with('error', trim($errorMessage));
         }
         // ---------------------------------------------------------
 
@@ -333,6 +340,28 @@ class StudentController extends Controller
                 }
             }
 
+            // ---------------------------------------------------------
+            // 🛑 NEW: ROLL OVER THE SCHOOL YEAR IN THE DATABASE
+            // ---------------------------------------------------------
+            $currentSyText = $currentYear->school_year; 
+            $parts = explode('-', $currentSyText);
+            
+            if (count($parts) === 2) {
+                $nextStartYear = (int)$parts[0] + 1; 
+                $nextEndYear = (int)$parts[1] + 1;   
+                $nextSyText = $nextStartYear . '-' . $nextEndYear; 
+
+                // 1. Archive the old year 
+                $currentYear->update(['status' => 'archived']);
+
+                // 2. Create and activate the brand new year 
+                SchoolYear::create([
+                    'school_year' => $nextSyText,
+                    'status'      => 'active'
+                ]);
+            }
+            // ---------------------------------------------------------
+
             AuditLog::create([
                 'user_id' => auth()->id(),
                 'action' => 'Year Finalized',
@@ -340,7 +369,7 @@ class StudentController extends Controller
             ]);
 
             DB::commit();
-            return back()->with('success', 'School year finalized! Students promoted and auto-assigned to sections.');
+            return back()->with('success', 'School year finalized! Students promoted, and system advanced to SY ' . ($nextSyText ?? 'Next Year') . '.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Error: ' . $e->getMessage());
