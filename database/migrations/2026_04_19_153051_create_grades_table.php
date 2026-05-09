@@ -14,10 +14,10 @@ class CreateGradesTable extends Migration
         $table->string('subject_name'); 
         
         // Changed to integer so JavaScript and PHP can calculate averages
-        $table->integer('q1')->nullable();
-        $table->integer('q2')->nullable();
-        $table->integer('q3')->nullable();
-        $table->integer('q4')->nullable();
+        $table->decimal('q1', 5, 2)->nullable();
+        $table->decimal('q2', 5, 2)->nullable();
+        $table->decimal('q3', 5, 2)->nullable();
+        $table->decimal('q4', 5, 2)->nullable();
         $table->float('final_grade')->nullable(); 
         
         $table->string('remarks', 50)->nullable();

@@ -23,112 +23,105 @@
 <body class="bg-gray-100" x-data="{ noMiddleName: false }">
 
     <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
-    <div class="flex items-center space-x-3">
-        <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow" alt="Logo">
-        <h1 class="text-2xl font-bold uppercase tracking-tight">Mendoza Academy, Inc.</h1>
-    </div>
-    
-    <div class="flex items-center space-x-6 text-2xl">
-        <x-top-icon-button>
-            <i class="fa-solid fa-envelope relative">
-                <span class="absolute -top-2 -right-2 bg-yellow-400 text-red-700 text-xs rounded-full h-5 w-5 flex items-center justify-center border border-red-700 font-bold">1</span>
-            </i>
-        </x-top-icon-button>
+        <div class="flex items-center space-x-3">
+            <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow" alt="Logo">
+            <h1 class="text-2xl font-bold uppercase tracking-tight">Mendoza Academy, Inc.</h1>
+        </div>
         
-        <x-top-icon-button>
-            <i class="fa-solid fa-bell"></i>
-        </x-top-icon-button>
-        
-        <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
-                <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>
-            </button>
-
-            <div x-show="open" 
-                 x-transition 
-                 class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-2xl py-1 z-50 border border-gray-200 overflow-hidden"
-                 style="display: none;"
-                 x-cloak>
-                
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold">
-                        <i class="fa-solid fa-right-from-bracket mr-3"></i>
-                        Logout
-                    </button>
-                </form>
-
-                <hr class="border-gray-100">
-
-                <button @click="open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors">
-                    <i class="fa-solid fa-xmark mr-3"></i>
-                    Cancel
+        <div class="flex items-center space-x-6 text-2xl">
+            <x-top-icon-button>
+                <i class="fa-solid fa-envelope relative">
+                    <span class="absolute -top-2 -right-2 bg-yellow-400 text-red-700 text-xs rounded-full h-5 w-5 flex items-center justify-center border border-red-700 font-bold">1</span>
+                </i>
+            </x-top-icon-button>
+            
+            <x-top-icon-button>
+                <i class="fa-solid fa-bell"></i>
+            </x-top-icon-button>
+            
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
+                    <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>
                 </button>
+
+                <div x-show="open" 
+                     x-transition 
+                     class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-2xl py-1 z-50 border border-gray-200 overflow-hidden"
+                     style="display: none;"
+                     x-cloak>
+                    
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold">
+                            <i class="fa-solid fa-right-from-bracket mr-3"></i>
+                            Logout
+                        </button>
+                    </form>
+
+                    <hr class="border-gray-100">
+
+                    <button @click="open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors">
+                        <i class="fa-solid fa-xmark mr-3"></i>
+                        Cancel
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-</header>
+    </header>
 
     <div class="flex min-h-screen">
         <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
-    <ul class="space-y-1">
-        <!-- Dashboard -->
-        <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
-            Dashboard
-        </x-sidebar-link>
+            <ul class="space-y-1">
+                <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
+                    Dashboard
+                </x-sidebar-link>
 
-        <!-- Student Information: ONLY for Parents -->
-        @if(auth()->user()->role === 'parent')
-            <x-sidebar-link href="{{ route('student.view') }}" icon="fa-solid fa-user-graduate" :active="request()->routeIs('student.view')">
-                Student Information
-            </x-sidebar-link>
-        @endif
+                @if(auth()->user()->role === 'parent')
+                    <x-sidebar-link href="{{ route('student.view') }}" icon="fa-solid fa-user-graduate" :active="request()->routeIs('student.view')">
+                        Student Information
+                    </x-sidebar-link>
+                @endif
 
-        <!-- Advisory Class: ONLY for Teachers -->
-        @if(auth()->user()->role === 'teacher')
-            <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-chalkboard-user" :active="request()->routeIs('students.*')">
-                Advisory Class
-            </x-sidebar-link>
-        @endif
+                @if(auth()->user()->role === 'teacher')
+                    <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-chalkboard-user" :active="request()->routeIs('students.*')">
+                        Advisory Class
+                    </x-sidebar-link>
+                @endif
 
-        <!-- Student Calendar: Role-Based Routing -->
-        @php
-            $calendarRoute = match(auth()->user()->role) {
-                'admin' => route('admin.student.participation'),
-                'parent' => route('student.calendar'),
-                default => route('student.calendar.index'),
-            };
-        @endphp
-        <x-sidebar-link href="{{ $calendarRoute }}" 
-            icon="fa-solid fa-calendar-days" 
-            :active="request()->routeIs('admin.student.participation') || request()->routeIs('student.calendar*')">
-            Student Calendar
-        </x-sidebar-link>
+                @php
+                    $calendarRoute = match(auth()->user()->role) {
+                        'admin' => route('admin.student.participation'),
+                        'parent' => route('student.calendar'),
+                        default => route('student.calendar.index'),
+                    };
+                @endphp
+                <x-sidebar-link href="{{ $calendarRoute }}" 
+                    icon="fa-solid fa-calendar-days" 
+                    :active="request()->routeIs('admin.student.participation') || request()->routeIs('student.calendar*')">
+                    Student Calendar
+                </x-sidebar-link>
 
-        <!-- Report Card: Role-Based Routing -->
-        <x-sidebar-link 
-            href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}" 
-            icon="fa-solid fa-star" 
-            :active="request()->routeIs('reportcard.*') || request()->routeIs('parent.reportcard')">
-            Report Card
-        </x-sidebar-link>
-        
-        <!-- Attendance: Role-Based Routing -->
-        <x-sidebar-link 
-            href="{{ auth()->user()->role === 'parent' ? route('parent.attendance') : route('attendance.index') }}" 
-            icon="fa-solid fa-calendar-check" 
-            :active="request()->routeIs('attendance.*') || request()->routeIs('parent.attendance')">
-            Attendance
-        </x-sidebar-link>
+                <x-sidebar-link 
+                    href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}" 
+                    icon="fa-solid fa-star" 
+                    :active="request()->routeIs('reportcard.*') || request()->routeIs('parent.reportcard')">
+                    Report Card
+                </x-sidebar-link>
+                
+                <x-sidebar-link 
+                    href="{{ auth()->user()->role === 'parent' ? route('parent.attendance') : route('attendance.index') }}" 
+                    icon="fa-solid fa-calendar-check" 
+                    :active="request()->routeIs('attendance.*') || request()->routeIs('parent.attendance')">
+                    Attendance
+                </x-sidebar-link>
 
-        <!-- Account Management: ONLY for Admin -->
-        @if(auth()->user()->role === 'admin')
-            <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.management')">
-                Account Management
-            </x-sidebar-link>
-        @endif
-    </ul>
-</nav>
+                @if(auth()->user()->role === 'admin')
+                    <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.management')">
+                        Account Management
+                    </x-sidebar-link>
+                @endif
+            </ul>
+        </nav>
 
         <main class="flex-1 p-12 bg-white">
             <div class="max-w-5xl mx-auto">
@@ -137,7 +130,6 @@
                     <p class="text-3xl font-bold text-black mt-2">Parent</p>
                 </div>
 
-                <!-- enctype added for file upload -->
                 <form action="{{ route('account.parent.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="grid grid-cols-2 gap-x-16 gap-y-6" x-data="{ pw: '', pw_confirm: '' }">
@@ -146,7 +138,16 @@
                             <div class="flex flex-col">
                                 <div class="flex items-center">
                                     <label class="w-40 font-bold text-xl">LRN: <span class="text-red-600">*</span></label>
-                                    <input type="text" name="lrn" class="form-input-pill @error('lrn') border-red-600 @enderror" value="{{ old('lrn') }}" required>
+                                    
+                                    <input type="text" 
+                                           name="lrn" 
+                                           class="form-input-pill @error('lrn') border-red-600 @enderror" 
+                                           value="{{ old('lrn') }}" 
+                                           required
+                                           maxlength="12"
+                                           inputmode="numeric"
+                                           oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 12)">
+                                           
                                 </div>
                                 @error('lrn') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                             </div>
@@ -179,12 +180,10 @@
                                 <input type="text" name="ext_name" class="form-input-pill">
                             </div>
 
-                            <!-- Profile Photo -->
                             <div class="flex flex-col" x-data="{ fileError: false }">
                                 <div class="flex items-center">
                                     <label class="w-40 font-bold text-xl">Profile Photo:</label>
                                     <div class="flex flex-col w-full">
-                                        <!-- File Input with instant check -->
                                         <input type="file" 
                                             name="profile_photo" 
                                             id="profile_photo"
@@ -196,11 +195,10 @@
                                                     if (file) {
                                                         const type = file.type;
                                                         const validTypes = ['image/png', 'image/jpg', 'image/jpeg'];
-                                                        // Check if file is an image and matching types
                                                         fileError = !validTypes.includes(type);
                                                         
                                                         if(fileError) {
-                                                            $event.target.value = ''; // Clear the input if it's a PDF/invalid
+                                                            $event.target.value = ''; 
                                                         }
                                                     }
                                             ">
@@ -209,7 +207,6 @@
                                             Max size: 2MB (.png, .jpg, .jpeg only)
                                         </p>
 
-                                        <!-- Instant Client-Side Error Message -->
                                         <template x-if="fileError">
                                             <span class="text-red-600 text-sm font-bold italic mt-1">
                                                 The profile photo field must be an image.
@@ -218,12 +215,11 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Server-Side Error (Keep this for traditional Laravel validation) -->
                                 @error('profile_photo') 
                                     <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> 
                                 @enderror
                             </div>
-                            </div>
+                        </div>
 
                         <div class="space-y-5">
                             <div class="flex items-center">
@@ -236,42 +232,43 @@
                             </div>
 
                             <div class="flex flex-col">
-    <div class="flex items-center">
-        <label class="w-40 font-bold text-xl">Birthdate: <span class="text-red-600">*</span></label>
-        
-        @php
-    // 1. Get the target year from the database
-    $activeSy = \App\Models\SchoolYear::where('status', 'active')->first();
-    $targetYear = now()->year; // Fallback to current year just in case
+                                <div class="flex items-center">
+                                    <label class="w-40 font-bold text-xl">Birthdate: <span class="text-red-600">*</span></label>
+                                    
+                                    @php
+                                        // 1. Get the target year from the database
+                                        $activeSy = \App\Models\SchoolYear::where('status', 'active')->first();
+                                        $targetYear = now()->year; // Fallback to current year just in case
 
-    if ($activeSy) {
-        // EXACT COLUMN NAME APPLIED HERE:
-        $syText = $activeSy->school_year; 
-        preg_match('/\d{4}/', $syText, $matches);
-        $targetYear = $matches[0] ?? now()->year; 
-    }
+                                        if ($activeSy) {
+                                            $syText = $activeSy->school_year; 
+                                            preg_match('/\d{4}/', $syText, $matches);
+                                            $targetYear = $matches[0] ?? now()->year; 
+                                        }
 
-    // 2. Calculate min and max based on the TARGET year
-    $minDate = \Carbon\Carbon::create($targetYear - 17, 1, 1)->format('Y-m-d');
-    $maxDate = \Carbon\Carbon::create($targetYear - 3, 12, 31)->format('Y-m-d');
-@endphp
+                                        // 2. PANEL DEFENSE SETUP: 
+                                        // Oldest allowed: 100 years ago
+                                        // Youngest allowed: 3 years ago
+                                        $minDate = \Carbon\Carbon::create($targetYear - 100, 1, 1)->format('Y-m-d');
+                                        $maxDate = \Carbon\Carbon::create($targetYear - 3, 12, 31)->format('Y-m-d'); 
+                                    @endphp
 
-        <input type="date" 
-               name="birthdate" 
-               class="form-input-pill @error('birthdate') border-red-600 @enderror" 
-               value="{{ old('birthdate') }}"
-               min="{{ $minDate }}" 
-               max="{{ $maxDate }}" 
-               required>
-    </div>
+                                    <input type="date" 
+                                           name="birthdate" 
+                                           class="form-input-pill @error('birthdate') border-red-600 @enderror" 
+                                           value="{{ old('birthdate') }}"
+                                           min="{{ $minDate }}" 
+                                           max="{{ $maxDate }}" 
+                                           required>
+                                </div>
 
-    @error('birthdate')
-        <span class="text-red-600 text-[10px] font-black uppercase italic mt-1 ml-40 flex items-center">
-            <i class="fa-solid fa-circle-exclamation mr-1 text-xs"></i>
-            {{ $message }}
-        </span>
-    @enderror
-</div>
+                                @error('birthdate')
+                                    <span class="text-red-600 text-[10px] font-black uppercase italic mt-1 ml-40 flex items-center">
+                                        <i class="fa-solid fa-circle-exclamation mr-1 text-xs"></i>
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+                            </div>
 
                             <div class="flex flex-col">
                                 <div class="flex items-center">

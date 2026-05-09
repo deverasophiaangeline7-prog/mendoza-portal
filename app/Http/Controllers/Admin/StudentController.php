@@ -38,9 +38,19 @@ class StudentController extends Controller
         if (auth()->user()->role === 'admin') {
             $sectionsQuery = \App\Models\Section::orderBy('section_name', 'asc')->get();
         } else {
+            // For Teachers: Fetch only their assigned sections
             $sectionsQuery = \App\Models\Section::where('teacher_id', auth()->id())
                                                 ->orderBy('section_name', 'asc')
                                                 ->get();
+            
+            // THE MAGIC BYPASS: If the teacher handles exactly ONE section, skip the dashboard!
+            if ($sectionsQuery->count() === 1) {
+                $singleSection = $sectionsQuery->first();
+                // Ensure we use the correct primary key (id or section_id)
+                $targetId = $singleSection->id ?? $singleSection->section_id;
+                
+                return redirect()->route('students.showSection', $targetId);
+            }
         }
 
         $sections = $sectionsQuery->sortBy(function ($section) use ($gradeOrder) {
@@ -86,86 +96,102 @@ class StudentController extends Controller
         $males = $students->where('gender', 'Male')->values();
         $females = $students->where('gender', 'Female')->values();
 
+        // ---------------------------------------------------------
+        // 🛑 NEW: BACK BUTTON HIDING LOGIC
+        // ---------------------------------------------------------
+        $hideBackButton = false;
+        
+        if (auth()->user()->role === 'teacher') {
+            // Count how many sections this specific teacher handles
+            $sectionCount = \App\Models\Section::where('teacher_id', auth()->id())->count();
+            
+            // If they only have 1, we hide the back button!
+            if ($sectionCount === 1) {
+                $hideBackButton = true;
+            }
+        }
+
         return view('listofstudent', [
-            'students' => $students,
-            'grade'    => $section->grade_level, // 👈 FIXED: This solves the error in your screenshot
-            'section'  => $section,
-            'males'    => $males,
-            'females'  => $females
+            'students'       => $students,
+            'grade'          => $section->grade_level,
+            'section'        => $section,
+            'males'          => $males,
+            'females'        => $females,
+            'hideBackButton' => $hideBackButton // 👈 Pass the signal to the Blade file
         ]);
     }
 
     public function storeStudent(Request $request)
-{
-    $request->validate([
-        'lrn'         => 'required|string|max:255',
-        'first_name'  => 'required|string|max:255',
-        'last_name'   => 'required|string|max:255',
-        'gender'      => 'required|string|in:Male,Female',
-        'birthdate'   => 'required|date',
-        'section_id'  => 'required', 
-        'grade_level' => 'required|string'
-    ]);
+    {
+        $request->validate([
+            'lrn'         => 'required|string|max:255',
+            'first_name'  => 'required|string|max:255',
+            'last_name'   => 'required|string|max:255',
+            'gender'      => 'required|string|in:Male,Female',
+            'birthdate'   => 'required|date',
+            'section_id'  => 'required', 
+            'grade_level' => 'required|string'
+        ]);
 
-    $birthDate = \Carbon\Carbon::parse($request->birthdate);
-    $gradeLevel = strtoupper($request->grade_level);
+        $birthDate = \Carbon\Carbon::parse($request->birthdate);
+        $gradeLevel = strtoupper($request->grade_level);
 
-    // FUTURE-PROOF FIX: Get the target year from your database, not the clock!
-    $activeSy = \App\Models\SchoolYear::where('status', 'active')->first();
-    
-    if (!$activeSy) {
-        return back()->with('error', 'No active school year found. Please set an active school year first.');
-    }
-
-    // EXACT COLUMN NAME APPLIED HERE:
-    $syText = $activeSy->school_year;
-    preg_match('/\d{4}/', $syText, $matches);
-    $targetYear = $matches[0] ?? now()->year; 
-
-    $birthDate = \Carbon\Carbon::parse($request->birthdate);
-    
-    // --- GLOBAL MAXIMUM AGE CHECK (Limit to 17) ---
-    $ageAtStartOfSy = $targetYear - $birthDate->year;
-    
-    if ($ageAtStartOfSy >= 18) {
-        return back()->withErrors(['birthdate' => 'THE BIRTHYEAR IS NOT QUALIFIED FOR THIS GRADE LEVEL.'])->withInput();
-    }
-
-    // --- NKP RULES (3 to 17 years old) ---
-    $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
-    if (in_array($gradeLevel, $nkpLevels)) {
-        $deadline = \Carbon\Carbon::create($targetYear, 10, 31);
-        $ageAtDeadline = $birthDate->diffInYears($deadline);
-
-        if ($ageAtDeadline < 3) {
-            return back()->withErrors(['birthdate' => 'THE BIRTHYEAR IS NOT QUALIFIED. MUST BE 3 BY OCT 31.'])->withInput();
+        // FUTURE-PROOF FIX: Get the target year from your database, not the clock!
+        $activeSy = \App\Models\SchoolYear::where('status', 'active')->first();
+        
+        if (!$activeSy) {
+            return back()->with('error', 'No active school year found. Please set an active school year first.');
         }
-    }
 
-    // --- ELEMENTARY RULES (6 to 17 years old) ---
-    $elementaryLevels = ['1', 'GRADE 1', '2', 'GRADE 2', '3', 'GRADE 3', '4', 'GRADE 4', '5', 'GRADE 5', '6', 'GRADE 6'];
-    if (in_array($gradeLevel, $elementaryLevels)) {
-        $deadline = \Carbon\Carbon::create($targetYear, 12, 31);
-        $ageAtDeadline = $birthDate->diffInYears($deadline);
+        // EXACT COLUMN NAME APPLIED HERE:
+        $syText = $activeSy->school_year;
+        preg_match('/\d{4}/', $syText, $matches);
+        $targetYear = $matches[0] ?? now()->year; 
 
-        if ($ageAtDeadline < 6) {
-            return back()->withErrors(['birthdate' => 'THE BIRTHYEAR IS NOT QUALIFIED. MUST BE 6 BY DEC 31.'])->withInput();
+        $birthDate = \Carbon\Carbon::parse($request->birthdate);
+        
+        // --- GLOBAL MAXIMUM AGE CHECK (Limit to 17) ---
+        $ageAtStartOfSy = $targetYear - $birthDate->year;
+        
+        if ($ageAtStartOfSy >= 18) {
+            return back()->withErrors(['birthdate' => 'THE BIRTHYEAR IS NOT QUALIFIED FOR THIS GRADE LEVEL.'])->withInput();
         }
+
+        // --- NKP RULES (3 to 17 years old) ---
+        $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
+        if (in_array($gradeLevel, $nkpLevels)) {
+            $deadline = \Carbon\Carbon::create($targetYear, 10, 31);
+            $ageAtDeadline = $birthDate->diffInYears($deadline);
+
+            if ($ageAtDeadline < 3) {
+                return back()->withErrors(['birthdate' => 'THE BIRTHYEAR IS NOT QUALIFIED. MUST BE 3 BY OCT 31.'])->withInput();
+            }
+        }
+
+        // --- ELEMENTARY RULES (6 to 17 years old) ---
+        $elementaryLevels = ['1', 'GRADE 1', '2', 'GRADE 2', '3', 'GRADE 3', '4', 'GRADE 4', '5', 'GRADE 5', '6', 'GRADE 6'];
+        if (in_array($gradeLevel, $elementaryLevels)) {
+            $deadline = \Carbon\Carbon::create($targetYear, 12, 31);
+            $ageAtDeadline = $birthDate->diffInYears($deadline);
+
+            if ($ageAtDeadline < 6) {
+                return back()->withErrors(['birthdate' => 'THE BIRTHYEAR IS NOT QUALIFIED. MUST BE 6 BY DEC 31.'])->withInput();
+            }
+        }
+
+        Student::create([
+            'lrn'         => $request->lrn,
+            'first_name'  => strtoupper($request->first_name),
+            'middle_name' => strtoupper($request->middle_name),
+            'last_name'   => strtoupper($request->last_name),
+            'gender'      => ucfirst($request->gender),
+            'birthdate'   => $request->birthdate,
+            'section_id'  => $request->section_id,
+            'grade_level' => $request->grade_level,
+        ]);
+
+        return redirect()->back()->with('success', 'Student registered successfully!');
     }
-
-    Student::create([
-        'lrn'         => $request->lrn,
-        'first_name'  => strtoupper($request->first_name),
-        'middle_name' => strtoupper($request->middle_name),
-        'last_name'   => strtoupper($request->last_name),
-        'gender'      => ucfirst($request->gender),
-        'birthdate'   => $request->birthdate,
-        'section_id'  => $request->section_id,
-        'grade_level' => $request->grade_level,
-    ]);
-
-    return redirect()->back()->with('success', 'Student registered successfully!');
-}
 
 
     public function destroyStudent($id)

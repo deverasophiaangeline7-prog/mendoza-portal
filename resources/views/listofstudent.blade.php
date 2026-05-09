@@ -13,7 +13,7 @@
     </style>
 </head>
 
-<body class="bg-gray-100" x-data="{ openModal: false, messageModal: false, promoteModal: false, studentName: '', studentId: '', promoteUrl: '' }">
+<body class="bg-gray-100" x-data="{ openModal: false, messageModal: false, promoteModal: false, studentName: '', studentId: '', promoteUrl: '', passwordModal: false }">
 
     <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
         <div class="flex items-center space-x-3">
@@ -33,13 +33,28 @@
                 <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
                     <i class="fa-solid fa-circle-user text-orange-300 text-4xl"></i>
                 </button>
-                <div x-show="open" x-transition class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-2xl py-1 z-50 border border-gray-200 overflow-hidden" style="display: none;" x-cloak>
+                <div x-show="open" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-2xl py-1 z-50 border border-gray-200 overflow-hidden" style="display: none;" x-cloak>
+                    
+                    @if(auth()->user()->role === 'teacher')
+                        <button @click="passwordModal = true; open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-bold">
+                            <i class="fa-solid fa-key mr-3 text-gray-400"></i>
+                            Change Password
+                        </button>
+                        <hr class="border-gray-100">
+                    @endif
+
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold"><i class="fa-solid fa-right-from-bracket mr-3"></i>Logout</button>
+                        <button type="submit" class="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold">
+                            <i class="fa-solid fa-right-from-bracket mr-3"></i>
+                            Logout
+                        </button>
                     </form>
                     <hr class="border-gray-100">
-                    <button @click="open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors"><i class="fa-solid fa-xmark mr-3"></i>Cancel</button>
+                    <button @click="open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors">
+                        <i class="fa-solid fa-xmark mr-3"></i>
+                        Cancel
+                    </button>
                 </div>
             </div>
         </div>
@@ -47,66 +62,59 @@
 
     <div class="flex min-h-screen">
         <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
-    <ul class="space-y-1">
-        <!-- Dashboard -->
-        <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
-            Dashboard
-        </x-sidebar-link>
+            <ul class="space-y-1">
+                <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
+                    Dashboard
+                </x-sidebar-link>
 
-        <!-- Student Information: ONLY for Parents -->
-        @if(auth()->user()->role === 'parent')
-            <x-sidebar-link href="{{ route('student.view') }}" icon="fa-solid fa-user-graduate" :active="request()->routeIs('student.view')">
-                Student Information
-            </x-sidebar-link>
-        @endif
+                @if(auth()->user()->role === 'parent')
+                    <x-sidebar-link href="{{ route('student.view') }}" icon="fa-solid fa-user-graduate" :active="request()->routeIs('student.view')">
+                        Student Information
+                    </x-sidebar-link>
+                @endif
 
-        <!-- Advisory Class: ONLY for Teachers -->
-        @if(auth()->user()->role === 'teacher')
-            <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-chalkboard-user" :active="request()->routeIs('students.*')">
-                Advisory Class
-            </x-sidebar-link>
-        @endif
+                @if(auth()->user()->role === 'teacher')
+                    <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-chalkboard-user" :active="request()->routeIs('students.*')">
+                        Advisory Class
+                    </x-sidebar-link>
+                @endif
 
-        <!-- Student Calendar: Role-Based Routing -->
-        @php
-            $calendarRoute = match(auth()->user()->role) {
-                'admin' => route('admin.student.participation'),
-                'parent' => route('student.calendar'),
-                default => route('student.calendar.index'),
-            };
-        @endphp
-        <x-sidebar-link href="{{ $calendarRoute }}" 
-            icon="fa-solid fa-calendar-days" 
-            :active="request()->routeIs('admin.student.participation') || request()->routeIs('student.calendar*')">
-            Student Calendar
-        </x-sidebar-link>
+                @php
+                    $calendarRoute = match(auth()->user()->role) {
+                        'admin' => route('admin.student.participation'),
+                        'parent' => route('student.calendar'),
+                        default => route('student.calendar.index'),
+                    };
+                @endphp
+                <x-sidebar-link href="{{ $calendarRoute }}" 
+                    icon="fa-solid fa-calendar-days" 
+                    :active="request()->routeIs('admin.student.participation') || request()->routeIs('student.calendar*')">
+                    Student Calendar
+                </x-sidebar-link>
 
-        <!-- Report Card: Role-Based Routing -->
-        <x-sidebar-link 
-            href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}" 
-            icon="fa-solid fa-star" 
-            :active="request()->routeIs('reportcard.*') || request()->routeIs('parent.reportcard')">
-            Report Card
-        </x-sidebar-link>
-        
-        <!-- Attendance: Role-Based Routing -->
-        <x-sidebar-link 
-            href="{{ auth()->user()->role === 'parent' ? route('parent.attendance') : route('attendance.index') }}" 
-            icon="fa-solid fa-calendar-check" 
-            :active="request()->routeIs('attendance.*') || request()->routeIs('parent.attendance')">
-            Attendance
-        </x-sidebar-link>
+                <x-sidebar-link 
+                    href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}" 
+                    icon="fa-solid fa-star" 
+                    :active="request()->routeIs('reportcard.*') || request()->routeIs('parent.reportcard')">
+                    Report Card
+                </x-sidebar-link>
+                
+                <x-sidebar-link 
+                    href="{{ auth()->user()->role === 'parent' ? route('parent.attendance') : route('attendance.index') }}" 
+                    icon="fa-solid fa-calendar-check" 
+                    :active="request()->routeIs('attendance.*') || request()->routeIs('parent.attendance')">
+                    Attendance
+                </x-sidebar-link>
 
-        <!-- Account Management: ONLY for Admin -->
-        @if(auth()->user()->role === 'admin')
-            <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.management')">
-                Account Management
-            </x-sidebar-link>
-        @endif
-    </ul>
-</nav>
+                @if(auth()->user()->role === 'admin')
+                    <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.management')">
+                        Account Management
+                    </x-sidebar-link>
+                @endif
+            </ul>
+        </nav>
+
         <main class="flex-1 p-8">
-            
             @if(session('success'))
                 <div x-data="{ show: true }" 
                     x-show="show" 
@@ -133,14 +141,13 @@
             @endif
 
             <div class="max-w-5xl mx-auto">
-        <main class="flex-1 p-8">
-            <div class="max-w-5xl mx-auto">
-                
                 <div class="mb-8 flex items-center justify-between">
                     <div class="flex items-center">
-                        <a href="{{ route('students.index') }}" class="text-red-600 text-5xl hover:scale-110 transition mr-6">
-                            <i class="fa-solid fa-circle-arrow-left"></i>
-                        </a>
+                        @if(!$hideBackButton)
+                            <a href="{{ route('students.index') }}" class="text-red-600 text-5xl hover:scale-110 transition mr-6">
+                                <i class="fa-solid fa-circle-arrow-left"></i>
+                            </a>
+                        @endif
                         <div>
                             <h2 class="text-4xl font-black text-black uppercase">Advisory Class</h2>
                             <h3 class="text-3xl font-black text-orange-300 italic uppercase" style="-webkit-text-stroke: 1.5px black;">
@@ -196,15 +203,10 @@
                                             </div>
                                         @else
                                             @php
-                                                // MATCHED TO YOUR DB: 9 subjects and final_grade column
                                                 $requiredSubjects = 9; 
                                                 $passingMark = 75;
-
                                                 $gradesCount = $student->grades->count();
-                                                
-                                                // FIXED: Uses 'final_grade' to match your ma_db structure
                                                 $failingGrade = $student->grades->first(fn($g) => $g->final_grade < $passingMark);
-                                                
                                                 $isComplete = $gradesCount >= $requiredSubjects;
                                                 $isPassed = $isComplete && !$failingGrade;
                                             @endphp
@@ -258,13 +260,10 @@
                                             </div>
                                         @else
                                             @php
-                                                // IDENTICAL LOGIC for Female Loop
                                                 $requiredSubjects = 9; 
                                                 $passingMark = 75;
-
                                                 $gradesCount = $student->grades->count();
                                                 $failingGrade = $student->grades->first(fn($g) => $g->final_grade < $passingMark);
-                                                
                                                 $isComplete = $gradesCount >= $requiredSubjects;
                                                 $isPassed = $isComplete && !$failingGrade;
                                             @endphp
@@ -294,14 +293,12 @@
                         </tbody>
                     </table>
                 </div>
-            
             </div>
         </main>
     </div>
 
     <div x-show="messageModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity">
         <div @click.away="messageModal = false" class="bg-white border-[3px] border-black rounded-[30px] p-8 w-full max-w-lg shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
-            
             <div class="flex justify-between items-start mb-6">
                 <div>
                     <h2 class="text-3xl font-black uppercase text-black">Message Parent</h2>
@@ -309,21 +306,17 @@
                 </div>
                 <button @click="messageModal = false" class="text-gray-400 hover:text-red-600 text-3xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
             <form action="{{ route('students.message') }}" method="POST">
                 @csrf
                 <input type="hidden" name="student_id" :value="studentId">
-
                 <div class="mb-6">
                     <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Subject</label>
                     <input type="text" name="subject" placeholder="e.g., Attendance, Performance Update..." required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400">
                 </div>
-
                 <div class="mb-8">
                     <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Message</label>
                     <textarea name="message" rows="5" placeholder="Type your message here..." required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400 resize-none"></textarea>
                 </div>
-
                 <div class="flex justify-end space-x-4">
                     <button type="button" @click="messageModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4">Cancel</button>
                     <button type="submit" class="bg-blue-500 text-white font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-600 active:translate-y-1 active:shadow-none transition-all">
@@ -332,26 +325,72 @@
                 </div>
             </form>
         </div>
-</div>
-
-        <!-- PROMOTION CONFIRMATION MODAL -->
-<div x-show="promoteModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity">
-    <div @click.away="promoteModal = false" class="bg-white border-[3px] border-black rounded-[30px] p-8 w-full max-w-md shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] text-center">
-        
-        <i class="fa-solid fa-circle-exclamation text-orange-500 text-6xl mb-4"></i>
-        <h2 class="text-3xl font-black uppercase text-black mb-2">Confirm Promotion</h2>
-        <p class="text-gray-600 font-bold mb-8">Are you sure you want to queue <span class="text-blue-600 uppercase" x-text="studentName"></span> for the next grade level?</p>
-
-        <!-- The actual form that submits the request -->
-        <form :action="promoteUrl" method="POST" class="flex justify-center space-x-4">
-            @csrf
-            <button type="button" @click="promoteModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4">Cancel</button>
-            <button type="submit" class="bg-[#8cc63f] text-black font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
-                Yes, Promote
-            </button>
-        </form>
     </div>
-</div>
+
+    <div x-show="promoteModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity">
+        <div @click.away="promoteModal = false" class="bg-white border-[3px] border-black rounded-[30px] p-8 w-full max-w-md shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] text-center">
+            <i class="fa-solid fa-circle-exclamation text-orange-500 text-6xl mb-4"></i>
+            <h2 class="text-3xl font-black uppercase text-black mb-2">Confirm Promotion</h2>
+            <p class="text-gray-600 font-bold mb-8">Are you sure you want to queue <span class="text-blue-600 uppercase" x-text="studentName"></span> for the next grade level?</p>
+            <form :action="promoteUrl" method="POST" class="flex justify-center space-x-4">
+                @csrf
+                <button type="button" @click="promoteModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4">Cancel</button>
+                <button type="submit" class="bg-[#8cc63f] text-black font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
+                    Yes, Promote
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if(auth()->user()->role === 'teacher')
+    <div x-show="passwordModal" 
+         x-transition:opacity
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" 
+         x-cloak>
+        <div @click.away="passwordModal = false" 
+             class="bg-white border-[4px] border-black rounded-[2.5rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
+            
+            <button @click="passwordModal = false" class="absolute top-6 right-8 text-4xl font-black text-gray-400 hover:text-black transition-colors">&times;</button>
+
+            <h2 class="text-3xl font-black italic uppercase tracking-tight mb-8">Change Password</h2>
+
+            <form action="{{ route('user.password.update') }}" method="POST">
+                @csrf
+                @method('PUT')
+                
+                <div class="space-y-5">
+                    <div>
+                        <label class="block font-bold uppercase text-black text-sm mb-2 tracking-widest">Current Password</label>
+                        <input type="password" name="current_password" required 
+                               class="w-full border-[3px] border-black rounded-2xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold uppercase text-black text-sm mb-2 tracking-widest">New Password</label>
+                        <input type="password" name="password" required 
+                               class="w-full border-[3px] border-black rounded-2xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold uppercase text-black text-sm mb-2 tracking-widest">Confirm New Password</label>
+                        <input type="password" name="password_confirmation" required 
+                               class="w-full border-[3px] border-black rounded-2xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 transition-all">
+                    </div>
+                </div>
+
+                <div class="flex justify-end items-center gap-8 mt-10">
+                    <button type="button" @click="passwordModal = false" class="text-black font-black uppercase tracking-widest hover:text-gray-600 transition-colors">
+                        Cancel
+                    </button>
+                    
+                    <button type="submit" class="bg-[#22C55E] text-white font-black py-3 px-8 rounded-2xl border-[3px] border-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] hover:brightness-95 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-check"></i> UPDATE
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
 
 </body>
 </html>

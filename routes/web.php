@@ -46,6 +46,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::put('/user/password', [ProfileController::class, 'updatePassword'])->name('user.password.update');
     Route::get('/students', [StudentController::class, 'index'])->name('students.index');
     Route::get('/students/section/{slug}', [StudentController::class, 'showSection'])->name('students.section');
     Route::post('/students/message', [StudentController::class, 'sendMessage'])->name('students.message');
@@ -76,6 +77,10 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::post('/attendance/{grade}/publish', [AttendanceController::class, 'publish'])->name('attendance.publish');
     Route::post('/attendance/{grade}/update', [AttendanceController::class, 'update'])->name('attendance.update');
     
+    Route::get('/teacher-information', function () {
+    return view('teacher-information');
+        })->name('teacher.information');
+
     // Report Card / Grading Actions
     Route::post('/report-card/save', [ReportCardController::class, 'store'])->name('reportcard.store');
     Route::get('/report-card/edit/{student_id}', [ReportCardController::class, 'edit'])->name('reportcard.edit');
@@ -92,6 +97,9 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::post('/teacher/promote/{id}', [TeacherController::class, 'promoteStudent'])->name('teacher.promote');
     Route::post('/teacher/announcement', [ClassroomAnnouncementController::class, 'store'])->name('teacher.announcement.store');
     });
+
+    
+
 
 
 // ==========================================
@@ -169,6 +177,8 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::delete('/admin/students/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroyStudent'])->name('admin.students.destroy');
     
     Route::post('/admin/finalize-year', [StudentController::class, 'finalizeSchoolYear'])->name('admin.finalize_year');
+
+    Route::put('/admin/reset-user-password', [App\Http\Controllers\Admin\UserController::class, 'resetUserPassword'])->name('admin.password.reset');
     });
 
     // Both Admins and Teachers are allowed inside this group!

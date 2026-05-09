@@ -265,7 +265,7 @@ class UserController extends Controller
         return view('audit-logs', compact('logs', 'search'));
     }
 
-public function updateStudent(Request $request, $id)
+    public function updateStudent(Request $request, $id)
     {
         $request->validate([
             'first_name' => 'required|string|max:255',
@@ -290,4 +290,43 @@ public function updateStudent(Request $request, $id)
         return redirect()->back()->with('success', 'Student updated successfully!');
     }
 
+    /**
+     * Admin Force Password Reset 
+     * Allows Admin to reset any user's password using their LRN or Email
+     */
+    public function resetUserPassword(Request $request)
+    {
+        // 1. Validate the incoming request
+        $request->validate([
+            'login_id' => ['required', 'string'],
+            'password' => ['required', 'string', 'confirmed'],
+        ]);
+
+        // 2. Find the user by their LRN or Email (stored in the username column)
+        $user = User::where('username', $request->login_id)->first();
+
+        // 3. If they typed an LRN/Email that doesn't exist, throw an error
+        if (!$user) {
+            return back()->with('error', 'User not found in the system. Please check the LRN or Email.');
+        }
+
+        // 4. THE NEW FIX: Check if the new password perfectly matches their current password!
+        if (Hash::check($request->password, $user->password)) {
+            return back()->with('error', 'The new password cannot be the exact same as their current password!');
+        }
+
+        // 5. Securely hash the new password and save it
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        // 6. Log the action
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Admin Password Reset',
+            'description' => Auth::user()->username . ' forcibly reset the password for user: ' . $user->username
+        ]);
+
+        // 7. Redirect back with your green success toast!
+        return back()->with('success', 'Password successfully reset for ' . $user->username);
+    }
 }

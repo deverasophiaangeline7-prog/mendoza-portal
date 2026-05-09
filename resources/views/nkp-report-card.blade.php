@@ -17,7 +17,7 @@
         .sub-category-header { background-color: #f9fafb; font-weight: 800; font-size: 0.95rem; color: #4b5563; }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100" x-data="{ passwordModal: false }">
 
 <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
     <div class="flex items-center space-x-3">
@@ -28,32 +28,64 @@
         <button onclick="window.location.href='{{ route('dashboard') }}'" class="hover:scale-110 transition-transform">
             <i class="fa-solid fa-house"></i>
         </button>
+
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center ml-6">
+                <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>
+            </button>
+
+            <div x-show="open" 
+                 x-transition 
+                 class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-2xl py-1 z-50 border border-gray-200 overflow-hidden"
+                 style="display: none;"
+                 x-cloak>
+                
+                @if(auth()->user()->role === 'teacher')
+                    <button @click="passwordModal = true; open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-bold">
+                        <i class="fa-solid fa-key mr-3 text-gray-400"></i>
+                        Change Password
+                    </button>
+                    <hr class="border-gray-100">
+                @endif
+
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold">
+                        <i class="fa-solid fa-right-from-bracket mr-3"></i>
+                        Logout
+                    </button>
+                </form>
+
+                <hr class="border-gray-100">
+
+                <button @click="open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-xmark mr-3"></i>
+                    Cancel
+                </button>
+            </div>
+        </div>
     </div>
 </header>
 
 <div class="flex min-h-screen">
     <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
     <ul class="space-y-1">
-        <!-- Dashboard -->
         <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
             Dashboard
         </x-sidebar-link>
 
-        <!-- Student Information: ONLY for Parents -->
         @if(auth()->user()->role === 'parent')
             <x-sidebar-link href="{{ route('student.view') }}" icon="fa-solid fa-user-graduate" :active="request()->routeIs('student.view')">
                 Student Information
             </x-sidebar-link>
         @endif
 
-        <!-- Advisory Class: ONLY for Teachers -->
         @if(auth()->user()->role === 'teacher')
             <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-chalkboard-user" :active="request()->routeIs('students.*')">
                 Advisory Class
             </x-sidebar-link>
         @endif
 
-        <!-- Student Calendar: Role-Based Routing -->
         @php
             $calendarRoute = match(auth()->user()->role) {
                 'admin' => route('admin.student.participation'),
@@ -67,7 +99,6 @@
             Student Calendar
         </x-sidebar-link>
 
-        <!-- Report Card: Role-Based Routing -->
         <x-sidebar-link 
             href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}" 
             icon="fa-solid fa-star" 
@@ -75,7 +106,6 @@
             Report Card
         </x-sidebar-link>
         
-        <!-- Attendance: Role-Based Routing -->
         <x-sidebar-link 
             href="{{ auth()->user()->role === 'parent' ? route('parent.attendance') : route('attendance.index') }}" 
             icon="fa-solid fa-calendar-check" 
@@ -83,7 +113,6 @@
             Attendance
         </x-sidebar-link>
 
-        <!-- Account Management: ONLY for Admin -->
         @if(auth()->user()->role === 'admin')
             <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.management')">
                 Account Management
@@ -282,6 +311,57 @@
         </div>
     </main>
 </div>
+
+@if(auth()->user()->role === 'teacher')
+<div x-show="passwordModal" 
+     x-transition:opacity
+     class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" 
+     x-cloak>
+    
+    <div @click.away="passwordModal = false" 
+         class="bg-white border-[4px] border-black rounded-[2.5rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
+        
+        <button @click="passwordModal = false" class="absolute top-6 right-8 text-4xl font-black text-gray-400 hover:text-black transition-colors">&times;</button>
+
+        <h2 class="text-3xl font-black italic uppercase tracking-tight mb-8">Change Password</h2>
+
+        <form action="{{ route('user.password.update') }}" method="POST">
+            @csrf
+            @method('PUT')
+            
+            <div class="space-y-5">
+                <div>
+                    <label class="block font-bold uppercase text-black text-sm mb-2 tracking-widest">Current Password</label>
+                    <input type="password" name="current_password" required 
+                           class="w-full border-[3px] border-black rounded-2xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 transition-all">
+                </div>
+
+                <div>
+                    <label class="block font-bold uppercase text-black text-sm mb-2 tracking-widest">New Password</label>
+                    <input type="password" name="password" required 
+                           class="w-full border-[3px] border-black rounded-2xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 transition-all">
+                </div>
+
+                <div>
+                    <label class="block font-bold uppercase text-black text-sm mb-2 tracking-widest">Confirm New Password</label>
+                    <input type="password" name="password_confirmation" required 
+                           class="w-full border-[3px] border-black rounded-2xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 transition-all">
+                </div>
+            </div>
+
+            <div class="flex justify-end items-center gap-8 mt-10">
+                <button type="button" @click="passwordModal = false" class="text-black font-black uppercase tracking-widest hover:text-gray-600 transition-colors">
+                    Cancel
+                </button>
+                
+                <button type="submit" class="bg-[#22C55E] text-white font-black py-3 px-8 rounded-2xl border-[3px] border-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] hover:brightness-95 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-check"></i> UPDATE
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
 
 <script>
     document.addEventListener('alpine:init', () => {

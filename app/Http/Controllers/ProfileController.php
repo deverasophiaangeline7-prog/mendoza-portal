@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
@@ -36,6 +37,23 @@ class ProfileController extends Controller
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
+
+    public function updatePassword(Request $request)
+{
+    // 1. Validate the form inputs
+    $request->validate([
+        'current_password' => ['required', 'current_password'], // Checks if the old password matches the database
+        'password' => ['required', 'min:8', 'confirmed'],       // 'confirmed' checks the password_confirmation field automatically
+    ]);
+
+    // 2. Encrypt and save the new password
+    $request->user()->update([
+        'password' => Hash::make($request->password),
+    ]);
+
+    // 3. Send them back to the dashboard with a success message
+    return back()->with('success', 'Your password has been successfully updated!');
+}
 
     /**
      * Delete the user's account.

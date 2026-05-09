@@ -70,26 +70,22 @@
 <div class="flex min-h-screen">
     <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
     <ul class="space-y-1">
-        <!-- Dashboard -->
         <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
             Dashboard
         </x-sidebar-link>
 
-        <!-- Student Information: ONLY for Parents -->
         @if(auth()->user()->role === 'parent')
             <x-sidebar-link href="{{ route('student.view') }}" icon="fa-solid fa-user-graduate" :active="request()->routeIs('student.view')">
                 Student Information
             </x-sidebar-link>
         @endif
 
-        <!-- Advisory Class: ONLY for Teachers -->
         @if(auth()->user()->role === 'teacher')
             <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-chalkboard-user" :active="request()->routeIs('students.*')">
                 Advisory Class
             </x-sidebar-link>
         @endif
 
-        <!-- Student Calendar: Role-Based Routing -->
         @php
             $calendarRoute = match(auth()->user()->role) {
                 'admin' => route('admin.student.participation'),
@@ -103,7 +99,6 @@
             Student Calendar
         </x-sidebar-link>
 
-        <!-- Report Card: Role-Based Routing -->
         <x-sidebar-link 
             href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}" 
             icon="fa-solid fa-star" 
@@ -111,7 +106,6 @@
             Report Card
         </x-sidebar-link>
         
-        <!-- Attendance: Role-Based Routing -->
         <x-sidebar-link 
             href="{{ auth()->user()->role === 'parent' ? route('parent.attendance') : route('attendance.index') }}" 
             icon="fa-solid fa-calendar-check" 
@@ -119,7 +113,6 @@
             Attendance
         </x-sidebar-link>
 
-        <!-- Account Management: ONLY for Admin -->
         @if(auth()->user()->role === 'admin')
             <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.management')">
                 Account Management
@@ -182,10 +175,10 @@
                             @foreach($regularSubs as $subject)
                             <tr>
                                 <td class="font-bold">{{ $subject }}</td>
-                                <td class="input-cell text-center"><input x-show="isManaging" type="number" step="1" x-model="grades['{{ $subject }}'].q1" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q1"></span></td>
-                                <td class="input-cell text-center"><input x-show="isManaging" type="number" step="1" x-model="grades['{{ $subject }}'].q2" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q2"></span></td>
-                                <td class="input-cell text-center"><input x-show="isManaging" type="number" step="1" x-model="grades['{{ $subject }}'].q3" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q3"></span></td>
-                                <td class="input-cell text-center"><input x-show="isManaging" type="number" step="1" x-model="grades['{{ $subject }}'].q4" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q4"></span></td>
+                                <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q1" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q1"></span></td>
+                                <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q2" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q2"></span></td>
+                                <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q3" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q3"></span></td>
+                                <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q4" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q4"></span></td>
                                 <td class="text-center font-bold" x-text="grades['{{ $subject }}'].final_grade"></td>
                                 <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
                             </tr>
@@ -201,10 +194,10 @@
                             @foreach($mapehSubs as $subject)
                             <tr>
                                 <td class="pl-8">{{ $subject }}</td>
-                                <td class="input-cell text-center"><input x-show="isManaging" type="number" step="1" x-model="grades['{{ $subject }}'].q1" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q1"></span></td>
-                                <td class="input-cell text-center"><input x-show="isManaging" type="number" step="1" x-model="grades['{{ $subject }}'].q2" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q2"></span></td>
-                                <td class="input-cell text-center"><input x-show="isManaging" type="number" step="1" x-model="grades['{{ $subject }}'].q3" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q3"></span></td>
-                                <td class="input-cell text-center"><input x-show="isManaging" type="number" step="1" x-model="grades['{{ $subject }}'].q4" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q4"></span></td>
+                                <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q1" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q1"></span></td>
+                                <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q2" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q2"></span></td>
+                                <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q3" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q3"></span></td>
+                                <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q4" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q4"></span></td>
                                 <td class="text-center font-bold" x-text="grades['{{ $subject }}'].final_grade"></td>
                                 <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
                             </tr>

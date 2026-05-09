@@ -14,7 +14,7 @@
 </head>
 
 <body class="bg-white overflow-hidden" 
-      x-data="{ finalizeModal: {{ $errors->has('admin_password') ? 'true' : 'false' }} }">
+      x-data="{ finalizeModal: {{ $errors->has('admin_password') ? 'true' : 'false' }}, passwordModal: false }">
 
     <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-[60]">
         <div class="flex items-center space-x-3">
@@ -143,16 +143,16 @@
                 </div>
             </div>
 
-            <div class="text-center mb-16">
+            <div class="text-center mb-12">
                 <h2 class="text-6xl font-black text-gray-900 mb-2 tracking-tight">Account Management</h2>
                 <h3 class="text-4xl font-bold text-red-700 uppercase tracking-widest" style="text-shadow: 2px 2px 0px #000;">
                     SY {{ $activeYear ? $activeYear->school_year : 'N/A' }}
                 </h3>
             </div>
 
-            <div class="w-full max-w-4xl">
-                <div class="flex flex-wrap justify-center items-start gap-12">
-                    
+            <div class="w-full max-w-4xl mx-auto flex flex-col items-center">
+                
+                <div class="flex flex-wrap justify-center gap-8 w-full mb-8">
                     <div class="relative" x-data="{ listOpen: false }" @click.away="listOpen = false">
                         <button @click="listOpen = !listOpen" class="bg-[#ffb72b] hover:bg-yellow-500 text-black text-2xl font-black py-5 px-12 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
                             List of accounts
@@ -191,18 +191,24 @@
                             <a href="{{ route('parent.create') }}" class="block px-6 py-4 text-xl font-bold hover:bg-yellow-100 transition-colors">Parent Account</a>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-2 gap-8 max-w-3xl mx-auto mt-8 mb-12 w-full">
-                        <a href="{{ route('admin.audit_logs') }}" 
-                           class="w-full bg-blue-500 hover:bg-blue-600 text-black text-2xl font-black py-5 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center text-center">
-                            View Audit Logs
-                        </a>
-                    
-                        <button @click="finalizeModal = true" class="w-full bg-green-500 hover:bg-green-600 text-black text-2xl font-black py-5 px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
-                            Finalize School Year
-                        </button>
-                    </div>
                 </div>
+
+                <div class="grid grid-cols-2 gap-8 max-w-3xl w-full">
+                    
+                    <a href="{{ route('admin.audit_logs') }}" 
+                       class="w-full bg-blue-500 hover:bg-blue-600 text-black text-2xl font-black py-5 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center text-center">
+                        View Audit Logs
+                    </a>
+                
+                    <button @click="finalizeModal = true" class="w-full bg-green-500 hover:bg-green-600 text-black text-2xl font-black py-5 px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
+                        Finalize School Year
+                    </button>
+
+                    <button @click="passwordModal = true" class="col-span-2 w-full bg-[#ff3366] text-black font-black text-2xl py-5 px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ff1a53] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-3">
+                        Change User Password <i class="fa-solid fa-key ml-2"></i>
+                    </button>
+                </div>
+
             </div>
         </main>
     </div>
@@ -248,6 +254,78 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <div x-show="passwordModal" 
+         x-data="{ userId: '', newPassword: '', confirmPassword: '' }"
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
+         x-cloak>
+        <div @click.away="passwordModal = false; userId = ''; newPassword = ''; confirmPassword = ''" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
+            
+            <button @click="passwordModal = false; userId = ''; newPassword = ''; confirmPassword = ''" class="absolute top-4 right-6 text-3xl font-black text-gray-400 hover:text-black transition-colors">&times;</button>
+
+            <h2 class="text-3xl font-black mb-6 uppercase tracking-tight text-center text-black italic">Reset Password</h2>
+
+            <form action="{{ route('admin.password.reset') }}" method="POST" 
+                  @submit.prevent="if(newPassword === confirmPassword) $el.submit()">
+                @csrf
+                @method('PUT')
+                
+                <div class="space-y-5 mb-8">
+                    <div>
+                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">
+                            LRN <span class="text-red-600">*</span>
+                        </label>
+                        <input type="text" 
+                            name="lrn" 
+                            class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366] transition-colors @error('lrn') border-red-500 bg-red-50 @else bg-white @enderror" 
+                            value="{{ old('lrn') }}" 
+                            required 
+                            maxlength="12"
+                            inputmode="numeric"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 12)">
+                            
+                        @error('lrn') 
+                            <p class="text-red-600 font-bold text-sm mt-2 flex items-center gap-1">
+                                <i class="fa-solid fa-circle-exclamation"></i> {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+                    
+                    <div>
+                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">New Password</label>
+                        <input type="password" name="password" x-model="newPassword" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366]">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Confirm New Password</label>
+                        <div class="relative">
+                            <input type="password" name="password_confirmation" x-model="confirmPassword" required 
+                                   class="w-full border-2 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-colors"
+                                   :class="(confirmPassword !== '' && newPassword !== confirmPassword) ? 'border-red-500 focus:ring-red-500 bg-red-50' : 'border-black focus:ring-[#ff3366] bg-white'">
+                        </div>
+                        
+                        <p x-show="confirmPassword !== '' && newPassword !== confirmPassword" 
+                           x-transition 
+                           class="text-red-600 font-bold text-sm mt-2 flex items-center gap-1">
+                            <i class="fa-solid fa-circle-exclamation"></i> Passwords do not match
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button type="submit" 
+                            :disabled="confirmPassword !== '' && newPassword !== confirmPassword"
+                            :class="(confirmPassword !== '' && newPassword !== confirmPassword) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#ff1a53] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
+                            class="w-full bg-[#ff3366] text-black font-black py-4 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-xl uppercase">
+                        <i class="fa-solid fa-key mr-2"></i> Reset Password
+                    </button>
+                    <button type="button" @click="passwordModal = false; userId = ''; newPassword = ''; confirmPassword = ''" class="w-full bg-gray-100 text-black font-black py-4 rounded-xl border-[3px] border-black hover:bg-gray-200 transition-all text-lg font-bold">
+                        CANCEL
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
