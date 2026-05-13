@@ -46,7 +46,6 @@ class StudentController extends Controller
             // THE MAGIC BYPASS: If the teacher handles exactly ONE section, skip the dashboard!
             if ($sectionsQuery->count() === 1) {
                 $singleSection = $sectionsQuery->first();
-                // Ensure we use the correct primary key (id or section_id)
                 $targetId = $singleSection->id ?? $singleSection->section_id;
                 
                 return redirect()->route('students.showSection', $targetId);
@@ -57,7 +56,8 @@ class StudentController extends Controller
             return $gradeOrder[strtoupper($section->grade_level)] ?? 99;
         });
 
-        $totalStudents = User::where('role', 'parent')->count(); 
+        // 👈 FIX: This counts actual active students, ignoring deleted ones!
+        $totalStudents = \App\Models\Student::count(); 
 
         return view('student-dashboard', compact('sections', 'totalStudents')); 
     }
@@ -87,25 +87,30 @@ class StudentController extends Controller
     {
         $section = Section::findOrFail($id);
 
-        // Load grades so we can check for passing/failing status
         $students = Student::where('section_id', $section->id ?? $section->section_id)
                            ->with(['section', 'grades']) 
                            ->orderBy('last_name', 'asc')
                            ->get();
 
+        // 👈 FIX: Check NKP Evaluations for the Promote Button
+        $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
+        
+        foreach ($students as $student) {
+            if (in_array(strtoupper(trim($student->grade_level)), $nkpLevels)) {
+                $student->has_nkp_eval = DB::table('nkp_evaluations')
+                                           ->where('student_id', $student->student_id ?? $student->id)
+                                           ->exists();
+            } else {
+                $student->has_nkp_eval = false; 
+            }
+        }
+
         $males = $students->where('gender', 'Male')->values();
         $females = $students->where('gender', 'Female')->values();
 
-        // ---------------------------------------------------------
-        // 🛑 NEW: BACK BUTTON HIDING LOGIC
-        // ---------------------------------------------------------
         $hideBackButton = false;
-        
         if (auth()->user()->role === 'teacher') {
-            // Count how many sections this specific teacher handles
             $sectionCount = \App\Models\Section::where('teacher_id', auth()->id())->count();
-            
-            // If they only have 1, we hide the back button!
             if ($sectionCount === 1) {
                 $hideBackButton = true;
             }
@@ -117,7 +122,7 @@ class StudentController extends Controller
             'section'        => $section,
             'males'          => $males,
             'females'        => $females,
-            'hideBackButton' => $hideBackButton // 👈 Pass the signal to the Blade file
+            'hideBackButton' => $hideBackButton 
         ]);
     }
 
@@ -133,47 +138,36 @@ class StudentController extends Controller
             'grade_level' => 'required|string'
         ]);
 
-        $birthDate = \Carbon\Carbon::parse($request->birthdate);
-        $gradeLevel = strtoupper($request->grade_level);
-
-        // FUTURE-PROOF FIX: Get the target year from your database, not the clock!
         $activeSy = \App\Models\SchoolYear::where('status', 'active')->first();
-        
         if (!$activeSy) {
             return back()->with('error', 'No active school year found. Please set an active school year first.');
         }
 
-        // EXACT COLUMN NAME APPLIED HERE:
         $syText = $activeSy->school_year;
         preg_match('/\d{4}/', $syText, $matches);
         $targetYear = $matches[0] ?? now()->year; 
 
         $birthDate = \Carbon\Carbon::parse($request->birthdate);
+        $gradeLevel = strtoupper($request->grade_level);
         
-        // --- GLOBAL MAXIMUM AGE CHECK (Limit to 17) ---
         $ageAtStartOfSy = $targetYear - $birthDate->year;
-        
         if ($ageAtStartOfSy >= 18) {
             return back()->withErrors(['birthdate' => 'THE BIRTHYEAR IS NOT QUALIFIED FOR THIS GRADE LEVEL.'])->withInput();
         }
 
-        // --- NKP RULES (3 to 17 years old) ---
         $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
         if (in_array($gradeLevel, $nkpLevels)) {
             $deadline = \Carbon\Carbon::create($targetYear, 10, 31);
             $ageAtDeadline = $birthDate->diffInYears($deadline);
-
             if ($ageAtDeadline < 3) {
                 return back()->withErrors(['birthdate' => 'THE BIRTHYEAR IS NOT QUALIFIED. MUST BE 3 BY OCT 31.'])->withInput();
             }
         }
 
-        // --- ELEMENTARY RULES (6 to 17 years old) ---
         $elementaryLevels = ['1', 'GRADE 1', '2', 'GRADE 2', '3', 'GRADE 3', '4', 'GRADE 4', '5', 'GRADE 5', '6', 'GRADE 6'];
         if (in_array($gradeLevel, $elementaryLevels)) {
             $deadline = \Carbon\Carbon::create($targetYear, 12, 31);
             $ageAtDeadline = $birthDate->diffInYears($deadline);
-
             if ($ageAtDeadline < 6) {
                 return back()->withErrors(['birthdate' => 'THE BIRTHYEAR IS NOT QUALIFIED. MUST BE 6 BY DEC 31.'])->withInput();
             }
@@ -193,16 +187,12 @@ class StudentController extends Controller
         return redirect()->back()->with('success', 'Student registered successfully!');
     }
 
-
     public function destroyStudent($id)
     {
         Student::findOrFail($id)->delete();
         return redirect()->back();
     }
 
-    /**
-     * Updated: Edit student with Middle Name and Section assignment
-     */
     public function updateStudent(Request $request, $id)
     {
         $request->validate([
@@ -246,34 +236,22 @@ class StudentController extends Controller
         return redirect()->back()->with('success', 'Message sent to parent successfully!');
     }
 
-    /**
-     * Updated: Automates Section Assignment and Archives Section History
-     */
     public function finalizeSchoolYear()
     {
         $currentYear = SchoolYear::where('status', 'active')->first();
         if (!$currentYear) return back()->with('error', 'No active school year found.');
 
-        // ---------------------------------------------------------
-        // 🛑 GUARD 1: Prevent Premature Finalization
-        // ---------------------------------------------------------
-        // Count if anyone has a grade OR an NKP evaluation
         $studentsWithAnyGrades = Student::whereNotNull('section_id')->has('grades')->count();
         $studentsWithAnyEvals = DB::table('nkp_evaluations')->count();
 
-        // If literally zero records exist in BOTH tables, the year just started!
         if ($studentsWithAnyGrades === 0 && $studentsWithAnyEvals === 0) {
             return back()->with('error', 'FINALIZATION BLOCKED: This school year has no grades or evaluations recorded yet! You cannot close a school year that just started.');
         }
 
-        // ---------------------------------------------------------
-        // 🛑 GUARD 2: Vanilla PHP Loop Approach (Elementary & NKP Check)
-        // ---------------------------------------------------------
         $requiredSubjects = 9; 
         $elementaryLevels = ['1', 'GRADE 1', '2', 'GRADE 2', '3', 'GRADE 3', '4', 'GRADE 4', '5', 'GRADE 5', '6', 'GRADE 6'];
         $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
 
-        // Fetch active students and count their standard grades
         $activeStudents = Student::whereNotNull('section_id')
             ->where('section_id', '!=', '')
             ->withCount('grades')
@@ -285,16 +263,13 @@ class StudentController extends Controller
         foreach ($activeStudents as $student) {
             $grade = strtoupper(trim($student->grade_level));
             
-            // A. Check Elementary (Must have exactly 9 subjects)
             if (in_array($grade, $elementaryLevels)) {
                 if ($student->grades_count < $requiredSubjects) {
                     $incompleteElementaryCount++;
                 }
             }
 
-            // B. Check NKP (Must have at least 1 evaluation record)
             if (in_array($grade, $nkpLevels)) {
-                // Check directly in the database if this student has an evaluation
                 $hasEvaluation = DB::table('nkp_evaluations')
                     ->where('student_id', $student->student_id ?? $student->id)
                     ->exists();
@@ -305,24 +280,18 @@ class StudentController extends Controller
             }
         }
 
-        // 3. Combine errors so the Admin sees EVERYTHING at once
         if ($incompleteElementaryCount > 0 || $incompleteNkpCount > 0) {
             $errorMessage = "FINALIZATION BLOCKED: ";
-            
             if ($incompleteElementaryCount > 0) {
                 $errorMessage .= "{$incompleteElementaryCount} Elementary student(s) missing grades. ";
             }
             if ($incompleteNkpCount > 0) {
                 $errorMessage .= "{$incompleteNkpCount} NKP student(s) missing evaluations. ";
             }
-            
             $errorMessage .= "Please complete these records before closing the year.";
-
             return back()->with('error', trim($errorMessage));
         }
-        // ---------------------------------------------------------
 
-        // 1. Get all students waiting for promotion (pending or promoted)
         $pendingStudents = Student::with('section')->whereIn('promotion_status', ['pending', 'promoted'])->get();
 
         if ($pendingStudents->isEmpty()) {
@@ -332,7 +301,6 @@ class StudentController extends Controller
         DB::beginTransaction();
         try {
             foreach ($pendingStudents as $student) {
-                // A. Archive their current section history before wiping it
                 if ($student->section) {
                     StudentHistory::create([
                         'student_id' => $student->student_id,
@@ -341,7 +309,6 @@ class StudentController extends Controller
                     ]);
                 }
 
-                // B. Handle Graduation for Grade 6 (Hardcoded check)
                 $graduatingGrade = strtoupper(trim($student->grade_level));
                 if ($graduatingGrade == '6' || $graduatingGrade == 'GRADE 6') {
                     if ($student->user) {
@@ -353,7 +320,6 @@ class StudentController extends Controller
                         'next_grade_level' => null
                     ]);
                 } else {
-                    // C. Promote others and Auto-Assign a section in the new grade
                     $targetGrade = $student->next_grade_level;
                     $newSection = Section::where('grade_level', $targetGrade)->first();
 
@@ -366,9 +332,6 @@ class StudentController extends Controller
                 }
             }
 
-            // ---------------------------------------------------------
-            // 🛑 NEW: ROLL OVER THE SCHOOL YEAR IN THE DATABASE
-            // ---------------------------------------------------------
             $currentSyText = $currentYear->school_year; 
             $parts = explode('-', $currentSyText);
             
@@ -377,16 +340,13 @@ class StudentController extends Controller
                 $nextEndYear = (int)$parts[1] + 1;   
                 $nextSyText = $nextStartYear . '-' . $nextEndYear; 
 
-                // 1. Archive the old year 
                 $currentYear->update(['status' => 'archived']);
 
-                // 2. Create and activate the brand new year 
                 SchoolYear::create([
                     'school_year' => $nextSyText,
                     'status'      => 'active'
                 ]);
             }
-            // ---------------------------------------------------------
 
             AuditLog::create([
                 'user_id' => auth()->id(),
