@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
     $this->call(SectionSeeder::class);
 
     // 2. Admin Account
-    $adminId = 'admin@mendoza.edu.ph';
+    $adminId = 'admin@gmail.com';
     User::create([
         'username' => $adminId,
         'email'    => $adminId, 
