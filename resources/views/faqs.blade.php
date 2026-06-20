@@ -33,7 +33,7 @@
             <nav class="hidden md:flex items-center space-x-8 font-medium">
     <a href="{{ url('/') }}" class="hover:text-red-200 transition" >Home</a>
     <a href="{{ url('about') }}" class="hover:text-red-200 transition">About</a>
-    <a href="{{ url('tuitionfee') }}" class="hover:text-red-200 transition">Tuition Fees</a>
+    <a href="{{ url('tuitionfee') }}" class="hover:text-red-200 transition">Courses</a>
     <a href="{{ url('faqs') }}" class="nav-active px-6 py-2">FAQs</a>
     <a href="{{ route('login') }}" class="bg-orange-400 text-red-900 px-6 py-2 rounded-full font-black shadow-md hover:bg-orange-300 transition">SMS / LOG IN</a>
     </nav>
@@ -53,25 +53,25 @@
                 </h2>
 
                 <div class="space-y-12">
-                    <div class="text-center">
+                    <div class="text-justify">
                         <h3 class="text-2xl font-bold text-red-700">1. What grade levels do you offer?</h3>
-                        <p class="text-xl font-semibold text-black mt-2">Pre-elementary (Kinder and Preparatory) to Elementary (Grades 1-6)</p>
+                        <p class="text-xl font-semibold text-black mt-2">Pre-elementary (Nursery, Kinder, and Preparatory) to Elementary (Grades 1-6)</p>
                     </div>
 
-                    <div class="text-center">
+                    <div class="text-justify">
                         <h3 class="text-2xl font-bold text-red-700">2. Where is the school located?</h3>
                         <p class="text-xl font-semibold text-black mt-2">
                             Blk. 9 Lot 88 Mapagkawanggawa St. Purok 4, Lupang Arenda, Sta. Ana, Taytay, Rizal
                         </p>
                     </div>
 
-                    <div class="text-center">
+                    <div class="text-justify">
                         <h3 class="text-2xl font-bold text-red-700">3. What are your office hours?</h3>
                         <p class="text-xl font-semibold text-black mt-2">Monday to Friday (8:00AM - 5:00PM)</p>
                     </div>
 
                     <div class="mt-12">
-                        <h3 class="text-2xl font-bold text-red-700 mb-8 text-center uppercase tracking-tight">4. What are the admission requirements?</h3>
+                        <h3 class="text-2xl font-bold text-red-700 mb-8 text-justify uppercase tracking-tight">4. What are the admission requirements?</h3>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-4xl mx-auto px-2">
                             
@@ -80,7 +80,7 @@
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">For incoming Kindergarten:</h4>
                                     <div class="flex items-start gap-3 text-white font-bold">
                                         <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center mt-1 text-xs font-black">✔</span>
-                                        <p class="text-sm">Must be five (5) years old on or before August 31, 2026. (Reference: DepEd Order No. 47 s. 2016/ DepEd Order No. 20, s. 2018)</p>
+                                        <p class="text-sm text-justify">Must be five (5) years old on or before August 31, 2026. (Reference: DepEd Order No. 47 s. 2016/ DepEd Order No. 20, s. 2018)</p>
                                     </div>
                                 </div>
 
@@ -88,7 +88,7 @@
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">Document to be submitted:</h4>
                                     <div class="flex items-start gap-3 text-white font-bold">
                                         <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center mt-1 text-xs font-black">✔</span>
-                                        <p class="text-sm">Photocopy of Birth Certificate [In the absence of PSA/NSO Birth Certificate, submit a photocopy of Baptismal or Barangay Certificate.]</p>
+                                        <p class="text-sm text-justify">Photocopy of Birth Certificate [In the absence of PSA/NSO Birth Certificate, submit a photocopy of Baptismal or Barangay Certificate.]</p>
                                     </div>
                                 </div>
                             </div>
@@ -98,13 +98,13 @@
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">For incoming Grade 1:</h4>
                                     <div class="flex items-start gap-3 text-white font-bold">
                                         <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center mt-1 text-xs font-black">✔</span>
-                                        <p class="text-sm">Must be Kindergarten Completer</p>
+                                        <p class="text-sm text-justify">Must be Kindergarten Completer</p>
                                     </div>
                                 </div>
 
                                 <div class="bg-orange-400 rounded-3xl p-6 shadow-md border-2 border-black">
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">For more information:</h4>
-                                    <div class="space-y-4 text-white font-bold text-sm">
+                                    <div class="space-y-4 text-white font-bold text-sm text-justify">
                                         <div class="flex items-start gap-3">
                                             <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center text-xs font-black">✔</span>
                                             <span>Visit our school or send a message to our official FB Page.</span>

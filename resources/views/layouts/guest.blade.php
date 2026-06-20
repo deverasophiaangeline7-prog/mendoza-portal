@@ -37,7 +37,7 @@
                 <nav class="hidden md:flex items-center space-x-8 font-medium">
                     <a href="{{ url('/') }}" class="hover:text-red-200 transition px-6 py-2">Home</a>
                     <a href="#" class="hover:text-red-200 transition">About</a>
-                    <a href="#" class="hover:text-red-200 transition">Tuition Fees</a>
+                    <a href="#" class="hover:text-red-200 transition">Courses</a>
                     <a href="#" class="hover:text-red-200 transition">FAQs</a>
                     <a href="{{ route('login') }}" class="bg-orange-400 text-red-900 px-6 py-2 rounded-full font-black shadow-md hover:bg-orange-300 transition">SMS / LOG IN</a>
                 </nav>

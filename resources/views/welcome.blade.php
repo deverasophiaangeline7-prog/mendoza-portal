@@ -9,11 +9,11 @@
     <link rel="icon" type="image/png" href="{{ asset('images/MAILogo.png') }}">
     <style>
         .hero-gradient {
-            background: linear-gradient(to right, #d32f2f, #8b0000);
+            background: linear-gradient(to right, #d32f2f, #6d0101);
         }
         .nav-active {
-            background-color: #ffb74d;
-            color: #fff;
+            background-color: #d97706;
+            color: #f1f5f9;
             border-radius: 9999px;
         }
         /* Controls the smooth fade transition between images */
@@ -22,7 +22,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 min-h-screen flex flex-col">
 
     <header class="hero-gradient text-white py-4 px-6 shadow-lg">
         <div class="container mx-auto flex flex-wrap justify-between items-center">
@@ -35,24 +35,22 @@
             </div>
 
             <nav class="hidden md:flex items-center space-x-8 font-medium">
-    <a href="{{ url('/') }}" class="nav-active px-6 py-2">Home</a>
-    
-    <a href="{{ route('about') }}" class="hover:text-red-200 transition">About</a>
-    <a href="{{ url('tuitionfee') }}" class="hover:text-red-200 transition">Tuition Fees</a>
-    <a href="{{ url('faqs') }}" class="hover:text-red-200 transition">FAQs</a>
-    
-    <a href="{{ route('login') }}" class="bg-orange-400 text-red-900 px-6 py-2 rounded-full font-black shadow-md hover:bg-orange-300 transition">SMS / LOG IN</a>
-</nav>
+                <a href="{{ url('/') }}" class="nav-active px-6 py-2">Home</a>
+                <a href="{{ route('about') }}" class="hover:text-red-200 transition">About</a>
+                <a href="{{ url('tuitionfee') }}" class="hover:text-red-200 transition">Courses</a>
+                <a href="{{ url('faqs') }}" class="hover:text-red-200 transition">FAQs</a>
+                <a href="{{ route('login') }}" class="bg-orange-400 text-red-900 px-6 py-2 rounded-full font-black shadow-md hover:bg-orange-300 transition">SMS / LOG IN</a>
+            </nav>
         </div>
     </header>
 
-    <main class="relative">
-        <div class="relative w-full h-[500px] overflow-hidden bg-black">
+    <main class="relative flex-grow flex flex-col">
+        <div class="relative w-full flex-grow min-h-[500px] overflow-hidden bg-black">
             
             <img id="sliderImage" 
                  src="{{ asset('images/HomePageBG.png') }}" 
                  alt="Mendoza Academy" 
-                 class="w-full h-full object-cover opacity-100">
+                 class="absolute inset-0 w-full h-full object-cover opacity-100">
 
             <div class="absolute inset-0 bg-black/10"></div>
 
@@ -66,22 +64,22 @@
         </div>
     </main>
 
-    <section class="container mx-auto py-12 px-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-            <div class="bg-white p-8 rounded-lg shadow-md border-t-4 border-red-600">
-                <h3 class="text-xl font-bold mb-2">ENROLL NOW!</h3>
-                <p class="text-gray-600">Enrolment is now ongoing for SY 2026-2027.</p>
+    <footer class="bg-white py-4 border-t border-gray-200 mt-auto">
+        <div class="container mx-auto flex flex-wrap justify-center gap-8 text-red-800 font-bold">
+            <div class="flex items-center space-x-2">
+                <i class="fab fa-facebook text-blue-600 text-2xl"></i>
+                <span>Mendoza Academy Inc</span>
             </div>
-            <div class="bg-white p-8 rounded-lg shadow-md border-t-4 border-red-600">
-                <h3 class="text-xl font-bold mb-2">COURSES OFFERED</h3>
-                <p class="text-gray-600">Kindergarten to Elementary</p>
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-phone-alt text-red-600"></i>
+                <span>09452415916</span>
             </div>
-            <div class="bg-white p-8 rounded-lg shadow-md border-t-4 border-red-600">
-                <h3 class="text-xl font-bold mb-2">SUMMER CLASS</h3>
-                <p class="text-gray-600">One-on-one tutoring from April 13, 2026 - May 13, 2026</p>
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-phone-alt text-red-600"></i>
+                <span>09081482052</span>
             </div>
         </div>
-    </section>
+    </footer>
 
     <script>
         // Array containing the paths to your 5 background images

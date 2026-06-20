@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mendoza Academy, Inc.</title>
+    <title>Mendoza Academy, Inc. - About</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" type="image/png" href="{{ asset('images/MAILogo.png') }}">
@@ -16,13 +16,6 @@
             color: #fff;
             border-radius: 9999px;
         }
-        .ribbon {
-            position: relative;
-            background: white;
-            padding: 10px 60px;
-            clip-path: polygon(10% 0, 90% 0, 100% 50%, 90% 100%, 10% 100%, 0% 50%);
-        }
-
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col min-h-screen">
@@ -38,31 +31,35 @@
             </div>
 
             <nav class="hidden md:flex items-center space-x-8 font-medium">
-    <a href="{{ url('/') }}" class="hover:text-red-200 transition" >Home</a>
-    <a href="{{ url('about') }}" class="nav-active px-6 py-2">About</a>
-    <a href="{{ url('tuitionfee') }}" class="hover:text-red-200 transition">Tuition Fees</a>
-    <a href="{{ url('faqs') }}" class="hover:text-red-200 transition">FAQs</a>
-    
-    <a href="{{ route('login') }}" class="bg-orange-400 text-red-900 px-6 py-2 rounded-full font-black shadow-md hover:bg-orange-300 transition">SMS / LOG IN</a>
-</nav>
+                <a href="{{ url('/') }}" class="hover:text-red-200 transition" >Home</a>
+                <a href="{{ url('about') }}" class="nav-active px-6 py-2">About</a>
+                <a href="{{ url('tuitionfee') }}" class="hover:text-red-200 transition">Courses</a>
+                <a href="{{ url('faqs') }}" class="hover:text-red-200 transition">FAQs</a>
+                
+                <a href="{{ route('login') }}" class="bg-orange-400 text-red-900 px-6 py-2 rounded-full font-black shadow-md hover:bg-orange-300 transition">SMS / LOG IN</a>
+            </nav>
         </div>
     </header>
 
     <main class= "relative flex-grow flex items-center justify-center py-20 bg-cover bg-center bg-no-repeat" 
-          style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('{{ asset('images/about.jpg') }}');">
+          style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{{ asset('images/about.jpg') }}');">
         
-        <div class="container mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 max-w-6xl relative z-10 px-4">
             
-            <div class="flex flex-col items-center">
-                <div class="ribbon text-red-700 font-black text-xl mb-4 shadow-md">MISSION</div>
-                <div class="bg-white rounded-2xl p-8 shadow-xl text-center leading-relaxed text-gray-800 font-semibold h-full">
+            <!-- Mission Card (Orange Theme) -->
+            <div class="bg-gray-50 rounded-2xl p-8 md:p-10 shadow-2xl flex flex-col items-center text-center border-t-[8px] border-b-[8px] border-orange-400 h-full">                <h2 class="text-2xl font-black text-slate-800 uppercase tracking-wide mb-6">
+                    Mission
+                </h2>
+                <div class="leading-relaxed text-slate-700 font-bold text-lg flex-grow flex items-center">
                     Mendoza Academy, Inc. aims to develop the inner potentials of individuals and mold them into young adults who are intellectually and academically competent appreciative of the cultural heritage of their environment, disciplined and determined to contribute their best effort as future leaders to the community with a well-bred conscience to distinguish what is right and wrong and their righteous commitment to the Lord Almighty.
                 </div>
             </div>
 
-            <div class="flex flex-col items-center">
-                <div class="ribbon text-red-700 font-black text-xl mb-4 shadow-md">VISION</div>
-                <div class="bg-white rounded-2xl p-8 shadow-xl text-center leading-relaxed text-gray-800 font-semibold h-full">
+            <!-- Vision Card (Red Theme) -->
+            <div class="bg-gray-50 rounded-2xl p-8 md:p-10 shadow-2xl flex flex-col items-center text-center border-t-[8px] border-b-[8px] border-red-700 h-full">                <h2 class="text-2xl font-black text-slate-800 uppercase tracking-wide mb-6">
+                    Vision
+                </h2>
+                <div class="leading-relaxed text-slate-700 font-bold text-lg flex-grow flex items-center">
                     As a private institution, Mendoza Academy, Inc. perceives itself that through competency in imparting discipline, quality education, full understanding of the individual differences among learners and honing them for their total development to be physically, mentally, socially, emotionally and spiritually fit, is conclusive of producing holistic graduates who are God-fearing aware of their worth and dignity.
                 </div>
             </div>
