@@ -131,7 +131,7 @@
                     @if(auth()->user()->role === 'admin')
                         <x-sidebar-link href="{{ route('account.management') }}"
                             icon="fa-solid fa-users-gear"
-                            :active="request()->routeIs(['account.management', 'admin.audit_logs'])">
+                            :active="request()->routeIs(['account.management', 'admin.audit_logs', 'parent.*', 'teacher.*', 'grade.show', 'account.*'])">
                             Account Management
                         </x-sidebar-link>
                     @endif
