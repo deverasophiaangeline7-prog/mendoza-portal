@@ -22,7 +22,7 @@
         @endif
     </div>
 
-    <div class="absolute top-6 right-8 z-50" x-data="{ syMenu: false }" @click.away="syMenu = false">
+    <div class="absolute top-6 right-8 z-30" x-data="{ syMenu: false }" @click.away="syMenu = false">
         <button @click="syMenu = !syMenu" class="inline-flex items-center border-[3px] border-black rounded-lg px-4 py-2 font-bold bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-50 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all focus:outline-none">
             <span>SY {{ $activeYear ? $activeYear->school_year : 'N/A' }}</span>
             <i class="fa-solid fa-chevron-down ml-3 text-sm transition-transform duration-200" :class="syMenu ? 'rotate-180' : ''"></i>

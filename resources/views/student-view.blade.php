@@ -17,7 +17,7 @@
             <div class="flex flex-col md:flex-row items-center justify-between gap-8 mb-12 pl-4">
                 
                 <div class="flex flex-col md:flex-row items-center gap-8">
-                    <div class="w-44 h-44 bg-orange-400 border-[4px] border-black rounded-[2rem] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center flex-shrink-0 rotate-[-2deg]">
+                    <div class="w-44 h-44 bg-amber-700 border-[4px] border-black rounded-[2rem] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center flex-shrink-0 rotate-[-2deg]">
                     @if($student->user && $student->user->profile_photo_path)
                         <img src="{{ asset('storage/' . $student->user->profile_photo_path) }}" 
                             class="w-full h-full object-cover">

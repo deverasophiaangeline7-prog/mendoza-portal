@@ -9,12 +9,42 @@
         <div class="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
             <div>
                 <h2 class="text-4xl font-black text-black uppercase tracking-tight">Student List</h2>
-                <h3 class="text-2xl font-bold text-orange-500 uppercase">{{ $sectionName }}</h3>
+                <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName }}</h3>
             </div>
             <a href="{{ route('reportcard.index') }}" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
                 <i class="fa-solid fa-circle-left"></i>
             </a>
         </div>
+
+        @if(session('success'))
+            <div class="mb-4 rounded-xl border-[3px] border-black bg-green-100 px-4 py-3 font-black text-green-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="mb-4 rounded-xl border-[3px] border-black bg-red-100 px-4 py-3 font-black text-red-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <form action="{{ route('batch.import', $section_id) }}" method="POST" enctype="multipart/form-data" class="mb-6 flex flex-wrap items-center justify-end gap-3">
+            @csrf
+            <select name="quarter" required class="border-[3px] border-black rounded-xl px-3 py-2 font-black text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <option value="">SELECT QUARTER</option>
+                <option value="q1">Q1</option>
+                <option value="q2">Q2</option>
+                <option value="q3">Q3</option>
+                <option value="q4">Q4</option>
+            </select>
+            <label class="cursor-pointer bg-white border-[3px] border-black rounded-xl px-3 py-2 font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <span class="mr-2">Choose CSV</span>
+                <input type="file" name="csv_file" accept=".csv" required class="hidden">
+            </label>
+            <button type="submit" class="bg-[#b26905] text-black font-black px-4 py-2 border-[3px] border-black rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
+                IMPORT BATCH
+            </button>
+        </form>
 
         <div class="border-[3px] border-black rounded-xl overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white">
             <table class="w-full text-left border-collapse">
@@ -37,7 +67,7 @@
                             <td class="p-4 px-6 font-black text-2xl uppercase">{{ $student->last_name }}, {{ $student->first_name }}</td>
                             <td class="p-4 text-center">
                                 <a href="{{ route('reportcard.showStudent', $student->student_id) }}" 
-                                   class="bg-[#ffaf2e] hover:bg-orange-500 text-black px-8 py-2 rounded-xl font-black border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all inline-block uppercase tracking-wider">
+                                   class="bg-[#b26905] hover:bg-amber-700 text-black px-8 py-2 rounded-xl font-black border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all inline-block uppercase tracking-wider">
                                     VIEW
                                 </a>
                             </td>

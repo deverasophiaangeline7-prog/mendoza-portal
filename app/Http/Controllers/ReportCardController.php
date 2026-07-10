@@ -230,6 +230,131 @@ if ($student) {
         return response()->json(['message' => 'Saved Successfully!']);
     }
 
+    public function importBatch(Request $request, $section_id)
+    {
+        $request->validate([
+            'quarter' => ['required', 'in:q1,q2,q3,q4'],
+            'csv_file' => ['required', 'file', 'mimes:csv,txt'],
+        ]);
+
+        $quarter = $request->input('quarter');
+        $file = $request->file('csv_file');
+        $path = $file->getRealPath();
+
+        if (!is_file($path)) {
+            return redirect()->back()->with('error', 'Unable to read the uploaded CSV file.');
+        }
+
+        $activeYear = SchoolYear::where('status', 'active')->first();
+        if (!$activeYear) {
+            return redirect()->back()->with('error', 'No active school year found.');
+        }
+
+        $handle = fopen($path, 'rb');
+        if ($handle === false) {
+            return redirect()->back()->with('error', 'Unable to open the uploaded CSV file.');
+        }
+
+        $headerSkipped = false;
+        $processedStudents = 0;
+        $updatedValues = 0;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (!$headerSkipped) {
+                $headerSkipped = true;
+                continue;
+            }
+
+            if ($row === [null] || $row === false) {
+                continue;
+            }
+
+            $isEmptyRow = true;
+            foreach ($row as $value) {
+                if ($value !== null && trim((string) $value) !== '') {
+                    $isEmptyRow = false;
+                    break;
+                }
+            }
+
+            if ($isEmptyRow) {
+                continue;
+            }
+
+            $studentName = isset($row[0]) ? trim((string) $row[0]) : '';
+            if ($studentName === '') {
+                continue;
+            }
+
+            $student = Student::where('section_id', $section_id)
+                ->where(function ($query) use ($studentName) {
+                    $normalized = strtolower(trim($studentName));
+                    $query->whereRaw('LOWER(CONCAT(first_name, " ", last_name)) = ?', [$normalized])
+                        ->orWhereRaw('LOWER(CONCAT(last_name, ", ", first_name)) = ?', [$normalized]);
+                })
+                ->first();
+
+            if (!$student) {
+                continue;
+            }
+
+            $processedStudents++;
+
+            $subjects = [
+                'Language' => isset($row[1]) ? trim((string) $row[1]) : '',
+                'English' => isset($row[2]) ? trim((string) $row[2]) : '',
+                'Mathematics' => isset($row[3]) ? trim((string) $row[3]) : '',
+                'Makabansa' => isset($row[4]) ? trim((string) $row[4]) : '',
+                'GMRC' => isset($row[5]) ? trim((string) $row[5]) : '',
+                'MAPEH' => isset($row[6]) ? trim((string) $row[6]) : '',
+                'Music' => isset($row[7]) ? trim((string) $row[7]) : '',
+                'Art' => isset($row[8]) ? trim((string) $row[8]) : '',
+                'PE' => isset($row[9]) ? trim((string) $row[9]) : '',
+                'Health' => isset($row[10]) ? trim((string) $row[10]) : '',
+            ];
+
+            foreach ($subjects as $subjectName => $rawValue) {
+                $gradeValue = trim((string) $rawValue);
+                if ($gradeValue === '') {
+                    continue;
+                }
+
+                $existingGrade = Grade::where('student_id', $student->student_id)
+                    ->where('subject_name', $subjectName)
+                    ->where('school_year_id', $activeYear->id)
+                    ->first();
+
+                if ($existingGrade) {
+                    $existingGrade->fill([
+                        'q1' => $quarter === 'q1' ? $gradeValue : ($existingGrade->q1 ?? null),
+                        'q2' => $quarter === 'q2' ? $gradeValue : ($existingGrade->q2 ?? null),
+                        'q3' => $quarter === 'q3' ? $gradeValue : ($existingGrade->q3 ?? null),
+                        'q4' => $quarter === 'q4' ? $gradeValue : ($existingGrade->q4 ?? null),
+                    ])->save();
+                } else {
+                    Grade::create([
+                        'student_id' => $student->student_id,
+                        'school_year_id' => $activeYear->id,
+                        'subject_name' => $subjectName,
+                        'q1' => $quarter === 'q1' ? $gradeValue : null,
+                        'q2' => $quarter === 'q2' ? $gradeValue : null,
+                        'q3' => $quarter === 'q3' ? $gradeValue : null,
+                        'q4' => $quarter === 'q4' ? $gradeValue : null,
+                        'final_grade' => null,
+                        'remarks' => null,
+                    ]);
+                }
+
+                $updatedValues++;
+            }
+        }
+
+        fclose($handle);
+
+        return redirect()->route('reportcard.show', ['section_id' => $section_id])
+            ->with('success', "Import successful. {$processedStudents} student row(s) processed and {$updatedValues} grade value(s) updated.");
+    }
+
     public function archivedIndex($school_year_id)
     {
         $schoolYear = SchoolYear::findOrFail($school_year_id);

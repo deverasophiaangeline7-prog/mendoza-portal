@@ -23,7 +23,7 @@
 
             <div class="text-center flex-1">
                 <h2 class="text-4xl font-black text-black uppercase tracking-tight">{{ $displayName }}</h2>
-                <div class="text-[#e68a2d] font-black text-2xl italic uppercase mt-1 drop-shadow-[1px_1px_0px_rgba(0,0,0,1)]">
+                <div class="text-[#b26905] font-black text-2xl italic uppercase mt-1 drop-shadow-[1px_1px_0px_rgba(0,0,0,1)]">
                     Attendance Sheet
                 </div>
             </div>
@@ -57,7 +57,7 @@
                     </div>
                 </div>
 
-                <button x-show="isManaging" x-cloak @click="saveAttendance()" class="bg-[#ffaf2e] text-black px-8 py-3 rounded-xl border-[3px] border-black font-black hover:bg-orange-500 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]">
+                <button x-show="isManaging" x-cloak @click="saveAttendance()" class="bg-[#b26905] text-black px-8 py-3 rounded-xl border-[3px] border-black font-black hover:bg-amber-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]">
                     <i class="fa-solid fa-floppy-disk mr-2"></i> SAVE ATTENDANCE
                 </button>
 
@@ -96,7 +96,7 @@
                         <th class="p-5 border-r-[3px] border-black w-1/3 text-left uppercase font-black text-2xl">Learner Name</th>
                         
                         <template x-for="day in addedDates" :key="day">
-                            <th class="border-r-[2px] border-black text-center text-lg w-16 py-4 bg-orange-50 font-black" x-text="new Date(day).getDate()"></th>
+                            <th class="border-r-[2px] border-black text-center text-lg w-16 py-4 bg-amber-700 font-black" x-text="new Date(day).getDate()"></th>
                         </template>
                         
                         <template x-if="addedDates.length === 0">

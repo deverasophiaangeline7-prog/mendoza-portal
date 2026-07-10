@@ -14,7 +14,7 @@
             @endphp
             
             <a href="{{ route('attendance.show', $slug) }}" 
-               class="bg-[#ffaf2e] w-[350px] py-8 rounded-[40px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-center group flex flex-col justify-center items-center">
+               class="bg-[#b26905] w-[350px] py-8 rounded-[40px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-center group flex flex-col justify-center items-center">
                 
                 <div class="font-black text-4xl uppercase tracking-tighter text-black group-hover:scale-110 transition-transform" 
                      style="text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;">

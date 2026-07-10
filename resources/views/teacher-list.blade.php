@@ -11,7 +11,7 @@
             <div class="flex justify-between items-center mb-8">
                 <div>
                     <h2 class="text-4xl font-black text-black uppercase tracking-tight">List of Accounts</h2>
-                    <h3 class="text-2xl font-bold text-orange-400 mt-1 italic">Teachers</h3>
+                    <h3 class="text-2xl font-bold text-amber-700 mt-1 italic">Teachers</h3>
                 </div>
                 <div class="flex gap-4">
                     <a href="{{ route('teacher.archived') }}" class="bg-gray-200 hover:bg-gray-300 text-black px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black">

@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\ClassroomAnnouncementController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\AppointmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,7 +67,17 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::get('/report-card/view/{student_id}', [ReportCardController::class, 'showStudent'])->name('reportcard.showStudent');
     Route::get('/my-child/report-card', [ReportCardController::class, 'showParentReportCard'])->name('parent.reportcard');
 
-    });
+    //Appointment
+    Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
+    Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
+
+    Route::patch('/appointments/{appointment}/approve', [AppointmentController::class, 'approve'])->name('appointments.approve');
+    Route::patch('/appointments/{appointment}/decline', [AppointmentController::class, 'decline'])->name('appointments.decline');
+    Route::patch('/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
+
+    Route::get('/appointments/teacher-schedule', [AppointmentController::class, 'getAvailability'])->name('appointments.getAvailability');
+    Route::post('/appointments/update-availability', [AppointmentController::class, 'updateAvailability'])->name('appointments.updateAvailability');
+});
 
 // ==========================================
 // 3. TEACHER ONLY ROUTES (Data Entry/Updates)
@@ -83,6 +94,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
 
     // Report Card / Grading Actions
     Route::post('/report-card/save', [ReportCardController::class, 'store'])->name('reportcard.store');
+    Route::post('/report-card/import-batch/{section_id}', [ReportCardController::class, 'importBatch'])->name('batch.import');
     Route::get('/report-card/edit/{student_id}', [ReportCardController::class, 'edit'])->name('reportcard.edit');
     Route::post('/report-card/update/{student_id}', [ReportCardController::class, 'update'])->name('reportcard.update');
 
@@ -91,8 +103,8 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::post('/student-calendar/add-participant', [StudentCalendarController::class, 'addParticipant'])->name('calendar.addParticipant');
     Route::delete('/student-calendar/participant/{id}', [StudentCalendarController::class, 'destroyParticipant'])->name('calendar.deleteParticipant');
 
-    Route::post('/teacher/students/add', [App\Http\Controllers\Teacher\StudentController::class, 'storeStudent'])->name('teacher.students.store');
-    Route::delete('/teacher/students/delete/{id}', [App\Http\Controllers\Teacher\StudentController::class, 'destroyStudent'])->name('teacher.students.destroy');
+    Route::post('/teacher/students/add', [App\Http\Controllers\Admin\StudentController::class, 'storeStudent'])->name('teacher.students.store');
+    Route::delete('/teacher/students/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroyStudent'])->name('teacher.students.destroy');
     
     Route::post('/teacher/promote/{id}', [TeacherController::class, 'promoteStudent'])->name('teacher.promote');
     Route::post('/teacher/announcement', [ClassroomAnnouncementController::class, 'store'])->name('teacher.announcement.store');

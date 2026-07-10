@@ -26,7 +26,7 @@
         <div class="flex justify-between items-start mb-6 border-b-4 border-black pb-4">
             <div>
                 <h2 class="text-4xl font-black uppercase text-black">{{ $studentName }}</h2>
-                <h3 class="text-2xl font-bold text-orange-600 uppercase">{{ $sectionName }}</h3>
+                <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName }}</h3>
             </div>
             
             <div class="flex flex-col items-end space-y-3">
@@ -38,7 +38,7 @@
                     <button @click="isManaging = !isManaging" class="font-black px-4 py-2 border-[3px] border-black rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all" :class="isManaging ? 'bg-green-400' : 'bg-gray-200'">
                         <i class="fa-solid" :class="isManaging ? 'fa-unlock' : 'fa-lock'"></i> <span x-text="isManaging ? ' EDITING' : ' VIEWING'"></span>
                     </button>
-                    <button x-show="isManaging" x-cloak @click="saveGrades()" class="bg-[#ffaf2e] text-black px-4 py-2 rounded border-[3px] border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
+                    <button x-show="isManaging" x-cloak @click="saveGrades()" class="bg-[#b26905] text-black px-4 py-2 rounded border-[3px] border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
                         <i class="fa-solid fa-floppy-disk mr-1"></i> SAVE
                     </button>
                 </div>
@@ -317,7 +317,7 @@
                 let totalMain = 0; let mainCount = 0;
                 let mapehTotal = 0; let mapehCount = 0;
 
-                const regularSubs = ['Language', 'English', 'Mathematics', 'Makabansa', 'GMRC'];
+                const regularSubs = ['Language', 'English', 'Mathematics', 'AP', 'GMRC'];
                 const mapehSubs = ['Music', 'Art', 'PE', 'Health'];
 
                 regularSubs.forEach(sub => {

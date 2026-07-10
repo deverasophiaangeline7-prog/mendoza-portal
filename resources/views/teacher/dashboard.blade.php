@@ -50,8 +50,8 @@
             </h2>
         </div>
 
-        <div class="relative w-full h-80 bg-orange-400 rounded-3xl p-6 shadow-lg border-2 border-black mb-12">
-            <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-orange-300 relative overflow-hidden flex items-center justify-center">
+        <div class="relative w-full h-80 bg-amber-700 rounded-3xl p-6 shadow-lg border-2 border-black mb-12">
+            <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-amber-600 relative overflow-hidden flex items-center justify-center">
                 @if(isset($announcementImages) && $announcementImages->count() > 0)
                     <div class="absolute inset-0">
                         <img src="{{ asset('storage/' . $announcementImages->first()->image_path) }}" class="w-full h-full object-cover">
@@ -65,7 +65,7 @@
         <div class="grid grid-cols-2 gap-12">
             <div>
                 <h3 class="text-4xl font-black text-center mb-6 tracking-tighter uppercase">SCHOOL CALENDAR</h3>
-                <div class="bg-[#d97706] rounded-[40px] p-6 border-[3px] border-black shadow-lg">
+                <div class="bg-[#b26905] rounded-[40px] p-6 border-[3px] border-black shadow-lg">
                     <div class="flex justify-between items-center mb-4 px-2">
                         <button @click="currentMonth === 0 ? (currentMonth = 11, currentYear--) : currentMonth--" class="text-white text-3xl hover:scale-125 transition">
                             <i class="fa-solid fa-chevron-left"></i>

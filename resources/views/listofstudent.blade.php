@@ -44,7 +44,7 @@
                 @endif
                 <div>
                     <h2 class="text-4xl font-black text-black uppercase">Advisory Class</h2>
-                    <h3 class="text-3xl font-black text-orange-300 italic uppercase" style="-webkit-text-stroke: 1.5px black;">
+                    <h3 class="text-3xl font-black text-amber-700 italic uppercase" style="-webkit-text-stroke: 1.5px black;">
                         {{ $grade }} - {{ $section->section_name ?? 'General' }}
                     </h3>
                 </div>
@@ -107,8 +107,8 @@
                             <td class="p-2 text-center">
                                 @if($student->promotion_status === 'pending')
                                     <div class="flex flex-col items-center justify-center cursor-default" onclick="event.stopPropagation();">
-                                        <i class="fa-solid fa-clock-rotate-left text-orange-500 mb-1"></i>
-                                        <span class="text-orange-600 font-bold italic text-[10px] uppercase tracking-wider">
+                                        <i class="fa-solid fa-clock-rotate-left text-amber-700 mb-1"></i>
+                                        <span class="text-amber-700 font-bold italic text-[10px] uppercase tracking-wider">
                                             Pending: {{ is_numeric($student->next_grade_level) ? 'Grade ' . $student->next_grade_level : $student->next_grade_level }}
                                         </span>
                                     </div>
@@ -189,8 +189,8 @@
                             <td class="p-2 text-center">
                                 @if($student->promotion_status === 'pending')
                                     <div class="flex flex-col items-center justify-center cursor-default" onclick="event.stopPropagation();">
-                                        <i class="fa-solid fa-clock-rotate-left text-orange-500 mb-1"></i>
-                                        <span class="text-orange-600 font-bold italic text-[10px] uppercase tracking-wider">
+                                        <i class="fa-solid fa-clock-rotate-left text-amber-700 mb-1"></i>
+                                        <span class="text-amber-700 font-bold italic text-[10px] uppercase tracking-wider">
                                             Pending: {{ is_numeric($student->next_grade_level) ? 'Grade ' . $student->next_grade_level : $student->next_grade_level }}
                                         </span>
                                     </div>
@@ -283,7 +283,7 @@
     <div x-show="promoteModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity">
         <div @click.away="promoteModal = false" class="bg-white border-[3px] border-black rounded-[30px] p-8 w-full max-w-md shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] text-center">
             
-            <i class="fa-solid fa-circle-exclamation text-orange-500 text-6xl mb-4"></i>
+            <i class="fa-solid fa-circle-exclamation text-amber-700 text-6xl mb-4"></i>
             <h2 class="text-3xl font-black uppercase text-black mb-2">Confirm Promotion</h2>
             <p class="text-gray-600 font-bold mb-8">Are you sure you want to queue <span class="text-blue-600 uppercase" x-text="studentName"></span> for the next grade level?</p>
             

@@ -48,10 +48,10 @@
                     @forelse($event->participants->groupBy('role') as $role => $group)
                         <div class="mb-6 last:mb-0">
                             <div class="flex items-center mb-2">
-                                <span class="text-[10px] bg-orange-600 text-white px-2 py-0.5 rounded font-black uppercase tracking-tighter">
+                                <span class="text-[10px] bg-amber-700 text-white px-2 py-0.5 rounded font-black uppercase tracking-tighter">
                                     {{ $role ?: 'General Participant' }}
                                 </span>
-                                <div class="flex-1 border-b border-orange-200 ml-2"></div>
+                                <div class="flex-1 border-b border-amber-200 ml-2"></div>
                             </div>
 
                             <ul class="space-y-1 ml-1">

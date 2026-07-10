@@ -130,6 +130,13 @@
                         Attendance
                     </x-sidebar-link>
 
+                    <x-sidebar-link
+                        href="{{ route('appointments.index') }}"
+                        icon="fa-solid fa-user-group" 
+                        :active="request()->routeIs('appointments.*')">
+                        Appointment Scheduling
+                    </x-sidebar-link>
+
                     @if(auth()->user()->role === 'admin')
                         <x-sidebar-link href="{{ route('account.management') }}"
                             icon="fa-solid fa-users-gear"

@@ -42,7 +42,7 @@
                         <i class="fa-solid fa-xmark"></i>
                     </div>
 
-                    <span class="text-4xl font-black text-black group-hover:-translate-y-1 group-hover:text-orange-500 transition-transform" 
+                    <span class="text-4xl font-black text-black group-hover:-translate-y-1 group-hover:text-amber-700 transition-transform" 
                         style="-webkit-text-stroke: 1.5px white;">
                         {{ $grade['level'] }}
                     </span>

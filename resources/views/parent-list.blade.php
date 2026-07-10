@@ -9,7 +9,7 @@
         <div class="flex justify-between items-center mb-8">
             <div>
                 <h2 class="text-4xl font-black text-black uppercase tracking-tight">List of Accounts</h2>
-                <h3 class="text-4xl font-bold text-orange-400 mt-1 italic">Parents</h3>
+                <h3 class="text-4xl font-bold text-amber-700 mt-1 italic">Parents</h3>
             </div>
             <a href="{{ route('account.management') }}" class="bg-gray-800 hover:bg-black text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2">
                 <i class="fa-solid fa-arrow-left"></i> Back
@@ -36,7 +36,7 @@
                     onclick="window.location.href='{{ route('grade.show', ['grade' => $grade['id']]) }}'"
                     class="bg-[#ffb31a] border-2 border-black rounded-[40px] py-6 flex flex-col items-center group transition-all active:scale-95">
                     
-                    <span class="text-4xl font-black text-black group-hover:-translate-y-1 group-hover:text-orange-500 transition-transform" 
+                    <span class="text-4xl font-black text-black group-hover:-translate-y-1 group-hover:text-amber-700 transition-transform" 
                         style="-webkit-text-stroke: 1.5px white;">
                         {{ $grade['level'] }}
                     </span>
