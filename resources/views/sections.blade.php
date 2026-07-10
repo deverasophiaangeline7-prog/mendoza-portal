@@ -21,7 +21,7 @@
         <div class="mb-8 flex justify-between items-center">
             <div>
                 <h2 class="text-4xl font-black text-black uppercase">Account Management</h2>
-                <h3 class="text-3xl font-black text-orange-400 italic uppercase" style="-webkit-text-stroke: 1.5px black;">
+                <h3 class="text-3xl font-black text-amber-700 italic uppercase" style="-webkit-text-stroke: 1.5px black;">
                     {{ str_replace('-', ' ', $grade) }} - {{ $section->section_name ?? 'General' }}
                 </h3>
             </div>

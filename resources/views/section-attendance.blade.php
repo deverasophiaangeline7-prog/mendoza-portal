@@ -23,7 +23,7 @@
 
             <div class="text-center flex-1">
                 <h2 class="text-4xl font-black text-black uppercase tracking-tight">{{ $displayName }}</h2>
-                <div class="text-[#ffaf2e] font-black text-2xl italic uppercase mt-1 drop-shadow-[1px_1px_0px_rgba(0,0,0,1)]">
+                <div class="text-[#e68a2d] font-black text-2xl italic uppercase mt-1 drop-shadow-[1px_1px_0px_rgba(0,0,0,1)]">
                     Attendance Sheet
                 </div>
             </div>

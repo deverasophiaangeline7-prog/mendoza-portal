@@ -60,7 +60,7 @@
         
         <div class="flex flex-wrap justify-center gap-8 w-full mb-8">
             <div class="relative" x-data="{ listOpen: false }" @click.away="listOpen = false">
-                <button @click="listOpen = !listOpen" class="bg-[#ffb72b] hover:bg-yellow-500 text-black text-2xl font-black py-5 px-12 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
+                <button @click="listOpen = !listOpen" class="bg-[#e68a2d] hover:bg-yellow-500 text-black text-2xl font-black py-5 px-12 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
                     List of accounts
                     <i class="fa-solid fa-caret-down ml-4 transition-transform duration-300" :class="listOpen ? 'rotate-180' : ''"></i>
                 </button>
@@ -82,7 +82,7 @@
             </div>
 
             <div class="relative" x-data="{ open: false }" @click.away="open = false">
-                <button @click="open = !open" class="bg-[#ffb72b] hover:bg-yellow-500 text-black text-2xl font-black py-5 px-12 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
+                <button @click="open = !open" class="bg-[#e68a2d] hover:bg-yellow-500 text-black text-2xl font-black py-5 px-12 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
                     Create an account
                     <i class="fa-solid fa-caret-down ml-4 transition-transform duration-300" :class="open ? 'rotate-180' : ''"></i>
                 </button>
@@ -103,7 +103,7 @@
             
             <a href="{{ route('admin.audit_logs') }}" 
                class="w-full bg-blue-500 hover:bg-blue-600 text-black text-2xl font-black py-5 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center text-center">
-                View Audit Logs
+                View Activity Logs
             </a>
         
             <button @click="finalizeModal = true" class="w-full bg-green-500 hover:bg-green-600 text-black text-2xl font-black py-5 px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">

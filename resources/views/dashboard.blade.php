@@ -44,14 +44,14 @@
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-3xl font-extrabold">Welcome, Admin!</h2>
                 <a href="{{ route('announcement-images.archived') }}" title="View Archives">
-                    <i class="fa-solid fa-box-archive text-3xl text-orange-800 opacity-80 hover:opacity-100 transition cursor-pointer"></i>
+                    <i class="fa-solid fa-box-archive text-3xl text-amber-700 opacity-80 hover:opacity-100 transition cursor-pointer"></i>
                 </a>
             </div>
 
-            <div class="relative w-full h-80 bg-orange-400 rounded-3xl p-6 shadow-lg border-2 border-black mb-12" 
+            <div class="relative w-full h-80 bg-amber-700 rounded-3xl p-6 shadow-lg border-2 border-black mb-12" 
                  x-data="{ activeSlide: 0, slidesCount: {{ $announcementImages->count() }} }">
                 
-                <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-orange-300 relative overflow-hidden flex items-center justify-center">
+                <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-amber-600 relative overflow-hidden flex items-center justify-center">
                     @if($announcementImages->count() > 0)
                         @foreach($announcementImages as $index => $image)
                             <div x-show="activeSlide === {{ $index }}" x-transition:enter="transition ease-out duration-500" class="absolute inset-0">
@@ -89,7 +89,7 @@
             <div class="grid grid-cols-2 gap-12">
                 <div>
                     <h3 class="text-4xl font-black text-center mb-6 tracking-tighter uppercase">SCHOOL CALENDAR</h3>
-                    <div class="bg-[#d97706] rounded-[40px] p-6 border-[3px] border-black shadow-lg">
+                    <div class="bg-[#b26905] rounded-[40px] p-6 border-[3px] border-black shadow-lg">
                         <div class="flex justify-between items-center mb-4 px-2">
                             <button @click="prevMonth()" class="text-white text-3xl hover:scale-125 transition">
                                 <i class="fa-solid fa-chevron-left"></i>
@@ -122,7 +122,7 @@
                                             class="aspect-square flex items-center justify-center rounded-lg border-2 font-black text-xl transition-all relative"
                                             :class="{
                                                 'bg-red-500 text-white border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] scale-110 z-10': selectedDate === day,
-                                                'bg-white text-black border-gray-200 hover:bg-orange-100': selectedDate !== day,
+                                                'bg-white text-black border-gray-200 hover:bg-amber-700': selectedDate !== day,
                                                 'ring-2 ring-red-600 ring-offset-1': events[getDateKey(day)]
                                             }"
                                             x-text="day">
@@ -248,13 +248,13 @@
     </div>
 
     <div x-show="openModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]" x-cloak>
-        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-4 border-orange-400">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-4 border-amber-700">
             <h3 class="text-2xl font-black mb-6 text-red-800 uppercase italic">Upload New Image</h3>
             <form action="{{ route('announcement-images.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="mb-4">
                     <label class="block font-bold text-gray-700 mb-2 uppercase text-xs">Select File</label>
-                    <input type="file" name="image" required class="block w-full text-sm border-2 border-dashed p-4 rounded-xl cursor-pointer hover:border-orange-400 transition">
+                    <input type="file" name="image" required class="block w-full text-sm border-2 border-dashed p-4 rounded-xl cursor-pointer hover:border-amber-700 transition">
                 </div>
                 <div class="mb-6">
                     <label class="block font-bold text-gray-700 mb-2 uppercase text-xs">Caption</label>

@@ -24,6 +24,7 @@
             @csrf
             <div class="grid grid-cols-2 gap-x-16 gap-y-6">
                 
+                {{-- LEFT COLUMN --}}
                 <div class="space-y-5">
                     <div class="flex items-center">
                         <label class="w-40 flex-shrink-0 font-bold text-xl">Last name: <span class="text-red-600">*</span></label>
@@ -46,38 +47,50 @@
                         <label class="w-40 flex-shrink-0 font-bold text-xl">Ext. name:</label>
                         <input type="text" name="ext_name" class="form-input-pill">
                     </div>
-                    
-                    <div class="flex flex-col mb-4">
-                        <div class="flex items-center">
-                            <label class="w-40 flex-shrink-0 font-bold text-xl">Username: <span class="text-red-600">*</span></label>
-                            <input type="text" name="username" class="form-input-pill" value="{{ old('username') }}" required>
-                        </div>
-                        @error('username')
-                            <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">This username is already taken.</span>
-                        @enderror
-                    </div>
-                    
-                    <div class="space-y-5" x-data="{ pw: '', pw_confirm: '' }">
-                        <div class="flex flex-col">
-                            <div class="flex items-center">
-                                <label class="w-40 flex-shrink-0 font-bold text-xl">Password: <span class="text-red-600">*</span></label>
-                                <input type="password" name="password" x-model="pw" class="form-input-pill" required>
-                            </div>
-                            @error('password') <span class="text-red-600 text-sm ml-40 mt-1">{{ $message }}</span> @enderror
-                        </div>
 
-                        <div class="flex flex-col">
-                            <div class="flex items-center">
-                                <label class="w-40 flex-shrink-0 font-bold text-xl">Confirm: <span class="text-red-600">*</span></label>
-                                <input type="password" name="password_confirmation" x-model="pw_confirm" class="form-input-pill" required>
+                    {{-- UPDATED TO MATCH PARENT PROFILE PHOTO DESIGN --}}
+                    <div class="flex flex-col" x-data="{ fileError: false }">
+                        <div class="flex items-center">
+                            <label class="w-40 flex-shrink-0 font-bold text-xl">Profile Photo:</label>
+                            <div class="flex flex-col w-full">
+                                <input type="file" 
+                                    name="profile_photo" 
+                                    id="profile_photo"
+                                    accept=".png, .jpg, .jpeg" 
+                                    class="form-input-pill bg-white py-1 transition-colors"
+                                    :class="fileError ? 'border-red-600 ring-1 ring-red-600' : 'border-black'"
+                                    @change="
+                                        const file = $event.target.files[0];
+                                        if (file) {
+                                            const type = file.type;
+                                            const validTypes = ['image/png', 'image/jpg', 'image/jpeg'];
+                                            fileError = !validTypes.includes(type);
+                                            
+                                            if(fileError) {
+                                                $event.target.value = ''; 
+                                            }
+                                        }
+                                    ">
+                                
+                                <p class="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-wider">
+                                    Max size: 2MB (.png, .jpg, .jpeg only)
+                                </p>
+
+                                <template x-if="fileError">
+                                    <span class="text-red-600 text-sm font-bold italic mt-1">
+                                        The profile photo field must be an image.
+                                    </span>
+                                </template>
                             </div>
-                            <template x-if="pw_confirm !== '' && pw !== pw_confirm">
-                                <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">Passwords do not match!</span>
-                            </template>
                         </div>
+                        
+                        @error('profile_photo') 
+                            <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> 
+                        @enderror
                     </div>
                 </div>
 
+                {{-- RIGHT COLUMN --}}
                 <div class="space-y-5">
                     <div class="flex items-center">
                         <label class="w-40 flex-shrink-0 font-bold text-xl">Sex: <span class="text-red-600">*</span></label>
@@ -115,18 +128,34 @@
                         @enderror
                     </div>
 
-                    <div class="pt-2">
-                        <label class="block font-bold text-xl mb-2 text-black">Upload CV: <span class="text-red-600">*</span></label>
-                        <div class="border-2 border-black rounded-2xl h-36 flex flex-col items-center justify-center relative hover:bg-gray-50 transition group">
-                            <input type="file" name="cv" id="cv_input" accept=".pdf" class="absolute inset-0 opacity-0 cursor-pointer z-10">
-                            <div class="text-center">
-                                <span id="cv_filename" class="text-xl font-bold block">Add attachment</span>
-                                <span id="cv_size" class="text-sm font-medium text-gray-500 block hidden"></span>
-                            </div>
+                    <div class="flex flex-col">
+                        <div class="flex items-center">
+                            <label class="w-40 flex-shrink-0 font-bold text-xl">Username: <span class="text-red-600">*</span></label>
+                            <input type="text" name="username" class="form-input-pill" value="{{ old('username') }}" required>
                         </div>
-                        <p class="text-sm font-bold text-red-700 mt-2 italic flex items-center gap-1">
-                            <i class="fa-solid fa-circle-info"></i> Note: Please upload PDF files only (Max 2MB).
-                        </p>
+                        @error('username')
+                            <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">This username is already taken.</span>
+                        @enderror
+                    </div>
+                    
+                    <div class="space-y-5" x-data="{ pw: '', pw_confirm: '' }">
+                        <div class="flex flex-col">
+                            <div class="flex items-center">
+                                <label class="w-40 flex-shrink-0 font-bold text-xl">Password: <span class="text-red-600">*</span></label>
+                                <input type="password" name="password" x-model="pw" class="form-input-pill" required>
+                            </div>
+                            @error('password') <span class="text-red-600 text-sm ml-40 mt-1">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="flex flex-col">
+                            <div class="flex items-center">
+                                <label class="w-40 flex-shrink-0 font-bold text-xl">Confirm: <span class="text-red-600">*</span></label>
+                                <input type="password" name="password_confirmation" x-model="pw_confirm" class="form-input-pill" required>
+                            </div>
+                            <template x-if="pw_confirm !== '' && pw !== pw_confirm">
+                                <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">Passwords do not match!</span>
+                            </template>
+                        </div>
                     </div>
 
                     <div class="flex justify-end gap-6 pt-10">
@@ -140,44 +169,6 @@
                 </div>
                 
             </div>
-            
-            <script>
-                const cvInput = document.getElementById('cv_input');
-                const cvName = document.getElementById('cv_filename');
-                const cvSizeDisplay = document.getElementById('cv_size');
-
-                cvInput.addEventListener('change', function() {
-                    if (this.files && this.files[0]) {
-                        const file = this.files[0];
-                        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2); 
-
-                        // 1. Check for PDF only
-                        if (file.type !== "application/pdf") {
-                            alert("Invalid file type. Please upload a PDF.");
-                            this.value = ""; 
-                            cvName.textContent = "Add attachment";
-                            return;
-                        }
-
-                        // 2. Check Size (Max 2MB)
-                        if (fileSizeMB > 2) {
-                            alert("File is too large! Max size is 2MB.");
-                            this.value = "";
-                            cvName.textContent = "Add attachment";
-                            return;
-                        }
-
-                        // 3. SUCCESS: Update the UI text
-                        cvName.textContent = file.name;
-                        cvName.style.color = "#34C759"; // Turns the text green on success
-                        
-                        if(cvSizeDisplay) {
-                            cvSizeDisplay.textContent = "(" + fileSizeMB + " MB)";
-                            cvSizeDisplay.classList.remove('hidden');
-                        }
-                    }
-                });
-            </script>
         </form>
     </div>
 </main>

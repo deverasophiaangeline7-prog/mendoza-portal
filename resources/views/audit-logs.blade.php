@@ -10,7 +10,7 @@
             
             <div class="text-left">
                 <h2 class="text-5xl font-black text-black uppercase tracking-tight" style="text-shadow: 2px 2px 0px #f59e0b;">
-                    System Audit Logs
+                    Activity Logs                    
                 </h2>
                 <h3 class="text-xl font-bold text-gray-600 mt-2 italic leading-none">
                     A complete record of all sensitive system actions.

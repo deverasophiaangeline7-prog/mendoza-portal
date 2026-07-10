@@ -36,7 +36,7 @@
                 <button type="button" 
                     onclick="window.location.href='{{ route('attendance.show', ['grade' => $grade['id']]) }}'"
                     class="border-2 border-black rounded-[40px] py-6 flex flex-col items-center group transition-all active:scale-95 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative"
-                    :class="isManaging ? 'bg-green-100 border-green-600' : 'bg-[#ffb31a]'">
+                    :class="isManaging ? 'bg-green-100 border-green-600' : 'bg-[#e68a2d]'">
                     
                     <div x-show="isManaging" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center border-2 border-black" x-cloak>
                         <i class="fa-solid fa-xmark"></i>

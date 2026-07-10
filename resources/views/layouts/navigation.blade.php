@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Mendoza Academy')</title>
 
+    <link rel="icon" type="image/png" href="{{ asset('images/MAILogo.png') }}">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
         .hero-gradient {
-            background: linear-gradient(to right, #d32f2f, #8b0000);
+            background-color: #6d0101;
         }
         [x-cloak] { display: none !important; }
     </style>
@@ -21,14 +23,14 @@
     <div class="min-h-screen">
         {{-- TOP HEADER --}}
         <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
-            <div class="flex items-center space-x-3">
+            <a href="{{ url('/') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer">
                 <img src="{{ asset('images/MAILogo.png') }}"
-                     class="h-10 w-10 bg-white p-1 rounded shadow"
-                     alt="Logo">
+                    class="h-10 w-10 bg-white p-1 rounded shadow"
+                    alt="Logo">
                 <h1 class="text-2xl font-bold uppercase tracking-tight">
                     Mendoza Academy, Inc.
                 </h1>
-            </div>
+            </a>
 
             <div class="flex items-center space-x-6 text-2xl">
                 <x-top-icon-button>
@@ -76,7 +78,7 @@
 
         <div class="flex min-h-screen">
             {{-- SIDEBAR --}}
-            <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
+            <nav class="w-64 bg-[#6d0101] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
                 <ul class="space-y-1">
                     <x-sidebar-link href="{{ route('dashboard') }}"
                         icon="fa-solid fa-chart-line"

@@ -27,7 +27,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             @foreach($sections as $section)
                 <a href="{{ route('reportcard.show', $section->section_id) }}"
-                   class="bg-[#ffb31a] border-[3px] border-black rounded-[40px] py-8 flex flex-col items-center group transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                   class="bg-[#e68a2d] border-[3px] border-black rounded-[40px] py-8 flex flex-col items-center group transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                    
                     <span class="text-4xl font-black text-black uppercase mb-1" style="-webkit-text-stroke: 1.5px white;">
                         {{ is_numeric($section->grade_level) ? 'GRADE ' . $section->grade_level : $section->grade_level }}

@@ -1,46 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mendoza Academy, Inc.</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="icon" type="image/png" href="{{ asset('images/MAILogo.png') }}">
-    <style>
-        .hero-gradient {
-            background: linear-gradient(to right, #d32f2f, #8b0000);
-        }
-        .nav-active {
-            background-color: #ffb74d;
-            color: #fff;
-            border-radius: 9999px;
-        }
-    </style>
-</head>
-<body class="bg-gray-100 flex flex-col min-h-screen">
+<x-guest-layout>
 
-    <header class="hero-gradient text-white py-4 px-6 shadow-lg">
-        <div class="container mx-auto flex flex-wrap justify-between items-center">
-            
-            <div class="flex items-center space-x-3">
-                <div class="p-1 rounded shadow-sm">
-                    <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="h-10 w-10">
-                </div>
-                <h1 class="text-2xl font-bold tracking-tight uppercase">Mendoza Academy, Inc.</h1>
-            </div>
-
-            <nav class="hidden md:flex items-center space-x-8 font-medium">
-    <a href="{{ url('/') }}" class="hover:text-red-200 transition" >Home</a>
-    <a href="{{ url('about') }}" class="hover:text-red-200 transition">About</a>
-    <a href="{{ url('tuitionfee') }}" class="hover:text-red-200 transition">Courses</a>
-    <a href="{{ url('faqs') }}" class="nav-active px-6 py-2">FAQs</a>
-    <a href="{{ route('login') }}" class="bg-orange-400 text-red-900 px-6 py-2 rounded-full font-black shadow-md hover:bg-orange-300 transition">SMS / LOG IN</a>
-    </nav>
-        </div>
-    </header>
-
-   <main class="relative flex-grow flex items-center justify-center py-12 bg-cover bg-center" 
+    <main class="relative flex-grow flex items-center justify-center py-12 bg-cover bg-center w-full" 
           style="background-image: url('{{ asset('images/faqs.jpg') }}');">
         
         <div class="absolute inset-0 bg-black/20"></div>
@@ -76,7 +36,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-4xl mx-auto px-2">
                             
                             <div class="space-y-6">
-                                <div class="bg-orange-400 rounded-3xl p-6 shadow-md border-2 border-black">
+                                <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">For incoming Kindergarten:</h4>
                                     <div class="flex items-start gap-3 text-white font-bold">
                                         <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center mt-1 text-xs font-black">✔</span>
@@ -84,7 +44,7 @@
                                     </div>
                                 </div>
 
-                                <div class="bg-orange-400 rounded-3xl p-6 shadow-md border-2 border-black">
+                                <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">Document to be submitted:</h4>
                                     <div class="flex items-start gap-3 text-white font-bold">
                                         <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center mt-1 text-xs font-black">✔</span>
@@ -94,7 +54,7 @@
                             </div>
 
                             <div class="space-y-6">
-                                <div class="bg-orange-400 rounded-3xl p-6 shadow-md border-2 border-black">
+                                <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">For incoming Grade 1:</h4>
                                     <div class="flex items-start gap-3 text-white font-bold">
                                         <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center mt-1 text-xs font-black">✔</span>
@@ -102,7 +62,7 @@
                                     </div>
                                 </div>
 
-                                <div class="bg-orange-400 rounded-3xl p-6 shadow-md border-2 border-black">
+                                <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">For more information:</h4>
                                     <div class="space-y-4 text-white font-bold text-sm text-justify">
                                         <div class="flex items-start gap-3">
@@ -129,24 +89,12 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div> </div> </div> </div> </div> </div> </main>
-
-    <footer class="bg-white py-4 border-t border-gray-200">
-        <div class="container mx-auto flex flex-wrap justify-center gap-8 text-red-800 font-bold">
-            <div class="flex items-center space-x-2">
-                <i class="fab fa-facebook text-blue-600 text-2xl"></i>
-                <span>Mendoza Academy Inc</span>
-            </div>
-            <div class="flex items-center space-x-2">
-                <i class="fas fa-phone-alt text-red-600"></i>
-                <span>09452415916</span>
-            </div>
-            <div class="flex items-center space-x-2">
-                <i class="fas fa-phone-alt text-red-600"></i>
-                <span>09081482052</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </footer>
+    </main>
 
-</body>
-</html>
+</x-guest-layout>
