@@ -16,9 +16,23 @@ class AppointmentController extends Controller
         $user = auth()->user();
 
         if ($user->role === 'teacher') {
-            $pendingRequests = Appointment::with('parent')
+            $incomingRequests = Appointment::with(['parent.student'])
                 ->where('teacher_id', $user->user_id)
                 ->where('status', 'pending')
+                ->where('created_by', '!=', $user->user_id)
+                ->orderBy('appointment_date', 'asc')
+                ->get();
+
+            $mySentRequests = Appointment::with(['parent.student'])
+                ->where('teacher_id', $user->user_id)
+                ->where('status', 'pending')
+                ->where('created_by', $user->user_id)
+                ->orderBy('appointment_date', 'asc')
+                ->get();
+
+            $bookedAppointments = Appointment::with(['parent.student'])
+                ->where('teacher_id', $user->user_id)
+                ->where('status', 'booked')
                 ->orderBy('appointment_date', 'asc')
                 ->get();
 
@@ -35,25 +49,41 @@ class AppointmentController extends Controller
 
             $schedules = TeacherSchedule::where('teacher_id', $user->user_id)->get();
 
-            return view('appointment_teacher', compact('pendingRequests', 'parents', 'schedules'));
+            return view('appointment_teacher', compact('incomingRequests', 'mySentRequests', 'parents', 'schedules', 'bookedAppointments'));
+            
         } elseif ($user->role === 'parent') {
             $student = Student::with('section.teacher')
                 ->where('user_id', $user->user_id)
                 ->first();
 
-            $pendingRequests = Appointment::where('parent_id', $user->user_id)
+            $incomingRequests = Appointment::with(['parent.student'])
+                ->where('parent_id', $user->user_id)
                 ->where('status', 'pending')
+                ->where('created_by', '!=', $user->user_id)
                 ->orderBy('appointment_date', 'asc')
                 ->get();
 
+            $mySentRequests = Appointment::with(['parent.student'])
+                ->where('parent_id', $user->user_id)
+                ->where('status', 'pending')
+                ->where('created_by', $user->user_id)
+                ->orderBy('appointment_date', 'asc')
+                ->get();
+
+            $bookedAppointments = collect();
             $adviserSchedule = collect();
             $adviserName = null;
             if ($student && $student->section && $student->section->teacher) {
                 $adviserSchedule = TeacherSchedule::where('teacher_id', $student->section->teacher->user_id)->get();
+                $bookedAppointments = Appointment::with(['parent.student'])
+                    ->where('teacher_id', $student->section->teacher->user_id)
+                    ->where('status', 'booked')
+                    ->get();
                 $adviserName = $student->section->teacher->name ?? ($student->section->teacher->first_name . ' ' . $student->section->teacher->last_name);
             }
 
-            return view('appointment_parent', compact('pendingRequests', 'adviserSchedule', 'student', 'adviserName'));
+            return view('appointment_parent', compact('incomingRequests', 'mySentRequests', 'adviserSchedule', 'student', 'adviserName', 'bookedAppointments'));
+            
         } elseif ($user->role === 'admin') {
             $advisersList = [
                 ['section' => 'NKP', 'name' => 'Adviser Name', 'user_id' => null],
@@ -70,13 +100,9 @@ class AppointmentController extends Controller
             foreach ($advisersList as $key => $adviser) {
                 foreach ($teachers as $teacher) {
                     if ($teacher->section) {
-                        
-                        // 1. Combine the database columns to format it exactly like the button text
                         $constructedName = 'Grade ' . $teacher->section->grade_level . ' - ' . $teacher->section->section_name;
                         
-                        // 2. Check if the constructed name matches OR if it's exactly the section name (for NKP)
                         if ($adviser['section'] === $constructedName || $adviser['section'] === $teacher->section->section_name) {
-                            
                             $advisersList[$key]['name'] = $teacher->first_name . ' ' . $teacher->last_name;
                             $advisersList[$key]['user_id'] = $teacher->user_id;
                         }
@@ -131,6 +157,8 @@ class AppointmentController extends Controller
         }
 
         $validated['status'] = 'pending';
+        // NEW: Track exactly who pressed the "Submit" button
+        $validated['created_by'] = auth()->id(); 
 
         Appointment::create($validated);
 
@@ -138,68 +166,86 @@ class AppointmentController extends Controller
     }
 
     public function approve(Appointment $appointment)
-{
-    $appointment->update(['status' => 'booked']);
-    return back()->with('success', 'Appointment request approved.');
-}
+    {
+        $appointment->update(['status' => 'booked']);
 
-public function decline(Appointment $appointment)
-{
-    $appointment->update(['status' => 'declined']);
-    return back()->with('success', 'Appointment request declined.');
-}
+        $startTime = \Carbon\Carbon::parse($appointment->start_time);
+        $endTime = \Carbon\Carbon::parse($appointment->end_time);
+        $durationMinutes = $startTime->diffInMinutes($endTime);
+        $status = $durationMinutes < 60 ? 'booked-half' : 'booked';
 
-public function reschedule(Request $request, Appointment $appointment)
-{
-    $request->validate([
-        'reason' => 'required|string|max:255',
-    ]);
-
-    $appointment->update([
-        'status' => 'reschedule',
-        'reschedule_reason' => $request->reason
-    ]);
-
-    return back()->with('success', 'Reschedule request sent to parent.');
-}
-
-public function getAvailability(Request $request)
-{
-    $request->validate([
-        'teacher_id' => 'required|integer|exists:users,user_id',
-    ]);
-
-    $schedules = TeacherSchedule::where('teacher_id', $request->teacher_id)->get(['date', 'time_slot', 'status']);
-
-    return response()->json([
-        'success' => true,
-        'schedules' => $schedules->map(function ($schedule) {
-            return [
-                'date' => $schedule->date,
-                'time' => $schedule->time_slot,
-                'status' => $schedule->status,
-            ];
-        }),
-    ]);
-}
-
-public function updateAvailability(Request $request) 
-{
-    $request->validate([
-        'teacher_id' => 'required|integer|exists:users,user_id',
-        'schedules' => 'required|array',
-        'schedules.*.date' => 'required|date',
-        'schedules.*.time' => 'required|string',
-        'schedules.*.status' => 'required|string',
-    ]);
-
-    foreach ($request->schedules as $schedule) {
+        $timeSlot = $startTime->format('gA');
         TeacherSchedule::updateOrCreate(
-            ['teacher_id' => $request->teacher_id, 'date' => $schedule['date'], 'time_slot' => $schedule['time']],
-            ['status' => $schedule['status']]
+            [
+                'teacher_id' => $appointment->teacher_id,
+                'date' => $appointment->appointment_date,
+                'time_slot' => $timeSlot,
+            ],
+            [
+                'status' => $status,
+            ]
         );
+
+        return back()->with('success', 'Appointment request approved.');
     }
 
-    return response()->json(['success' => true]);
-}
+    public function decline(Appointment $appointment)
+    {
+        $appointment->update(['status' => 'declined']);
+        return back()->with('success', 'Appointment request declined.');
+    }
+
+    public function reschedule(Request $request, Appointment $appointment)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:255',
+        ]);
+
+        $appointment->update([
+            'status' => 'reschedule',
+            'reschedule_reason' => $request->reason
+        ]);
+
+        return back()->with('success', 'Reschedule request sent to parent.');
+    }
+
+    public function getAvailability(Request $request)
+    {
+        $request->validate([
+            'teacher_id' => 'required|integer|exists:users,user_id',
+        ]);
+
+        $schedules = TeacherSchedule::where('teacher_id', $request->teacher_id)->get(['date', 'time_slot', 'status']);
+
+        return response()->json([
+            'success' => true,
+            'schedules' => $schedules->map(function ($schedule) {
+                return [
+                    'date' => $schedule->date,
+                    'time' => $schedule->time_slot,
+                    'status' => $schedule->status,
+                ];
+            }),
+        ]);
+    }
+
+    public function updateAvailability(Request $request) 
+    {
+        $request->validate([
+            'teacher_id' => 'required|integer|exists:users,user_id',
+            'schedules' => 'required|array',
+            'schedules.*.date' => 'required|date',
+            'schedules.*.time' => 'required|string',
+            'schedules.*.status' => 'required|string',
+        ]);
+
+        foreach ($request->schedules as $schedule) {
+            TeacherSchedule::updateOrCreate(
+                ['teacher_id' => $request->teacher_id, 'date' => $schedule['date'], 'time_slot' => $schedule['time']],
+                ['status' => $schedule['status']]
+            );
+        }
+
+        return response()->json(['success' => true]);
+    }
 }

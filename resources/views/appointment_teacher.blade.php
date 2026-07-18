@@ -230,6 +230,17 @@
     
     .cell-red { background-color: var(--ma-red); }
     .cell-green { background-color: var(--ma-green); }
+    .cell-half-top {
+        background: linear-gradient(180deg, var(--ma-green) 0 50%, #ffffff 50% 100%);
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+    }
+    
+    .cell-half-bottom {
+        background: linear-gradient(180deg, #ffffff 0 50%, var(--ma-green) 50% 100%);
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+    }
     .cell-white { background-color: #ffffff; }
 
     .legend {
@@ -455,22 +466,29 @@
                 </form>
             </div>
 
-            <!-- Mini Overview Table (Matches prototype) -->
+            <!-- My Sent Requests Table -->
             <table class="pending-table">
                 <thead>
                     <tr>
-                        <th colspan="2">Pending Requests</th>
+                        <th colspan="2">My Sent Requests</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>De Vera, Sophia</td>
-                        <td>May 9, 10:00AM</td>
-                    </tr>
-                    <tr>
-                        <td>Estabillo, Jenny</td>
-                        <td>May 10, 10:00AM</td>
-                    </tr>
+                    @forelse($mySentRequests as $request)
+                        <tr>
+                            <td>
+                                {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
+                            </td>
+                            <td>
+                                {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }},
+                                {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="2" style="text-align: center;">No sent requests.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -515,7 +533,7 @@
                 <div class="requests-trigger" onclick="openModal('requestsModalOverlay')">
                     <div class="icon-container">
                         <i class="fa-solid fa-user-group"></i>
-                        <span class="request-badge">{{ $pendingRequests->count() > 0 ? $pendingRequests->count() : 9 }}</span>
+                        <span class="request-badge">{{ $incomingRequests->count() }}</span>
                     </div>
                     <span class="request-label">Requests</span>
                 </div>
@@ -540,17 +558,60 @@
                             <td class="time-col">{{ $time }}</td>
                             @foreach($weekDays as $day)
                                 @php
+                                    // 1. Check predefined statuses in the schedules table
                                     $slot = $schedules->first(function ($schedule) use ($day, $time) {
                                         return $schedule->date === $day->format('Y-m-d') && $schedule->time_slot === $time;
                                     });
+                                    
                                     $cellClass = 'cell-white';
                                     if ($slot) {
-                                        if ($slot->status === 'booked') $cellClass = 'cell-green';
-                                        elseif ($slot->status === 'class') $cellClass = 'cell-red';
+                                        if ($slot->status === 'class') $cellClass = 'cell-red';
                                         elseif ($slot->status === 'leave') $cellClass = 'cell-grey';
+                                        elseif ($slot->status === 'booked') $cellClass = 'cell-green';
+                                        elseif ($slot->status === 'booked-half') $cellClass = 'cell-half-top';
+                                    }
+
+                                    // 2. Fetch overlapping meetings (handles cross-hour spills)
+                                    $cellStartTime = \Carbon\Carbon::parse($day->format('Y-m-d') . ' ' . $time); 
+                                    $cellEndTime = $cellStartTime->copy()->addHour(); 
+
+                                    $meetingTooltip = '';
+                                    $meeting = $bookedAppointments->first(function ($appointment) use ($cellStartTime, $cellEndTime) {
+                                        $appStart = \Carbon\Carbon::parse($appointment->appointment_date . ' ' . $appointment->start_time);
+                                        $appEnd = \Carbon\Carbon::parse($appointment->appointment_date . ' ' . $appointment->end_time);
+                                        
+                                        // Check if the appointment touches ANY part of this 1-hour cell
+                                        return $appStart->lt($cellEndTime) && $appEnd->gt($cellStartTime);
+                                    });
+
+                                    if ($meeting) {
+                                        // Build the tooltip
+                                        $parentName = strtoupper(optional($meeting->parent->student)->first_name . ' ' . optional($meeting->parent->student)->last_name ?: optional($meeting->parent)->username);
+                                        $meetingTooltip = $parentName . ' • ' . $meeting->discussion_topic . ' • ' . \Carbon\Carbon::parse($meeting->start_time)->format('g:iA') . ' - ' . \Carbon\Carbon::parse($meeting->end_time)->format('g:iA');
+                                        
+                                        // 3. Calculate exactly how much of THIS specific cell is covered
+                                        $appStart = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->start_time);
+                                        $appEnd = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->end_time);
+
+                                        // Find the exact boundaries of the overlap inside this hour
+                                        $overlapStart = $appStart->max($cellStartTime);
+                                        $overlapEnd = $appEnd->min($cellEndTime);
+                                        
+                                        $durationInCell = $overlapStart->diffInMinutes($overlapEnd);
+                                        
+                                        if ($durationInCell >= 60) {
+                                            $cellClass = 'cell-green'; // Covers the whole hour
+                                        } elseif ($durationInCell <= 30) {
+                                            // Check if the portion inside this cell starts at :00 or :30
+                                            if ($overlapStart->minute >= 30) {
+                                                $cellClass = 'cell-half-bottom';
+                                            } else {
+                                                $cellClass = 'cell-half-top';
+                                            }
+                                        }
                                     }
                                 @endphp
-                                <td class="{{ $cellClass }}"></td>
+                                <td class="{{ $cellClass }}" title="{{ $meetingTooltip }}"></td>
                             @endforeach
                         </tr>
                     @endforeach
@@ -577,7 +638,7 @@
 <div id="requestsModalOverlay" class="modal-overlay hidden">
     <div class="requests-modal">
         <div class="modal-header">
-            <h2><i class="fa-solid fa-user-plus"></i> Appointment Requests</h2>
+            <h2><i class="fa-solid fa-user-plus"></i> Incoming Requests</h2>
             <button class="close-btn" onclick="closeModal('requestsModalOverlay')">&times;</button>
         </div>
 
@@ -586,39 +647,35 @@
                 <tr>
                     <th>Name</th>
                     <th>Topic</th>
-                    <th colspan="2">Date and Time</th>
+                    <th>Date and Time</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($pendingRequests as $request)
+                @forelse($incomingRequests as $request)
                 <tr>
-                    <td>{{ $request->parent->name ?? 'Mendoza, Synel' }}</td>
+                    <td>
+                        {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
+                    </td>
                     <td>{{ $request->discussion_topic }}</td>
                     <td>
                         {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
                         {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
                         {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
                     </td>
-                    <td class="action-buttons">
-                        <!-- Approve Form -->
-                        <form action="{{ route('appointments.approve', $request->id) }}" method="POST" style="display:inline;">
-                            @csrf @method('PATCH')
-                            <button type="submit" class="btn-flat btn-approve">Approve</button>
-                        </form>
-                        
-                        <!-- Decline Form -->
-                        <form action="{{ route('appointments.decline', $request->id) }}" method="POST" style="display:inline;">
-                            @csrf @method('PATCH')
-                            <button type="submit" class="btn-flat btn-decline">Decline</button>
-                        </form>
-
-                        <!-- Trigger Reschedule Modal -->
-                        <button type="button" class="btn-flat btn-reschedule" onclick="openRescheduleModal({{ $request->id }})">Reschedule</button>
+                    <td>
+                        <div class="action-buttons">
+                            <form action="{{ route('appointments.approve', $request->id) }}" method="POST" style="display:inline;">
+                                @csrf @method('PATCH')
+                                <button type="submit" class="btn-flat btn-approve">Approve</button>
+                            </form>
+                            <button type="button" class="btn-flat btn-reschedule" onclick="openRescheduleModal({{ $request->id }})">Reschedule</button>
+                        </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="4" style="text-align: center;">No pending appointment requests.</td>
+                    <td colspan="4" style="text-align: center;">No incoming appointment requests.</td>
                 </tr>
                 @endforelse
             </tbody>

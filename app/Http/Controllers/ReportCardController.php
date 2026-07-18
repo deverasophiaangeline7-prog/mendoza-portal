@@ -63,9 +63,6 @@ class ReportCardController extends Controller
     /**
      * 3. THE GRADE SHEET (Branching Logic)
      */
-    /**
-     * 3. THE GRADE SHEET (Branching Logic)
-     */
     public function showStudent($student_id)
     {
         $student = Student::with('section')->findOrFail($student_id);
@@ -204,18 +201,18 @@ class ReportCardController extends Controller
         // 4. NOTIFY THE PARENT (Custom Table Logic)
         $student = Student::find($student_id);
 
-if ($student && $student->user_id) {
-    \App\Models\Notification::create([
-        'user_id'    => $student->user_id,
-        'title'      => 'Grades Uploaded',
-        'message'    => 'New grades have been posted for ' . $student->first_name . '.',
-        'type'       => 'grade_upload',
-        'is_read'    => 0,
-        'created_at' => now(), // Manually set the time
-    ]);
-}
+        if ($student && $student->user_id) {
+            \App\Models\Notification::create([
+                'user_id'    => $student->user_id,
+                'title'      => 'Grades Uploaded',
+                'message'    => 'New grades have been posted for ' . $student->first_name . '.',
+                'type'       => 'grade_upload',
+                'is_read'    => 0,
+                'created_at' => now(), // Manually set the time
+            ]);
+        }
 
-if ($student) {
+        if ($student) {
             // We format the names to look clean in the log table
             $studentName = strtoupper($student->last_name . ', ' . $student->first_name);
             $sectionName = $student->section ? strtoupper($student->section->grade_level . ' - ' . $student->section->section_name) : 'UNASSIGNED';
@@ -234,7 +231,7 @@ if ($student) {
     {
         $request->validate([
             'quarter' => ['required', 'in:q1,q2,q3,q4'],
-            'csv_file' => ['required', 'file', 'mimes:csv,txt'],
+            'csv_file' => ['required', 'file', 'mimes:csv,txt,xlsx'], // Added xlsx just in case you use a package later
         ]);
 
         $quarter = $request->input('quarter');
@@ -255,62 +252,56 @@ if ($student) {
             return redirect()->back()->with('error', 'Unable to open the uploaded CSV file.');
         }
 
-        $headerSkipped = false;
         $processedStudents = 0;
         $updatedValues = 0;
 
+        // NEW: Fetch all students in this section ONCE to make matching faster and smarter
+        $sectionStudents = Student::where('section_id', $section_id)->get();
+
         while (($row = fgetcsv($handle)) !== false) {
-            if (!$headerSkipped) {
-                $headerSkipped = true;
-                continue;
-            }
+            // Removed headerSkipped logic because the student check will naturally skip headers
 
             if ($row === [null] || $row === false) {
                 continue;
             }
 
-            $isEmptyRow = true;
-            foreach ($row as $value) {
-                if ($value !== null && trim((string) $value) !== '') {
-                    $isEmptyRow = false;
-                    break;
-                }
-            }
-
-            if ($isEmptyRow) {
-                continue;
-            }
-
-            $studentName = isset($row[0]) ? trim((string) $row[0]) : '';
+            // 1. The name is in Column B (Index 1) based on the spreadsheet provided
+            $studentName = isset($row[1]) ? trim((string) $row[1]) : '';
             if ($studentName === '') {
                 continue;
             }
 
-            $student = Student::where('section_id', $section_id)
-                ->where(function ($query) use ($studentName) {
-                    $normalized = strtolower(trim($studentName));
-                    $query->whereRaw('LOWER(CONCAT(first_name, " ", last_name)) = ?', [$normalized])
-                        ->orWhereRaw('LOWER(CONCAT(last_name, ", ", first_name)) = ?', [$normalized]);
-                })
-                ->first();
+            // NEW: Clean the CSV name (Remove spaces, commas, and make lowercase)
+            // Example: "LEGO, ZEDEKIAH CHYLE" becomes "legozedekiahchyle"
+            $cleanCsvName = str_replace([',', ' '], '', strtolower($studentName));
 
+            // NEW: Find the matching student using the cleaned string
+            $student = $sectionStudents->first(function ($s) use ($cleanCsvName) {
+                $dbName1 = str_replace(' ', '', strtolower($s->first_name . $s->last_name));
+                $dbName2 = str_replace(' ', '', strtolower($s->last_name . $s->first_name));
+                
+                return $cleanCsvName === $dbName1 || $cleanCsvName === $dbName2;
+            });
+
+            // If it's a header row or "MALE", this will naturally fail and skip the row
             if (!$student) {
                 continue;
             }
 
             $processedStudents++;
 
+            // 2. Adjust indices for the 4 blank columns. Grades start at Column G (Index 6)
             $subjects = [
-                'Language' => isset($row[1]) ? trim((string) $row[1]) : '',
-                'English' => isset($row[2]) ? trim((string) $row[2]) : '',
-                'Mathematics' => isset($row[3]) ? trim((string) $row[3]) : '',
-                'Makabansa' => isset($row[4]) ? trim((string) $row[4]) : '',
-                'GMRC' => isset($row[5]) ? trim((string) $row[5]) : '',
-                'MAPEH' => isset($row[6]) ? trim((string) $row[6]) : '',
-                'Music' => isset($row[7]) ? trim((string) $row[7]) : '',
-                'Art' => isset($row[8]) ? trim((string) $row[8]) : '',
-                'PE' => isset($row[9]) ? trim((string) $row[9]) : '',
-                'Health' => isset($row[10]) ? trim((string) $row[10]) : '',
+                'Language'    => isset($row[6]) ? trim((string) $row[6]) : '',
+                'English'     => isset($row[7]) ? trim((string) $row[7]) : '',
+                'Mathematics' => isset($row[8]) ? trim((string) $row[8]) : '',
+                'Makabansa'   => isset($row[9]) ? trim((string) $row[9]) : '', // AP in your sheet
+                'GMRC'        => isset($row[10]) ? trim((string) $row[10]) : '',
+                'MAPEH'       => isset($row[11]) ? trim((string) $row[11]) : '',
+                'Music'       => isset($row[12]) ? trim((string) $row[12]) : '',
+                'Art'         => isset($row[13]) ? trim((string) $row[13]) : '', // ARTS in your sheet
+                'PE'          => isset($row[14]) ? trim((string) $row[14]) : '',
+                'Health'      => isset($row[15]) ? trim((string) $row[15]) : '',
             ];
 
             foreach ($subjects as $subjectName => $rawValue) {

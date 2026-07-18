@@ -16,6 +16,14 @@
             background-color: #6d0101;
         }
         [x-cloak] { display: none !important; }
+        
+        /* 
+         * Safely force the sidebar links to be the standard larger size 
+         */
+        nav ul a { 
+            font-size: 1.125rem !important; /* Tailwind text-lg */
+            font-weight: 500 !important;    /* Tailwind font-medium */
+        }
     </style>
 </head>
 
@@ -33,15 +41,9 @@
             </a>
 
             <div class="flex items-center space-x-6 text-2xl">
-                <x-top-icon-button>
-                    <i class="fa-solid fa-envelope relative">
-                        <span class="absolute -top-2 -right-2 bg-yellow-400 text-red-700 text-xs rounded-full h-5 w-5 flex items-center justify-center border border-red-700 font-bold">
-                            1
-                        </span>
-                    </i>
-                </x-top-icon-button>
+               
+                <x-chat-dropdown />
 
-                {{-- THIS IS THE MISSING LINE THAT BRINGS THE BELL BACK --}}
                 @include('components.notification-bell')
 
                 <div class="relative" x-data="{ open: false }">

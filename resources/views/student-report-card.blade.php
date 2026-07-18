@@ -25,15 +25,16 @@
         
         <div class="flex justify-between items-start mb-6 border-b-4 border-black pb-4">
             <div>
-                <h2 class="text-4xl font-black uppercase text-black">{{ $studentName }}</h2>
-                <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName }}</h3>
+                <h2 class="text-4xl font-black uppercase text-black">{{ $studentName ?? 'Student Name' }}</h2>
+                <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName ?? 'Section Name' }}</h3>
+                <p class="text-sm font-bold text-blue-600 uppercase mt-1">Active Window: Quarter <span x-text="activeQuarter"></span></p>
             </div>
             
             <div class="flex flex-col items-end space-y-3">
                 <button onclick="window.history.back()" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
                     <i class="fa-solid fa-circle-left"></i>
                 </button>
-                @if($canManage)
+                @if($canManage ?? true)
                 <div class="flex space-x-2">
                     <button @click="isManaging = !isManaging" class="font-black px-4 py-2 border-[3px] border-black rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all" :class="isManaging ? 'bg-green-400' : 'bg-gray-200'">
                         <i class="fa-solid" :class="isManaging ? 'fa-unlock' : 'fa-lock'"></i> <span x-text="isManaging ? ' EDITING' : ' VIEWING'"></span>
@@ -47,7 +48,6 @@
         </div>
 
         <div class="flex flex-col space-y-12 mb-12">
-            
             <div>
                 <h4 class="text-center font-bold text-lg mb-2 uppercase">Report on Learning Progress and Achievement</h4>
                 <table class="w-full text-sm deped-table bg-white">
@@ -74,10 +74,15 @@
                         @foreach($regularSubs as $subject)
                         <tr>
                             <td class="font-bold">{{ $subject }}</td>
-                            <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q1" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q1"></span></td>
-                            <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q2" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q2"></span></td>
-                            <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q3" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q3"></span></td>
-                            <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q4" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q4"></span></td>
+                            @for($q = 1; $q <= 4; $q++)
+                            <td class="input-cell text-center">
+                                <input x-show="isManaging && activeQuarter == '{{ $q }}'" type="number" min="0" max="100" step="0.01" 
+                                       oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" 
+                                       x-model="grades['{{ $subject }}'].q{{ $q }}" @input="calculateGrades()" 
+                                       class="form-input-pill">
+                                <span x-show="!isManaging || activeQuarter != '{{ $q }}'" x-text="grades['{{ $subject }}'].q{{ $q }}"></span>
+                            </td>
+                            @endfor
                             <td class="text-center font-bold" x-text="grades['{{ $subject }}'].final_grade"></td>
                             <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
                         </tr>
@@ -86,17 +91,22 @@
                         <tr>
                             <td class="font-bold">MAPEH</td>
                             <td colspan="4" class="bg-gray-100"></td>
-                            <td class="text-center font-bold bg-gray-100" x-text="mapehFinal"></td>
-                            <td class="text-center bg-gray-100" x-text="mapehRemarks"></td>
+                            <td class="text-center font-bold bg-gray-100"></td>
+                            <td class="text-center bg-gray-100"></td>
                         </tr>
 
                         @foreach($mapehSubs as $subject)
                         <tr>
                             <td class="pl-8">{{ $subject }}</td>
-                            <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q1" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q1"></span></td>
-                            <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q2" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q2"></span></td>
-                            <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q3" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q3"></span></td>
-                            <td class="input-cell text-center"><input x-show="isManaging" type="number" min="0" max="100" step="0.01" oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" x-model="grades['{{ $subject }}'].q4" @input="calculateGrades()" class="form-input-pill"><span x-show="!isManaging" x-text="grades['{{ $subject }}'].q4"></span></td>
+                            @for($q = 1; $q <= 4; $q++)
+                            <td class="input-cell text-center">
+                                <input x-show="isManaging && activeQuarter == '{{ $q }}'" type="number" min="0" max="100" step="0.01" 
+                                       oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" 
+                                       x-model="grades['{{ $subject }}'].q{{ $q }}" @input="calculateGrades()" 
+                                       class="form-input-pill">
+                                <span x-show="!isManaging || activeQuarter != '{{ $q }}'" x-text="grades['{{ $subject }}'].q{{ $q }}"></span>
+                            </td>
+                            @endfor
                             <td class="text-center font-bold" x-text="grades['{{ $subject }}'].final_grade"></td>
                             <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
                         </tr>
@@ -109,33 +119,6 @@
                         </tr>
                     </tbody>
                 </table>
-
-                <div class="mt-4 flex justify-around text-xs leading-relaxed max-w-3xl mx-auto">
-                    <div>
-                        <p class="font-bold mb-2">Descriptors</p>
-                        <p>Outstanding</p>
-                        <p>Very Satisfactory</p>
-                        <p>Satisfactory</p>
-                        <p>Fairly Satisfactory</p>
-                        <p>Did Not Meet Expectations</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="font-bold mb-2">Grading Scale</p>
-                        <p>90-100</p>
-                        <p>85-89</p>
-                        <p>80-84</p>
-                        <p>75-79</p>
-                        <p>Below 75</p>
-                    </div>
-                    <div>
-                        <p class="font-bold mb-2">Remarks</p>
-                        <p>Passed</p>
-                        <p>Passed</p>
-                        <p>Passed</p>
-                        <p>Passed</p>
-                        <p>Failed</p>
-                    </div>
-                </div>
             </div>
 
             <div>
@@ -148,10 +131,7 @@
                             <th colspan="4">Quarter</th>
                         </tr>
                         <tr class="bg-[#8faadc]">
-                            <th class="w-8">1</th>
-                            <th class="w-8">2</th>
-                            <th class="w-8">3</th>
-                            <th class="w-8">4</th>
+                            <th class="w-8">1</th><th class="w-8">2</th><th class="w-8">3</th><th class="w-8">4</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -160,10 +140,10 @@
                             <td class="p-2">Expresses one's spiritual beliefs while respecting the spiritual beliefs of others</td>
                             <template x-for="q in ['q1','q2','q3','q4']">
                                 <td class="input-cell text-center">
-                                    <select x-show="isManaging" x-model="behaviors['Expresses ones spiritual beliefs'][q]" class="form-select-pill">
+                                    <select x-show="isManaging && activeQuarter == q.replace('q','')" x-model="behaviors['Expresses ones spiritual beliefs'][q]" class="form-select-pill">
                                         <option value=""></option><option value="AO">AO</option><option value="SO">SO</option><option value="RO">RO</option><option value="NO">NO</option>
                                     </select>
-                                    <span x-show="!isManaging" x-text="behaviors['Expresses ones spiritual beliefs'][q]"></span>
+                                    <span x-show="!isManaging || activeQuarter != q.replace('q','')" x-text="behaviors['Expresses ones spiritual beliefs'][q]"></span>
                                 </td>
                             </template>
                         </tr>
@@ -171,23 +151,22 @@
                             <td class="p-2">Shows adherence to ethical principles by upholding truth</td>
                             <template x-for="q in ['q1','q2','q3','q4']">
                                 <td class="input-cell text-center">
-                                    <select x-show="isManaging" x-model="behaviors['Shows adherence to ethical principles'][q]" class="form-select-pill">
+                                    <select x-show="isManaging && activeQuarter == q.replace('q','')" x-model="behaviors['Shows adherence to ethical principles'][q]" class="form-select-pill">
                                         <option value=""></option><option value="AO">AO</option><option value="SO">SO</option><option value="RO">RO</option><option value="NO">NO</option>
                                     </select>
-                                    <span x-show="!isManaging" x-text="behaviors['Shows adherence to ethical principles'][q]"></span>
+                                    <span x-show="!isManaging || activeQuarter != q.replace('q','')" x-text="behaviors['Shows adherence to ethical principles'][q]"></span>
                                 </td>
                             </template>
                         </tr>
-
                         <tr>
                             <td rowspan="2" class="font-bold align-top">2. Makatao</td>
                             <td class="p-2">Is sensitive to individual, social, and cultural differences</td>
                             <template x-for="q in ['q1','q2','q3','q4']">
                                 <td class="input-cell text-center">
-                                    <select x-show="isManaging" x-model="behaviors['Is sensitive to individual differences'][q]" class="form-select-pill">
+                                    <select x-show="isManaging && activeQuarter == q.replace('q','')" x-model="behaviors['Is sensitive to individual differences'][q]" class="form-select-pill">
                                         <option value=""></option><option value="AO">AO</option><option value="SO">SO</option><option value="RO">RO</option><option value="NO">NO</option>
                                     </select>
-                                    <span x-show="!isManaging" x-text="behaviors['Is sensitive to individual differences'][q]"></span>
+                                    <span x-show="!isManaging || activeQuarter != q.replace('q','')" x-text="behaviors['Is sensitive to individual differences'][q]"></span>
                                 </td>
                             </template>
                         </tr>
@@ -195,36 +174,34 @@
                             <td class="p-2">Demonstrates contributions toward solidarity</td>
                             <template x-for="q in ['q1','q2','q3','q4']">
                                 <td class="input-cell text-center">
-                                    <select x-show="isManaging" x-model="behaviors['Demonstrates contributions toward solidarity'][q]" class="form-select-pill">
+                                    <select x-show="isManaging && activeQuarter == q.replace('q','')" x-model="behaviors['Demonstrates contributions toward solidarity'][q]" class="form-select-pill">
                                         <option value=""></option><option value="AO">AO</option><option value="SO">SO</option><option value="RO">RO</option><option value="NO">NO</option>
                                     </select>
-                                    <span x-show="!isManaging" x-text="behaviors['Demonstrates contributions toward solidarity'][q]"></span>
+                                    <span x-show="!isManaging || activeQuarter != q.replace('q','')" x-text="behaviors['Demonstrates contributions toward solidarity'][q]"></span>
                                 </td>
                             </template>
                         </tr>
-
                         <tr>
                             <td class="font-bold align-top">3. Maka-kalikasan</td>
                             <td class="p-2">Cares for the environment and utilizes resources wisely, judiciously, and economically</td>
                             <template x-for="q in ['q1','q2','q3','q4']">
                                 <td class="input-cell text-center">
-                                    <select x-show="isManaging" x-model="behaviors['Cares for the environment'][q]" class="form-select-pill">
+                                    <select x-show="isManaging && activeQuarter == q.replace('q','')" x-model="behaviors['Cares for the environment'][q]" class="form-select-pill">
                                         <option value=""></option><option value="AO">AO</option><option value="SO">SO</option><option value="RO">RO</option><option value="NO">NO</option>
                                     </select>
-                                    <span x-show="!isManaging" x-text="behaviors['Cares for the environment'][q]"></span>
+                                    <span x-show="!isManaging || activeQuarter != q.replace('q','')" x-text="behaviors['Cares for the environment'][q]"></span>
                                 </td>
                             </template>
                         </tr>
-
                         <tr>
                             <td rowspan="2" class="font-bold align-top">4. Maka-bansa</td>
                             <td class="p-2">Demonstrates pride in being a Filipino; exercises the rights and responsibilities of a Filipino citizen</td>
                             <template x-for="q in ['q1','q2','q3','q4']">
                                 <td class="input-cell text-center">
-                                    <select x-show="isManaging" x-model="behaviors['Demonstrates pride in being a Filipino'][q]" class="form-select-pill">
+                                    <select x-show="isManaging && activeQuarter == q.replace('q','')" x-model="behaviors['Demonstrates pride in being a Filipino'][q]" class="form-select-pill">
                                         <option value=""></option><option value="AO">AO</option><option value="SO">SO</option><option value="RO">RO</option><option value="NO">NO</option>
                                     </select>
-                                    <span x-show="!isManaging" x-text="behaviors['Demonstrates pride in being a Filipino'][q]"></span>
+                                    <span x-show="!isManaging || activeQuarter != q.replace('q','')" x-text="behaviors['Demonstrates pride in being a Filipino'][q]"></span>
                                 </td>
                             </template>
                         </tr>
@@ -232,153 +209,87 @@
                             <td class="p-2">Demonstrates appropriate behavior in carrying out activities in the school, community, and country</td>
                             <template x-for="q in ['q1','q2','q3','q4']">
                                 <td class="input-cell text-center">
-                                    <select x-show="isManaging" x-model="behaviors['Demonstrates appropriate behavior'][q]" class="form-select-pill">
+                                    <select x-show="isManaging && activeQuarter == q.replace('q','')" x-model="behaviors['Demonstrates appropriate behavior'][q]" class="form-select-pill">
                                         <option value=""></option><option value="AO">AO</option><option value="SO">SO</option><option value="RO">RO</option><option value="NO">NO</option>
                                     </select>
-                                    <span x-show="!isManaging" x-text="behaviors['Demonstrates appropriate behavior'][q]"></span>
+                                    <span x-show="!isManaging || activeQuarter != q.replace('q','')" x-text="behaviors['Demonstrates appropriate behavior'][q]"></span>
                                 </td>
                             </template>
                         </tr>
                     </tbody>
                 </table>
-
-                <div class="mt-4 flex justify-center space-x-12 text-sm">
-                    <div>
-                        <p class="font-bold mb-2">Marking</p>
-                        <p>AO</p>
-                        <p>SO</p>
-                        <p>RO</p>
-                        <p>NO</p>
-                    </div>
-                    <div>
-                        <p class="font-bold mb-2">Non-Numerical Rating</p>
-                        <p>Always Observed</p>
-                        <p>Sometimes Observed</p>
-                        <p>Rarely Observed</p>
-                        <p>Not Observed</p>
-                    </div>
-                </div>
             </div>
-
         </div>
     </div>
 
-    <div x-show="showToast" x-cloak class="fixed bottom-10 right-10 z-50 px-8 py-4 rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-[3px] border-black bg-green-400 text-black font-black uppercase text-xl">
-        <i class="fa-solid fa-circle-check mr-2"></i> <span x-text="toastMessage"></span>
+    <!-- Centered Alert -->
+    <div x-show="showErrorModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition.opacity>
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showErrorModal = false"></div>
+        <div class="relative bg-red-500 border-[4px] border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-sm w-full flex items-center space-x-4">
+            <div class="bg-white rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-exclamation text-red-500 text-2xl font-black"></i>
+            </div>
+            <div class="text-white">
+                <h3 class="text-xl font-black uppercase leading-tight">Missing in Quarter <span x-text="activeQuarter"></span>:</h3>
+                <ul class="font-bold text-sm mt-1"><template x-for="sub in missingSubjects" :key="sub"><li x-text="sub"></li></template></ul>
+            </div>
+        </div>
     </div>
 </main>
 
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('gradeData', () => ({
-            isManaging: false, 
-            showToast: false, 
-            toastMessage: '',
-            studentId: '{{ $student_id }}', 
-            
+            isManaging: false, showErrorModal: false, missingSubjects: [],
+            studentId: '{{ $student_id ?? 1 }}', activeQuarter: '1', 
             subjects: ['Language', 'English', 'Mathematics', 'Makabansa', 'GMRC', 'Music', 'Art', 'PE', 'Health'], 
-            grades: @json($savedGrades) || {}, 
-            
-            generalAverage: '',
-            finalStatus: '',
-            mapehFinal: '',
-            mapehRemarks: '',
-
-            behaviorKeys: [
-                'Expresses ones spiritual beliefs',
-                'Shows adherence to ethical principles',
-                'Is sensitive to individual differences',
-                'Demonstrates contributions toward solidarity',
-                'Cares for the environment',
-                'Demonstrates pride in being a Filipino',
-                'Demonstrates appropriate behavior'
-            ],
-            behaviors: @json($savedBehaviors) || {},
+            grades: @json($savedGrades ?? []) || {}, 
+            generalAverage: '', finalStatus: '', behaviors: @json($savedBehaviors ?? []) || {},
 
             init() {
-                if (Array.isArray(this.grades)) this.grades = {};
-                this.subjects.forEach(sub => { 
-                    if(!this.grades[sub]) {
-                        this.grades[sub] = { q1: '', q2: '', q3: '', q4: '', final_grade: '', remarks: '' }; 
-                    }
-                });
-
-                if (Array.isArray(this.behaviors)) this.behaviors = {};
-                this.behaviorKeys.forEach(key => { 
-                    if(!this.behaviors[key]) {
-                        this.behaviors[key] = { q1: '', q2: '', q3: '', q4: '' }; 
-                    }
-                });
-
+                this.subjects.forEach(sub => { if(!this.grades[sub]) this.grades[sub] = { q1: '', q2: '', q3: '', q4: '', final_grade: '', remarks: '' }; });
+                this.activeQuarter = this.determineActiveQuarter();
                 this.calculateGrades();
             },
 
+            determineActiveQuarter() {
+                const isComplete = (q) => this.subjects.every(s => String(this.grades[s]['q'+q] || '').trim() !== '');
+                if (isComplete(1) && isComplete(2) && isComplete(3)) return '4';
+                if (isComplete(1) && isComplete(2)) return '3';
+                if (isComplete(1)) return '2';
+                return '1';
+            },
+
             calculateGrades() {
-                let totalMain = 0; let mainCount = 0;
-                let mapehTotal = 0; let mapehCount = 0;
-
-                const regularSubs = ['Language', 'English', 'Mathematics', 'AP', 'GMRC'];
-                const mapehSubs = ['Music', 'Art', 'PE', 'Health'];
-
-                regularSubs.forEach(sub => {
-                    let g = this.grades[sub];
-                    if (g.q1 && g.q2 && g.q3 && g.q4) {
-                        let avg = (parseFloat(g.q1) + parseFloat(g.q2) + parseFloat(g.q3) + parseFloat(g.q4)) / 4;
-                        g.final_grade = Math.round(avg); 
+                let totalScore = 0, count = 0;
+                this.subjects.forEach(s => {
+                    let g = this.grades[s];
+                    let vals = [parseFloat(g.q1), parseFloat(g.q2), parseFloat(g.q3), parseFloat(g.q4)];
+                    if (vals.every(v => !isNaN(v))) {
+                        let avg = vals.reduce((a,b) => a+b, 0) / 4;
+                        g.final_grade = Math.round(avg);
                         g.remarks = g.final_grade >= 75 ? 'Passed' : 'Failed';
-                        totalMain += avg; mainCount++;
+                        totalScore += avg; count++;
                     } else { g.final_grade = ''; g.remarks = ''; }
                 });
-
-                mapehSubs.forEach(sub => {
-                    let g = this.grades[sub];
-                    if (g.q1 && g.q2 && g.q3 && g.q4) {
-                        let avg = (parseFloat(g.q1) + parseFloat(g.q2) + parseFloat(g.q3) + parseFloat(g.q4)) / 4;
-                        g.final_grade = Math.round(avg); 
-                        g.remarks = g.final_grade >= 75 ? 'Passed' : 'Failed';
-                        mapehTotal += avg; mapehCount++;
-                    } else { g.final_grade = ''; g.remarks = ''; }
-                });
-
-                if (mapehCount === 4) {
-                    let mFinal = Math.round(mapehTotal / 4);
-                    this.mapehFinal = mFinal;
-                    this.mapehRemarks = mFinal >= 75 ? 'Passed' : 'Failed';
-                    totalMain += (mapehTotal / 4);
-                    mainCount++;
-                } else {
-                    this.mapehFinal = ''; this.mapehRemarks = '';
-                }
-
-                if (mainCount === 6) { 
-                    let genAvg = Math.round(totalMain / 6);
-                    this.generalAverage = genAvg;
-                    this.finalStatus = genAvg >= 75 ? 'Promoted' : 'Retained';
-                } else {
-                    this.generalAverage = ''; this.finalStatus = '';
+                if (count > 0) {
+                    this.generalAverage = Math.round(totalScore / count);
+                    this.finalStatus = this.generalAverage >= 75 ? 'Promoted' : 'Retained';
                 }
             },
 
             saveGrades() {
+                let qKey = 'q' + this.activeQuarter;
+                this.missingSubjects = this.subjects.filter(s => String(this.grades[s][qKey] || '').trim() === '');
+                if (this.missingSubjects.length > 0) {
+                    this.showErrorModal = true;
+                    setTimeout(() => { this.showErrorModal = false; }, 3000);
+                    return;
+                }
                 fetch('{{ route('reportcard.store') }}', {
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    body: JSON.stringify({ 
-                        student_id: this.studentId, 
-                        grades: this.grades,
-                        behaviors: this.behaviors 
-                    })
-                })
-                .then(res => res.json())
-                .then(data => { 
-                    this.toastMessage = 'Saved Successfully!'; 
-                    this.showToast = true; 
-                    setTimeout(() => this.showToast = false, 3000); 
-                })
-                .catch(err => {
-                    console.error('Error:', err);
-                    alert('Error saving. Check console.');
-                });
+                    method: 'POST', headers: {'Content-Type':'application/json', 'X-CSRF-TOKEN':'{{ csrf_token() }}'},
+                    body: JSON.stringify({ student_id: this.studentId, grades: this.grades, behaviors: this.behaviors })
+                }).then(() => location.reload());
             }
         }));
     });

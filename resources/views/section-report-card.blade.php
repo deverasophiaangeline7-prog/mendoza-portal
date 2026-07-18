@@ -37,10 +37,22 @@
                 <option value="q3">Q3</option>
                 <option value="q4">Q4</option>
             </select>
-            <label class="cursor-pointer bg-white border-[3px] border-black rounded-xl px-3 py-2 font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <span class="mr-2">Choose CSV</span>
-                <input type="file" name="csv_file" accept=".csv" required class="hidden">
-            </label>
+            
+            <!-- NEW: Alpine.js wrapper for the file input -->
+            <div x-data="{ fileName: '' }">
+                <label :class="fileName ? 'bg-red-500 text-white' : 'bg-white text-black'" 
+                    class="cursor-pointer border-[3px] border-black rounded-xl px-3 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors inline-flex items-center">
+                    
+                    <i class="fa-solid fa-file-csv mr-2" :class="fileName ? 'text-white' : 'text-black'"></i>
+                    
+                    <!-- Shows the file name if selected, otherwise shows "Choose CSV" -->
+                    <span class="mr-2" x-text="fileName ? fileName : 'Choose CSV'"></span>
+                    
+                    <input type="file" name="csv_file" accept=".csv, .xlsx" required class="hidden" 
+                        @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''">
+                </label>
+            </div>
+
             <button type="submit" class="bg-[#b26905] text-black font-black px-4 py-2 border-[3px] border-black rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
                 IMPORT BATCH
             </button>

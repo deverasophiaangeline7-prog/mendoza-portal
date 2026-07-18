@@ -1,5 +1,4 @@
 <?php
-
 // app/Models/Appointment.php
 namespace App\Models;
 
@@ -11,8 +10,14 @@ class Appointment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'teacher_id', 'parent_id', 'discussion_topic', 
-        'appointment_date', 'start_time', 'end_time', 'status'
+        'teacher_id', 
+        'parent_id', 
+        'discussion_topic', 
+        'appointment_date', 
+        'start_time', 
+        'end_time', 
+        'status',
+        'created_by' // <--- MUST BE HERE!
     ];
 
     public function parent()

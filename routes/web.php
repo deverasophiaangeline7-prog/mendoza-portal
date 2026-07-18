@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\UserController;
@@ -60,6 +61,11 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
     Route::get('/attendance/{grade}', [AttendanceController::class, 'show'])->name('attendance.show');
     Route::get('/parent/attendance', [ParentAttendanceController::class, 'index'])->name('parent.attendance');
+
+    // Chat Routes
+    Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');
+    Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
 
     // Report Card Views
     Route::get('/report-card', [ReportCardController::class, 'index'])->name('reportcard.index');
