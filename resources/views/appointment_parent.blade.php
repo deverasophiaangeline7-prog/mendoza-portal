@@ -9,6 +9,7 @@
         --ma-orange: #ffaa00; 
         --ma-green: #34a853;
         --ma-bg-grey: #e8e8e8;
+        --ma-dark-grey: #b0b0b0; 
     }
 
     .dashboard-container {
@@ -140,7 +141,6 @@
         gap: 10px;
     }
 
-    /* Standardized Action Buttons */
     .btn-flat {
         padding: 8px 18px;
         border: 2px solid #000;
@@ -148,14 +148,13 @@
         font-weight: 900;
         font-size: 14px;
         cursor: pointer;
-        color: black; /* Default to black text to match Canva layout */
+        color: black;
     }
 
     .btn-approve { background-color: var(--ma-green); }
     .btn-decline { background-color: var(--ma-red); color: white; }
     .btn-reschedule { background-color: var(--ma-orange); } 
 
-    /* Calendar */
     .calendar-title {
         text-align: center;
         font-size: 24px;
@@ -198,7 +197,6 @@
 
     .nav-arrow:hover { transform: scale(1.2); color: var(--ma-red); }
 
-    /* Matrix */
     .schedule-grid {
         width: 100%;
         border-collapse: collapse;
@@ -214,9 +212,11 @@
     
     .cell-red { background-color: var(--ma-red); }
     .cell-green { background-color: var(--ma-green); }
+    .cell-grey { background-color: var(--ma-dark-grey) !important; }
+    .cell-white { background-color: #ffffff; }
+
     .cell-half-top { background: linear-gradient(180deg, var(--ma-green) 0 50%, #ffffff 50% 100%); }
     .cell-half-bottom { background: linear-gradient(180deg, #ffffff 0 50%, var(--ma-green) 50% 100%); }
-    .cell-white { background-color: #ffffff; }
 
     .legend {
         display: flex;
@@ -232,16 +232,27 @@
     }
     .disclaimer { color: var(--ma-red); text-align: center; font-size: 13px; font-weight: 900; margin-top: 5px; }
 
-    /* Reschedule Modal CSS */
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;
     }
     .hidden { display: none !important; }
     
-    .nested-modal-content {
+    .nested-modal-content, .validation-modal {
         background: white; border: 4px solid #000; padding: 30px; width: 60%; max-width: 600px; text-align: center; box-shadow: 10px 10px 0px var(--ma-orange); border-radius: 15px;
     }
+
+    .validation-modal {
+        max-width: 450px;
+    }
+
+    .validation-modal h3 {
+        margin-top: 0;
+        color: var(--ma-red);
+        font-weight: 900;
+        font-size: 22px;
+    }
+
     .nested-modal-content h3 { margin-top: 0; font-size: 20px; font-weight: 900;}
     .reason-input {
         width: 90%; padding: 15px; border: 2px solid #000; border-radius: 10px; background: var(--ma-bg-grey); margin-bottom: 25px; font-size: 16px; font-weight: bold;
@@ -252,12 +263,11 @@
 <div class="dashboard-container">
     <div class="main-content">
         
-        <!-- Left Side: Forms and Statuses -->
         <div class="left-column">
             
             <div class="ma-card">
                 <h3>Appoint with your adviser</h3>
-                <form action="{{ route('appointments.store') }}" method="POST">
+                <form id="appointmentForm" action="{{ route('appointments.store') }}" method="POST" onsubmit="return validateAppointmentForm(event)">
                     @csrf
                     <div class="form-group">
                         <label>Discussion Topic</label>
@@ -265,16 +275,19 @@
                     </div>
                     <div class="form-group">
                         <label>Appointment Date</label>
-                        <input type="date" name="appointment_date" class="form-control" required>
+                        {{-- Added Min/Max restrictions: Extended to 2 weeks out --}}
+                        <input type="date" id="appointment_date" name="appointment_date" class="form-control" required
+                               min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                               max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
                     </div>
                     <div class="time-group">
                         <div class="form-group" style="flex: 1;">
                             <label>Start Time</label>
-                            <input type="time" name="start_time" class="form-control" required>
+                            <input type="time" id="start_time" name="start_time" class="form-control" required>
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label>End Time</label>
-                            <input type="time" name="end_time" class="form-control" required>
+                            <input type="time" id="end_time" name="end_time" class="form-control" required>
                         </div>
                     </div>
                     <button type="submit" class="btn-submit">Submit Request</button>
@@ -300,7 +313,6 @@
                 </div>
             </div>
 
-            <!-- MY REQUESTS LIST -->
             <div class="ma-card">
                 <h3>My Requests</h3>
 
@@ -310,7 +322,6 @@
                     </div>
                 @else
                     
-                    <!-- 1. Incoming Requests (Needs Action) -->
                     @foreach($incomingRequests as $request)
                         <div style="margin-bottom: 20px;">
                             <div style="text-align: left; font-weight: 900; font-size: 13px; margin-bottom: 5px; color: var(--ma-red); margin-left: 5px;">
@@ -338,7 +349,6 @@
                         @endif
                     @endforeach
 
-                    <!-- 2. My Sent Requests (Waiting for Teacher) -->
                     @foreach($mySentRequests as $request)
                         <div style="margin-bottom: 20px;">
                             <div style="text-align: left; font-weight: 900; font-size: 13px; margin-bottom: 5px; margin-left: 5px;">
@@ -363,11 +373,19 @@
 
         </div>
 
-        <!-- Right Side: Schedule Matrix -->
         <div class="right-column">
             @php
-                $dateParam = request('date', \Carbon\Carbon::now()->format('Y-m-d'));
-                $currentDate = \Carbon\Carbon::parse($dateParam);
+                $dateParam = request('date');
+                if ($dateParam) {
+                    $currentDate = \Carbon\Carbon::parse($dateParam);
+                } else {
+                    $currentDate = \Carbon\Carbon::now();
+                    // Auto-skip to upcoming Monday if today is Saturday or Sunday
+                    if ($currentDate->isWeekend()) {
+                        $currentDate = $currentDate->next(\Carbon\Carbon::MONDAY);
+                    }
+                }
+
                 $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
                 $prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');
                 $nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');
@@ -411,11 +429,22 @@
                                         return $schedule->date === $day->format('Y-m-d') && $schedule->time_slot === $time;
                                     });
                                     $cellClass = 'cell-white';
+                                    $statusValue = 'available';
+
                                     if ($slot) {
-                                        if ($slot->status === 'class') $cellClass = 'cell-red';
-                                        elseif ($slot->status === 'leave') $cellClass = 'cell-grey';
-                                        elseif ($slot->status === 'booked') $cellClass = 'cell-green';
-                                        elseif ($slot->status === 'booked-half') $cellClass = 'cell-half-top';
+                                        if ($slot->status === 'class' || $slot->status === 'class_hours') {
+                                            $cellClass = 'cell-red';
+                                            $statusValue = 'class';
+                                        } elseif ($slot->status === 'leave' || $slot->status === 'on_leave') {
+                                            $cellClass = 'cell-grey';
+                                            $statusValue = 'leave';
+                                        } elseif ($slot->status === 'booked') {
+                                            $cellClass = 'cell-green';
+                                            $statusValue = 'booked';
+                                        } elseif ($slot->status === 'booked-half') {
+                                            $cellClass = 'cell-half-top';
+                                            $statusValue = 'booked';
+                                        }
                                     }
                                     
                                     $cellStartTime = \Carbon\Carbon::parse($day->format('Y-m-d') . ' ' . $time);
@@ -429,6 +458,7 @@
                                     });
 
                                     if ($meeting) {
+                                        $statusValue = 'booked';
                                         $parentName = strtoupper(optional($meeting->parent->student)->first_name . ' ' . optional($meeting->parent->student)->last_name ?: optional($meeting->parent)->username);
                                         $meetingTooltip = $parentName . ' • ' . $meeting->discussion_topic . ' • ' . \Carbon\Carbon::parse($meeting->start_time)->format('g:iA') . ' - ' . \Carbon\Carbon::parse($meeting->end_time)->format('g:iA');
                                         
@@ -449,7 +479,12 @@
                                         }
                                     }
                                 @endphp
-                                <td class="{{ $cellClass }}" title="{{ $meetingTooltip }}"></td>
+                                <td class="{{ $cellClass }}" 
+                                    data-date="{{ $day->format('Y-m-d') }}" 
+                                    data-time="{{ $time }}" 
+                                    data-status="{{ $statusValue }}" 
+                                    title="{{ $meetingTooltip }}">
+                                </td>
                             @endforeach
                         </tr>
                     @endforeach
@@ -460,16 +495,21 @@
                 <div class="legend-item"><span class="cell-white"></span>Available</div>
                 <div class="legend-item"><span class="cell-green"></span>Booked</div>
                 <div class="legend-item"><span class="cell-red"></span>Class Hours</div>
-                <div class="legend-item"><span style="background-color: grey;"></span>On Leave</div>
+                <div class="legend-item"><span class="cell-grey"></span>On Leave</div>
             </div>
             <p class="disclaimer">Schedules booked on "On Leave" will be pending for reschedule.</p>
         </div>
     </div>
 </div>
 
-<!-- ============================================== -->
-<!-- MODALS SECTION -->
-<!-- ============================================== -->
+<!-- VALIDATION POPUP MODAL -->
+<div id="validationModalOverlay" class="modal-overlay hidden">
+    <div class="validation-modal">
+        <h3 id="valModalTitle"><i class="fa-solid fa-triangle-exclamation"></i> Invalid Action</h3>
+        <p id="valModalMessage" style="font-weight: bold; font-size: 15px; margin: 20px 0; color: #333;"></p>
+        <button type="button" class="btn-submit" onclick="closeModal('validationModalOverlay')" style="margin: 0 auto;">OK</button>
+    </div>
+</div>
 
 <!-- Reschedule Modal -->
 <div id="rescheduleModal" class="modal-overlay hidden">
@@ -497,10 +537,108 @@
         document.getElementById(modalId).classList.add('hidden');
     }
 
+    function showValidationPopUp(message) {
+        document.getElementById('valModalMessage').innerText = message;
+        openModal('validationModalOverlay');
+    }
+
+    function validateAppointmentForm(event) {
+        const dateInput = document.getElementById('appointment_date').value;
+        const startTimeInput = document.getElementById('start_time').value;
+        const endTimeInput = document.getElementById('end_time').value;
+
+        if (!dateInput || !startTimeInput || !endTimeInput) return true;
+
+        const today = "{{ \Carbon\Carbon::now()->format('Y-m-d') }}";
+        const maxDate = "{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}";
+        
+        if (dateInput < today) {
+            event.preventDefault();
+            showValidationPopUp('Appointments cannot be booked in the past.');
+            return false;
+        }
+
+        if (dateInput > maxDate) {
+            event.preventDefault();
+            showValidationPopUp('Appointments can only be scheduled up to two weeks in advance.');
+            return false;
+        }
+
+        const [year, month, day] = dateInput.split('-');
+        const dateObj = new Date(year, month - 1, day);
+        const dayOfWeek = dateObj.getDay(); 
+        if (dayOfWeek === 0 || dayOfWeek === 6) { 
+            event.preventDefault();
+            showValidationPopUp('Appointments are only available from Monday to Friday.');
+            return false;
+        }
+
+        const startParts = startTimeInput.split(':');
+        const endParts = endTimeInput.split(':');
+
+        const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
+        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+
+        const duration = endMins - startMins;
+
+        if (duration <= 0) {
+            event.preventDefault();
+            showValidationPopUp('Invalid time selected. The end time must be later than the start time.');
+            return false;
+        }
+
+        if (duration !== 30 && duration !== 60) {
+            event.preventDefault();
+            showValidationPopUp('Appointment duration must be exactly 30 minutes or 1 hour.');
+            return false;
+        }
+
+        const cellHour = parseInt(startParts[0], 10);
+        let timeSlotLabel = '';
+
+        if (cellHour === 8) timeSlotLabel = '8AM';
+        else if (cellHour === 9) timeSlotLabel = '9AM';
+        else if (cellHour === 10) timeSlotLabel = '10AM';
+        else if (cellHour === 11) timeSlotLabel = '11AM';
+        else if (cellHour === 13) timeSlotLabel = '1PM';
+        else if (cellHour === 14) timeSlotLabel = '2PM';
+        else if (cellHour === 15) timeSlotLabel = '3PM';
+        else if (cellHour === 16) timeSlotLabel = '4PM';
+
+        if (timeSlotLabel) {
+            const matchingCell = document.querySelector(`td[data-date="${dateInput}"][data-time="${timeSlotLabel}"]`);
+            if (matchingCell) {
+                const cellStatus = matchingCell.getAttribute('data-status');
+                if (cellStatus === 'leave') {
+                    event.preventDefault();
+                    showValidationPopUp('Cannot book an appointment! The teacher is On Leave for this day.');
+                    return false;
+                } else if (cellStatus === 'class') {
+                    event.preventDefault();
+                    showValidationPopUp('Cannot book an appointment! This slot is reserved for Class Hours.');
+                    return false;
+                } else if (cellStatus === 'booked') {
+                    event.preventDefault();
+                    showValidationPopUp('Cannot book an appointment! This time slot is already Booked.');
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     function openRescheduleModal(appointmentId) {
         const form = document.getElementById('rescheduleForm');
         form.action = `/appointments/${appointmentId}/reschedule`;
         openModal('rescheduleModal');
+    }
+
+    window.onclick = function(event) {
+        const valOverlay = document.getElementById('validationModalOverlay');
+        const resOverlay = document.getElementById('rescheduleModal');
+        if (event.target === valOverlay) closeModal('validationModalOverlay');
+        if (event.target === resOverlay) closeModal('rescheduleModal');
     }
 </script>
 @endsection

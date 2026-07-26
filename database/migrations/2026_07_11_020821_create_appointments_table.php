@@ -14,21 +14,23 @@ return new class extends Migration
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
             
-            // Foreign Keys linking to your users table
-            $table->foreignId('teacher_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('parent_id')->constrained('users')->onDelete('cascade');
+            // 1. CREATE THE COLUMNS FIRST
+            $table->unsignedBigInteger('teacher_id');
+            $table->unsignedBigInteger('parent_id');
             
-            // Appointment Details
+            // ... (Your other columns like discussion_topic, appointment_date, status, etc.)
             $table->string('discussion_topic');
             $table->date('appointment_date');
             $table->time('start_time');
             $table->time('end_time');
-            
-            // Status and Rescheduling
             $table->enum('status', ['pending', 'booked', 'reschedule', 'declined'])->default('pending');
             $table->string('reschedule_reason')->nullable();
             
             $table->timestamps();
+
+            // 2. THEN DEFINE THE FOREIGN KEYS
+            $table->foreign('teacher_id')->references('user_id')->on('users')->onDelete('cascade');
+            $table->foreign('parent_id')->references('user_id')->on('users')->onDelete('cascade');
         });
     }
 

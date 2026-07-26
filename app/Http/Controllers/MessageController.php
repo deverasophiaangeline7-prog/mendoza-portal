@@ -5,45 +5,77 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Message;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class MessageController extends Controller
 {
     public function index()
     {
-        $users = $this->getDummyChats();
+        $authId = Auth::id();
+
+        // Fetch ONLY users who have a message history with the logged-in user
+        $users = User::where('user_id', '!=', $authId)
+            ->where(function ($query) use ($authId) {
+                $query->whereHas('sentMessages', function ($q) use ($authId) {
+                    $q->where('receiver_id', $authId);
+                })->orWhereHas('receivedMessages', function ($q) use ($authId) {
+                    $q->where('sender_id', $authId);
+                });
+            })
+            ->get();
+        
         return view('chat-system', compact('users'));
     }
 
     public function show($id)
     {
-        $users = $this->getDummyChats();
-        $selectedUser = collect($users)->firstWhere('id', (int)$id);
+        $authId = Auth::id();
 
-        if (!$selectedUser) {
-            abort(404, 'Chat not found');
-        }
+        // Apply the same filter for the sidebar when viewing a specific chat
+        $users = User::where('user_id', '!=', $authId)
+            ->where(function ($query) use ($authId) {
+                $query->whereHas('sentMessages', function ($q) use ($authId) {
+                    $q->where('receiver_id', $authId);
+                })->orWhereHas('receivedMessages', function ($q) use ($authId) {
+                    $q->where('sender_id', $authId);
+                });
+            })
+            ->get();
+        
+        // Find the selected user by user_id
+        $selectedUser = User::where('user_id', $id)->firstOrFail();
 
-        $messages = [];
+        // Mark incoming messages from this user as read
+        Message::where('sender_id', $id)
+               ->where('receiver_id', $authId)
+               ->update(['is_read' => true]);
+
+        // Fetch messages between the logged-in user and the selected user
+        $messages = Message::where(function($query) use ($id, $authId) {
+            $query->where('sender_id', $authId)
+                  ->where('receiver_id', $id);
+        })->orWhere(function($query) use ($id, $authId) {
+            $query->where('sender_id', $id)
+                  ->where('receiver_id', $authId);
+        })->orderBy('created_at', 'asc')->get();
 
         return view('chat-system', compact('users', 'selectedUser', 'messages'));
     }
 
     public function store(Request $request)
     {
-        return back();
-    }
+        $request->validate([
+            'receiver_id' => 'required|exists:users,user_id',
+            'message' => 'required|string',
+        ]);
 
-    // Helper method to keep our dummy data clean and pinned at the top
-    private function getDummyChats()
-    {
-        return [
-            // Pinned Chats at the top
-            (object) ['id' => 3, 'name' => 'Announcements', 'type' => 'announcement'],
-            (object) ['id' => 4, 'name' => '1 - Faith', 'type' => 'advisory'],
-            
-            // Regular Direct Messages below
-            (object) ['id' => 1, 'name' => 'John Doe', 'type' => 'direct'],
-            (object) ['id' => 2, 'name' => 'Jane Smith', 'type' => 'direct'],
-        ];
+        Message::create([
+            'sender_id' => Auth::id(),
+            'receiver_id' => $request->receiver_id,
+            'content' => $request->message,
+            'is_read' => false,
+        ]);
+
+        return redirect()->route('messages.show', ['id' => $request->receiver_id]);
     }
 }

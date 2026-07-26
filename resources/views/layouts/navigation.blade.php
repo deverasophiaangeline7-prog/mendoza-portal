@@ -41,10 +41,13 @@
             </a>
 
             <div class="flex items-center space-x-6 text-2xl">
-               
-                <x-chat-dropdown />
+    
+            <!-- Direct link to Chat System -->
+            <a href="{{ route('messages.index') }}" class="relative hover:scale-110 transition-transform focus:outline-none flex items-center">
+                <i class="fa-solid fa-envelope {{ request()->routeIs('messages.index') ? 'text-[#ffaa00]' : 'text-white hover:text-[#ffaa00]' }} transition-colors duration-200"></i>
+            </a>
 
-                @include('components.notification-bell')
+            @include('components.notification-bell')
 
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" @click.away="open = false"

@@ -10,23 +10,23 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
- Schema::create('messages', function (Blueprint $table) {
-    $table->id();
-    
-    // This column will hold the sender's ID
-    $table->unsignedBigInteger('sender_id');
-    
-    // LINK: This must reference 'user_id' to match the users table exactly
-    $table->foreign('sender_id')
-          ->references('user_id') 
-          ->on('users')
-          ->onDelete('cascade');
+    {
+        Schema::create('messages', function (Blueprint $table) {
+            $table->id();
+            
+            // 1. Create the columns first
+            $table->unsignedBigInteger('sender_id');
+            $table->unsignedBigInteger('receiver_id');
+            $table->text('content');
+            $table->boolean('is_read')->default(false);
+            
+            $table->timestamps();
 
-    $table->text('message');
-    $table->timestamps();
-});
-}
+            // 2. Define the foreign keys referencing user_id on the users table
+            $table->foreign('sender_id')->references('user_id')->on('users')->onDelete('cascade');
+            $table->foreign('receiver_id')->references('user_id')->on('users')->onDelete('cascade');
+        });
+    }
 
     /**
      * Reverse the migrations.

@@ -87,11 +87,55 @@ public function notifyUser($title, $message, $type = 'general')
 // User.php
 public function sentMessages()
 {
-    return $this->hasMany(Message::class, 'sender_id');
+    return $this->hasMany(Message::class, 'sender_id', 'user_id');
 }
 
 public function receivedMessages()
 {
-    return $this->hasMany(Message::class, 'receiver_id');
+    return $this->hasMany(Message::class, 'receiver_id', 'user_id');
 }
+
+public function getNameAttribute()
+{
+    // If the user has a linked student profile, return their full name
+    if ($this->student) {
+        return trim($this->student->first_name . ' ' . $this->student->last_name);
+    }
+
+    // If the user has a linked teacher profile (adjust columns if needed)
+    if ($this->teacher) {
+        return trim(($this->teacher->first_name ?? '') . ' ' . ($this->teacher->last_name ?? ''));
+    }
+
+    // Fallback to username if no profile name is found (e.g., Admins)
+    return $this->username;
+}
+
+public function getSectionNameAttribute()
+{
+    // If the user is a student and has a section assigned
+    if ($this->student && $this->student->section) {
+        return $this->student->section->grade_level . ' - ' . $this->student->section->section_name;
+    }
+
+    // If the user is a teacher, you can pull their advisory section if applicable
+    if ($this->sections()->exists()) {
+        return $this->sections()->first()->name ?? null;
+    }
+
+    return null;
+}
+
+public function latestMessageWithAuthUser()
+{
+    return Message::where(function($query) {
+        $query->where('sender_id', auth()->id())
+              ->where('receiver_id', $this->user_id);
+    })->orWhere(function($query) {
+        $query->where('sender_id', $this->user_id)
+              ->where('receiver_id', auth()->id());
+    })->latest('created_at')->first();
+}
+
+
 }

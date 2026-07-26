@@ -6,9 +6,10 @@
 <style>
     :root {
         --ma-red: #d00101;
-        --ma-orange: #ffaa00; /* Bright orange matching Canva */
+        --ma-orange: #ffaa00;
         --ma-green: #34a853;
         --ma-bg-grey: #e8e8e8;
+        --ma-dark-grey: #b0b0b0; 
     }
 
     .dashboard-container {
@@ -16,10 +17,9 @@
         font-family: 'Arial', sans-serif;
         width: 100%;
         height: 100%;
-        overflow: hidden; /* Prevents page scroll */
+        overflow: hidden;
     }
 
-    /* Main Content Styling */
     .main-content {
         flex: 1;
         padding: 20px 30px;
@@ -31,14 +31,9 @@
     .left-column { flex: 1; display: flex; flex-direction: column; gap: 20px; }
     .right-column { flex: 1.2; position: relative; }
 
-    /* ----------------------------------
-       LEFT COLUMN STYLES
-       ---------------------------------- */
-
-    /* Form Card */
     .appointment-form-card {
         border: 2px solid #000;
-        border-radius: 25px; /* Pill/Card shape */
+        border-radius: 25px;
         padding: 20px;
         background: #fff;
     }
@@ -51,9 +46,7 @@
         margin-bottom: 15px;
     }
 
-    .form-group {
-        margin-bottom: 12px;
-    }
+    .form-group { margin-bottom: 12px; }
     
     .form-group label {
         display: block;
@@ -67,17 +60,14 @@
         width: 100%;
         padding: 8px 15px;
         border: 2px solid #000;
-        border-radius: 25px; /* Pill shape inputs */
+        border-radius: 25px;
         background-color: var(--ma-bg-grey);
         font-weight: bold;
         font-size: 14px;
         box-sizing: border-box;
     }
 
-    .time-group {
-        display: flex;
-        gap: 15px;
-    }
+    .time-group { display: flex; gap: 15px; }
 
     .btn-submit {
         background-color: var(--ma-green);
@@ -92,7 +82,6 @@
         cursor: pointer;
     }
 
-    /* Pending Requests Mini Table */
     .pending-table {
         width: 100%;
         border-collapse: collapse;
@@ -116,10 +105,6 @@
         font-size: 14px;
     }
 
-    /* ----------------------------------
-       RIGHT COLUMN STYLES (CALENDAR)
-       ---------------------------------- */
-
     .calendar-title {
         text-align: center;
         font-size: 24px;
@@ -127,11 +112,10 @@
         margin: 0 0 5px 0;
     }
 
-    /* Calendar Header & Navigation */
     .calendar-header-wrapper {
         position: relative;
         display: flex;
-        justify-content: center; /* Centers the arrows and month */
+        justify-content: center;
         align-items: center;
         margin-bottom: 15px;
         min-height: 40px;
@@ -166,11 +150,10 @@
         color: var(--ma-red); 
     }
 
-    /* Requests Icon Trigger */
     .requests-trigger {
         position: absolute;
         right: 0;
-        top: -15px; /* Aligns it nicely with the header */
+        top: -15px;
         text-align: center;
         cursor: pointer;
         display: flex;
@@ -207,7 +190,6 @@
         margin-top: 5px;
     }
 
-    /* Schedule Grid */
     .schedule-grid {
         width: 100%;
         border-collapse: collapse;
@@ -230,6 +212,9 @@
     
     .cell-red { background-color: var(--ma-red); }
     .cell-green { background-color: var(--ma-green); }
+    .cell-grey { background-color: var(--ma-dark-grey) !important; }
+    .cell-white { background-color: #ffffff; }
+
     .cell-half-top {
         background: linear-gradient(180deg, var(--ma-green) 0 50%, #ffffff 50% 100%);
         background-repeat: no-repeat;
@@ -241,7 +226,6 @@
         background-repeat: no-repeat;
         background-size: 100% 100%;
     }
-    .cell-white { background-color: #ffffff; }
 
     .legend {
         display: flex;
@@ -270,9 +254,6 @@
         margin-top: 5px;
     }
 
-    /* ----------------------------------
-       MODALS BASE STYLING
-       ---------------------------------- */
     .modal-overlay {
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
@@ -283,11 +264,9 @@
         z-index: 1000;
     }
     
-    .hidden {
-        display: none !important;
-    }
+    .hidden { display: none !important; }
 
-    .requests-modal {
+    .requests-modal, .validation-modal {
         background: white;
         border: 4px solid #000;
         border-radius: 25px;
@@ -295,6 +274,18 @@
         max-width: 900px;
         padding: 20px;
         position: relative;
+    }
+
+    .validation-modal {
+        max-width: 450px;
+        text-align: center;
+    }
+
+    .validation-modal h3 {
+        margin-top: 0;
+        color: var(--ma-red);
+        font-weight: 900;
+        font-size: 22px;
     }
 
     .modal-header {
@@ -354,7 +345,6 @@
         vertical-align: middle;
     }
 
-    /* Action Buttons in Modal */
     .action-buttons {
         display: flex;
         gap: 10px;
@@ -375,7 +365,6 @@
     .btn-decline { background-color: var(--ma-red); }
     .btn-reschedule { background-color: var(--ma-orange); } 
 
-    /* Nested Reschedule Modal */
     .nested-modal {
         position: absolute;
         top: 0; left: 0; width: 100%; height: 100%;
@@ -396,10 +385,7 @@
         box-shadow: 10px 10px 0px var(--ma-orange);
     }
 
-    .nested-modal-content h3 {
-        margin-top: 0;
-        font-size: 20px;
-    }
+    .nested-modal-content h3 { margin-top: 0; font-size: 20px; }
 
     .reason-input {
         width: 90%;
@@ -419,15 +405,11 @@
 </style>
 
 <div class="dashboard-container">
-    <!-- Main Content -->
     <div class="main-content">
-        
-        <!-- Left Side: Form and Mini Pending Requests -->
         <div class="left-column">
-            
             <div class="appointment-form-card">
                 <h3>Appoint with a parent</h3>
-                <form action="{{ route('appointments.store') }}" method="POST">
+                <form id="appointmentForm" action="{{ route('appointments.store') }}" method="POST" onsubmit="return validateAppointmentForm(event)">
                     @csrf
                     <div class="form-group">
                         <label>Name</label>
@@ -448,17 +430,20 @@
 
                     <div class="form-group">
                         <label>Appointment Date</label>
-                        <input type="date" name="appointment_date" class="form-control" required>
+                        {{-- Added Min/Max restrictions: Extended to 2 weeks out --}}
+                        <input type="date" id="appointment_date" name="appointment_date" class="form-control" required
+                               min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                               max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
                     </div>
 
                     <div class="time-group">
                         <div class="form-group" style="flex: 1;">
                             <label>Start Time</label>
-                            <input type="time" name="start_time" class="form-control" required>
+                            <input type="time" id="start_time" name="start_time" class="form-control" required>
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label>End Time</label>
-                            <input type="time" name="end_time" class="form-control" required>
+                            <input type="time" id="end_time" name="end_time" class="form-control" required>
                         </div>
                     </div>
 
@@ -466,7 +451,6 @@
                 </form>
             </div>
 
-            <!-- My Sent Requests Table -->
             <table class="pending-table">
                 <thead>
                     <tr>
@@ -493,22 +477,23 @@
             </table>
         </div>
 
-        <!-- Right Side: Schedule Matrix -->
         <div class="right-column">
-            
             @php
-                // Check if a date is passed in the URL (e.g., ?date=2026-05-18), otherwise use today
-                $dateParam = request('date', \Carbon\Carbon::now()->format('Y-m-d'));
-                $currentDate = \Carbon\Carbon::parse($dateParam);
-                
-                // Find the Monday of the currently viewed week
+                $dateParam = request('date');
+                if ($dateParam) {
+                    $currentDate = \Carbon\Carbon::parse($dateParam);
+                } else {
+                    $currentDate = \Carbon\Carbon::now();
+                    // Auto-skip to upcoming Monday if today is Saturday or Sunday
+                    if ($currentDate->isWeekend()) {
+                        $currentDate = $currentDate->next(\Carbon\Carbon::MONDAY);
+                    }
+                }
+
                 $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
-                
-                // Calculate the dates for the Previous and Next arrows
                 $prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');
                 $nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');
                 
-                // Generate the 5 days (Mon-Fri)
                 $weekDays = [];
                 for ($i = 0; $i < 5; $i++) {
                     $weekDays[] = $startOfWeek->copy()->addDays($i);
@@ -517,19 +502,15 @@
                 $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
             @endphp
 
-            <!-- Calendar Header: Title, Navigation, and Requests Icon -->
             <h2 class="calendar-title">My Schedule</h2>
             
             <div class="calendar-header-wrapper">
-                
-                <!-- Dynamic Calendar Navigation -->
                 <div class="calendar-navigation">
                     <a href="{{ request()->url() }}?date={{ $prevWeekDate }}" class="nav-arrow">&laquo;</a>
                     <h2 class="month-title">{{ $currentDate->format('F Y') }}</h2>
                     <a href="{{ request()->url() }}?date={{ $nextWeekDate }}" class="nav-arrow">&raquo;</a>
                 </div>
 
-                <!-- Notification Trigger -->
                 <div class="requests-trigger" onclick="openModal('requestsModalOverlay')">
                     <div class="icon-container">
                         <i class="fa-solid fa-user-group"></i>
@@ -539,7 +520,6 @@
                 </div>
             </div>
 
-            <!-- Dynamic Matrix matching prototype structure -->
             <table class="schedule-grid">
                 <thead>
                     <tr>
@@ -558,20 +538,30 @@
                             <td class="time-col">{{ $time }}</td>
                             @foreach($weekDays as $day)
                                 @php
-                                    // 1. Check predefined statuses in the schedules table
                                     $slot = $schedules->first(function ($schedule) use ($day, $time) {
-                                        return $schedule->date === $day->format('Y-m-d') && $schedule->time_slot === $time;
+                                        $schedTime = isset($schedule->time) ? $schedule->time : ($schedule->time_slot ?? '');
+                                        return $schedule->date === $day->format('Y-m-d') && $schedTime === $time;
                                     });
                                     
                                     $cellClass = 'cell-white';
+                                    $statusValue = 'available';
+
                                     if ($slot) {
-                                        if ($slot->status === 'class') $cellClass = 'cell-red';
-                                        elseif ($slot->status === 'leave') $cellClass = 'cell-grey';
-                                        elseif ($slot->status === 'booked') $cellClass = 'cell-green';
-                                        elseif ($slot->status === 'booked-half') $cellClass = 'cell-half-top';
+                                        if ($slot->status === 'class' || $slot->status === 'class_hours') {
+                                            $cellClass = 'cell-red';
+                                            $statusValue = 'class';
+                                        } elseif ($slot->status === 'leave' || $slot->status === 'on_leave') {
+                                            $cellClass = 'cell-grey';
+                                            $statusValue = 'leave';
+                                        } elseif ($slot->status === 'booked') {
+                                            $cellClass = 'cell-green';
+                                            $statusValue = 'booked';
+                                        } elseif ($slot->status === 'booked-half') {
+                                            $cellClass = 'cell-half-top';
+                                            $statusValue = 'booked';
+                                        }
                                     }
 
-                                    // 2. Fetch overlapping meetings (handles cross-hour spills)
                                     $cellStartTime = \Carbon\Carbon::parse($day->format('Y-m-d') . ' ' . $time); 
                                     $cellEndTime = $cellStartTime->copy()->addHour(); 
 
@@ -579,30 +569,25 @@
                                     $meeting = $bookedAppointments->first(function ($appointment) use ($cellStartTime, $cellEndTime) {
                                         $appStart = \Carbon\Carbon::parse($appointment->appointment_date . ' ' . $appointment->start_time);
                                         $appEnd = \Carbon\Carbon::parse($appointment->appointment_date . ' ' . $appointment->end_time);
-                                        
-                                        // Check if the appointment touches ANY part of this 1-hour cell
                                         return $appStart->lt($cellEndTime) && $appEnd->gt($cellStartTime);
                                     });
 
                                     if ($meeting) {
-                                        // Build the tooltip
+                                        $statusValue = 'booked';
                                         $parentName = strtoupper(optional($meeting->parent->student)->first_name . ' ' . optional($meeting->parent->student)->last_name ?: optional($meeting->parent)->username);
                                         $meetingTooltip = $parentName . ' • ' . $meeting->discussion_topic . ' • ' . \Carbon\Carbon::parse($meeting->start_time)->format('g:iA') . ' - ' . \Carbon\Carbon::parse($meeting->end_time)->format('g:iA');
                                         
-                                        // 3. Calculate exactly how much of THIS specific cell is covered
                                         $appStart = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->start_time);
                                         $appEnd = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->end_time);
 
-                                        // Find the exact boundaries of the overlap inside this hour
                                         $overlapStart = $appStart->max($cellStartTime);
                                         $overlapEnd = $appEnd->min($cellEndTime);
                                         
                                         $durationInCell = $overlapStart->diffInMinutes($overlapEnd);
                                         
                                         if ($durationInCell >= 60) {
-                                            $cellClass = 'cell-green'; // Covers the whole hour
+                                            $cellClass = 'cell-green';
                                         } elseif ($durationInCell <= 30) {
-                                            // Check if the portion inside this cell starts at :00 or :30
                                             if ($overlapStart->minute >= 30) {
                                                 $cellClass = 'cell-half-bottom';
                                             } else {
@@ -611,7 +596,12 @@
                                         }
                                     }
                                 @endphp
-                                <td class="{{ $cellClass }}" title="{{ $meetingTooltip }}"></td>
+                                <td class="{{ $cellClass }}" 
+                                    data-date="{{ $day->format('Y-m-d') }}" 
+                                    data-time="{{ $time }}" 
+                                    data-status="{{ $statusValue }}" 
+                                    title="{{ $meetingTooltip }}">
+                                </td>
                             @endforeach
                         </tr>
                     @endforeach
@@ -622,7 +612,7 @@
                 <div class="legend-item"><span class="cell-white"></span>Available</div>
                 <div class="legend-item"><span class="cell-green"></span>Booked</div>
                 <div class="legend-item"><span class="cell-red"></span>Class Hours</div>
-                <div class="legend-item"><span style="background-color: grey;"></span>On Leave</div>
+                <div class="legend-item"><span class="cell-grey"></span>On Leave</div>
             </div>
             <p class="disclaimer">
                 Schedules booked on "On Leave" will be pending for reschedule.
@@ -631,9 +621,14 @@
     </div>
 </div>
 
-<!-- ============================================== -->
-<!-- MODALS SECTION -->
-<!-- ============================================== -->
+<!-- VALIDATION POPUP MODAL -->
+<div id="validationModalOverlay" class="modal-overlay hidden">
+    <div class="validation-modal">
+        <h3 id="valModalTitle"><i class="fa-solid fa-triangle-exclamation"></i> Invalid Action</h3>
+        <p id="valModalMessage" style="font-weight: bold; font-size: 15px; margin: 20px 0; color: #333;"></p>
+        <button type="button" class="btn-submit" onclick="closeModal('validationModalOverlay')" style="margin: 0 auto;">OK</button>
+    </div>
+</div>
 
 <div id="requestsModalOverlay" class="modal-overlay hidden">
     <div class="requests-modal">
@@ -681,7 +676,6 @@
             </tbody>
         </table>
 
-        <!-- Nested Reschedule Modal -->
         <div id="rescheduleModal" class="nested-modal hidden">
             <div class="nested-modal-content">
                 <h3>State your reason for rescheduling</h3>
@@ -709,20 +703,108 @@
         document.getElementById(modalId).classList.add('hidden');
     }
 
+    function showValidationPopUp(message) {
+        document.getElementById('valModalMessage').innerText = message;
+        openModal('validationModalOverlay');
+    }
+
+    function validateAppointmentForm(event) {
+        const dateInput = document.getElementById('appointment_date').value;
+        const startTimeInput = document.getElementById('start_time').value;
+        const endTimeInput = document.getElementById('end_time').value;
+
+        if (!dateInput || !startTimeInput || !endTimeInput) return true;
+
+        const today = "{{ \Carbon\Carbon::now()->format('Y-m-d') }}";
+        const maxDate = "{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}";
+        
+        if (dateInput < today) {
+            event.preventDefault();
+            showValidationPopUp('Appointments cannot be booked in the past.');
+            return false;
+        }
+
+        if (dateInput > maxDate) {
+            event.preventDefault();
+            showValidationPopUp('Appointments can only be scheduled up to two weeks in advance.');
+            return false;
+        }
+
+        const [year, month, day] = dateInput.split('-');
+        const dateObj = new Date(year, month - 1, day);
+        const dayOfWeek = dateObj.getDay(); 
+        if (dayOfWeek === 0 || dayOfWeek === 6) { 
+            event.preventDefault();
+            showValidationPopUp('Appointments are only available from Monday to Friday.');
+            return false;
+        }
+
+        const startParts = startTimeInput.split(':');
+        const endParts = endTimeInput.split(':');
+
+        const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
+        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+
+        const duration = endMins - startMins;
+
+        if (duration <= 0) {
+            event.preventDefault();
+            showValidationPopUp('Invalid time selected. The end time must be later than the start time.');
+            return false;
+        }
+
+        if (duration !== 30 && duration !== 60) {
+            event.preventDefault();
+            showValidationPopUp('Appointment duration must be exactly 30 minutes or 1 hour.');
+            return false;
+        }
+
+        const cellHour = parseInt(startParts[0], 10);
+        let timeSlotLabel = '';
+
+        if (cellHour === 8) timeSlotLabel = '8AM';
+        else if (cellHour === 9) timeSlotLabel = '9AM';
+        else if (cellHour === 10) timeSlotLabel = '10AM';
+        else if (cellHour === 11) timeSlotLabel = '11AM';
+        else if (cellHour === 13) timeSlotLabel = '1PM';
+        else if (cellHour === 14) timeSlotLabel = '2PM';
+        else if (cellHour === 15) timeSlotLabel = '3PM';
+        else if (cellHour === 16) timeSlotLabel = '4PM';
+
+        if (timeSlotLabel) {
+            const matchingCell = document.querySelector(`td[data-date="${dateInput}"][data-time="${timeSlotLabel}"]`);
+            if (matchingCell) {
+                const cellStatus = matchingCell.getAttribute('data-status');
+                if (cellStatus === 'leave') {
+                    event.preventDefault();
+                    showValidationPopUp('Cannot book an appointment! You are marked On Leave for this day.');
+                    return false;
+                } else if (cellStatus === 'class') {
+                    event.preventDefault();
+                    showValidationPopUp('Cannot book an appointment! This slot is reserved for Class Hours.');
+                    return false;
+                } else if (cellStatus === 'booked') {
+                    event.preventDefault();
+                    showValidationPopUp('Cannot book an appointment! This time slot is already Booked.');
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     function openRescheduleModal(appointmentId) {
-        const modal = document.getElementById('rescheduleModal');
         const form = document.getElementById('rescheduleForm');
-        
         form.action = `/appointments/${appointmentId}/reschedule`;
-        
         openModal('rescheduleModal');
     }
 
     window.onclick = function(event) {
         const overlay = document.getElementById('requestsModalOverlay');
-        if (event.target === overlay) {
-            closeModal('requestsModalOverlay');
-        }
+        const valOverlay = document.getElementById('validationModalOverlay');
+        if (event.target === overlay) closeModal('requestsModalOverlay');
+        if (event.target === valOverlay) closeModal('validationModalOverlay');
     }
 </script>
 @endsection

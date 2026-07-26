@@ -9,12 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
-{
-    Schema::table('appointments', function (Blueprint $table) {
-        $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('cascade');
-    });
-}
+    public function up(): void
+    {
+        Schema::table('appointments', function (Blueprint $table) {
+            // Make sure the column is an unsignedBigInteger to match user_id
+            $table->unsignedBigInteger('created_by')->nullable(); 
+
+            // Change references('id') to references('user_id')
+            $table->foreign('created_by')
+                  ->references('user_id')
+                  ->on('users')
+                  ->onDelete('cascade');
+        });
+    }
 
     /**
      * Reverse the migrations.

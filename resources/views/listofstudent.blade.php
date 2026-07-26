@@ -7,7 +7,6 @@
 <div class="flex-1 p-8 bg-gray-100 min-h-screen" 
      x-data="{ 
          openModal: false, 
-         messageModal: false, 
          promoteModal: false, 
          studentName: '', 
          studentId: '', 
@@ -66,7 +65,6 @@
                         <th class="p-4 border-r-[3px] border-black w-40 text-center">LRN</th>
                         <th class="p-4 border-r-[3px] border-black">Learner</th>
                         <th class="p-4 border-r-[3px] border-black text-center w-48">Birthdate</th>
-                        <th class="p-4 border-r-[3px] border-black text-center w-20">Message</th>
                         <th class="p-4 text-center w-32">Promotion</th>
                     </tr>
                 </thead>
@@ -74,7 +72,7 @@
                 <tbody>
                     
                     <tr class="bg-gray-300 font-bold border-b-[3px] border-black uppercase tracking-widest">
-                        <td colspan="6" class="p-2 pl-4 italic border-r-[3px] border-black">Male</td>
+                        <td colspan="5" class="p-2 pl-4 italic border-r-[3px] border-black">Male</td>
                     </tr>
                     
                     @forelse($males as $index => $student)
@@ -94,14 +92,6 @@
                             
                             <td class="p-4 border-r-[3px] border-black text-center font-medium">
                                 {{ $student->birth_date ? \Carbon\Carbon::parse($student->birth_date)->format('d/m/Y') : 'dd/mm/yyyy' }}
-                            </td>
-                            
-                            <td class="p-2 border-r-[3px] border-black text-center">
-                                <button type="button" 
-                                        @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; studentId = '{{ $student->student_id ?? $student->id }}'; messageModal = true;" 
-                                        class="bg-blue-500 text-white w-9 h-9 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-600 active:translate-y-1 active:shadow-none transition-all text-base">
-                                    <i class="fa-solid fa-envelope"></i>
-                                </button>
                             </td>
                             
                             <td class="p-2 text-center">
@@ -149,14 +139,14 @@
                         </tr>
                     @empty
                         <tr class="border-b-[3px] border-black">
-                            <td colspan="6" class="p-4 text-center font-bold text-gray-500">
+                            <td colspan="5" class="p-4 text-center font-bold text-gray-500">
                                 No male students found.
                             </td>
                         </tr>
                     @endforelse
 
                     <tr class="bg-gray-300 font-bold border-b-[3px] border-black uppercase tracking-widest">
-                        <td colspan="6" class="p-2 pl-4 italic border-r-[3px] border-black">Female</td>
+                        <td colspan="5" class="p-2 pl-4 italic border-r-[3px] border-black">Female</td>
                     </tr>
                     
                     @forelse($females as $index => $student)
@@ -176,14 +166,6 @@
                             
                             <td class="p-4 border-r-[3px] border-black text-center font-medium">
                                 {{ $student->birth_date ? \Carbon\Carbon::parse($student->birth_date)->format('d/m/Y') : 'dd/mm/yyyy' }}
-                            </td>
-                            
-                            <td class="p-2 border-r-[3px] border-black text-center">
-                                <button type="button" 
-                                        @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; studentId = '{{ $student->student_id ?? $student->id }}'; messageModal = true;" 
-                                        class="bg-blue-500 text-white w-9 h-9 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-600 active:translate-y-1 active:shadow-none transition-all text-base">
-                                    <i class="fa-solid fa-envelope"></i>
-                                </button>
                             </td>
                             
                             <td class="p-2 text-center">
@@ -231,52 +213,13 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="p-4 text-center font-bold text-gray-500">
+                            <td colspan="5" class="p-4 text-center font-bold text-gray-500">
                                 No female students found.
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
-        </div>
-    </div>
-
-    <div x-show="messageModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity">
-        <div @click.away="messageModal = false" class="bg-white border-[3px] border-black rounded-[30px] p-8 w-full max-w-lg shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
-            
-            <div class="flex justify-between items-start mb-6">
-                <div>
-                    <h2 class="text-3xl font-black uppercase text-black">Message Parent</h2>
-                    <p class="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1">Regarding: <span class="text-blue-600" x-text="studentName"></span></p>
-                </div>
-                <button @click="messageModal = false" class="text-gray-400 hover:text-red-600 text-3xl">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            
-            <form action="{{ route('students.message') }}" method="POST">
-                @csrf
-                <input type="hidden" name="student_id" :value="studentId">
-                
-                <div class="mb-6">
-                    <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Subject</label>
-                    <input type="text" name="subject" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400">
-                </div>
-                
-                <div class="mb-8">
-                    <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Message</label>
-                    <textarea name="message" rows="5" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400 resize-none"></textarea>
-                </div>
-                
-                <div class="flex justify-end space-x-4">
-                    <button type="button" @click="messageModal = false" class="font-bold text-gray-500 uppercase tracking-wider px-4">
-                        Cancel
-                    </button>
-                    <button type="submit" class="bg-blue-500 text-white font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-600 active:translate-y-1 active:shadow-none transition-all">
-                        <i class="fa-solid fa-paper-plane mr-2"></i> Send Message
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
