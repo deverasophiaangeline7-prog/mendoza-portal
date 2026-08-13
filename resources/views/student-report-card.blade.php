@@ -243,11 +243,41 @@
             isManaging: false, showErrorModal: false, missingSubjects: [],
             studentId: '{{ $student_id ?? 1 }}', activeQuarter: '1', 
             subjects: ['Language', 'English', 'Mathematics', 'Makabansa', 'GMRC', 'Music', 'Art', 'PE', 'Health'], 
-            grades: @json($savedGrades ?? []) || {}, 
-            generalAverage: '', finalStatus: '', behaviors: @json($savedBehaviors ?? []) || {},
+            grades: {}, 
+            generalAverage: '', finalStatus: '', 
+            behaviors: {},
 
             init() {
-                this.subjects.forEach(sub => { if(!this.grades[sub]) this.grades[sub] = { q1: '', q2: '', q3: '', q4: '', final_grade: '', remarks: '' }; });
+                // Ensure grades & behaviors are strictly JS Objects {}, never Arrays []
+                let rawGrades = @json((object)($savedGrades ?? []));
+                this.grades = (Array.isArray(rawGrades) || !rawGrades) ? {} : rawGrades;
+
+                let rawBehaviors = @json((object)($savedBehaviors ?? []));
+                this.behaviors = (Array.isArray(rawBehaviors) || !rawBehaviors) ? {} : rawBehaviors;
+
+                // Initialize grades array
+                this.subjects.forEach(sub => { 
+                    if (!this.grades[sub]) {
+                        this.grades[sub] = { q1: '', q2: '', q3: '', q4: '', final_grade: '', remarks: '' }; 
+                    }
+                });
+
+                // Initialize behaviors array
+                const behaviorKeys = [
+                    'Expresses ones spiritual beliefs',
+                    'Shows adherence to ethical principles',
+                    'Is sensitive to individual differences',
+                    'Demonstrates contributions toward solidarity',
+                    'Cares for the environment',
+                    'Demonstrates pride in being a Filipino',
+                    'Demonstrates appropriate behavior'
+                ];
+                behaviorKeys.forEach(b => {
+                    if (!this.behaviors[b]) {
+                        this.behaviors[b] = { q1: '', q2: '', q3: '', q4: '' };
+                    }
+                });
+
                 this.activeQuarter = this.determineActiveQuarter();
                 this.calculateGrades();
             },
@@ -278,7 +308,7 @@
                 }
             },
 
-            saveGrades() {
+            async saveGrades() {
                 let qKey = 'q' + this.activeQuarter;
                 this.missingSubjects = this.subjects.filter(s => String(this.grades[s][qKey] || '').trim() === '');
                 if (this.missingSubjects.length > 0) {
@@ -286,10 +316,32 @@
                     setTimeout(() => { this.showErrorModal = false; }, 3000);
                     return;
                 }
-                fetch('{{ route('reportcard.store') }}', {
-                    method: 'POST', headers: {'Content-Type':'application/json', 'X-CSRF-TOKEN':'{{ csrf_token() }}'},
-                    body: JSON.stringify({ student_id: this.studentId, grades: this.grades, behaviors: this.behaviors })
-                }).then(() => location.reload());
+
+                try {
+                    const response = await fetch('{{ route('reportcard.store') }}', {
+                        method: 'POST', 
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ 
+                            student_id: this.studentId, 
+                            grades: this.grades, 
+                            behaviors: this.behaviors 
+                        })
+                    });
+
+                    const resData = await response.json();
+
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Server Validation Error: ' + (resData.message || JSON.stringify(resData)));
+                    }
+                } catch (err) {
+                    alert('Save Failed: ' + err.message);
+                }
             }
         }));
     });
