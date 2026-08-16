@@ -3,20 +3,19 @@
     @php
         $user = auth()->user();
         
-        // Bulletproof filter
+        // Filter notifications based on role
         $filteredNotifications = $user->customNotifications->filter(function($notification) use ($user) {
             $role = strtolower(trim($user->role));
             $type = strtolower(trim($notification->type));
 
             if ($role === 'teacher') {
-                return $type === 'announcement'; 
+                // Allow both announcements and school events from admin
+                return in_array($type, ['announcement', 'event', 'school event', 'calendar']); 
             }
             return true; 
         });
     @endphp
 
-    <!-- 1. Moved @click.away to the Parent Div -->
-    <!-- 2. Added z-[999] to force it above everything -->
     <div class="relative inline-block z-[999]" x-data="{ notifOpen: false }" @click.away="notifOpen = false">
         
         <!-- BELL BUTTON -->
@@ -47,7 +46,7 @@
                     <a href="{{ route('notifications.read', $notification->notification_id) }}" 
                        class="block p-4 border-b border-gray-200 hover:bg-gray-50 transition cursor-pointer no-underline">
                         
-                        <div class="pointer-events-none">
+                        <div>
                             <p class="text-[10px] font-black text-orange-600 uppercase">
                                 {{ $notification->title }}
                             </p>

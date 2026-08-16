@@ -1,5 +1,5 @@
 <?php
-// app/Http/Controllers/AppointmentController.php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -8,6 +8,7 @@ use App\Models\Teacher;
 use App\Models\TeacherSchedule;
 use App\Models\User;
 use App\Models\Student;
+use App\Models\Section;
 
 class AppointmentController extends Controller
 {
@@ -73,45 +74,62 @@ class AppointmentController extends Controller
             $bookedAppointments = collect();
             $adviserSchedule = collect();
             $adviserName = null;
-            if ($student && $student->section && $student->section->teacher) {
-                $adviserSchedule = TeacherSchedule::where('teacher_id', $student->section->teacher->user_id)->get();
+
+            // Fallback check to resolve NKP or missing teacher relationship
+            $adviserTeacher = $student?->section?->teacher;
+            if (!$adviserTeacher && $student?->section) {
+                $adviserTeacher = Teacher::whereIn('advisory', ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep'])
+                    ->orWhere('advisory', $student->section->grade_level)
+                    ->first();
+            }
+
+            if ($student && $adviserTeacher) {
+                $adviserSchedule = TeacherSchedule::where('teacher_id', $adviserTeacher->user_id)->get();
                 $bookedAppointments = Appointment::with(['parent.student'])
-                    ->where('teacher_id', $student->section->teacher->user_id)
+                    ->where('teacher_id', $adviserTeacher->user_id)
                     ->where('status', 'booked')
                     ->get();
-                $adviserName = $student->section->teacher->name ?? ($student->section->teacher->first_name . ' ' . $student->section->teacher->last_name);
+                $adviserName = $adviserTeacher->name ?? ($adviserTeacher->first_name . ' ' . $adviserTeacher->last_name);
             }
 
             return view('appointment_parent', compact('incomingRequests', 'mySentRequests', 'adviserSchedule', 'student', 'adviserName', 'bookedAppointments'));
             
         } elseif ($user->role === 'admin') {
-            $advisersList = [
-                ['section' => 'NKP', 'name' => 'Adviser Name', 'user_id' => null],
-                ['section' => 'Grade 1 - Faith', 'name' => 'Adviser Name', 'user_id' => null],
-                ['section' => 'Grade 2 - Hope', 'name' => 'Adviser Name', 'user_id' => null],
-                ['section' => 'Grade 3 - Love', 'name' => 'Adviser Name', 'user_id' => null],
-                ['section' => 'Grade 4 - Grace', 'name' => 'Adviser Name', 'user_id' => null],
-                ['section' => 'Grade 5 - Light', 'name' => 'Adviser Name', 'user_id' => null],
-                ['section' => 'Grade 6 - Wisdom', 'name' => 'Adviser Name', 'user_id' => null],
+            
+            $advisersList = [];
+
+            // 1. Manually add the single NKP button first
+            $nkpTeacher = Teacher::whereIn('advisory', ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep', 'KINDERGARTEN', 'PREPARATORY'])->first();
+            $advisersList[] = [
+                'section' => 'NKP',
+                'name' => $nkpTeacher ? $nkpTeacher->first_name . ' ' . $nkpTeacher->last_name : 'Unassigned',
+                'user_id' => $nkpTeacher ? $nkpTeacher->user_id : null,
             ];
 
-            $teachers = \App\Models\Teacher::with('section')->get();
+            // 2. Fetch all sections and filter out Nursery, Kinder, Prep
+            $sections = Section::with('teacher')
+                ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+                ->orderBy('section_name', 'asc')
+                ->get()
+                ->filter(function ($section) {
+                    return !in_array(strtoupper($section->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY', 'NKP']);
+                });
 
-            foreach ($advisersList as $key => $adviser) {
-                foreach ($teachers as $teacher) {
-                    if ($teacher->section) {
-                        $constructedName = 'Grade ' . $teacher->section->grade_level . ' - ' . $teacher->section->section_name;
-                        
-                        if ($adviser['section'] === $constructedName || $adviser['section'] === $teacher->section->section_name) {
-                            $advisersList[$key]['name'] = $teacher->first_name . ' ' . $teacher->last_name;
-                            $advisersList[$key]['user_id'] = $teacher->user_id;
-                        }
-                    }
-                }
+            // 3. Add the remaining Grade 1-6 sections dynamically
+            foreach ($sections as $section) {
+                // Fetch the actual teacher profile using the section's teacher_id
+                $teacherProfile = \App\Models\Teacher::where('user_id', $section->teacher_id)->first();
+
+                $advisersList[] = [
+                    'section' => 'Grade ' . $section->grade_level . ' - ' . $section->section_name,
+                    'name' => $teacherProfile ? $teacherProfile->first_name . ' ' . $teacherProfile->last_name : 'Unassigned',
+                    'user_id' => $teacherProfile ? $teacherProfile->user_id : null,
+                ];
             }
 
             $selectedTeacherId = request('teacher_id');
             $scheduleRows = [];
+            
             if ($selectedTeacherId) {
                 $teacherSchedules = TeacherSchedule::where('teacher_id', $selectedTeacherId)->get();
                 foreach ($teacherSchedules as $schedule) {
@@ -119,11 +137,7 @@ class AppointmentController extends Controller
                 }
             }
 
-            return view('appointment_admin', [
-                'advisers' => $advisersList,
-                'scheduleRows' => $scheduleRows,
-                'selectedTeacherId' => $selectedTeacherId,
-            ]);
+            return view('appointment_admin', compact('advisersList', 'scheduleRows', 'selectedTeacherId'));
         }
 
         return redirect()->route('dashboard')->with('error', 'Unauthorized access.');
@@ -149,15 +163,27 @@ class AppointmentController extends Controller
             $validated['parent_id'] = $request->parent_id;
         } else {
             $student = Student::with('section.teacher')->where('user_id', auth()->id())->first();
-            if (!$student || !$student->section || !$student->section->teacher) {
+
+            $teacherUserId = $student?->section?->teacher?->user_id;
+
+            // Fallback for NKP / Advisory-assigned teachers
+            if (!$teacherUserId && $student?->section) {
+                $teacher = Teacher::whereIn('advisory', ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep'])
+                    ->orWhere('advisory', $student->section->grade_level)
+                    ->first();
+
+                $teacherUserId = $teacher?->user_id;
+            }
+
+            if (!$teacherUserId) {
                 return redirect()->back()->with('error', 'Unable to determine your adviser for this appointment.');
             }
-            $validated['teacher_id'] = $student->section->teacher->user_id;
+
+            $validated['teacher_id'] = $teacherUserId;
             $validated['parent_id'] = auth()->id();
         }
 
         $validated['status'] = 'pending';
-        // NEW: Track exactly who pressed the "Submit" button
         $validated['created_by'] = auth()->id(); 
 
         Appointment::create($validated);

@@ -18,23 +18,14 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-8">
-            @php
-                $grades = [
-                    ['id' => 'nursery',     'level' => 'NURSERY',     'name' => 'St. Mary'],
-                    ['id' => 'kinder',      'level' => 'KINDER',      'name' => 'St. Bridget'],
-                    ['id' => 'preparatory', 'level' => 'PREPARATORY', 'name' => 'St. Augustine'],
-                    ['id' => 'grade-1',     'level' => 'GRADE 1',     'name' => 'Faith'],
-                    ['id' => 'grade-2',     'level' => 'GRADE 2',     'name' => 'Hope'],
-                    ['id' => 'grade-3',     'level' => 'GRADE 3',     'name' => 'Love'],
-                    ['id' => 'grade-4',     'level' => 'GRADE 4',     'name' => 'Grace'],
-                    ['id' => 'grade-5',     'level' => 'GRADE 5',     'name' => 'Light'],
-                    ['id' => 'grade-6',     'level' => 'GRADE 6',     'name' => 'Wisdom'],
-                ];
-            @endphp
+            @foreach($sections as $section)
+                @php
+                    $isNKP = in_array(strtoupper($section->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREPARATORY', 'PREP', 'NKP']);
+                    $displayLevel = $isNKP ? strtoupper($section->grade_level) : 'GRADE ' . $section->grade_level;
+                @endphp
 
-            @foreach($grades as $grade)
                 <button type="button" 
-                    onclick="window.location.href='{{ route('attendance.show', ['grade' => $grade['id']]) }}'"
+                    onclick="window.location.href='{{ route('attendance.show', ['grade' => $section->section_id]) }}'"
                     class="border-2 border-black rounded-[40px] py-6 flex flex-col items-center group transition-all active:scale-95 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative"
                     :class="isManaging ? 'bg-green-100 border-green-600' : 'bg-[#e68a2d]'">
                     
@@ -42,12 +33,12 @@
                         <i class="fa-solid fa-xmark"></i>
                     </div>
 
-                    <span class="text-4xl font-black text-black group-hover:-translate-y-1 group-hover:text-amber-700 transition-transform" 
+                    <span class="text-4xl font-black text-black group-hover:-translate-y-1 group-hover:text-amber-700 transition-transform uppercase" 
                         style="-webkit-text-stroke: 1.5px white;">
-                        {{ $grade['level'] }}
+                        {{ $displayLevel }}
                     </span>
                     <span class="text-xl font-medium text-black group-hover:-translate-y-1 transition-transform">
-                        {{ $grade['name'] }}
+                        {{ $section->section_name }}
                     </span>
                 </button>
             @endforeach

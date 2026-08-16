@@ -25,7 +25,7 @@ class ParentAccountController extends Controller
             ELSE 4 
         END ASC
     ")
-    ->orderBy('grade_level', 'asc') // This sorts the numeric grades (1, 2, 3...) after the first three
+    ->orderBy('grade_level', 'asc')
     ->get();
 
     return view('create-parent-account', compact('sections'));
@@ -36,7 +36,6 @@ class ParentAccountController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validation (Matches your Blade input 'name' attributes)
         $request->validate([
             'username'    => 'required|unique:users,username',
             'password'    => 'required|min:6|confirmed',
@@ -51,12 +50,9 @@ class ParentAccountController extends Controller
 
             $path = null;
             if ($request->hasFile('profile_photo')) {
-                // This saves the file in storage/app/public/profile_photos
                 $path = $request->file('profile_photo')->store('profile_photos', 'public');
             }
 
-        // 2. CREATE THE USER FIRST (The Parent)
-        // Note: Using 'id' is standard, but if your User model uses 'user_id', change it here
         $user = User::create([
             'username' => $request->username,
             'password' => Hash::make($request->password),
@@ -64,17 +60,15 @@ class ParentAccountController extends Controller
             'profile_photo_path' => $path,
         ]);
 
-        // 3. CREATE THE STUDENT SECOND
-        // We link the student to the parent using the ID we just created
         Student::create([
-            'user_id'     => $user->user_id, // Use $user->user_id if that is your User PK
+            'user_id'     => $user->user_id,
             'lrn'         => $request->lrn,
             'first_name'  => $request->first_name,
             'middle_name' => $request->middle_name,
             'last_name'   => $request->last_name,
             'ext_name'    => $request->ext_name,
             'gender'      => $request->gender,
-            'birth_date'  => $request->birthdate, // Matches 'birthdate' from form to 'birth_date' in DB
+            'birth_date'  => $request->birthdate,
             'grade_level' => $request->grade_level,
             'section_id'  => $request->section_id,
         ]);
@@ -89,104 +83,180 @@ class ParentAccountController extends Controller
     }
 
     /**
-     * Optional: List all parents if needed for the management page.
+     * List all sections and students for the parent accounts management page.
      */
     public function index()
     {
+        $sections = Section::orderByRaw("
+            CASE 
+                WHEN grade_level = 'Nursery' THEN 1
+                WHEN grade_level = 'Kindergarten' THEN 2
+                WHEN grade_level = 'Preparatory' THEN 3
+                ELSE 4 
+            END ASC
+        ")
+        ->orderBy('grade_level', 'asc')
+        ->get();
+
         $students = Student::with('user', 'section')->get();
-        return view('parent-list', compact('students'));
+        
+        return view('parent-list', compact('sections', 'students'));
+    }
+
+    /**
+     * Store a newly created section from the modal form with case normalization.
+     */
+    public function storeSection(Request $request)
+    {
+        $request->validate([
+            'grade_level'  => 'required|string|max:255',
+            'section_name' => 'required|string|max:255',
+        ]);
+
+        // This permanently forces "ST. MARY" or "st. mary" to "St. Mary"
+        $sectionName = ucwords(strtolower(trim($request->section_name)));
+
+        Section::create([
+            'grade_level'  => $request->grade_level,
+            'section_name' => $sectionName,
+        ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Create Section',
+            'description' => Auth::user()->username . ' created a new section: ' . $request->grade_level . ' - ' . $sectionName
+        ]);
+
+        return redirect()->back()->with('success', 'Section created successfully!');
+    }
+
+    /**
+     * Delete an existing section using section_id.
+     */
+    public function destroySection(Request $request)
+    {
+        $request->validate([
+            'section_id' => 'required|exists:sections,section_id',
+        ]);
+
+        $section = Section::where('section_id', $request->section_id)->firstOrFail();
+        $section->delete();
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Delete Section',
+            'description' => Auth::user()->username . ' deleted section ID: ' . $request->section_id
+        ]);
+
+        return redirect()->back()->with('success', 'Section deleted successfully!');
     }
 
     public function showGrade($grade)
-{
-    $lookup = [
-        'nursery'     => 'Nursery',
-        'kinder'      => 'Kindergarten',
-        'preparatory' => 'Preparatory',
-        'grade-1'     => '1', 'grade-2' => '2', 'grade-3' => '3',
-        'grade-4'     => '4', 'grade-5' => '5', 'grade-6' => '6',
-    ];
+    {
+        // If clicking a dynamic section ID from the database
+        if (is_numeric($grade)) {
+            $section = Section::where('section_id', $grade)->firstOrFail();
+            $students = Student::where('section_id', $section->section_id)
+                               ->whereHas('user', function($query) {
+                                   $query->where('status', 'active');
+                               })
+                               ->with('section', 'user')
+                               ->orderBy('last_name', 'asc')
+                               ->get();
 
-    $dbValue = $lookup[$grade] ?? $grade;
+            return view('sections', [
+                'students' => $students,
+                'grade'    => strtoupper($section->grade_level),
+                'section'  => $section,
+                'males'    => $students->where('gender', 'Male'),
+                'females'  => $students->where('gender', 'Female')
+            ]);
+        }
 
-    // Updated to only fetch students where the linked user is 'active'
-    $students = Student::where('grade_level', $dbValue)
-                       ->whereHas('user', function($query) {
-                           $query->where('status', 'active');
-                       })
-                       ->with('section', 'user')
-                       ->orderBy('last_name', 'asc')
-                       ->get();
+        $lookup = [
+            'nursery'     => 'Nursery',
+            'kinder'      => 'Kindergarten',
+            'preparatory' => 'Preparatory',
+            'grade-1'     => '1', 'grade-2' => '2', 'grade-3' => '3',
+            'grade-4'     => '4', 'grade-5' => '5', 'grade-6' => '6',
+        ];
 
-    return view('sections', [
-        'students' => $students,
-        'grade'    => strtoupper(str_replace('-', ' ', $grade)),
-        'section'  => $students->first()->section ?? null,
-        'males'    => $students->where('gender', 'Male'),
-        'females'  => $students->where('gender', 'Female')
-    ]);
-}
-    public function studentInfo()
-{
-    // Fetch the student linked to the authenticated user (the parent)
-    $student = Auth::user()->student()->with('section')->first();
+        $dbValue = $lookup[$grade] ?? $grade;
 
-    return view('student-view', compact('student'));
-}
+        $students = Student::where('grade_level', $dbValue)
+                           ->whereHas('user', function($query) {
+                               $query->where('status', 'active');
+                           })
+                           ->with('section', 'user')
+                           ->orderBy('last_name', 'asc')
+                           ->get();
 
-public function showStudentProfile()
-{
-    // Auth::user()->student ensures we only get the student linked to THIS parent
-    $student = Auth::user()->student()->with('section')->first();
-
-    if (!$student) {
-        abort(403, 'No student profile linked to this account.');
+        return view('sections', [
+            'students' => $students,
+            'grade'    => strtoupper(str_replace('-', ' ', $grade)),
+            'section'  => $students->first()->section ?? null,
+            'males'    => $students->where('gender', 'Male'),
+            'females'  => $students->where('gender', 'Female')
+        ]);
     }
 
-    return view('student-view', compact('student'));
-}
+    public function studentInfo()
+    {
+        $student = Auth::user()->student()->with('section')->first();
 
-public function archive($id)
-{
-    $user = User::findOrFail($id);
-    $user->status = 'archived'; 
-    $user->save();
-    
+        return view('student-view', compact('student'));
+    }
 
-    AuditLog::create([
+    public function showStudentProfile()
+    {
+        $student = Auth::user()->student()->with('section')->first();
+
+        if (!$student) {
+            abort(403, 'No student profile linked to this account.');
+        }
+
+        return view('student-view', compact('student'));
+    }
+
+    public function archive($id)
+    {
+        $user = User::findOrFail($id);
+        $user->status = 'archived'; 
+        $user->save();
+        
+        AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Archive Parent',
             'description' => Auth::user()->username . ' archived Parent account ID: ' . $id
         ]);
 
-    return redirect()->back()->with('success', 'Parent account archived successfully!');
-}
+        return redirect()->back()->with('success', 'Parent account archived successfully!');
+    }
 
-public function restore($id)
-{
-    $user = User::findOrFail($id);
-    $user->status = 'active'; 
-    $user->save();
-    
-AuditLog::create([
+    public function restore($id)
+    {
+        $user = User::findOrFail($id);
+        $user->status = 'active'; 
+        $user->save();
+        
+        AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Restore Parent',
             'description' => Auth::user()->username . ' restored Parent account ID: ' . $id
         ]);
 
-    return redirect()->back()->with('success', 'Parent account restored successfully!');
-}
+        return redirect()->back()->with('success', 'Parent account restored successfully!');
+    }
 
-public function archivedIndex()
-{
-    // Fetch students where the linked parent user is 'archived'
-    $archivedStudents = Student::whereHas('user', function($query) {
-                            $query->where('status', 'archived');
-                        })
-                        ->with('section', 'user')
-                        ->orderBy('last_name', 'asc')
-                        ->get();
-                        
-    return view('parent-archived-list', compact('archivedStudents')); 
-}
+    public function archivedIndex()
+    {
+        $archivedStudents = Student::whereHas('user', function($query) {
+                                $query->where('status', 'archived');
+                            })
+                            ->with('section', 'user')
+                            ->orderBy('last_name', 'asc')
+                            ->get();
+                            
+        return view('parent-archived-list', compact('archivedStudents')); 
+    }
 }

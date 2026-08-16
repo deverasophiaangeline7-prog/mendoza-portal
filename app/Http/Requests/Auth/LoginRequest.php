@@ -27,33 +27,28 @@ class LoginRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
      */
     public function rules(): array
-{
-    return [
-        'login_id' => ['required', 'string'], // We will use this name in the HTML too
-        'password' => ['required', 'string'],
-    ];
-}
+    {
+        return [
+            'login_id' => ['required', 'string'], 
+            'password' => ['required', 'string'],
+        ];
+    }
 
-public function authenticate(): void
+    public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
 
-        // 1. Grab what the user typed in the box (LRN or Email)
         $loginField = $this->input('login_id');
 
-        // 2. If they typed numbers (an LRN), translate it!
         if (is_numeric($loginField)) {
             $student = \App\Models\Student::where('lrn', $loginField)->first();
             
-            // Safely swap the LRN for the Parent's email/username
             if ($student && $student->user) {
                 $loginField = $student->user->username; 
             }
         }
 
-        // 3. THE FIX: ALWAYS search the 'username' column!
-        // Because in your database, even emails are saved under 'username'.
-        if (! Auth::attempt(['username' => $loginField, 'password' => $this->input('password')], $this->boolean('remember'))) {
+        if (! Auth::attempt(['username' => $loginField, 'password' => $this->input('password'), 'status' => 'active'], $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -91,7 +86,7 @@ public function authenticate(): void
      * Get the rate limiting throttle key for the request.
      */
     public function throttleKey(): string
-        {
-            return Str::transliterate(Str::lower($this->string('login_id')).'|'.$this->ip());
-        }
+    {
+        return Str::transliterate(Str::lower($this->string('login_id')).'|'.$this->ip());
+    }
 }

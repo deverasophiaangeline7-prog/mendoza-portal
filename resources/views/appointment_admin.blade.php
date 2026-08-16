@@ -17,8 +17,27 @@
     .page-title { font-size: 36px; font-weight: 900; text-align: center; margin-bottom: 40px; text-transform: uppercase; }
     
     .adviser-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; width: 100%; max-width: 1100px; }
-    .adviser-btn { background-color: var(--ma-orange); border: 3px solid #000; border-radius: 40px; padding: 25px 15px; text-align: center; cursor: pointer; transition: transform 0.2s; display: block; }
-    .adviser-btn:hover { transform: translateY(-5px); }
+    
+    /* UPDATED: Box shape, border thickness, and hard shadow to match Attendance */
+    .adviser-btn { 
+        background-color: var(--ma-orange); 
+        border: 2px solid #000; 
+        border-radius: 40px; 
+        padding: 25px 15px; 
+        text-align: center; 
+        cursor: pointer; 
+        transition: all 0.1s ease-in-out; 
+        display: block; 
+        box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+    }
+    .adviser-btn:hover { 
+        transform: translateY(-4px); 
+    }
+    .adviser-btn:active { 
+        transform: scale(0.95); 
+        box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+    }
+    
     .adviser-btn span { display: block; color: #fff; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; font-weight: 900; font-size: 22px; }
 
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
@@ -72,11 +91,14 @@
     <div class="main-content">
         <h1 class="page-title">Appointment Scheduling</h1>
         <div class="adviser-grid">
-            @foreach($advisers as $adviser)
-                @php $assigned = !empty($adviser['user_id']); @endphp
-                <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" @if($assigned) onclick="openAdminModal('{{ $adviser['section'] }}', '{{ addslashes($adviser['name']) }}', '{{ $adviser['user_id'] }}')" @endif>
+            @foreach($advisersList as $adviser)
+                @php 
+                    $assigned = !empty($adviser['user_id']); 
+                    $teacherId = $assigned ? $adviser['user_id'] : 'null';
+                @endphp
+                <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{ $teacherId }}')" @endif>
                     <span>{{ $adviser['section'] }}</span>
-                    <span>{{ $assigned ? $adviser['name'] : 'Unassigned' }}</span>
+                    <span>{{ $adviser['name'] }}</span>
                 </div>
             @endforeach
         </div>

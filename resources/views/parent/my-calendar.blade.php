@@ -8,7 +8,7 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         @forelse($events as $event)
-        <div class="bg-white border-[3px] border-black p-6 rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-transform">
+        <div class="bg-white border-[3px] border-black p-6 rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
             <div class="mb-4">
                 <h4 class="text-2xl font-black text-red-600 uppercase leading-tight mb-1">{{ $event->event_title }}</h4>
                 <p class="font-bold text-gray-500 italic text-sm">

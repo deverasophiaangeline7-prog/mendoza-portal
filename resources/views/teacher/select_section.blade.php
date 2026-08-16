@@ -1,4 +1,4 @@
-@extends('layouts.navigation') <!-- nde ko alam san to-->
+@extends('layouts.navigation')
 
 @section('title', 'Attendance Selection')
 
@@ -10,20 +10,21 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-12 gap-x-14 w-full max-w-6xl justify-items-center">
         @foreach($sections as $section)
             @php 
-                $slug = strtolower(str_replace([' ', 'garten'], ['', ''], $section->grade_level)); 
+                $isNKP = in_array(strtoupper($section->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREPARATORY', 'PREP', 'NKP']);
+                $displayLevel = $isNKP ? strtoupper($section->grade_level) : (stripos($section->grade_level, 'GRADE') !== false ? strtoupper($section->grade_level) : 'GRADE ' . $section->grade_level);
             @endphp
             
-            <a href="{{ route('attendance.show', $slug) }}" 
-               class="bg-[#b26905] w-[350px] py-8 rounded-[40px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-center group flex flex-col justify-center items-center">
+            <a href="{{ route('attendance.show', $section->section_id) }}" 
+               class="bg-[#e68a2d] w-[350px] py-6 rounded-[40px] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all text-center flex flex-col justify-center items-center group active:scale-95">
                 
-                <div class="font-black text-4xl uppercase tracking-tighter text-black group-hover:scale-110 transition-transform" 
-                     style="text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;">
-                    {{ str_replace('garten', '', $section->grade_level) }}
-                </div>
+                <span class="text-4xl font-black text-black uppercase tracking-tight transition-transform group-hover:-translate-y-1" 
+                    style="-webkit-text-stroke: 1.5px white;">
+                    {{ $displayLevel }}
+                </span>
 
-                <div class="font-bold text-xl text-black mt-2 tracking-widest uppercase bg-white/50 px-4 py-1 rounded-full mt-4 border-2 border-black">
+                <span class="text-xl font-medium text-black transition-transform group-hover:-translate-y-1 mt-1">
                     {{ $section->section_name }}
-                </div>
+                </span>
             </a>
         @endforeach
     </div>

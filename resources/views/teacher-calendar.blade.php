@@ -29,8 +29,6 @@
         <div class="flex justify-between items-center mb-8">
             <div>
                 <h2 class="text-4xl font-black uppercase tracking-tighter text-gray-900">Student Participation</h2>
-                @if(auth()->user()->role === 'admin')
-                @endif
             </div>
         </div>
 
@@ -110,7 +108,9 @@
                     <label class="block font-black text-xs uppercase text-gray-400 mb-2">Search Students</label>
                     <select id="student-select" name="student_ids[]" multiple placeholder="Type name..." autocomplete="off">
                         @foreach($students as $student)
-                            <option value="{{ $student->student_id }}">{{ $student->last_name }}, {{ $student->first_name }}</option>
+                            <option value="{{ $student->student_id }}">
+                                {{ $student->first_name }} {{ $student->last_name }}
+                            </option>
                         @endforeach
                     </select>
                 </div>

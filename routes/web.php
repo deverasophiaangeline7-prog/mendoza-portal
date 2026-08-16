@@ -20,6 +20,8 @@ use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\ClassroomAnnouncementController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\SectionController;
+use App\Http\Controllers\ChatbotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,17 +44,21 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
 // ==========================================
 // 2. GENERAL LOGGED-IN USERS (View Only)
 // ==========================================
-    Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [SchoolCalendarController::class, 'index'])->name('dashboard');
     Route::get('/my-calendar', [StudentCalendarController::class, 'studentCalendar'])->name('student.calendar');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::put('/user/password', [ProfileController::class, 'updatePassword'])->name('user.password.update');
+    Route::put('/profile/photo/update', [App\Http\Controllers\ProfileController::class, 'updatePhoto'])->name('profile.photo.update');
     Route::get('/students', [StudentController::class, 'index'])->name('students.index');
     Route::get('/students/section/{slug}', [StudentController::class, 'showSection'])->name('students.section');
     Route::post('/students/message', [StudentController::class, 'sendMessage'])->name('students.message');
     
+    // Notifications Route (Moved here so teachers & parents both have access)
+    Route::get('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+
     // General Views
     Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
     Route::get('/calendar', [SchoolCalendarController::class, 'index'])->name('calendar.index');
@@ -73,7 +79,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::get('/report-card/view/{student_id}', [ReportCardController::class, 'showStudent'])->name('reportcard.showStudent');
     Route::get('/my-child/report-card', [ReportCardController::class, 'showParentReportCard'])->name('parent.reportcard');
 
-    //Appointment
+    // Appointment
     Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
     Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
 
@@ -83,20 +89,22 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
 
     Route::get('/appointments/teacher-schedule', [AppointmentController::class, 'getAvailability'])->name('appointments.getAvailability');
     Route::post('/appointments/update-availability', [AppointmentController::class, 'updateAvailability'])->name('appointments.updateAvailability');
-});
+
+    Route::get('/teacher/profile', [TeacherController::class, 'view'])->name('teacher.view');
+    });
 
 // ==========================================
 // 3. TEACHER ONLY ROUTES (Data Entry/Updates)
 // ==========================================
-    Route::middleware(['auth', 'teacher'])->group(function () {
+Route::middleware(['auth', 'teacher'])->group(function () {
     // Attendance Actions
     Route::post('/attendance/save', [AttendanceController::class, 'store'])->name('attendance.store');
     Route::post('/attendance/{grade}/publish', [AttendanceController::class, 'publish'])->name('attendance.publish');
     Route::post('/attendance/{grade}/update', [AttendanceController::class, 'update'])->name('attendance.update');
     
     Route::get('/teacher-information', function () {
-    return view('teacher-information');
-        })->name('teacher.information');
+        return view('teacher-information');
+    })->name('teacher.information');
 
     // Report Card / Grading Actions
     Route::post('/report-card/save', [ReportCardController::class, 'store'])->name('reportcard.store');
@@ -114,16 +122,12 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     
     Route::post('/teacher/promote/{id}', [TeacherController::class, 'promoteStudent'])->name('teacher.promote');
     Route::post('/teacher/announcement', [ClassroomAnnouncementController::class, 'store'])->name('teacher.announcement.store');
-    });
-
-    
-
-
+});
 
 // ==========================================
 // 4. ADMIN ONLY ROUTES (Management & CRUD)
 // ==========================================
-    Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     
     Route::get('/admin/student-participation', [StudentCalendarController::class, 'index'])->name('admin.student.participation');
     Route::get('/students/view/{id}', [App\Http\Controllers\Admin\StudentController::class, 'showStudent'])->name('students.showStudent');
@@ -132,10 +136,10 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     
     // Accounts Overview
     Route::get('/account-management', function () { 
-    $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
-    $archivedYears = \App\Models\SchoolYear::where('status', 'archived')->orderBy('id', 'desc')->get();
-    return view('accountmanagement', compact('activeYear' , 'archivedYears')); 
-})->name('account.management');
+        $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
+        $archivedYears = \App\Models\SchoolYear::where('status', 'archived')->orderBy('id', 'desc')->get();
+        return view('accountmanagement', compact('activeYear' , 'archivedYears')); 
+    })->name('account.management');
     Route::get('/admin/audit-logs', [App\Http\Controllers\Admin\UserController::class, 'logs'])->name('admin.audit_logs');
 
     // Teacher Management
@@ -147,6 +151,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::get('/teacher-list/archived', [TeacherAccountController::class, 'archivedIndex'])->name('teacher.archived');
     Route::patch('/teacher/{id}/restore', [TeacherAccountController::class, 'restore'])->name('account.teacher.restore');
     Route::put('/account/teacher/{id}/edit', [App\Http\Controllers\TeacherAccountController::class, 'update'])->name('account.teacher.update');
+    
     // Parent Management
     Route::get('/create-parent-account', [ParentAccountController::class, 'create'])->name('parent.create'); 
     Route::post('/account/parent/store', [ParentAccountController::class, 'store'])->name('account.parent.store');
@@ -155,7 +160,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::patch('/account/parent/{id}/archive', [ParentAccountController::class, 'archive'])->name('account.parent.archive');
     Route::patch('/account/parent/{id}/restore', [ParentAccountController::class, 'restore'])->name('account.parent.restore');
     Route::get('/parent-list/archived', [ParentAccountController::class, 'archivedIndex'])->name('parent.archived');
-   Route::put('/admin/students/{id}/edit', [App\Http\Controllers\Admin\StudentController::class, 'updateStudent'])->name('admin.students.update');
+    Route::put('/admin/students/{id}/edit', [App\Http\Controllers\Admin\StudentController::class, 'updateStudent'])->name('admin.students.update');
 
     // User General CRUD
     Route::post('/finalize-year', [UserController::class, 'finalize'])->name('finalize.year');
@@ -184,10 +189,8 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::put('/calendar/{schoolCalendar}', [SchoolCalendarController::class, 'update'])->name('calendar.update');
     Route::delete('/calendar/delete/{id}', [SchoolCalendarController::class, 'destroy'])->name('calendar.delete');
 
-    // The route for loading the table (change {slug} to {id})
+    // Sections & Students
     Route::get('/students/section/{id}', [App\Http\Controllers\Admin\StudentController::class, 'showSection'])->name('students.showSection');
-
-    // The two new routes for adding and deleting
     Route::post('/sections/add', [App\Http\Controllers\Admin\StudentController::class, 'storeSection'])->name('sections.store');
     Route::delete('/sections/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroySection'])->name('sections.destroy');
 
@@ -195,23 +198,24 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
     Route::delete('/admin/students/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroyStudent'])->name('admin.students.destroy');
     
     Route::post('/admin/finalize-year', [StudentController::class, 'finalizeSchoolYear'])->name('admin.finalize_year');
-
     Route::put('/admin/reset-user-password', [App\Http\Controllers\Admin\UserController::class, 'resetUserPassword'])->name('admin.password.reset');
+
+    // Section Management Routes
+    Route::post('/sections/store', [SectionController::class, 'store'])->name('sections.store');
+    Route::delete('/sections/destroy', [SectionController::class, 'destroy'])->name('sections.destroy');
     });
 
-    // Both Admins and Teachers are allowed inside this group!
-    Route::middleware(['auth', 'role:admin,teacher'])->group(function () {
+// Both Admins and Teachers are allowed inside this group
+Route::middleware(['auth', 'role:admin,teacher'])->group(function () {
     Route::post('/students/add', [App\Http\Controllers\Admin\StudentController::class, 'storeStudent'])->name('students.store');
     Route::delete('/students/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroyStudent'])->name('students.destroy');
-    
-    });
+});
 
-    // Only users with the 'parent' role can access these routes
-    Route::middleware(['auth', 'role:parent'])->group(function () {
-    // The name here has a DOT, so the route() call must have a DOT
+// Only users with the 'parent' role can access these routes
+Route::middleware(['auth', 'role:parent'])->group(function () {
     Route::get('/student-view', [ParentAccountController::class, 'showStudentProfile'])->name('student.view');
-    
-    Route::get('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-    });
+});
+
+Route::post('/chatbot/send', [ChatbotController::class, 'handleChat']);
 
 require __DIR__.'/auth.php';

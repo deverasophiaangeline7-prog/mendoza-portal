@@ -23,23 +23,18 @@
                 <thead>
                     <tr class="bg-gray-200 border-b-2 border-black">
                         <th class="px-4 py-4 border-r-2 border-black text-center font-bold text-xl w-24">No.</th>
-                        <th class="px-6 py-4 border-r-2 border-black font-bold text-xl">Name</th>
-                        <th class="px-6 py-4 font-bold text-xl">Advisory Class</th>
+                        <th class="px-6 py-4 font-bold text-xl">Name</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y-2 divide-black">
                     @forelse($archivedTeachers as $index => $teacherUser)
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-4 py-4 border-r-2 border-black text-center font-bold text-lg text-gray-700">{{ $index + 1 }}</td>
-                        <td class="px-6 py-4 border-r-2 border-black font-bold text-lg uppercase text-gray-500">
-                            {{ $teacherUser->teacher?->first_name ?? 'NO PROFILE' }} {{ $teacherUser->teacher?->last_name ?? '' }}
-                        </td>
                         <td class="px-6 py-4 flex justify-between items-center text-gray-500">
-                            <span class="font-bold text-lg">
-                                {{ $teacherUser->teacher?->section?->section_name ?? 'No Advisory' }}
+                            <span class="font-bold text-lg uppercase">
+                                {{ $teacherUser->teacher?->first_name ?? 'NO PROFILE' }} {{ $teacherUser->teacher?->last_name ?? '' }}
                             </span>
                             <div class="flex gap-2 items-center">
-                                
                                 <button type="button" 
                                     @click="restoreModal = true; restoreUrl = '{{ route('account.teacher.restore', $teacherUser->user_id) }}'" 
                                     title="Restore Account" 
@@ -56,7 +51,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="3" class="px-6 py-10 text-center text-gray-500 font-bold text-xl">No archived teachers found.</td></tr>
+                    <tr><td colspan="2" class="px-6 py-10 text-center text-gray-500 font-bold text-xl">No archived teachers found.</td></tr>
                     @endforelse
                 </tbody>
             </table>

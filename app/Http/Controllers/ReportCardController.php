@@ -7,13 +7,13 @@ use App\Models\Grade;
 use App\Models\Section;
 use App\Models\BehaviorReport;
 use App\Models\NkpEvaluation;
-use App\Models\User; // Added for Notifications
+use App\Models\User; 
 use App\Models\AuditLog;
-use App\Notifications\GradeUploaded; // Added for Notifications
+use App\Notifications\GradeUploaded; 
 use App\Models\SchoolYear;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification; // Added for Notifications
+use Illuminate\Support\Facades\Notification; 
 
 class ReportCardController extends Controller
 {
@@ -24,13 +24,31 @@ class ReportCardController extends Controller
     {
         $user = Auth::user();
 
+        // Custom sorting string to keep NKP on top and Grades 1-6 in order
+        $orderLogic = "
+            CASE 
+                WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1
+                WHEN grade_level IN ('Kindergarten', 'Kinder', 'KINDER') THEN 2
+                WHEN grade_level IN ('Preparatory', 'Prep', 'PREPARATORY') THEN 3
+                ELSE 4 
+            END ASC
+        ";
+
         if ($user->role === 'admin') {
-            $sections = Section::all();
+            $sections = Section::orderByRaw($orderLogic)
+                ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+                ->orderBy('section_name', 'asc')
+                ->get();
+                
             return view('report-card-index', compact('sections'));
         }
 
         if ($user->role === 'teacher') {
-            $sections = Section::where('teacher_id', $user->user_id)->get();
+            $sections = Section::where('teacher_id', $user->user_id)
+                ->orderByRaw($orderLogic)
+                ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+                ->orderBy('section_name', 'asc')
+                ->get();
             
             if ($sections->count() > 1) {
                 return view('report-card-index', compact('sections'));
@@ -76,13 +94,12 @@ class ReportCardController extends Controller
         $gradeLevel = strtoupper($student->section ? $student->section->grade_level : '');
         $isNkp = in_array($gradeLevel, ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREPARATORY']);
 
-        // --- NEW: GET THE ACTIVE SCHOOL YEAR ---
+        // --- GET THE ACTIVE SCHOOL YEAR ---
         $activeYear = SchoolYear::where('status', 'active')->first();
         $activeYearId = $activeYear ? $activeYear->id : null;
 
         // --- BRANCH 1: NKP STUDENTS ---
         if ($isNkp) {
-            // NEW: Added the where('school_year_id') filter
             $existingEvaluations = NkpEvaluation::where('student_id', $student_id)
                 ->where('school_year_id', $activeYearId) 
                 ->get()
@@ -102,7 +119,6 @@ class ReportCardController extends Controller
         $subjects = ['Language', 'English', 'Mathematics', 'Makabansa', 'GMRC', 'Music', 'Art', 'PE', 'Health'];
         $coreValues = ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'];
 
-        // NEW: Added the where('school_year_id') filters
         $existingGrades = Grade::where('student_id', $student_id)
             ->where('school_year_id', $activeYearId)
             ->get()->keyBy('subject_name')->toArray();
@@ -145,7 +161,7 @@ class ReportCardController extends Controller
         $behaviors = $request->input('behaviors');
         $nkpEvaluations = $request->input('nkp_evaluations');
 
-        // --- NEW: GET THE ACTIVE SCHOOL YEAR ---
+        // --- GET THE ACTIVE SCHOOL YEAR ---
         $activeYear = SchoolYear::where('status', 'active')->first();
         
         // Safety check: if no active year exists, stop them from saving
@@ -158,7 +174,6 @@ class ReportCardController extends Controller
         // 1. Save Numeric Grades (Grades 1-6)
         if ($grades) {
             foreach ($grades as $subject => $data) {
-                // Notice we added school_year_id to the first array!
                 Grade::updateOrCreate(
                     ['student_id' => $student_id, 'subject_name' => $subject, 'school_year_id' => $activeYearId],
                     [
@@ -208,12 +223,11 @@ class ReportCardController extends Controller
                 'message'    => 'New grades have been posted for ' . $student->first_name . '.',
                 'type'       => 'grade_upload',
                 'is_read'    => 0,
-                'created_at' => now(), // Manually set the time
+                'created_at' => now(), 
             ]);
         }
 
         if ($student) {
-            // We format the names to look clean in the log table
             $studentName = strtoupper($student->last_name . ', ' . $student->first_name);
             $sectionName = $student->section ? strtoupper($student->section->grade_level . ' - ' . $student->section->section_name) : 'UNASSIGNED';
 
@@ -231,7 +245,7 @@ class ReportCardController extends Controller
     {
         $request->validate([
             'quarter' => ['required', 'in:q1,q2,q3,q4'],
-            'csv_file' => ['required', 'file', 'mimes:csv,txt,xlsx'], // Added xlsx just in case you use a package later
+            'csv_file' => ['required', 'file', 'mimes:csv,txt,xlsx'], 
         ]);
 
         $quarter = $request->input('quarter');
@@ -255,27 +269,20 @@ class ReportCardController extends Controller
         $processedStudents = 0;
         $updatedValues = 0;
 
-        // NEW: Fetch all students in this section ONCE to make matching faster and smarter
         $sectionStudents = Student::where('section_id', $section_id)->get();
 
         while (($row = fgetcsv($handle)) !== false) {
-            // Removed headerSkipped logic because the student check will naturally skip headers
-
             if ($row === [null] || $row === false) {
                 continue;
             }
 
-            // 1. The name is in Column B (Index 1) based on the spreadsheet provided
             $studentName = isset($row[1]) ? trim((string) $row[1]) : '';
             if ($studentName === '') {
                 continue;
             }
 
-            // NEW: Clean the CSV name (Remove spaces, commas, and make lowercase)
-            // Example: "LEGO, ZEDEKIAH CHYLE" becomes "legozedekiahchyle"
             $cleanCsvName = str_replace([',', ' '], '', strtolower($studentName));
 
-            // NEW: Find the matching student using the cleaned string
             $student = $sectionStudents->first(function ($s) use ($cleanCsvName) {
                 $dbName1 = str_replace(' ', '', strtolower($s->first_name . $s->last_name));
                 $dbName2 = str_replace(' ', '', strtolower($s->last_name . $s->first_name));
@@ -283,23 +290,21 @@ class ReportCardController extends Controller
                 return $cleanCsvName === $dbName1 || $cleanCsvName === $dbName2;
             });
 
-            // If it's a header row or "MALE", this will naturally fail and skip the row
             if (!$student) {
                 continue;
             }
 
             $processedStudents++;
 
-            // 2. Adjust indices for the 4 blank columns. Grades start at Column G (Index 6)
             $subjects = [
                 'Language'    => isset($row[6]) ? trim((string) $row[6]) : '',
                 'English'     => isset($row[7]) ? trim((string) $row[7]) : '',
                 'Mathematics' => isset($row[8]) ? trim((string) $row[8]) : '',
-                'Makabansa'   => isset($row[9]) ? trim((string) $row[9]) : '', // AP in your sheet
+                'Makabansa'   => isset($row[9]) ? trim((string) $row[9]) : '', 
                 'GMRC'        => isset($row[10]) ? trim((string) $row[10]) : '',
                 'MAPEH'       => isset($row[11]) ? trim((string) $row[11]) : '',
                 'Music'       => isset($row[12]) ? trim((string) $row[12]) : '',
-                'Art'         => isset($row[13]) ? trim((string) $row[13]) : '', // ARTS in your sheet
+                'Art'         => isset($row[13]) ? trim((string) $row[13]) : '', 
                 'PE'          => isset($row[14]) ? trim((string) $row[14]) : '',
                 'Health'      => isset($row[15]) ? trim((string) $row[15]) : '',
             ];
@@ -350,14 +355,11 @@ class ReportCardController extends Controller
     {
         $schoolYear = SchoolYear::findOrFail($school_year_id);
         
-        // Find all student IDs that have grades OR NKP evaluations in this specific year
         $gradeStudentIds = Grade::where('school_year_id', $school_year_id)->pluck('student_id')->toArray();
         $nkpStudentIds = NkpEvaluation::where('school_year_id', $school_year_id)->pluck('student_id')->toArray();
         
-        // Combine them and remove duplicates
         $allStudentIds = array_unique(array_merge($gradeStudentIds, $nkpStudentIds));
         
-        // Fetch those specific students
         $students = Student::whereIn('student_id', $allStudentIds)->orderBy('last_name')->get();
         
         $histories = \App\Models\StudentHistory::where('school_year_id', $school_year_id)
@@ -376,10 +378,8 @@ class ReportCardController extends Controller
         $student = Student::findOrFail($student_id);
         $schoolYear = SchoolYear::findOrFail($school_year_id);
         
-        // Check if they have NKP evaluations for this year
         $hasNkp = NkpEvaluation::where('student_id', $student_id)->where('school_year_id', $school_year_id)->exists();
 
-        // Admin is viewing past records, so managing/editing is strictly disabled
         $canManage = false; 
 
         if ($hasNkp) {
@@ -389,7 +389,7 @@ class ReportCardController extends Controller
             
             return view('nkp-report-card', [
                 'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
-                'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year, // Shows it is an old record
+                'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year, 
                 'student_id' => $student_id,
                 'savedEvaluations' => $existingEvaluations,
                 'canManage' => $canManage
@@ -405,7 +405,7 @@ class ReportCardController extends Controller
 
              return view('student-report-card', [
                 'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
-                'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year, // Shows it is an old record
+                'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year, 
                 'student_id' => $student_id,
                 'subjects' => ['Language', 'English', 'Mathematics', 'Makabansa', 'GMRC', 'Music', 'Art', 'PE', 'Health'],
                 'coreValues' => ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'],

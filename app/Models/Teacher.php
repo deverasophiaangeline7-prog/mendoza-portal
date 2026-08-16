@@ -6,15 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class Teacher extends Model
 {
-    protected $primaryKey = 'teacher_id'; // Match ERD
+    protected $primaryKey = 'teacher_id';
 
     protected $fillable = [
-        'user_id',
-        'first_name',
-        'last_name',
-        'advisory',
-        'cv_path'
-    ];
+    'user_id',
+    'first_name',
+    'middle_name',
+    'ext_name',
+    'last_name',
+    'advisory',
+    'gender',
+    'birthdate',
+];
 
     public function user()
     {

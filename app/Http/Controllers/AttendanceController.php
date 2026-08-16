@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendance; // IMPORTANT: This connects the new table
+use App\Models\Attendance; 
 use Illuminate\Http\Request;
 use App\Models\Student;
 use App\Models\Section;
@@ -14,77 +14,103 @@ class AttendanceController extends Controller
     /**
      * Display the main grid or redirect teachers.
      */
-        public function index()
-{
-    $user = Auth::user();
-
-    // 1. THE PARENT REDIRECT
-    if ($user->role === 'parent') {
-        // Find the child linked to this parent's account
-        $student = \App\Models\Student::where('user_id', $user->user_id)->first();
-
-        if ($student) {
-            // Convert "Grade 5" to "grade-5" to match your slug routes
-            $gradeSlug = strtolower(str_replace(' ', '-', $student->grade_level));
-            
-            // Redirect them straight to the sheet, bypassing the yellow grid
-            return redirect()->route('attendance.show', $gradeSlug);
-        }
-
-        return "No child record found for this account.";
-    }
-
-    // 2. THE TEACHER REDIRECT (Keep your existing logic here)
-    if ($user->role === 'teacher') {
-        $sections = Section::where('teacher_id', $user->user_id)->get();
-
-        if ($sections->count() > 1) {
-            return view('teacher.select_section', compact('sections'));
-        } 
-        
-        if ($sections->count() === 1) {
-            $gradeSlug = strtolower(str_replace(' ', '-', $sections->first()->grade_level));
-            return redirect()->route('attendance.show', $gradeSlug);
-        }
-    }
-
-    // 3. THE ADMIN VIEW (Image #2)
-    // Only the Admin will ever see the grid of all grades
-    return view('attendance'); 
-}
-
-    /**
-     * Display the attendance list for a specific grade.
-     */
-    public function show($grade)
+    public function index()
     {
         $user = Auth::user();
 
-        $gradeMap = [
-            'nursery'      => 'Nursery',
-            'kinder'       => 'Kindergarten', 
-            'kindergarten' => 'Kindergarten',
-            'preparatory'  => 'Preparatory',
-            'grade-1'      => '1',
-            'grade-2'      => '2',
-            'grade-3'      => '3',
-            'grade-4'      => '4',
-            'grade-5'      => '5',
-            'grade-6'      => '6',
-            '5'            => '5',
-        ];
+        // 1. THE PARENT REDIRECT
+        if ($user->role === 'parent') {
+            // Find the child linked to this parent's account
+            $student = \App\Models\Student::where('user_id', $user->user_id)->first();
 
-        $dbGradeLevel = $gradeMap[$grade] ?? $grade;
+            if ($student && $student->section_id) {
+                // Redirect straight to the sheet via accurate Section ID
+                return redirect()->route('attendance.show', $student->section_id);
+            }
 
-        $query = Section::where('grade_level', 'like', "%$dbGradeLevel%");
+            return "No child record found for this account.";
+        }
 
+        // 2. THE TEACHER REDIRECT
         if ($user->role === 'teacher') {
-            $section = $query->where('teacher_id', $user->user_id)->first();
-        } elseif ($user->role === 'parent') {
-            $student = Student::where('user_id', $user->user_id)->first();
-            $section = Section::find($student->section_id);
-        } else {
-            $section = $query->first();
+            $sections = Section::where('teacher_id', $user->user_id)
+                ->orderByRaw("
+                    CASE 
+                        WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1
+                        WHEN grade_level IN ('Kindergarten', 'Kinder', 'KINDER') THEN 2
+                        WHEN grade_level IN ('Preparatory', 'Prep', 'PREPARATORY') THEN 3
+                        ELSE 4 
+                    END ASC
+                ")
+                ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+                ->orderBy('grade_level', 'asc')
+                ->orderBy('section_name', 'asc')
+                ->get();
+
+            if ($sections->count() > 1) {
+                return view('teacher.select_section', compact('sections'));
+            } 
+            
+            if ($sections->count() === 1) {
+                return redirect()->route('attendance.show', $sections->first()->section_id);
+            }
+        }
+
+        // 3. THE ADMIN VIEW
+        // Fetch all sections dynamically and sort them properly (NKP first, then numerical, then section name)
+        $sections = Section::orderByRaw("
+            CASE 
+                WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1
+                WHEN grade_level IN ('Kindergarten', 'Kinder', 'KINDER') THEN 2
+                WHEN grade_level IN ('Preparatory', 'Prep', 'PREPARATORY') THEN 3
+                ELSE 4 
+            END ASC
+        ")
+        ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+        ->orderBy('grade_level', 'asc')
+        ->orderBy('section_name', 'asc')
+        ->get();
+
+        return view('attendance', compact('sections')); 
+    }
+
+    /**
+     * Display the attendance list for a specific grade or section ID.
+     */
+    public function show($idOrSlug)
+    {
+        $user = Auth::user();
+
+        // Try to find the section exactly by its database ID first (Highly Accurate)
+        $section = Section::find($idOrSlug);
+
+        // Fallback for old named links if they still exist anywhere in the system
+        if (!$section) {
+            $gradeMap = [
+                'nursery'      => 'Nursery',
+                'kinder'       => 'Kindergarten', 
+                'kindergarten' => 'Kindergarten',
+                'preparatory'  => 'Preparatory',
+                'grade-1'      => '1',
+                'grade-2'      => '2',
+                'grade-3'      => '3',
+                'grade-4'      => '4',
+                'grade-5'      => '5',
+                'grade-6'      => '6',
+                '5'            => '5',
+            ];
+
+            $dbGradeLevel = $gradeMap[$idOrSlug] ?? $idOrSlug;
+            $query = Section::where('grade_level', 'like', "%$dbGradeLevel%");
+
+            if ($user->role === 'teacher') {
+                $section = $query->where('teacher_id', $user->user_id)->first();
+            } elseif ($user->role === 'parent') {
+                $student = Student::where('user_id', $user->user_id)->first();
+                $section = Section::find($student->section_id);
+            } else {
+                $section = $query->first();
+            }
         }
 
         if (!$section) {
@@ -107,6 +133,11 @@ class AttendanceController extends Controller
             $attendanceMap[$att->student_id][$att->attendance_date] = $statusMap[$att->status] ?? 0;
         }
 
+        // To ensure the view keeps working with existing variable names
+        $grade = in_array(strtoupper($section->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY']) 
+                    ? strtolower($section->grade_level) 
+                    : 'grade-' . $section->grade_level;
+
         return view('section-attendance', [
             'grade'         => $grade,
             'displayName'   => strtoupper($section->grade_level . ' - ' . $section->section_name),
@@ -118,11 +149,8 @@ class AttendanceController extends Controller
     }
 
     /**
-     * THE NEW SAVE FUNCTION: Stores the clicks into the database
-     */
-    /**
      * THE UPDATED SAVE ENGINE
-     * Now handles both Absence and Tardiness notifications.
+     * Handles both Absence and Tardiness notifications.
      */
     public function store(Request $request)
     {
@@ -139,7 +167,7 @@ class AttendanceController extends Controller
         $attendanceDate = $firstRecord['date'];
 
         foreach ($records as $record) {
-            // 2. Save or Update the record (FIXED SYNTAX)
+            // 2. Save or Update the record
             Attendance::updateOrCreate(
                 [
                     'student_id'      => $record['student_id'],
@@ -166,7 +194,6 @@ class AttendanceController extends Controller
                     }
                 }
             }
-            // --- REMOVED AUDIT LOG FROM HERE ---
         }
 
         // 4. CREATE THE BATCH AUDIT LOG (OUTSIDE THE LOOP)

@@ -17,12 +17,9 @@
         }
         [x-cloak] { display: none !important; }
         
-        /* 
-         * Safely force the sidebar links to be the standard larger size 
-         */
         nav ul a { 
-            font-size: 1.125rem !important; /* Tailwind text-lg */
-            font-weight: 500 !important;    /* Tailwind font-medium */
+            font-size: 1.125rem !important; 
+            font-weight: 500 !important;    
         }
     </style>
 </head>
@@ -42,11 +39,15 @@
 
             <div class="flex items-center space-x-6 text-2xl">
     
-            <!-- Direct link to Chat System -->
-            <a href="{{ route('messages.index') }}" class="relative hover:scale-110 transition-transform focus:outline-none flex items-center">
-                <i class="fa-solid fa-envelope {{ request()->routeIs('messages.index') ? 'text-[#ffaa00]' : 'text-white hover:text-[#ffaa00]' }} transition-colors duration-200"></i>
-            </a>
-
+            
+   <a href="{{ route('messages.index') }}" class="relative transition inline-flex items-center p-2 rounded-lg {{ request()->routeIs('messages*') ? 'text-orange-400' : 'text-white hover:text-orange-400' }}">
+    <i class="fa-solid fa-envelope text-xl"></i>
+    @if(isset($unreadTotal) && $unreadTotal > 0)
+        <span class="absolute -top-1 -right-1 bg-yellow-400 text-red-600 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold shadow-sm">
+            {{ $unreadTotal }}
+        </span>
+    @endif
+</a>
             @include('components.notification-bell')
 
                 <div class="relative" x-data="{ open: false }">
@@ -100,6 +101,12 @@
                     @endif
 
                     @if(auth()->user()->role === 'teacher')
+                        <x-sidebar-link href="{{ route('teacher.view') }}"
+                            icon="fa-solid fa-user-tie"
+                            :active="request()->routeIs('teacher.view')">
+                            Teacher Information
+                        </x-sidebar-link>
+
                         <x-sidebar-link href="{{ route('students.index') }}"
                             icon="fa-solid fa-chalkboard-user"
                             :active="request()->routeIs('students.*')">

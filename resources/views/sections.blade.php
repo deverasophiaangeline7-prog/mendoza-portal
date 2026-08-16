@@ -31,7 +31,7 @@
                     <i class="fa-solid fa-box-archive"></i> View Archives
                 </a>
                 <a href="{{ route('parent.list') }}" class="bg-gray-800 hover:bg-black text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Grades
+                    <i class="fa-solid fa-arrow-left"></i> Back
                 </a>
             </div>
         </div>

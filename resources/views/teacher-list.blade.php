@@ -41,8 +41,14 @@
                             </td>
                             <td class="px-6 py-4 flex justify-between items-center">
                                 <span class="font-bold text-lg">
-                                    {{ $teacherUser->teacher?->section?->section_name ?? 'No Advisory' }}
-                                </span>
+                                @if(in_array($teacherUser->teacher?->advisory, ['1,2,3', 'NKP']) || in_array($teacherUser->teacher?->section?->grade_level, ['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3']))
+                                    NKP
+                                @elseif($teacherUser->teacher?->section)
+                                    {{ $teacherUser->teacher->section->grade_level }} - {{ $teacherUser->teacher->section->section_name }}
+                                @else
+                                    No Advisory
+                                @endif
+                            </span>
                                 <div class="flex gap-2 items-center">
                                     
                                     <!-- WIRED UP EDIT BUTTON -->
@@ -51,12 +57,10 @@
                                                     editId = '{{ $teacherUser->user_id }}'; 
                                                     editFirstName = '{{ addslashes($teacherUser->teacher?->first_name) }}'; 
                                                     editLastName = '{{ addslashes($teacherUser->teacher?->last_name) }}'; 
-                                                    editAdvisory = '{{ $teacherUser->teacher?->advisory === '1,2,3' ? 'NKP' : $teacherUser->teacher?->advisory }}';"
+                                                    editAdvisory = '{{ in_array($teacherUser->teacher?->advisory, ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep']) || in_array($teacherUser->teacher?->section?->grade_level, ['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3']) ? 'NKP' : $teacherUser->teacher?->advisory }}';"
                                             class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
                                         Edit
                                     </button>
-
-                                    <button class="bg-[#FF9500] text-white px-4 py-1.5 rounded-full font-bold text-sm">View CV</button>
                                     
                                     <button type="button" @click="archiveModal = true; archiveUrl = '{{ route('account.teacher.archive', $teacherUser->user_id) }}'" title="Archive" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
                                         <i class="fa-solid fa-box-archive"></i>
@@ -99,12 +103,14 @@
                     <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Reassign Grade Level</label>
                     <select name="advisory" x-model="editAdvisory" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 appearance-none bg-white">
                         <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
-                        <option value="4">Grade 1</option>
-                        <option value="5">Grade 2</option>
-                        <option value="6">Grade 3</option>
-                        <option value="7">Grade 4</option>
-                        <option value="8">Grade 5</option>
-                        <option value="9">Grade 6</option>
+                        @php
+                            $dynamicSections = \App\Models\Section::orderByRaw("CAST(grade_level AS UNSIGNED) ASC")->get();
+                        @endphp
+                        @foreach($dynamicSections as $sec)
+                            @if(!in_array(strtoupper($sec->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY', 'NKP']))
+                                <option value="{{ $sec->section_id }}">Grade {{ $sec->grade_level }} - {{ $sec->section_name }}</option>
+                            @endif
+                        @endforeach
                     </select>
                 </div>
 

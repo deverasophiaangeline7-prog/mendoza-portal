@@ -44,7 +44,12 @@
                     <div class="flex flex-col">
                         <div class="flex items-center">
                             <label class="w-40 flex-shrink-0 font-bold text-xl">Last name: <span class="text-red-600">*</span></label>
-                            <input type="text" name="last_name" class="form-input-pill @error('last_name') border-red-600 @enderror" value="{{ old('last_name') }}" required>
+                            <input type="text" 
+                                   name="last_name" 
+                                   class="form-input-pill @error('last_name') border-red-600 @enderror" 
+                                   value="{{ old('last_name') }}" 
+                                   oninput="this.value = this.value.replace(/[^a-zA-Z\s'-]/g, '').toLowerCase().replace(/\b\w/g, char => char.toUpperCase())"
+                                   required>
                         </div>
                         @error('last_name') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                     </div>
@@ -52,7 +57,12 @@
                     <div class="flex flex-col">
                         <div class="flex items-center">
                             <label class="w-40 flex-shrink-0 font-bold text-xl">First name: <span class="text-red-600">*</span></label>
-                            <input type="text" name="first_name" class="form-input-pill @error('first_name') border-red-600 @enderror" value="{{ old('first_name') }}" required>
+                            <input type="text" 
+                                   name="first_name" 
+                                   class="form-input-pill @error('first_name') border-red-600 @enderror" 
+                                   value="{{ old('first_name') }}" 
+                                   oninput="this.value = this.value.replace(/[^a-zA-Z\s'-]/g, '').toLowerCase().replace(/\b\w/g, char => char.toUpperCase())"
+                                   required>
                         </div>
                         @error('first_name') <span class="text-red-600 text-sm ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                     </div>
@@ -60,13 +70,21 @@
                     <div>
                         <div class="flex items-center">
                             <label class="w-40 flex-shrink-0 font-bold text-xl">Middle name:</label>
-                            <input type="text" name="middle_name" class="form-input-pill">
+                            <input type="text" 
+                                   name="middle_name" 
+                                   class="form-input-pill"
+                                   value="{{ old('middle_name') }}"
+                                   oninput="this.value = this.value.replace(/[^a-zA-Z\s'-]/g, '').toLowerCase().replace(/\b\w/g, char => char.toUpperCase())">
                         </div>
                     </div>
 
                     <div class="flex items-center">
                         <label class="w-40 flex-shrink-0 font-bold text-xl">Ext. name:</label>
-                        <input type="text" name="ext_name" class="form-input-pill">
+                        <input type="text" 
+                               name="ext_name" 
+                               class="form-input-pill"
+                               value="{{ old('ext_name') }}"
+                               oninput="this.value = this.value.replace(/[^a-zA-Z\s'-]/g, '').toLowerCase().replace(/\b\w/g, char => char.toUpperCase())">
                     </div>
 
                     <div class="flex flex-col" x-data="{ fileError: false }">

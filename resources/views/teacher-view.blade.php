@@ -1,6 +1,6 @@
 @extends('layouts.navigation')
 
-@section('title', 'Student Profile')
+@section('title', 'Teacher Profile')
 
 @section('content')
 <style>
@@ -18,13 +18,14 @@
                 
                 <div class="flex flex-col md:flex-row items-center gap-8">
                     
+                    {{-- Profile Picture Container with Edit Button --}}
                     <div class="relative flex-shrink-0 mb-4 md:mb-0">
                         <div class="w-44 h-44 bg-amber-700 border-[4px] border-black rounded-[2rem] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center rotate-[-2deg]">
-                        @if($student->user && $student->user->profile_photo_path)
-                            <img src="{{ asset('storage/' . $student->user->profile_photo_path) }}" 
-                                class="w-full h-full object-cover">
+                        @if($teacher->user && $teacher->user->profile_photo_path)
+                            <img src="{{ asset('storage/' . $teacher->user->profile_photo_path) }}" 
+                                 class="w-full h-full object-cover">
                         @else
-                            <i class="fa-solid fa-user-graduate text-7xl text-black"></i>
+                            <i class="fa-solid fa-user-tie text-7xl text-black"></i>
                         @endif
                         </div>
                         <button @click="photoModal = true" class="absolute -bottom-2 -right-2 bg-white text-black border-[3px] border-black rounded-full w-12 h-12 flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all z-10 text-xl">
@@ -34,11 +35,8 @@
 
                     <div class="text-center md:text-left">
                         <h2 class="text-6xl font-black uppercase italic tracking-tighter leading-none text-black">
-                            {{ $student->last_name }}, {{ $student->first_name }} {{ $student->ext_name ?? '' }}
+                            {{ $teacher->last_name }}, {{ $teacher->first_name }} {{ $teacher->ext_name ?? '' }}
                         </h2>
-                        <div class="font-bold text-gray-400 mt-4 italic uppercase tracking-widest text-2xl">
-                            {{ $student->grade_level }} - {{ $student->section->section_name ?? 'NO SECTION' }}
-                        </div>
                     </div>
                 </div>
 
@@ -53,18 +51,22 @@
                     
                     <div class="space-y-10">
                         <div>
-                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Learner Reference Number (LRN)</label>
-                            <p class="text-3xl font-black uppercase italic">{{ $student->lrn }}</p>
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Advisory Class</label>
+                            <p class="text-3xl font-black uppercase italic">
+                                @if($teacher->advisory === 'NKP')
+                                    NKP (Nursery, Kinder, Prep)
+                                @elseif($teacher->section)
+                                    {{ $teacher->section->grade_level }} - {{ $teacher->section->section_name }}
+                                @else
+                                    NO ADVISORY
+                                @endif
+                            </p>
                         </div>
 
                         <div>
-                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Class Adviser</label>
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Username</label>
                             <p class="text-3xl font-black uppercase italic">
-                                @if($student->section?->teacher?->teacher)
-                                    {{ $student->section->teacher->teacher->first_name }} {{ $student->section->teacher->teacher->last_name }}
-                                @else
-                                    NOT ASSIGNED
-                                @endif
+                                {{ $teacher->user->username ?? $teacher->username ?? 'N/A' }}
                             </p>
                         </div>
                     </div>
@@ -72,12 +74,19 @@
                     <div class="space-y-10">
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Biological Sex</label>
-                            <p class="text-3xl font-black uppercase italic">{{ $student->gender }}</p>
+                            <p class="text-3xl font-black uppercase italic">
+                                {{ $teacher->gender ?? $teacher->sex ?? $teacher->user?->gender ?? 'N/A' }}
+                            </p>
                         </div>
 
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Date of Birth</label>
-                            <p class="text-3xl font-black uppercase italic">{{ \Carbon\Carbon::parse($student->birth_date)->format('F d, Y') }}</p>
+                            <p class="text-3xl font-black uppercase italic">
+                                @php
+                                    $birthdate = $teacher->birthdate ?? $teacher->birth_date ?? $teacher->date_of_birth ?? $teacher->user?->birthdate ?? null;
+                                @endphp
+                                {{ $birthdate ? \Carbon\Carbon::parse($birthdate)->format('F d, Y') : 'N/A' }}
+                            </p>
                         </div>
                     </div>
 
@@ -86,6 +95,7 @@
         </div>
     </main>
 
+    {{-- PHOTO UPDATE MODAL --}}
     <div x-show="photoModal" 
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
         <div @click.away="photoModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
@@ -117,6 +127,7 @@
         </div>
     </div>
 
+    {{-- PASSWORD UPDATE MODAL --}}
     <div x-show="passwordModal" 
          x-data="{ currentPassword: '', newPassword: '', confirmPassword: '' }"
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>

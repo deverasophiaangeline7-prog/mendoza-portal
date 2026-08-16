@@ -48,7 +48,6 @@ class User extends Authenticatable
         return $this->hasMany(Section::class, 'teacher_id', 'user_id');
     }
 
-
     protected $hidden = [
         'password',
         'remember_token',
@@ -58,84 +57,103 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-public function getEmailForPasswordReset()
+    public function getEmailForPasswordReset()
     {
         return $this->username;
     }
 
     public function customNotifications()
-{
-    return $this->hasMany(Notification::class, 'user_id')
-                ->where('is_read', 0)
-                ->orderBy('created_at', 'desc');
-}
-
-/**
- * Reusable notification helper
- */
-public function notifyUser($title, $message, $type = 'general')
-{
-    return \App\Models\Notification::create([
-        'user_id'    => $this->user_id, // Uses the primary key of the user being notified
-        'title'      => $title,
-        'message'    => $message,
-        'type'       => $type,
-        'is_read'    => 0,
-        'created_at' => now(),
-    ]);
-}
-// User.php
-public function sentMessages()
-{
-    return $this->hasMany(Message::class, 'sender_id', 'user_id');
-}
-
-public function receivedMessages()
-{
-    return $this->hasMany(Message::class, 'receiver_id', 'user_id');
-}
-
-public function getNameAttribute()
-{
-    // If the user has a linked student profile, return their full name
-    if ($this->student) {
-        return trim($this->student->first_name . ' ' . $this->student->last_name);
+    {
+        return $this->hasMany(Notification::class, 'user_id')
+                    ->where('is_read', 0)
+                    ->orderBy('created_at', 'desc');
     }
 
-    // If the user has a linked teacher profile (adjust columns if needed)
-    if ($this->teacher) {
-        return trim(($this->teacher->first_name ?? '') . ' ' . ($this->teacher->last_name ?? ''));
+    /**
+     * Reusable notification helper
+     */
+    public function notifyUser($title, $message, $type = 'general')
+    {
+        return \App\Models\Notification::create([
+            'user_id'    => $this->user_id, // Uses the primary key of the user being notified
+            'title'      => $title,
+            'message'    => $message,
+            'type'       => $type,
+            'is_read'    => 0,
+            'created_at' => now(),
+        ]);
     }
 
-    // Fallback to username if no profile name is found (e.g., Admins)
-    return $this->username;
-}
-
-public function getSectionNameAttribute()
-{
-    // If the user is a student and has a section assigned
-    if ($this->student && $this->student->section) {
-        return $this->student->section->grade_level . ' - ' . $this->student->section->section_name;
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id', 'user_id');
     }
 
-    // If the user is a teacher, you can pull their advisory section if applicable
-    if ($this->sections()->exists()) {
-        return $this->sections()->first()->name ?? null;
+    public function receivedMessages()
+    {
+        return $this->hasMany(Message::class, 'receiver_id', 'user_id');
     }
 
-    return null;
-}
+    /**
+     * Unified Name Attribute Accessor
+     */
+    public function getNameAttribute(): ?string
+    {
+        // If the user has a linked student profile, return their full name
+        if ($this->student) {
+            return trim($this->student->first_name . ' ' . $this->student->last_name);
+        }
 
-public function latestMessageWithAuthUser()
-{
-    return Message::where(function($query) {
-        $query->where('sender_id', auth()->id())
-              ->where('receiver_id', $this->user_id);
-    })->orWhere(function($query) {
-        $query->where('sender_id', $this->user_id)
-              ->where('receiver_id', auth()->id());
-    })->latest('created_at')->first();
-}
+        // If the user has a linked teacher profile (adjust columns if needed)
+        if ($this->teacher) {
+            return trim(($this->teacher->first_name ?? '') . ' ' . ($this->teacher->last_name ?? ''));
+        }
 
+        // If the fallback username or email is the admin email, return 'Admin'
+        if ($this->username === 'admin@gmail.com' || $this->email === 'admin@gmail.com') {
+            return 'Admin';
+        }
 
+        // Fallback to username if no profile name is found
+        return $this->username;
+    }
+
+    public function getSectionNameAttribute()
+    {
+        // If the user is a student and has a section assigned
+        if ($this->student && $this->student->section) {
+            return $this->student->section->grade_level . ' - ' . $this->student->section->section_name;
+        }
+
+        // If the user is a teacher, you can pull their advisory section if applicable
+        if ($this->sections()->exists()) {
+            return $this->sections()->first()->name ?? null;
+        }
+
+        return null;
+    }
+
+    public function latestMessageWithAuthUser()
+    {
+        return Message::where(function($query) {
+            $query->where('sender_id', auth()->id())
+                  ->where('receiver_id', $this->user_id);
+        })->orWhere(function($query) {
+            $query->where('sender_id', $this->user_id)
+                  ->where('receiver_id', auth()->id());
+        })->latest('created_at')->first();
+    }
+
+    public function unreadMessagesCount()
+    {
+        return \App\Models\Message::where('sender_id', $this->user_id)
+            ->where('receiver_id', auth()->id())
+            ->where('is_read', false) // assuming you have a boolean 'is_read' column
+            ->count();
+    }
+
+    public function isOnline()
+    {
+        return \Illuminate\Support\Facades\Cache::has('user-is-online-' . $this->user_id);
+    }
 }
