@@ -10,6 +10,7 @@ use App\Models\AuditLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class TeacherAccountController extends Controller
 {
@@ -29,7 +30,7 @@ class TeacherAccountController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'username'      => 'required|unique:users',
+            'username'      => 'required|unique:users,username',
             'password'      => 'required|confirmed',
             'last_name'     => 'required',
             'first_name'    => 'required',
@@ -46,6 +47,7 @@ class TeacherAccountController extends Controller
 
         $user = User::create([
             'username'           => $request->username,
+            'email'              => $request->username,
             'password'           => Hash::make($request->password),
             'role'               => 'teacher',
             'status'             => 'active',

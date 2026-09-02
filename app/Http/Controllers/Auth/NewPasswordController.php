@@ -33,7 +33,6 @@ class NewPasswordController extends Controller
                 // This is the manual update part
                 $user->forceFill([
                     'password' => Hash::make($password),
-                    'remember_token' => Str::random(60),
                 ])->save();
             }
         );
