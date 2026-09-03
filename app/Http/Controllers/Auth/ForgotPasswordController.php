@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -8,31 +9,34 @@ use Illuminate\Support\Facades\Password;
 
 class ForgotPasswordController extends Controller
 {
-    // This shows your Forgot Password page
     public function showLinkRequestForm() {
         return view('auth.forgot-password');
     }
 
-    // This handles the "Submit" button
-
     public function sendResetLink(Request $request) {
-    $request->validate(['lrn' => 'required']);
+        $request->validate(['lrn' => 'required']);
 
-    // 1. Find the user by LRN or Email
-    $user = \App\Models\User::where('username', $request->lrn)
-                ->first();
+        // Find user by LRN or Email
+        $user = User::where('username', $request->lrn)
+                    ->orWhere('email', $request->lrn)
+                    ->first();
 
-    if (!$user) {
-        return back()->withErrors(['lrn' => 'No account found with that LRN or Email.']);
+        if (!$user) {
+            return back()->withErrors(['lrn' => 'No account found with that LRN or Email.']);
+        }
+
+        // Ensure the user account has a valid destination email
+        if (empty($user->email)) {
+            return back()->withErrors(['lrn' => 'This account does not have a registered email address.']);
+        }
+
+        // Send password reset link to $user->email
+        $status = Password::broker()->sendResetLink([
+            'email' => $user->email
+        ]);
+
+        return $status === Password::RESET_LINK_SENT
+            ? back()->with(['status' => __($status)])
+            : back()->withErrors(['lrn' => __($status)]);
     }
-
-    // 2. Now that we've synced the DB, the broker will find the email correctly
-    $status = Password::broker()->sendResetLink([
-        'email' => $user->username // Use the email column now
-    ]);
-
-    return $status === \Illuminate\Support\Facades\Password::RESET_LINK_SENT
-        ? back()->with(['status' => __($status)])
-        : back()->withErrors(['lrn' => __($status)]);
-}
 }
