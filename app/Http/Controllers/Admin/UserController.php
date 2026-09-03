@@ -329,4 +329,40 @@ class UserController extends Controller
         // 7. Redirect back with your green success toast!
         return back()->with('success', 'Password successfully reset for ' . $user->username);
     }
+
+    public function updateTerms(Request $request)
+{
+    // Validate the dates
+    $validated = $request->validate([
+        'term1_start' => 'required|date',
+        'term1_end'   => 'required|date|after_or_equal:term1_start',
+        
+        'term2_start' => 'required|date|after_or_equal:term1_end',
+        'term2_end'   => 'required|date|after_or_equal:term2_start',
+        
+        'term3_start' => 'required|date|after_or_equal:term2_end',
+        'term3_end'   => 'required|date|after_or_equal:term3_start',
+    ]);
+
+    // Fetch the currently active school year 
+    // (Note: your web.php uses 'status' => 'active')
+    $activeYear = SchoolYear::where('status', 'active')->first();
+
+    if (!$activeYear) {
+        return back()->with('error', 'No active school year found to update.');
+    }
+
+    // Update the record in the database
+    $activeYear->update([
+        'term1_start' => $validated['term1_start'],
+        'term1_end'   => $validated['term1_end'],
+        'term2_start' => $validated['term2_start'],
+        'term2_end'   => $validated['term2_end'],
+        'term3_start' => $validated['term3_start'],
+        'term3_end'   => $validated['term3_end'],
+    ]);
+
+    return back()->with('success', 'Term Schedule securely updated.');
+}
+
 }

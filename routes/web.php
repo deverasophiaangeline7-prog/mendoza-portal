@@ -203,6 +203,14 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     // Section Management Routes
     Route::post('/sections/store', [SectionController::class, 'store'])->name('sections.store');
     Route::delete('/sections/destroy', [SectionController::class, 'destroy'])->name('sections.destroy');
+    
+    // AI Knowledge Base Management
+    Route::get('/admin/knowledge-base', [\App\Http\Controllers\KnowledgeBaseController::class, 'index'])->name('knowledge.index');
+    Route::post('/admin/knowledge-base', [\App\Http\Controllers\KnowledgeBaseController::class, 'store'])->name('knowledge.store');
+    Route::delete('/admin/knowledge-base/{id}', [\App\Http\Controllers\KnowledgeBaseController::class, 'destroy'])->name('knowledge.destroy');
+
+    Route::put('/admin/terms/update', [App\Http\Controllers\Admin\UserController::class, 'updateTerms'])->name('admin.terms.update');
+
     });
 
 // Both Admins and Teachers are allowed inside this group

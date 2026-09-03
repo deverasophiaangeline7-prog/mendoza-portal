@@ -12,7 +12,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Add your term deadline command here:
+        $schedule->command('terms:check-deadlines')->dailyAt('08:00');
     }
 
     /**

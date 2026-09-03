@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Message;
 use App\Models\User;
+use App\Models\SchoolCalendar; 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class MessageController extends Controller
@@ -53,7 +55,7 @@ class MessageController extends Controller
         ]);
 
         // 1. Save the student's actual message to the database first
-        Message::create([
+        $currentMessage = Message::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $request->receiver_id,
             'content' => $request->message,
@@ -66,21 +68,77 @@ class MessageController extends Controller
         $apiKey = env('GEMINI_API_KEY');
         
         if ($apiKey) {
-            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=' . $apiKey;
+            // A. Fetch school events from the database
+            $upcomingEvents = SchoolCalendar::orderBy('start_date', 'asc')->limit(10)->get();
+            
+            $eventsKnowledge = "";
+            if ($upcomingEvents->count() > 0) {
+                foreach ($upcomingEvents as $event) {
+                    $timeStr = "";
+                    if (!empty($event->start_time) && !empty($event->end_time)) {
+                        $timeStr = " from {$event->start_time} to {$event->end_time}";
+                    } elseif (!empty($event->time)) {
+                        $timeStr = " at {$event->time}";
+                    }
+                    $descStr = !empty($event->description) ? ". Note: {$event->description}" : "";
+                    $eventsKnowledge .= "- " . $event->event_title . " on " . $event->start_date . $timeStr . $descStr . "\n";
+                }
+            } else {
+                $eventsKnowledge = "- No upcoming events scheduled.\n";
+            }
 
-            // FIX: "systemInstruction" MUST be camelCase, no underscores!
+            // B. Fetch the last 4 messages to give the AI "Memory" for context
+            $history = Message::where(function($query) use ($request) {
+                $query->where('sender_id', Auth::id())->where('receiver_id', $request->receiver_id);
+            })->orWhere(function($query) use ($request) {
+                $query->where('sender_id', $request->receiver_id)->where('receiver_id', Auth::id());
+            })
+            ->where('id', '!=', $currentMessage->id) // Exclude the message they just sent
+            ->orderBy('created_at', 'desc')
+            ->limit(4)
+            ->get()
+            ->reverse();
+
+            $historyContext = "";
+            foreach ($history as $msg) {
+                $sender = ($msg->sender_id == Auth::id()) ? "User" : "AI";
+                $cleanText = str_replace("🤖 AI Assistant: ", "", $msg->content);
+                $historyContext .= "{$sender}: {$cleanText}\n";
+            }
+            if (empty($historyContext)) $historyContext = "No previous messages.";
+
+            // C. Build the highly intelligent system prompt
+            $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc. 
+            
+            Guidelines:
+            - Maintain a polite, professional, and helpful tone.
+            - STRICT LANGUAGE MATCHING: You MUST reply in the exact same language as the user's current question. If they ask in English, reply in English. If they ask in Tagalog, reply in Tagalog. Do not mix languages unless the user does.
+            - Use the [PREVIOUS CHAT HISTORY] to understand the context of the user's current question (e.g. if they ask 'when is the next one?').
+            - Convert dates to friendly natural language (e.g., 'September 3, 2026').
+            - Answer using ONLY the provided facts below.
+            - If the question cannot be answered using these exact facts, respond with exactly one word: ESCALATE.
+
+            *** MENDOZA ACADEMY CHEAT SHEET ***\n\n"
+                . "[PREVIOUS CHAT HISTORY FOR CONTEXT]\n" . $historyContext . "\n\n"
+                . "[TUITION & FEES]\n"
+                . "- Tuition is 1,000 PHP per month. Miscellaneous fee is 3,500 PHP.\n"
+                . "- Tuition fee payment schedule: Every second Friday of the month.\n\n"
+                . "[SCHOOL YEAR & TERMS]\n"
+                . "- School year starts: June 08, 2026 for SY 2026-2027.\n"
+                . "- Term 1: June 08 - September 15, 2026.\n"
+                . "- Term 2: September 16 - December 18, 2026.\n"
+                . "- Term 3: January 04 - April 08, 2027.\n"
+                . "- Last day of classes (School year ends): April 08, 2027.\n\n"
+                . "[GRADES RELEASE]\n"
+                . "- Grades are released via the Report Card module 1 to 2 weeks after the end of each Term.\n\n"
+                . "[UPCOMING CALENDAR EVENTS]\n"
+                . $eventsKnowledge;
+
+            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' . $apiKey;
+
             $data = [
-                "systemInstruction" => [
-                    "parts" => [
-                        ["text" => "You are the automated AI assistant for Mendoza Academy, Inc. Your only job is to answer simple FAQs using ONLY the facts provided below. Be polite and concise. Do not use markdown. If a user's question cannot be answered using these exact facts, or if they ask about specific grades, you must reply with exactly one word: ESCALATE.\n\n*** MENDOZA ACADEMY CHEAT SHEET ***\n- School Fees: Tuition is 1,000 PHP per month. Miscellaneous fee is 3,500 PHP.\n- 
-                        Schedules: Morning classes start at 7:30 AM. Afternoon classes start at 1:00 PM.\n- 
-                        Events: Intramurals will be held in October. Christmas break starts December 18.\n- 
-                        xAnnouncements: Enrollment for next semester is ongoing until the end of the month."]
-                    ]
-                ],
-                "contents" => [
-                    ["parts" => [["text" => $request->message]]]
-                ]
+                "systemInstruction" => ["parts" => [["text" => $systemPrompt]]],
+                "contents" => [["parts" => [["text" => $request->message]]]]
             ];
 
             $ch = curl_init($url);
@@ -90,17 +148,12 @@ class MessageController extends Controller
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); 
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
             
             $response = curl_exec($ch);
             curl_close($ch);
 
             $responseData = json_decode($response);
-            
-            // SMART DIAGNOSTIC: If Google returns an error, print it to the screen instantly!
-            if (isset($responseData->error)) {
-                dd('Google API Error:', $responseData->error);
-            }
-
             $aiText = "ESCALATE"; 
             if (isset($responseData->candidates[0]->content->parts[0]->text)) {
                 $aiText = trim($responseData->candidates[0]->content->parts[0]->text);
@@ -111,6 +164,13 @@ class MessageController extends Controller
                     'sender_id' => $request->receiver_id, 
                     'receiver_id' => Auth::id(),          
                     'content' => "🤖 AI Assistant: " . $aiText,
+                    'is_read' => false,
+                ]);
+            } else {
+                Message::create([
+                    'sender_id' => $request->receiver_id,
+                    'receiver_id' => Auth::id(),
+                    'content' => "🤖 AI Assistant: I'm sorry, I don't have that information. I have escalated your question to the staff.",
                     'is_read' => false,
                 ]);
             }

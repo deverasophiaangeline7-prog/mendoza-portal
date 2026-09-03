@@ -14,9 +14,8 @@ class BehaviorReport extends Model
         'student_id',
         'school_year_id',
         'core_value',
-        'q1',
-        'q2',
-        'q3',
-        'q4',
+        'term1',
+        'term2',
+        'term3',
     ];
 }

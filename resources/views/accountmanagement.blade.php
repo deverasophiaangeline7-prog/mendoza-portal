@@ -115,6 +115,88 @@
             </button>
         </div>
 
+        <!-- START: Term Schedule Card -->
+        <div class="w-full bg-[#ccff00] mt-12 border-[4px] border-black rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden">
+            
+            <div class="flex items-center justify-between mb-8 border-b-[4px] border-black pb-4">
+                <div>
+                    <h3 class="text-3xl font-black uppercase tracking-widest text-black">Academic Term Schedule</h3>
+                    <p class="font-bold text-gray-800 text-lg mt-1">Set grading periods to automatically lock/unlock teacher grade sheets.</p>
+                </div>
+                <i class="fa-solid fa-calendar-days text-5xl text-black"></i>
+            </div>
+
+            <form action="{{ route('admin.terms.update') }}" method="POST">
+                @csrf
+                <!-- Use @method('PUT') here if your route is defined as Route::put() -->
+                @method('PUT') 
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Term 1 -->
+                    <div class="bg-white border-[3px] border-black p-5 rounded-[1.5rem] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <h4 class="text-xl font-black uppercase mb-4 text-center bg-gray-100 border-[3px] border-black rounded-xl py-2">Term 1</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
+                                <input type="date" name="term1_start" required
+                                       value="{{ old('term1_start', $activeYear ? $activeYear->term1_start : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
+                                <input type="date" name="term1_end" required
+                                       value="{{ old('term1_end', $activeYear ? $activeYear->term1_end : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Term 2 -->
+                    <div class="bg-white border-[3px] border-black p-5 rounded-[1.5rem] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <h4 class="text-xl font-black uppercase mb-4 text-center bg-gray-100 border-[3px] border-black rounded-xl py-2">Term 2</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
+                                <input type="date" name="term2_start" required
+                                       value="{{ old('term2_start', $activeYear ? $activeYear->term2_start : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
+                                <input type="date" name="term2_end" required
+                                       value="{{ old('term2_end', $activeYear ? $activeYear->term2_end : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Term 3 -->
+                    <div class="bg-white border-[3px] border-black p-5 rounded-[1.5rem] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <h4 class="text-xl font-black uppercase mb-4 text-center bg-gray-100 border-[3px] border-black rounded-xl py-2">Term 3</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
+                                <input type="date" name="term3_start" required
+                                       value="{{ old('term3_start', $activeYear ? $activeYear->term3_start : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
+                                <input type="date" name="term3_end" required
+                                       value="{{ old('term3_end', $activeYear ? $activeYear->term3_end : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-[#00e5ff] hover:bg-[#00cce6] text-black text-2xl font-black py-5 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center gap-3">
+                    Save Term Schedule <i class="fa-solid fa-floppy-disk"></i>
+                </button>
+            </form>
+        </div>
+        <!-- END: Term Schedule Card -->
+
     </div>
 
     <div x-show="finalizeModal" 

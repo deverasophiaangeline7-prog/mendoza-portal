@@ -135,7 +135,8 @@ class ReportCardController extends Controller
             'coreValues' => $coreValues,
             'savedGrades' => $existingGrades,
             'savedBehaviors' => $existingBehaviors,
-            'canManage' => $canManage
+            'canManage' => $canManage,
+            'activeYear' => $activeYear
         ]);
     }
 
@@ -172,13 +173,15 @@ class ReportCardController extends Controller
         $activeYearId = $activeYear->id;
 
         // 1. Save Numeric Grades (Grades 1-6)
+        // 1. Save Numeric Grades
         if ($grades) {
             foreach ($grades as $subject => $data) {
                 Grade::updateOrCreate(
                     ['student_id' => $student_id, 'subject_name' => $subject, 'school_year_id' => $activeYearId],
                     [
-                        'q1' => $data['q1'] ?? null, 'q2' => $data['q2'] ?? null,
-                        'q3' => $data['q3'] ?? null, 'q4' => $data['q4'] ?? null,
+                        'term1' => $data['term1'] ?? null, 
+                        'term2' => $data['term2'] ?? null,
+                        'term3' => $data['term3'] ?? null, 
                         'final_grade' => $data['final_grade'] ?? null,
                         'remarks' => $data['remarks'] ?? null
                     ]
