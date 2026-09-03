@@ -6,7 +6,7 @@
 <style>
     :root {
         --ma-red: #d00101;
-        --ma-orange: #ffaa00; 
+        --ma-orange: #ffaa00;
         --ma-green: #34a853;
         --ma-bg-grey: #e8e8e8;
         --ma-dark-grey: #b0b0b0; 
@@ -265,6 +265,13 @@
         
         <div class="left-column">
             
+            @if(session('success'))
+            <div style="background-color: #d4edda; color: #155724; border: 2px solid #000; border-radius: 15px; padding: 12px 20px; font-weight: bold; display: flex; align-items: center; justify-content: space-between;">
+                <span><i class="fa-solid fa-circle-check" style="margin-right: 8px; color: #34a853;"></i> {{ session('success') }}</span>
+                <button type="button" onclick="this.parentElement.style.display='none';" style="background:none; border:none; font-size: 18px; font-weight: bold; cursor: pointer;">&times;</button>
+            </div>
+            @endif
+
             <div class="ma-card">
                 <h3>Appoint with your adviser</h3>
                 <form id="appointmentForm" action="{{ route('appointments.store') }}" method="POST" onsubmit="return validateAppointmentForm(event)">
@@ -275,7 +282,6 @@
                     </div>
                     <div class="form-group">
                         <label>Appointment Date</label>
-                        {{-- Added Min/Max restrictions: Extended to 2 weeks out --}}
                         <input type="date" id="appointment_date" name="appointment_date" class="form-control" required
                                min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
                                max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
@@ -380,7 +386,6 @@
                     $currentDate = \Carbon\Carbon::parse($dateParam);
                 } else {
                     $currentDate = \Carbon\Carbon::now();
-                    // Auto-skip to upcoming Monday if today is Saturday or Sunday
                     if ($currentDate->isWeekend()) {
                         $currentDate = $currentDate->next(\Carbon\Carbon::MONDAY);
                     }

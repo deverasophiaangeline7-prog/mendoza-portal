@@ -3,22 +3,14 @@
 @section('title', 'Messages - Mendoza Academy')
 
 @section('content')
-<!-- Main Wrapper: Flex layout to place sidebar and chat side-by-side -->
 <div class="h-[calc(100vh-100px)] w-full bg-white overflow-hidden flex" x-data="{ newMsgModal: false, createGroupModal: false }">
     
-    <!-- ================== -->
-    <!-- 1. CHATS SIDEBAR   -->
-    <!-- ================== -->
     <div class="w-80 border-r flex flex-col bg-white flex-shrink-0">
         
-        <!-- Sidebar Header -->
         <div class="p-4 font-bold text-lg border-b bg-gray-50 flex justify-between items-center relative" x-data="{ searchOpen: false, searchQuery: '' }">
-            <!-- Title or Search Input container -->
             <div class="flex items-center flex-1 mr-2 relative">
-                <!-- Normal Title (Shown when search is closed) -->
                 <span x-show="!searchOpen" class="text-gray-800">Chats</span>
 
-                <!-- Expanding Search Input (Shown when search is open) -->
                 <div x-show="searchOpen" 
                      x-transition:enter="transition-all ease-out duration-200"
                      x-transition:enter-start="opacity-0 w-0"
@@ -35,22 +27,18 @@
                 </div>
             </div>
 
-            <!-- Action Buttons -->
             <div class="flex items-center gap-2 flex-shrink-0">
-                <!-- Search Button / Close Toggle -->
                 <button @click="searchOpen = !searchOpen; if(searchOpen) { $nextTick(() => $el.closest('div.flex').querySelector('input').focus()) }" 
                         class="text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full w-8 h-8 flex items-center justify-center transition" 
                         :title="searchOpen ? 'Close Search' : 'Search Account'">
                     <i class="fa-solid text-sm" :class="searchOpen ? 'fa-xmark' : 'fa-magnifying-glass'"></i>
                 </button>
                 
-                <!-- Plus Button with Dropdown Menu -->
                 <div x-data="{ dropdownOpen: false }" class="relative">
                     <button @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="text-white bg-[#6d0101] hover:bg-red-900 rounded-full w-8 h-8 flex items-center justify-center transition">
                         <i class="fa-solid fa-plus text-sm"></i>
                     </button>
 
-                    <!-- Dropdown Content -->
                     <div x-show="dropdownOpen" 
                          x-transition:enter="transition ease-out duration-100"
                          x-transition:enter-start="transform opacity-0 scale-95"
@@ -61,21 +49,20 @@
                          style="display: none;"
                          class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
                         
-                        <!-- Option 1: New Message -->
                         <button @click="dropdownOpen = false; newMsgModal = true" class="w-full text-left block px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-100 border-b border-gray-100 transition-colors">
                             <i class="fa-solid fa-pen-to-square mr-2 text-[#6d0101]"></i> New Message
                         </button>
                         
-                        <!-- Option 2: Create Group Chat -->
+                        @if(auth()->user()->role !== 'parent')
                         <button @click="dropdownOpen = false; createGroupModal = true" class="w-full text-left block px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-100 transition-colors">
                             <i class="fa-solid fa-users mr-2 text-[#6d0101]"></i> Create a group chat
                         </button>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Sidebar User List (Shows people with chat history) -->
         <div class="overflow-y-auto flex-1">
             @forelse($users as $user)
                 @php
@@ -88,20 +75,16 @@
                           {{ (isset($selectedUser) && $selectedUser->user_id == $user->user_id) ? 'border-l-4 border-[#6d0101] bg-gray-50' : 'border-l-4 border-transparent' }}">
                     <div class="flex items-center">
                         
-                        <!-- Avatar -->
                         <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}" class="w-12 h-12 rounded-full mr-3 border flex-shrink-0" alt="User">
                         
-                        <!-- Details -->
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between items-baseline">
-                                <!-- Name, Section, and UNREAD BADGE -->
                                 <span class="truncate flex items-center gap-1 min-w-0 {{ $hasUnread ? 'font-bold text-black' : 'font-bold text-gray-900' }}">
                                     @if(isset($user->type) && $user->type === 'announcement') 📌 
                                     @elseif(isset($user->type) && $user->type === 'advisory') 🎓 
                                     @endif    
                                     <span class="truncate">{{ $user->name }}</span>
                                     
-                                    <!-- UNREAD MESSAGES BADGE -->
                                     @if($hasUnread)
                                         <span class="bg-red-600 text-white rounded-full px-2 py-0.5 text-[10px] font-bold ml-1 flex-shrink-0">
                                             {{ $user->unreadMessagesCount() }}
@@ -118,7 +101,6 @@
                                 </span>
                             </div>
                             
-                            <!-- Last Message Snippet -->
                             <p class="text-xs truncate mt-0.5 {{ $hasUnread ? 'text-gray-900 font-semibold' : 'text-gray-500' }}">
                                 {{ $latestMsg ? $latestMsg->content : 'No messages yet...' }}
                             </p>
@@ -133,13 +115,9 @@
         </div>
     </div>
 
-    <!-- ================== -->
-    <!-- 2. CHAT DETAIL VIEW-->
-    <!-- ================== -->
     <div class="flex-1 flex flex-col bg-white overflow-hidden">
         
         @isset($selectedUser)
-            <!-- Chat Header -->
             <div class="p-4 border-b bg-white flex items-center justify-between shadow-sm flex-shrink-0">
                 <div class="flex items-center">
                     <img src="https://ui-avatars.com/api/?name={{ urlencode($selectedUser->name) }}" class="w-10 h-10 rounded-full mr-3 border" alt="User">
@@ -153,7 +131,6 @@
                             @endif
                         </h3>
                         
-                        <!-- DYNAMIC ACTIVE/OFFLINE STATUS -->
                         @if($selectedUser->isOnline())
                             <span class="text-xs text-green-500 flex items-center mt-0.5">
                                 <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Active Now
@@ -165,13 +142,9 @@
                         @endif
                     </div>
                 </div>
-                <div class="text-gray-400 space-x-4">
-                    <i class="fa-solid fa-magnifying-glass hover:text-gray-600 cursor-pointer"></i>
-                    <i class="fa-solid fa-ellipsis-vertical hover:text-gray-600 cursor-pointer"></i>
-                </div>
+                <!-- Right-side search and three dots icons are removed here -->
             </div>
             
-            <!-- Messages Display Area -->
             <div id="message-container" class="flex-1 overflow-y-auto p-4 space-y-4">
                 @if(isset($messages) && count($messages) > 0)
                     @foreach($messages as $message)
@@ -191,26 +164,22 @@
                 @endif
             </div>
 
-            <!-- Message Input Form -->
             <div class="p-4 border-t bg-white flex-shrink-0">
                 @php
                     $isAdviser = false; 
                 @endphp
 
                 @if(isset($selectedUser->type) && $selectedUser->type === 'announcement')
-                    <!-- Read Only: Announcements -->
                     <div class="text-center text-sm text-gray-500 py-3 bg-gray-50 rounded-full border border-gray-200">
                         <i class="fa-solid fa-lock mr-1"></i> Only administrators can send messages in Announcements.
                     </div>
                     
                 @elseif(isset($selectedUser->type) && $selectedUser->type === 'advisory' && !$isAdviser)
-                    <!-- Read Only: Section -->
                     <div class="text-center text-sm text-gray-500 py-3 bg-gray-50 rounded-full border border-gray-200">
                         <i class="fa-solid fa-lock mr-1"></i> Only the adviser can send messages to this section.
                     </div>
                     
                 @else
-                    <!-- Normal Input Box -->
                     <form action="{{ route('messages.store') }}" method="POST" class="flex gap-2">
                         @csrf
                         <input type="hidden" name="receiver_id" value="{{ $selectedUser->user_id }}">
@@ -223,7 +192,6 @@
             </div>
         
         @else
-            <!-- Empty State -->
             <div class="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50">
                 <i class="fa-solid fa-comment-dots text-6xl mb-4 text-gray-300"></i>
                 <p class="text-lg font-semibold text-gray-500">Click a message to view</p>
@@ -232,9 +200,6 @@
 
     </div>
 
-    <!-- ========================== -->
-    <!-- MODAL: New Message         -->
-    <!-- ========================== -->
     <div x-show="newMsgModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" style="display: none;">
         <div @click.away="newMsgModal = false" class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -243,7 +208,6 @@
             </div>
             <p class="text-sm text-gray-600 mb-4">Select a user from your permitted contacts list to begin chatting.</p>
             
-            <!-- Scrollable Permitted Contacts List -->
             <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-2 mb-4 space-y-1">
                 @forelse($contacts as $contact)
                     <a href="{{ route('messages.show', ['id' => $contact->user_id]) }}" class="flex items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition">
@@ -266,9 +230,7 @@
         </div>
     </div>
 
-    <!-- ========================== -->
-    <!-- MODAL: Create Group Chat   -->
-    <!-- ========================== -->
+    @if(auth()->user()->role !== 'parent')
     <div x-show="createGroupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" style="display: none;">
         <div @click.away="createGroupModal = false" class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -307,10 +269,10 @@
             </form>
         </div>
     </div>
+    @endif
 
 </div>
 
-<!-- Auto-scroll to bottom of messages -->
 <script>
     const container = document.getElementById('message-container');
     if (container) {
