@@ -9,8 +9,8 @@
             $type = strtolower(trim($notification->type));
 
             if ($role === 'teacher') {
-                // Allow both announcements and school events from admin
-                return in_array($type, ['announcement', 'event', 'school event', 'calendar']); 
+                // ADDED 'deadline_alert' to the allowed types for teachers
+                return in_array($type, ['announcement', 'event', 'school event', 'calendar', 'deadline_alert']); 
             }
             return true; 
         });
@@ -48,9 +48,10 @@
                         
                         <div>
                             <p class="text-[10px] font-black text-orange-600 uppercase">
+                                <i class="fa-solid {{ $notification->type === 'deadline_alert' ? 'fa-clock text-red-600' : 'fa-circle-info' }} mr-1"></i>
                                 {{ $notification->title }}
                             </p>
-                            <p class="text-sm font-bold text-black leading-tight">
+                            <p class="text-sm font-bold text-black leading-tight mt-1">
                                 {{ $notification->message }}
                             </p>
                             <p class="text-[10px] text-gray-400 mt-2">
