@@ -157,6 +157,11 @@ class ReportCardController extends Controller
      */
     public function store(Request $request)
     {
+        // BACKEND RESTRICTION: Block Admins and Parents from saving grades
+        if (Auth::user()->role !== 'teacher') {
+            return response()->json(['message' => 'Unauthorized action. Only teachers can update grades.'], 403);
+        }
+
         $student_id = $request->input('student_id');
         $grades = $request->input('grades');
         $behaviors = $request->input('behaviors');
@@ -172,7 +177,6 @@ class ReportCardController extends Controller
         
         $activeYearId = $activeYear->id;
 
-        // 1. Save Numeric Grades (Grades 1-6)
         // 1. Save Numeric Grades
         if ($grades) {
             foreach ($grades as $subject => $data) {
@@ -246,6 +250,11 @@ class ReportCardController extends Controller
 
     public function importBatch(Request $request, $section_id)
     {
+        // BACKEND RESTRICTION: Block Admins from accessing the import logic
+        if (Auth::user()->role !== 'teacher') {
+            return redirect()->back()->with('error', 'Unauthorized action. Only assigned teachers can import grades.');
+        }
+
         $request->validate([
             'quarter' => ['required', 'in:q1,q2,q3,q4'],
             'csv_file' => ['required', 'file', 'mimes:csv,txt,xlsx'], 
@@ -419,3 +428,4 @@ class ReportCardController extends Controller
         }
     }
 }
+

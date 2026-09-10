@@ -63,7 +63,6 @@
 
             </div>
         @elseif(auth()->user()->role === 'admin')
-            {{-- This part ONLY shows for the Admin --}}
             <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-blue-100 flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-blue-900">
                 <i class="fa-solid fa-eye text-3xl mr-4"></i>
                 <div>
@@ -71,9 +70,7 @@
                     <div class="font-bold text-sm">You are viewing this attendance sheet as an administrator.</div>
                 </div>
             </div>
-
         @elseif(auth()->user()->role === 'teacher')
-            {{-- This shows for Teachers who ARE NOT assigned to this specific section --}}
             <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-gray-200 flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-gray-700">
                 <i class="fa-solid fa-lock text-3xl mr-4"></i>
                 <div>
@@ -81,9 +78,7 @@
                     <div class="font-bold text-sm">You are not the assigned adviser for this section.</div>
                 </div>
             </div>
-
         @else
-            {{-- This is what the Parent sees --}}
             <div class="mb-6">
                 <h3 class="font-black text-2xl uppercase border-b-4 border-black inline-block">Attendance Overview</h3>
             </div>
@@ -160,27 +155,22 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('attendanceData', () => ({
         isManaging: false,
         selectedDate: new Date().toISOString().split('T')[0],
-        
-        // Toast variables
         showToast: false,
         toastMessage: '',
         toastType: 'success',
-        
-        // Loaded dynamically from Laravel
         addedDates: @json($existingDates ?? []),
         serverAttendance: @json($attendanceMap ?? []),
         
         addDateToTable() {
             if (!this.addedDates.includes(this.selectedDate)) {
                 this.addedDates.push(this.selectedDate);
-                this.addedDates.sort(); // Keep dates in order
+                this.addedDates.sort(); 
             } else {
                 this.triggerToast('Date already added!', 'error');
             }
         },
 
         getSavedStatus(studentId, date) {
-            // If we have data from the server, use it. Otherwise, default to 0 (Unset) or 1 (Present)
             if (this.serverAttendance[studentId] && this.serverAttendance[studentId][date]) {
                 return this.serverAttendance[studentId][date];
             }
@@ -188,17 +178,28 @@ document.addEventListener('alpine:init', () => {
         },
 
         async saveAttendance() {
-            // 1. Gather all the data from the cells
             const attendanceData = [];
             const cells = document.querySelectorAll('.attendance-cell');
+            let hasIncompleteData = false;
             
             cells.forEach(cell => {
+                const status = cell.getAttribute('data-status');
+                
+                if (status === '0' || status === 0 || !status) {
+                    hasIncompleteData = true;
+                }
+
                 attendanceData.push({
                     student_id: cell.getAttribute('data-student'),
                     date: cell.getAttribute('data-date'),
-                    status: cell.getAttribute('data-status')
+                    status: status
                 });
             });
+
+            if (hasIncompleteData) {
+                this.triggerToast('Please complete all attendance fields before saving!', 'error');
+                return;
+            }
 
             if (attendanceData.length === 0) {
                 this.triggerToast('No data to save!', 'error');
@@ -206,7 +207,6 @@ document.addEventListener('alpine:init', () => {
             }
 
             try {
-                // 2. Send to Laravel
                 const response = await fetch('{{ route("attendance.store") }}', {
                     method: 'POST',
                     headers: {
@@ -218,7 +218,7 @@ document.addEventListener('alpine:init', () => {
 
                 if (response.ok) {
                     this.triggerToast('ATTENDANCE SAVED!', 'success');
-                    this.isManaging = false; // Switch back to view mode
+                    this.isManaging = false; 
                 } else {
                     throw new Error('Server error');
                 }

@@ -28,6 +28,8 @@
             </div>
         @endif
 
+        {{-- Wrap the import form to ONLY show for teachers --}}
+        @if(auth()->user()->role === 'teacher')
         <form action="{{ route('batch.import', $section_id) }}" method="POST" enctype="multipart/form-data" class="mb-6 flex flex-wrap items-center justify-end gap-3">
             @csrf
             <select name="quarter" required class="border-[3px] border-black rounded-xl px-3 py-2 font-black text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -38,14 +40,12 @@
                 <option value="q4">Q4</option>
             </select>
             
-            <!-- NEW: Alpine.js wrapper for the file input -->
             <div x-data="{ fileName: '' }">
                 <label :class="fileName ? 'bg-red-500 text-white' : 'bg-white text-black'" 
                     class="cursor-pointer border-[3px] border-black rounded-xl px-3 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors inline-flex items-center">
                     
                     <i class="fa-solid fa-file-csv mr-2" :class="fileName ? 'text-white' : 'text-black'"></i>
                     
-                    <!-- Shows the file name if selected, otherwise shows "Choose CSV" -->
                     <span class="mr-2" x-text="fileName ? fileName : 'Choose CSV'"></span>
                     
                     <input type="file" name="csv_file" accept=".csv, .xlsx" required class="hidden" 
@@ -57,6 +57,7 @@
                 IMPORT BATCH
             </button>
         </form>
+        @endif
 
         <div class="border-[3px] border-black rounded-xl overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white">
             <table class="w-full text-left border-collapse">

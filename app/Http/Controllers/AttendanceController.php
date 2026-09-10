@@ -11,27 +11,18 @@ use Illuminate\Support\Facades\Auth;
 
 class AttendanceController extends Controller
 {
-    /**
-     * Display the main grid or redirect teachers.
-     */
     public function index()
     {
         $user = Auth::user();
 
-        // 1. THE PARENT REDIRECT
         if ($user->role === 'parent') {
-            // Find the child linked to this parent's account
             $student = \App\Models\Student::where('user_id', $user->user_id)->first();
-
             if ($student && $student->section_id) {
-                // Redirect straight to the sheet via accurate Section ID
                 return redirect()->route('attendance.show', $student->section_id);
             }
-
             return "No child record found for this account.";
         }
 
-        // 2. THE TEACHER REDIRECT
         if ($user->role === 'teacher') {
             $sections = Section::where('teacher_id', $user->user_id)
                 ->orderByRaw("
@@ -56,8 +47,6 @@ class AttendanceController extends Controller
             }
         }
 
-        // 3. THE ADMIN VIEW
-        // Fetch all sections dynamically and sort them properly (NKP first, then numerical, then section name)
         $sections = Section::orderByRaw("
             CASE 
                 WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1
@@ -74,17 +63,11 @@ class AttendanceController extends Controller
         return view('attendance', compact('sections')); 
     }
 
-    /**
-     * Display the attendance list for a specific grade or section ID.
-     */
     public function show($idOrSlug)
     {
         $user = Auth::user();
-
-        // Try to find the section exactly by its database ID first (Highly Accurate)
         $section = Section::find($idOrSlug);
 
-        // Fallback for old named links if they still exist anywhere in the system
         if (!$section) {
             $gradeMap = [
                 'nursery'      => 'Nursery',
@@ -130,10 +113,9 @@ class AttendanceController extends Controller
         $attendanceMap = [];
         
         foreach($attendances as $att) {
-            $attendanceMap[$att->student_id][$att->attendance_date] = $statusMap[$att->status] ?? 0;
+            $attendanceMap[$att->student_id][$att->attendance_date] = $statusMap[strtolower($att->status)] ?? 0;
         }
 
-        // To ensure the view keeps working with existing variable names
         $grade = in_array(strtoupper($section->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY']) 
                     ? strtolower($section->grade_level) 
                     : 'grade-' . $section->grade_level;
@@ -148,18 +130,31 @@ class AttendanceController extends Controller
         ]);
     }
 
-    /**
-     * THE UPDATED SAVE ENGINE
-     * Handles both Absence and Tardiness notifications.
-     */
     public function store(Request $request)
     {
+        // 1. Properly validate the nested array objects coming from JavaScript
+        $request->validate([
+            'attendance' => 'required|array',
+            'attendance.*.student_id' => 'required',
+            'attendance.*.date' => 'required|date',
+            'attendance.*.status' => 'required|in:1,2,3,4', // Frontend sends 1,2,3,4
+        ], [
+            'attendance.*.status.in' => 'All attendance fields must be filled out before saving.',
+        ]);
+
         $records = $request->input('attendance', []);
         if (empty($records)) {
             return response()->json(['message' => 'No records to save.'], 400);
         }
 
-        // 1. Identify the Section & Date for the Audit Log (Only once!)
+        // Map frontend numbers to database text
+        $numericToText = [
+            '1' => 'Present',
+            '2' => 'Absent',
+            '3' => 'Late',
+            '4' => 'Excused'
+        ];
+
         $firstRecord = $records[0];
         $sampleStudent = Student::find($firstRecord['student_id']);
         $sectionName = $sampleStudent->section->section_name ?? 'Unknown Section';
@@ -167,25 +162,24 @@ class AttendanceController extends Controller
         $attendanceDate = $firstRecord['date'];
 
         foreach ($records as $record) {
-            // 2. Save or Update the record
+            $textStatus = $numericToText[$record['status']] ?? 'Present';
+
             Attendance::updateOrCreate(
                 [
                     'student_id'      => $record['student_id'],
                     'attendance_date' => $record['date']
                 ],
                 [
-                    'status' => $record['status']
+                    'status' => $textStatus
                 ]
             );
 
-            // 3. NOTIFICATION LOGIC
-            $status = strtolower($record['status'] ?? '');
-            if (in_array($status, ['absent', '2', 'late', '3'])) {
+            if (in_array($textStatus, ['Absent', 'Late'])) {
                 $student = Student::find($record['student_id']);
                 if ($student && $student->user_id) {
                     $parent = User::find($student->user_id);
                     if ($parent) {
-                        $typeLabel = ($status === 'late' || $status === '3') ? 'LATE' : 'ABSENT';
+                        $typeLabel = strtoupper($textStatus);
                         $parent->notifyUser(
                             'Attendance Alert', 
                             "Notice: {$student->first_name} was marked {$typeLabel} today.", 
@@ -196,7 +190,6 @@ class AttendanceController extends Controller
             }
         }
 
-        // 4. CREATE THE BATCH AUDIT LOG (OUTSIDE THE LOOP)
         \App\Models\AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Attendance Submitted',

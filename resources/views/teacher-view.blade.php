@@ -47,12 +47,12 @@
             </div>
 
             <div class="bg-white border-[5px] border-black p-10 rounded-[3rem] shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] mb-10">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-12">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-12 min-w-0">
                     
-                    <div class="space-y-10">
+                    <div class="space-y-10 min-w-0">
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Advisory Class</label>
-                            <p class="text-3xl font-black uppercase italic">
+                            <p class="text-3xl font-black uppercase italic break-all">
                                 @if($teacher->advisory === 'NKP')
                                     NKP (Nursery, Kinder, Prep)
                                 @elseif($teacher->section)
@@ -65,23 +65,23 @@
 
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Username</label>
-                            <p class="text-3xl font-black uppercase italic">
+                            <p class="text-3xl font-black uppercase italic break-all">
                                 {{ $teacher->user->username ?? $teacher->username ?? 'N/A' }}
                             </p>
                         </div>
                     </div>
 
-                    <div class="space-y-10">
+                    <div class="space-y-10 min-w-0">
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Biological Sex</label>
-                            <p class="text-3xl font-black uppercase italic">
+                            <p class="text-3xl font-black uppercase italic break-all">
                                 {{ $teacher->gender ?? $teacher->sex ?? $teacher->user?->gender ?? 'N/A' }}
                             </p>
                         </div>
 
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Date of Birth</label>
-                            <p class="text-3xl font-black uppercase italic">
+                            <p class="text-3xl font-black uppercase italic break-all">
                                 @php
                                     $birthdate = $teacher->birthdate ?? $teacher->birth_date ?? $teacher->date_of_birth ?? $teacher->user?->birthdate ?? null;
                                 @endphp

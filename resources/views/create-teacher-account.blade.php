@@ -171,6 +171,8 @@
                         @enderror
                     </div>
 
+                    
+
                     <div class="space-y-5" x-data="{ pw: '', pw_confirm: '' }">
                         <div class="flex flex-col">
                             <div class="flex items-center">

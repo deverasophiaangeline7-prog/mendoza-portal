@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="flex-1 bg-white relative p-8 flex flex-col items-center justify-center min-h-screen w-full"
-     x-data="{ finalizeModal: {{ $errors->has('admin_password') ? 'true' : 'false' }}, passwordModal: false }">
+     x-data="{ finalizeModal: {{ $errors->has('admin_password') ? 'true' : 'false' }}, passwordModal: false, termScheduleModal: false }">
 
     <div class="absolute top-20 w-full max-w-md z-50">
         @if(session('success'))
@@ -99,7 +99,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-8 max-w-3xl w-full">
+        <div class="grid grid-cols-2 gap-8 max-w-4xl w-full mb-12">
             
             <a href="{{ route('admin.audit_logs') }}" 
                class="w-full bg-blue-500 hover:bg-blue-600 text-black text-2xl font-black py-5 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center text-center">
@@ -110,95 +110,19 @@
                 Finalize School Year
             </button>
 
-            <button @click="passwordModal = true" class="col-span-2 w-full bg-[#ff3366] text-black font-black text-2xl py-5 px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ff1a53] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-3">
+            <button @click="passwordModal = true" class="w-full bg-[#ff3366] text-black font-black text-2xl py-5 px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ff1a53] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-3">
                 Change User Password <i class="fa-solid fa-key ml-2"></i>
+            </button>
+
+            <!-- Modified button: Now purple-400 -->
+            <button @click="termScheduleModal = true" class="w-full bg-purple-400 text-black font-black text-2xl py-5 px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-purple-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-3">
+                Term Schedule <i class="fa-solid fa-calendar-days ml-2"></i>
             </button>
         </div>
 
-        <!-- START: Term Schedule Card -->
-        <div class="w-full bg-[#ccff00] mt-12 border-[4px] border-black rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden">
-            
-            <div class="flex items-center justify-between mb-8 border-b-[4px] border-black pb-4">
-                <div>
-                    <h3 class="text-3xl font-black uppercase tracking-widest text-black">Academic Term Schedule</h3>
-                    <p class="font-bold text-gray-800 text-lg mt-1">Set grading periods to automatically lock/unlock teacher grade sheets.</p>
-                </div>
-                <i class="fa-solid fa-calendar-days text-5xl text-black"></i>
-            </div>
-
-            <form action="{{ route('admin.terms.update') }}" method="POST">
-                @csrf
-                <!-- Use @method('PUT') here if your route is defined as Route::put() -->
-                @method('PUT') 
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <!-- Term 1 -->
-                    <div class="bg-white border-[3px] border-black p-5 rounded-[1.5rem] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                        <h4 class="text-xl font-black uppercase mb-4 text-center bg-gray-100 border-[3px] border-black rounded-xl py-2">Term 1</h4>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
-                                <input type="date" name="term1_start" required
-                                       value="{{ old('term1_start', $activeYear ? $activeYear->term1_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
-                                <input type="date" name="term1_end" required
-                                       value="{{ old('term1_end', $activeYear ? $activeYear->term1_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Term 2 -->
-                    <div class="bg-white border-[3px] border-black p-5 rounded-[1.5rem] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                        <h4 class="text-xl font-black uppercase mb-4 text-center bg-gray-100 border-[3px] border-black rounded-xl py-2">Term 2</h4>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
-                                <input type="date" name="term2_start" required
-                                       value="{{ old('term2_start', $activeYear ? $activeYear->term2_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
-                                <input type="date" name="term2_end" required
-                                       value="{{ old('term2_end', $activeYear ? $activeYear->term2_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Term 3 -->
-                    <div class="bg-white border-[3px] border-black p-5 rounded-[1.5rem] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                        <h4 class="text-xl font-black uppercase mb-4 text-center bg-gray-100 border-[3px] border-black rounded-xl py-2">Term 3</h4>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
-                                <input type="date" name="term3_start" required
-                                       value="{{ old('term3_start', $activeYear ? $activeYear->term3_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
-                                <input type="date" name="term3_end" required
-                                       value="{{ old('term3_end', $activeYear ? $activeYear->term3_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="w-full bg-[#00e5ff] hover:bg-[#00cce6] text-black text-2xl font-black py-5 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center gap-3">
-                    Save Term Schedule <i class="fa-solid fa-floppy-disk"></i>
-                </button>
-            </form>
-        </div>
-        <!-- END: Term Schedule Card -->
-
     </div>
 
+    <!-- START: Modals -->
     <div x-show="finalizeModal" 
          x-transition:opacity
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
@@ -311,5 +235,101 @@
             </form>
         </div>
     </div>
+
+    <!-- START: Term Schedule Modal -->
+    <div x-show="termScheduleModal" 
+         x-transition:opacity
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto" 
+         x-cloak>
+        
+        <!-- Modified modal background: Now purple-400 -->
+        <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[4px] border-black rounded-[2rem] p-8 max-w-4xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative my-8">
+            
+            <button @click="termScheduleModal = false" class="absolute top-4 right-6 text-5xl font-black text-black hover:text-gray-700 transition-colors leading-none">&times;</button>
+
+            <div class="flex items-center justify-between mb-8 border-b-[4px] border-black pb-4 pr-8">
+                <div>
+                    <h3 class="text-3xl font-black uppercase tracking-widest text-black">Academic Term Schedule</h3>
+                    <p class="font-bold text-gray-800 text-lg mt-1">Set grading periods to automatically lock/unlock teacher grade sheets.</p>
+                </div>
+                <i class="fa-solid fa-calendar-days text-5xl text-black hidden sm:block"></i>
+            </div>
+
+            <form action="{{ route('admin.terms.update') }}" method="POST">
+                @csrf
+                @method('PUT') 
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Term 1 -->
+                    <div class="bg-white border-[3px] border-black p-5 rounded-[1.5rem] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <h4 class="text-xl font-black uppercase mb-4 text-center bg-gray-100 border-[3px] border-black rounded-xl py-2">Term 1</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
+                                <input type="date" name="term1_start" required
+                                       value="{{ old('term1_start', $activeYear ? $activeYear->term1_start : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
+                                <input type="date" name="term1_end" required
+                                       value="{{ old('term1_end', $activeYear ? $activeYear->term1_end : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Term 2 -->
+                    <div class="bg-white border-[3px] border-black p-5 rounded-[1.5rem] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <h4 class="text-xl font-black uppercase mb-4 text-center bg-gray-100 border-[3px] border-black rounded-xl py-2">Term 2</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
+                                <input type="date" name="term2_start" required
+                                       value="{{ old('term2_start', $activeYear ? $activeYear->term2_start : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
+                                <input type="date" name="term2_end" required
+                                       value="{{ old('term2_end', $activeYear ? $activeYear->term2_end : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Term 3 -->
+                    <div class="bg-white border-[3px] border-black p-5 rounded-[1.5rem] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <h4 class="text-xl font-black uppercase mb-4 text-center bg-gray-100 border-[3px] border-black rounded-xl py-2">Term 3</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
+                                <input type="date" name="term3_start" required
+                                       value="{{ old('term3_start', $activeYear ? $activeYear->term3_start : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
+                                <input type="date" name="term3_end" required
+                                       value="{{ old('term3_end', $activeYear ? $activeYear->term3_end : '') }}" 
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button type="submit" class="w-full bg-[#00e5ff] hover:bg-[#00cce6] text-black text-2xl font-black py-5 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center gap-3">
+                        Save Term Schedule <i class="fa-solid fa-floppy-disk"></i>
+                    </button>
+                    <button type="button" @click="termScheduleModal = false" class="w-full bg-white text-black text-xl font-black py-4 rounded-full border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
+                        CANCEL
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- END: Term Schedule Modal -->
+
 </div>
 @endsection
