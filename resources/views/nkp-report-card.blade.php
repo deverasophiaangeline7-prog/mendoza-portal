@@ -5,7 +5,7 @@
 @section('content')
 <style>
     .deped-table th, .deped-table td { border: 1px solid black; padding: 0.4rem 0.6rem; vertical-align: middle; }
-    .deped-table th { background-color: #f3f4f6; font-weight: 800; text-transform: uppercase; }
+    .deped-table th { background-color: #f3f4f6; font-weight: 800; text-transform: uppercase; text-align: center; }
     .form-select-pill { border: 1px solid #999; height: 32px; width: 100%; text-align: center; font-weight: 900; outline: none; cursor: pointer; border-radius: 4px; background: #fff; }
     .category-header { background-color: #e5e7eb; font-weight: 900; font-size: 1.1rem; }
     .sub-category-header { background-color: #f9fafb; font-weight: 800; font-size: 0.95rem; color: #4b5563; }
@@ -17,11 +17,15 @@
         <div class="flex justify-between items-start mb-6 border-b-4 border-black pb-4">
             <div>
                 <h2 class="text-4xl font-black uppercase text-black">{{ $studentName }}</h2>
-                <h3 class="text-2xl font-bold text-blue-700 uppercase">{{ $sectionName }} (NKP Checklist)</h3>
+                <h3 class="text-2xl font-bold text-blue-700 uppercase">{{ $sectionName }} (Kindergarten Progress Report)</h3>
+                <p class="text-sm font-bold text-blue-600 uppercase mt-1">Active Window: Term <span x-text="activeTerm"></span></p>
             </div>
             
             <div class="flex flex-col items-end space-y-3">
-                @if($canManage)
+                <button onclick="window.history.back()" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
+                    <i class="fa-solid fa-circle-left"></i>
+                </button>
+                @if($canManage ?? true)
                 <div class="flex space-x-2">
                     <button @click="isManaging = !isManaging" class="font-black px-4 py-2 border-[3px] border-black rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all" :class="isManaging ? 'bg-green-400' : 'bg-gray-200'">
                         <i class="fa-solid" :class="isManaging ? 'fa-unlock' : 'fa-lock'"></i> <span x-text="isManaging ? ' EDITING' : ' VIEWING'"></span>
@@ -34,140 +38,138 @@
             </div>
         </div>
 
-        <p class="text-center italic mb-6 font-bold text-lg">Ang bawat kasanayan ay mamarkahan ng: Beginning (B), Development (D), Consistent (C)</p>
-
-        <div class="space-y-10 mb-20">
+        <div class="space-y-10 mb-12">
             @php
                 $curriculum = [
-                    'KALUSUGAN, MAAYOS NA PAKIRAMDAM AT TAMANG PAGKILOS' => [
+                    'I. Sensory Perceptual and Motor Development' => [
                         'skills' => [
-                            'Naisasagawa ang kasanayang pagkalusugan ng nagpapanatili ng pansariling kalinisan at kaligtasan sa mga sakit',
-                            'Naipapakita ang pag-uugali na nagtataguyod sa pansariling kaligtasan',
-                            'Naisasagawa ang kasanayang lokomotor tulad ng paglalakad, pagtakbo, pag-eskapo, pagtalon, pag-akyat ng wasto habang naglalaro, pagsasayaw o pag-eehersisyo',
-                            'Naisasagawa ang kasanayang di-lokomotor tulad ng pagtulak, paghila, pag-ikot, pag-indayog, pagbaluktot, pagbato, pagsalo at pagsipa nang wasto habang naglalaro',
-                            'Naisasagawa ang kasanayang fine motor na kinakailangan para sa pangangalaga sa sarili tulad ng pagsisipilyo, pagbobotones, at paggamit ng kutsara at tinidor',
-                            'Naisasagawa ang kasanayang fine motor na kinakailangan para sa mga gawaing sining tulad ng pagpunit, paggupit, pagdikit, pagkopya, pagguhit, pagkulay at iba pa',
-                            'Nakababakat, nakakakopya o nakasusulat ng mga titik at bilang'
+                            '1. Identifies external body parts and their functions',
+                            '2. Identifies ways to care for and protects one\'s body',
+                            '3. Demonstrates gross motor skills (locomotor, non-locomotor)',
+                            '4. Moves body parts as directed',
+                            '5. Demonstrates fine motor skills (tearing, cutting, rolling, molding with playdough)'
                         ]
                     ],
-                    'PANGKAUNLARANG SOSYO-EMOSYONAL' => [
+                    'II. Socio-emotional Development' => [
                         'skills' => [
-                            'Nasasabi ang personal na impormasyon (pangalan, kasarian, edad, kapanganakan)',
-                            'Naipapahayag ang sariling kagustuhan at pangangailangan',
-                            'Naipapakita ang kahandaan na sumubok ng bagong karanasan at tiwala sa sarili sa paggawa nang mag-isa',
-                            'Naipapahayag sa positibong paraan ang nararamdaman sa iba\'t-ibang sitwasyon',
-                            'Nakasusunod sa mga itinakdang tuntunin sa paaralan ng maluwag sa kalooban at naisasagawa ng maayos ang mga gawain',
-                            'Nakikilala ang mga pangunahing emosyon at nagkakarooon ng kamalayan sa damdamin ng iba at naipapakita ang kusang pagtulong',
-                            'Naipapakita ang paggalang sa mga kapwa bata at mga nakatatanda',
-                            'Natutukoy ang bumubuo sa sariling pamilya',
-                            'Nakikilala ang mga tauhan at natutukoy ang mga lugar sa paaralan at komunidad'
+                            '1. Identifies and expresses feelings in appropriate ways',
+                            '2. Recognizes and respect feelings of others',
+                            '3. Expresses needs and preferences',
+                            '4. Behaves appropriately in different situations',
+                            '5. Participates in classroom routines and activities',
+                            '6. Follows classroom and school rules',
+                            '7. Fulfills classroom responsibilities'
                         ]
                     ],
-                    'WIKA, PAGKATUTONG BUMASA AT PAKIKIPAGTALASTASAN' => [
+                    'III. Cognitive Development' => [
+                        'skills' => [
+                            '1. Identifies attributes of objects (color, shape, size)',
+                            '2. Matches objects based on attributes',
+                            '3. Describes objects based on attributes (shape, color, taste, texture)',
+                            '4. Classifies objects by a single attribute (color, shape, size)',
+                            '5. Reclassifies objects according to multiple attributes',
+                            '6. Arranges objects according to specific attributes',
+                            '7. Recognizes, extends and create patterns using concrete objects',
+                            '8. Measures size, length, capacity and mass of objects using non-standard measuring tools',
+                            '9. Identifies position of objects (in, on, over, under, top, bottom)',
+                            '10. Compares quantities of objects (more/less)',
+                            '11. Counts with one-to-one correspondence',
+                            '12. Recognizes numerals',
+                            '13. Matches numerals to objects',
+                            '14. Adds and subtracts using concrete objects',
+                            '15. Recognizes clock as measure of time (hours and minutes)',
+                            '16. Shows awareness and care for the natural and physical environment',
+                            '17. Talks about participation in cultural and religious activities',
+                            '18. Shows awareness of the importance of caring for the natural and physical environment through simple practices (e.g., sorting trash, helping to clean up)',
+                            '19. Predicts outcomes in familiar stories read aloud in class',
+                            '20. Suggests solutions to problems in class activities and stories read aloud in class'
+                        ]
+                    ],
+                    'IV. Language, Literacy, and Communication Development' => [
                         'sections' => [
-                            'PAKIKINIG AT PANONOOD' => [
-                                'Natutukoy ang pagkakaiba ng mga uri ng tunog. Hal. malakas o mahina, mataas o mababa',
-                                'Nakikinig nang mabuti sa kuwento/tula/awit',
-                                'Nasasabi ang mga detalye mula sa napakinggang kuwento/tula/awit',
-                                'Naiuugnay sa sariling karanasan ang mga pangyayari sa kuwento',
-                                'Napagsusunod-sunod ang mga pangyayari sa kuwentong napakinggan',
-                                'Nahihinuha ang mga katangian at mga damdamin ng tauhan sa napakinggang kuwento',
-                                'Natutukoy ang kaugnayan ng mga simpleng sanhi at bunga, problema at solusyon mula sa mga pangyayari sa kuwentong napakinggan',
-                                'Nahihinuha ang maaaring mangyari o magiging wakas ng kuwento',
-                                'Natutukoy ang mga bagay/larawan na magkatulad o magkaiba, mga nawawalang bahagi sa bagay o larawan at mga bagay na hindi kabilang sa grupo'
+                            'A. Listening and Viewing' => [
+                                '1. Identifies familiar environmental sound',
+                                '2. Recalls what happens first, middle and end in a story',
+                                '3. Retells story in sequence',
+                                '4. Follows 1-2 step instructions'
                             ],
-                            'PAGSASALITA' => [
-                                'Nagagamit ang tamang ekspresyon sa pagpapakilala sa sarili at magalang na pagbati ayon sa sitwasyon',
-                                'Nagagamit ang angkop na salita sa paglalarawan ng tao, bagay, atbp.',
-                                'Aktibong nakikiisa sa mga talakayan/gawain sa silid aralan tulad ng tula, tugma atbp. sa pamamagitan ng tamang pagsagot sa mga tanong',
-                                'Nagtatanong ng mga simpleng katanungan gamit ang sino, ano, saan, kailan at bakit',
-                                'Nakakapagbigay ng 1 hanggang 2 direksyon',
-                                'Naikukuwento ang mga simpleng napakinggang kuwento at mga pansariling karanasan'
+                            'B. Sight Word Recognition' => [
+                                '5. Recognizes non-decodable words in and out of context automatically',
+                                '6. Recognizes sight words'
                             ],
-                            'PAGBASA' => [
-                                'Natutukoy ang mga tunog ng mga titik ng alpabeto [a] hanggang [z]',
-                                'Natutukoy ang mga malalaki at maliliit na titik',
-                                'Naiuugnay ang malaking titik sa maliit na titik',
-                                'Natutukoy ang unang tunog ng salitang napakinggan',
-                                'Natutukoy ang mga salitang magkasingtunog/magkatugma',
-                                'Nasasabi ang bilang ng pantig ng salitang napakinggan',
-                                'Natutukoy ang mga bahagi ng isang aklat (pamagat, may akda, gumuhit)',
-                                'Naipapakita ang interes sa pagbasa sa pamamagitan ng pagbuklat ng mga pahina ng libro',
-                                'Nakukuha ang impormasyon mula sa simpleng pictograph, mapa atbp.'
+                            'C. Speaking' => [
+                                '7. Identifies first and last name',
+                                '8. Identifies classmates, teachers, family member',
+                                '9. Identifies familiar objects at home, in school and in the community',
+                                '10. Uses polite greetings and courteous expressions in varied situations',
+                                '11. Retells personal experiences to story events',
+                                '12. Expresses ideas and feelings using phrases and simple sentences'
                             ],
-                            'PAGSULAT' => [
-                                'Naisusulat ang sariling pangalan',
-                                'Naisusulat ang malaki at maliit na titik ng alpabeto',
-                                'Naipapahayag ang simple/sariling ideya sa pamamagitan ng mga simbolo'
+                            'D. Reading' => [
+                                '13. Orally segment sounds (a. syllable, b. onset and rime, c. phoneme by phoneme)',
+                                '14. Identifies uppercase letters',
+                                '15. Identifies lowercase letters',
+                                '16. Matches upper and lowercase letters',
+                                '17. Identifies letter sounds',
+                                '18. Matches letters and their corresponding sounds'
+                            ],
+                            'E. Comprehension' => [
+                                '19. Uses a variety of strategies to gain meaning of leveled texts',
+                                '20. Uses print and illustrations to make meaning'
+                            ],
+                            'F. Concepts of Print' => [
+                                '21. Demonstrates book handling skills',
+                                '22. Distinguishes between letters, words, and sentences',
+                                '23. Demonstrates awareness of print (left to right and top to bottom)'
+                            ],
+                            'G. Writing' => [
+                                '24. Traces/draws/copies shapes, designs, pictures',
+                                '25. Traces/copies/writes name, words',
+                                '26. Writes uppercase and lowercase letters',
+                                '27. Spells sight words',
+                                '28. Spells simple words phonetically'
                             ]
-                        ]
-                    ],
-                    'MATEMATIKA' => [
-                        'skills' => [
-                            'Natutukoy ang mga kulay at hugis',
-                            'Napagsama-sama ang mga bagay ayon sa hugis, laki at kulay',
-                            'Pinaghahambing / isinasaayos ang mga bagay ayon sa katangian',
-                            'Natutukoy ang pattern at naitutuloy ito',
-                            'Nasasabi ang oras gamit ang analog clock',
-                            'Nasasabi ang ngalan ng mga araw sa isang linggo at buwan sa isang taon',
-                            'Nakabibilang nang lalagpas sa 20',
-                            'Napagsusunod-sunod ang mga bilang',
-                            'Natutukoy ang ordinal na bilang ng mga bagay',
-                            'Nakasasagot ng simpleng addition at subtraction problems',
-                            'Naipapangkat ang mga bagay na may katulad na bilang hanggang 10',
-                            'Nasusukat ang haba, laki at bigat ng mga bagay gamit ang non-standard na panukat',
-                            'Nakikilala ang halaga ng pera hanggang P20'
-                        ]
-                    ],
-                    'PAG-UNAWA SA PISIKAL AT NATURAL NA KAPALIGIRAN' => [
-                        'skills' => [
-                            'Natutukoy ang mga bahaging katawan at ang mga gawain nito',
-                            'Nakapagtatala ng mga namasid at nakita sa mga datos gamit ang larawan, bilang o simbolo',
-                            'Natutukoy ang mga bahagi ng halaman / hayop at ang gawain nito',
-                            'Napapangkat ang mga hayop sa iba-ibang katangian',
-                            'Nasasabi ang pangunahing pangangailangan ng mga halaman / hayop / kapaligiran',
-                            'Natutukoy ang iba\'t ibang uri ng panahon'
                         ]
                     ]
                 ];
             @endphp
 
             @foreach($curriculum as $catName => $content)
-            <div class="border-black rounded-2xl bg-gray-50 mb-20 shadow-sm">                    
+            <div class="border-black rounded-2xl bg-gray-50 mb-10 shadow-sm">                    
                 <table class="w-full text-sm deped-table bg-white">
                     <thead>
                         <tr class="category-header">
-                            <th class="text-left w-2/3 uppercase">{{ $catName }}</th>
-                            <th class="w-12">Q1</th><th class="w-12">Q2</th><th class="w-12">Q3</th><th class="w-12">Q4</th>
+                            <th class="text-left w-3/4">{{ $catName }}</th>
+                            <th class="w-12">T1</th><th class="w-12">T2</th><th class="w-12">T3</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if(isset($content['skills']))
                             @foreach($content['skills'] as $skill)
                             <tr>
-                                <td class="font-medium">{{ $skill }}</td>
-                                @for($q=1; $q<=4; $q++)
+                                <td class="font-medium pl-4">{{ $skill }}</td>
+                                @for($t=1; $t<=3; $t++)
                                 <td class="p-0">
-                                    <select x-show="isManaging" x-model="evaluations['{{ $skill }}'].q{{ $q }}" class="form-select-pill">
-                                        <option value=""></option><option value="B">B</option><option value="D">D</option><option value="C">C</option>
+                                    <select x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" x-model="evaluations['{{ addslashes($skill) }}'].term{{ $t }}" class="form-select-pill">
+                                        <option value=""></option><option value="BG">BG</option><option value="DV">DV</option><option value="CO">CO</option>
                                     </select>
-                                    <span x-show="!isManaging" class="block text-center font-black text-blue-600 text-lg" x-text="evaluations['{{ $skill }}'].q{{ $q }}"></span>
+                                    <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" class="block text-center font-black text-blue-600 text-[1rem]" x-text="evaluations['{{ addslashes($skill) }}'].term{{ $t }}"></span>
                                 </td>
                                 @endfor
                             </tr>
                             @endforeach
                         @elseif(isset($content['sections']))
                             @foreach($content['sections'] as $subName => $subSkills)
-                            <tr class="sub-category-header"><td colspan="5" class="italic pl-4">{{ $subName }}</td></tr>
+                            <tr class="sub-category-header"><td colspan="4" class="italic pl-6">{{ $subName }}</td></tr>
                             @foreach($subSkills as $skill)
                             <tr>
-                                <td class="font-medium pl-8">{{ $skill }}</td>
-                                @for($q=1; $q<=4; $q++)
+                                <td class="font-medium pl-10">{{ $skill }}</td>
+                                @for($t=1; $t<=3; $t++)
                                 <td class="p-0">
-                                    <select x-show="isManaging" x-model="evaluations['{{ $skill }}'].q{{ $q }}" class="form-select-pill">
-                                        <option value=""></option><option value="B">B</option><option value="D">D</option><option value="C">C</option>
+                                    <select x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" x-model="evaluations['{{ addslashes($skill) }}'].term{{ $t }}" class="form-select-pill">
+                                        <option value=""></option><option value="BG">BG</option><option value="DV">DV</option><option value="CO">CO</option>
                                     </select>
-                                    <span x-show="!isManaging" class="block text-center font-black text-blue-600 text-lg" x-text="evaluations['{{ $skill }}'].q{{ $q }}"></span>
+                                    <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" class="block text-center font-black text-blue-600 text-[1rem]" x-text="evaluations['{{ addslashes($skill) }}'].term{{ $t }}"></span>
                                 </td>
                                 @endfor
                             </tr>
@@ -180,124 +182,143 @@
             @endforeach
         </div>
 
-        <div class="mt-12 p-8 border border-black rounded-2xl bg-gray-50 mb-20 shadow-sm">
-            <h5 class="font-black text-center text-2xl mb-6 uppercase tracking-tighter">Iskala ng Pagmamarka</h5>
+        <div class="mt-8 p-6 border-2 border-black rounded-2xl bg-gray-50 shadow-sm">
+            <h5 class="font-black text-center text-xl mb-4 uppercase">Rating Indicators</h5>
             <table class="w-full text-sm deped-table bg-white">
                 <thead>
-                    <tr class="bg-black text-white border-black"><th>MARKA</th><th>BATAYAN</th></tr>
+                    <tr class="bg-black text-white border-black">
+                        <th class="w-1/4">Rating</th>
+                        <th>Indicators</th>
+                    </tr>
                 </thead>
                 <tbody>
-                    <tr><td class="font-black text-lg">Beginning (B)</td><td class="italic">Bihirang naipapakita ang kasanayan / Nangangailangan ng lubos na paggabay</td></tr>
-                    <tr><td class="font-black text-lg">Development (D)</td><td class="italic">Minsan naipapakita ang kasanayan / Patuloy na umuunlad</td></tr>
-                    <tr><td class="font-black text-lg">Consistent (C)</td><td class="italic">Laging naisasagawa ang kasanayan at may higit pang pagsulong</td></tr>
+                    <tr>
+                        <td class="font-black text-center">Consistent (CO)</td>
+                        <td class="italic text-xs">
+                            <ul class="list-disc ml-5">
+                                <li>Always demonstrates the expected competency</li>
+                                <li>Always participates in the different activities, works independently</li>
+                                <li>Always performs tasks, advanced in some aspects</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-black text-center">Developing (DV)</td>
+                        <td class="italic text-xs">
+                            <ul class="list-disc ml-5">
+                                <li>Sometimes demonstrates the competency</li>
+                                <li>Sometimes participates, minimal supervision</li>
+                                <li>Progresses continuously in doing assigned tasks</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-black text-center">Beginning (BG)</td>
+                        <td class="italic text-xs">
+                            <ul class="list-disc ml-5">
+                                <li>Rarely demonstrates the expected competency</li>
+                                <li>Rarely participates in class activities and/or initiates independent works</li>
+                                <li>Shows interest in doing tasks but needs close supervision</li>
+                            </ul>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Success Toast -->
-    <div x-show="showToast" x-cloak class="fixed bottom-10 right-10 z-50 px-10 py-5 rounded-2xl border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black font-black uppercase text-2xl">
-        <i class="fa-solid fa-circle-check mr-2"></i> SAVED SUCCESSFULLY!
-    </div>
-
-    <!-- Change Password Modal -->
-    @if(auth()->user()->role === 'teacher')
-    <div x-show="passwordModal" 
-         x-transition:opacity
-         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" 
-         x-cloak>
-        
-        <div @click.away="passwordModal = false" 
-             class="bg-white border-[4px] border-black rounded-[2.5rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
-            
-            <button @click="passwordModal = false" class="absolute top-6 right-8 text-4xl font-black text-gray-400 hover:text-black transition-colors">&times;</button>
-
-            <h2 class="text-3xl font-black italic uppercase tracking-tight mb-8">Change Password</h2>
-
-            <form action="{{ route('user.password.update') }}" method="POST">
-                @csrf
-                @method('PUT')
-                
-                <div class="space-y-5">
-                    <div>
-                        <label class="block font-bold uppercase text-black text-sm mb-2 tracking-widest">Current Password</label>
-                        <input type="password" name="current_password" required 
-                               class="w-full border-[3px] rounded-2xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-all @error('current_password') border-red-500 bg-red-50 focus:ring-red-400 @else border-black focus:ring-green-400 bg-white @enderror">
-                        @error('current_password')
-                            <p class="text-red-500 font-bold text-sm mt-2 flex items-center gap-1"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label class="block font-bold uppercase text-black text-sm mb-2 tracking-widest">New Password</label>
-                        <input type="password" name="password" required 
-                               class="w-full border-[3px] border-black rounded-2xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 transition-all bg-white">
-                    </div>
-
-                    <div>
-                        <label class="block font-bold uppercase text-black text-sm mb-2 tracking-widest">Confirm New Password</label>
-                        <input type="password" name="password_confirmation" required 
-                               class="w-full border-[3px] border-black rounded-2xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 transition-all bg-white">
-                    </div>
-                </div>
-
-                <div class="flex justify-end items-center gap-8 mt-10">
-                    <button type="button" @click="passwordModal = false" class="text-black font-black uppercase tracking-widest hover:text-gray-600 transition-colors">
-                        Cancel
-                    </button>
-                    
-                    <button type="submit" class="bg-[#22C55E] text-white font-black py-3 px-8 rounded-2xl border-[3px] border-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] hover:brightness-95 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2">
-                        <i class="fa-solid fa-check"></i> UPDATE
-                    </button>
-                </div>
-            </form>
+    <!-- Centered Alert Modal -->
+    <div x-show="showErrorModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition.opacity>
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showErrorModal = false"></div>
+        <div class="relative bg-red-500 border-[4px] border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-sm w-full flex items-center space-x-4">
+            <div class="bg-white rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-exclamation text-red-500 text-2xl font-black"></i>
+            </div>
+            <div class="text-white">
+                <h3 class="text-xl font-black uppercase leading-tight">Missing Values in Term <span x-text="activeTerm"></span></h3>
+                <p class="font-bold text-sm mt-1">Please completely fill out all competencies for the active term before saving.</p>
+            </div>
         </div>
     </div>
-    @endif
 </div>
 
-<!-- NKP Alpine.js Logic -->
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('nkpData', () => ({
-            isManaging: false,
-            showToast: false,
-            // Automatically open the password modal if there is a validation error
-            passwordModal: {{ $errors->has('current_password') || $errors->has('password') ? 'true' : 'false' }},
+            isManaging: false, showErrorModal: false, activeTerm: '1',
             studentId: '{{ $student_id }}',
             evaluations: @json($savedEvaluations) || {},
+            
+            termDates: {
+                term1: { start: '{{ $activeYear->term1_start ?? "" }}', end: '{{ $activeYear->term1_end ?? "" }}' },
+                term2: { start: '{{ $activeYear->term2_start ?? "" }}', end: '{{ $activeYear->term2_end ?? "" }}' },
+                term3: { start: '{{ $activeYear->term3_start ?? "" }}', end: '{{ $activeYear->term3_end ?? "" }}' }
+            },
 
             init() {
-                // Failsafe check
                 if (Array.isArray(this.evaluations)) this.evaluations = {};
                 
-                // Initialize all skill keys automatically from the DOM to avoid manual typing in JS
                 document.querySelectorAll('tbody tr:not(.sub-category-header)').forEach(row => {
                     let firstTd = row.querySelector('td:first-child');
                     if(firstTd) {
                         let skillText = firstTd.innerText.trim();
                         if(!this.evaluations[skillText]) {
-                            this.evaluations[skillText] = { q1: '', q2: '', q3: '', q4: '' };
+                            this.evaluations[skillText] = { category: this.findCategory(row), term1: '', term2: '', term3: '' };
                         }
                     }
                 });
+
+                this.activeTerm = this.determineActiveTerm();
             },
 
-            saveNKP() {
-                fetch('{{ route('reportcard.store') }}', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    body: JSON.stringify({ 
-                        student_id: this.studentId, 
-                        nkp_evaluations: this.evaluations 
-                    })
-                })
-                .then(res => res.json())
-                .then(() => {
-                    this.showToast = true;
-                    setTimeout(() => this.showToast = false, 3000);
-                })
-                .catch(err => alert('Error saving data.'));
+            findCategory(rowElement) {
+                let current = rowElement.closest('div.border-black').querySelector('th.text-left');
+                return current ? current.innerText.trim() : 'General';
+            },
+
+            determineActiveTerm() {
+                const isComplete = (t) => Object.values(this.evaluations).every(s => String(s['term'+t] || '').trim() !== '');
+                if (isComplete(1) && isComplete(2)) return '3';
+                if (isComplete(1)) return '2';
+                return '1';
+            },
+
+            isTermUnlocked(termNumber) {
+                const today = new Date().toISOString().split('T')[0];
+                const term = this.termDates['term' + termNumber];
+                if (!term.start || !term.end) return false; 
+                return today >= term.start && today <= term.end;
+            },
+
+            async saveNKP() {
+                let tKey = 'term' + this.activeTerm;
+                
+                let isIncomplete = Object.values(this.evaluations).some(s => String(s[tKey] || '').trim() === '');
+                if (isIncomplete) {
+                    this.showErrorModal = true;
+                    setTimeout(() => { this.showErrorModal = false; }, 3000);
+                    return;
+                }
+
+                try {
+                    const response = await fetch('{{ route('reportcard.store') }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        body: JSON.stringify({ 
+                            student_id: this.studentId, 
+                            nkp_evaluations: this.evaluations 
+                        })
+                    });
+
+                    const resData = await response.json();
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Server Error: ' + (resData.message || JSON.stringify(resData)));
+                    }
+                } catch (err) {
+                    alert('Save Failed: ' + err.message);
+                }
             }
         }));
     });

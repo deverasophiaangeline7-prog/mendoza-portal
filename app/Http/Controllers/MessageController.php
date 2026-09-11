@@ -93,7 +93,7 @@ class MessageController extends Controller
             })->orWhere(function($query) use ($request) {
                 $query->where('sender_id', $request->receiver_id)->where('receiver_id', Auth::id());
             })
-            ->where('id', '!=', $currentMessage->id) // Exclude the message they just sent
+            ->where('id', '!=', $currentMessage->id) 
             ->orderBy('created_at', 'desc')
             ->limit(4)
             ->get()
@@ -107,13 +107,34 @@ class MessageController extends Controller
             }
             if (empty($historyContext)) $historyContext = "No previous messages.";
 
-            // C. Build the highly intelligent system prompt
+            // C. Fetch active school year for dynamic term dates
+            $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
+            $termInfo = "- Term schedules are not set yet.\n";
+            $lastDayOfSchool = "TBA";
+            
+            if ($activeYear) {
+                $t1s = $activeYear->term1_start ? \Carbon\Carbon::parse($activeYear->term1_start)->format('F d, Y') : 'TBA';
+                $t1e = $activeYear->term1_end ? \Carbon\Carbon::parse($activeYear->term1_end)->format('F d, Y') : 'TBA';
+                $t2s = $activeYear->term2_start ? \Carbon\Carbon::parse($activeYear->term2_start)->format('F d, Y') : 'TBA';
+                $t2e = $activeYear->term2_end ? \Carbon\Carbon::parse($activeYear->term2_end)->format('F d, Y') : 'TBA';
+                $t3s = $activeYear->term3_start ? \Carbon\Carbon::parse($activeYear->term3_start)->format('F d, Y') : 'TBA';
+                $t3e = $activeYear->term3_end ? \Carbon\Carbon::parse($activeYear->term3_end)->format('F d, Y') : 'TBA';
+
+                $termInfo = "- Term 1: {$t1s} to {$t1e}.\n" .
+                            "- Term 2: {$t2s} to {$t2e}.\n" .
+                            "- Term 3: {$t3s} to {$t3e}.\n";
+                            
+                // Dynamically assign the end of Term 3 as the last day of classes
+                $lastDayOfSchool = $t3e;
+            }
+
+            // D. Build the highly intelligent system prompt
             $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc. 
             
             Guidelines:
             - Maintain a polite, professional, and helpful tone.
-            - STRICT LANGUAGE MATCHING: You MUST reply in the exact same language as the user's current question. If they ask in English, reply in English. If they ask in Tagalog, reply in Tagalog. Do not mix languages unless the user does.
-            - Use the [PREVIOUS CHAT HISTORY] to understand the context of the user's current question (e.g. if they ask 'when is the next one?').
+            - STRICT LANGUAGE MATCHING: You MUST reply in the exact same language as the user's current question.
+            - Use the [PREVIOUS CHAT HISTORY] to understand the context of the user's current question.
             - Convert dates to friendly natural language (e.g., 'September 3, 2026').
             - Answer using ONLY the provided facts below.
             - If the question cannot be answered using these exact facts, respond with exactly one word: ESCALATE.
@@ -124,11 +145,8 @@ class MessageController extends Controller
                 . "- Tuition is 1,000 PHP per month. Miscellaneous fee is 3,500 PHP.\n"
                 . "- Tuition fee payment schedule: Every second Friday of the month.\n\n"
                 . "[SCHOOL YEAR & TERMS]\n"
-                . "- School year starts: June 08, 2026 for SY 2026-2027.\n"
-                . "- Term 1: June 08 - September 15, 2026.\n"
-                . "- Term 2: September 16 - December 18, 2026.\n"
-                . "- Term 3: January 04 - April 08, 2027.\n"
-                . "- Last day of classes (School year ends): April 08, 2027.\n\n"
+                . $termInfo
+                . "- Last day of classes (School year ends): {$lastDayOfSchool}.\n\n"
                 . "[GRADES RELEASE]\n"
                 . "- Grades are released via the Report Card module 1 to 2 weeks after the end of each Term.\n\n"
                 . "[UPCOMING CALENDAR EVENTS]\n"

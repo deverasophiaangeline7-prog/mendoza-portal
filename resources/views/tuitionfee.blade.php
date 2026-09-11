@@ -1,7 +1,7 @@
 <x-guest-layout>
 
     <main class="relative flex-grow flex items-center justify-center py-16 bg-cover bg-center w-full" 
-          style="background-image: url('{{ asset('images/tuitionfee.jpg') }}');">
+          style="background-image: url('{{ asset('images/tuitionfee.png') }}');">
         
         <div class="absolute inset-0 bg-black/70"></div>
 

@@ -9,6 +9,7 @@ use App\Models\TeacherSchedule;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Section;
+use App\Models\Notification;
 
 class AppointmentController extends Controller
 {
@@ -19,14 +20,14 @@ class AppointmentController extends Controller
         if ($user->role === 'teacher') {
             $incomingRequests = Appointment::with(['parent.student'])
                 ->where('teacher_id', $user->user_id)
-                ->where('status', 'pending')
+                ->whereIn('status', ['pending', 'reschedule'])
                 ->where('created_by', '!=', $user->user_id)
                 ->orderBy('appointment_date', 'asc')
                 ->get();
 
             $mySentRequests = Appointment::with(['parent.student'])
                 ->where('teacher_id', $user->user_id)
-                ->where('status', 'pending')
+                ->whereIn('status', ['pending', 'reschedule'])
                 ->where('created_by', $user->user_id)
                 ->orderBy('appointment_date', 'asc')
                 ->get();
@@ -59,14 +60,14 @@ class AppointmentController extends Controller
 
             $incomingRequests = Appointment::with(['parent.student'])
                 ->where('parent_id', $user->user_id)
-                ->where('status', 'pending')
+                ->whereIn('status', ['pending', 'reschedule'])
                 ->where('created_by', '!=', $user->user_id)
                 ->orderBy('appointment_date', 'asc')
                 ->get();
 
             $mySentRequests = Appointment::with(['parent.student'])
                 ->where('parent_id', $user->user_id)
-                ->where('status', 'pending')
+                ->whereIn('status', ['pending', 'reschedule'])
                 ->where('created_by', $user->user_id)
                 ->orderBy('appointment_date', 'asc')
                 ->get();
@@ -75,7 +76,6 @@ class AppointmentController extends Controller
             $adviserSchedule = collect();
             $adviserName = null;
 
-            // Fallback check to resolve NKP or missing teacher relationship
             $adviserTeacher = $student?->section?->teacher;
             if (!$adviserTeacher && $student?->section) {
                 $adviserTeacher = Teacher::whereIn('advisory', ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep'])
@@ -98,7 +98,6 @@ class AppointmentController extends Controller
             
             $advisersList = [];
 
-            // 1. Manually add the single NKP button first
             $nkpTeacher = Teacher::whereIn('advisory', ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep', 'KINDERGARTEN', 'PREPARATORY'])->first();
             $advisersList[] = [
                 'section' => 'NKP',
@@ -106,7 +105,6 @@ class AppointmentController extends Controller
                 'user_id' => $nkpTeacher ? $nkpTeacher->user_id : null,
             ];
 
-            // 2. Fetch all sections and filter out Nursery, Kinder, Prep
             $sections = Section::with('teacher')
                 ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
                 ->orderBy('section_name', 'asc')
@@ -115,11 +113,8 @@ class AppointmentController extends Controller
                     return !in_array(strtoupper($section->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY', 'NKP']);
                 });
 
-            // 3. Add the remaining Grade 1-6 sections dynamically
             foreach ($sections as $section) {
-                // Fetch the actual teacher profile using the section's teacher_id
                 $teacherProfile = \App\Models\Teacher::where('user_id', $section->teacher_id)->first();
-
                 $advisersList[] = [
                     'section' => 'Grade ' . $section->grade_level . ' - ' . $section->section_name,
                     'name' => $teacherProfile ? $teacherProfile->first_name . ' ' . $teacherProfile->last_name : 'Unassigned',
@@ -161,17 +156,15 @@ class AppointmentController extends Controller
         if (auth()->user()->role === 'teacher') {
             $validated['teacher_id'] = auth()->id();
             $validated['parent_id'] = $request->parent_id;
+            $notifyUserId = $request->parent_id;
         } else {
             $student = Student::with('section.teacher')->where('user_id', auth()->id())->first();
-
             $teacherUserId = $student?->section?->teacher?->user_id;
 
-            // Fallback for NKP / Advisory-assigned teachers
             if (!$teacherUserId && $student?->section) {
                 $teacher = Teacher::whereIn('advisory', ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep'])
                     ->orWhere('advisory', $student->section->grade_level)
                     ->first();
-
                 $teacherUserId = $teacher?->user_id;
             }
 
@@ -181,12 +174,21 @@ class AppointmentController extends Controller
 
             $validated['teacher_id'] = $teacherUserId;
             $validated['parent_id'] = auth()->id();
+            $notifyUserId = $teacherUserId;
         }
 
         $validated['status'] = 'pending';
         $validated['created_by'] = auth()->id(); 
 
         Appointment::create($validated);
+
+        Notification::create([
+            'user_id' => $notifyUserId,
+            'title' => 'New Appointment Request',
+            'message' => auth()->user()->name . ' has requested an appointment regarding "' . $validated['discussion_topic'] . '".',
+            'type' => 'appointment',
+            'is_read' => 0,
+        ]);
 
         return redirect()->back()->with('success', 'Appointment request submitted successfully.');
     }
@@ -212,27 +214,58 @@ class AppointmentController extends Controller
             ]
         );
 
+        Notification::create([
+            'user_id' => $appointment->created_by,
+            'title' => 'Appointment Approved',
+            'message' => 'Your appointment request for "' . $appointment->discussion_topic . '" has been approved by ' . auth()->user()->name . '.',
+            'type' => 'appointment',
+            'is_read' => 0,
+        ]);
+
         return back()->with('success', 'Appointment request approved.');
     }
 
-    public function decline(Appointment $appointment)
-    {
-        $appointment->update(['status' => 'declined']);
-        return back()->with('success', 'Appointment request declined.');
-    }
-
-    public function reschedule(Request $request, Appointment $appointment)
+    public function decline(Request $request, Appointment $appointment)
     {
         $request->validate([
             'reason' => 'required|string|max:255',
+            'suggested_date' => 'nullable|date',
+            'suggested_start_time' => 'nullable|date_format:H:i',
+            'suggested_end_time' => 'nullable|date_format:H:i|after:suggested_start_time',
         ]);
 
-        $appointment->update([
-            'status' => 'reschedule',
-            'reschedule_reason' => $request->reason
+        $originalCreatorId = $appointment->created_by;
+
+        if ($request->suggested_date && $request->suggested_start_time && $request->suggested_end_time) {
+            $appointment->update([
+                'status' => 'reschedule',
+                'reschedule_reason' => $request->reason,
+                'appointment_date' => $request->suggested_date,
+                'start_time' => $request->suggested_start_time,
+                'end_time' => $request->suggested_end_time,
+                'created_by' => auth()->id(), 
+            ]);
+
+            $message = auth()->user()->name . ' requested to reschedule. Reason: ' . $request->reason;
+            $successResponse = 'Appointment rescheduled and sent back to requests.';
+        } else {
+            $appointment->update([
+                'status' => 'declined',
+                'reschedule_reason' => $request->reason
+            ]);
+            $message = 'Your appointment request for "' . $appointment->discussion_topic . '" was declined by ' . auth()->user()->name . '. Reason: ' . $request->reason;
+            $successResponse = 'Appointment request declined successfully.';
+        }
+
+        Notification::create([
+            'user_id' => $originalCreatorId,
+            'title' => 'Appointment Declined/Rescheduled',
+            'message' => $message,
+            'type' => 'appointment',
+            'is_read' => 0,
         ]);
 
-        return back()->with('success', 'Reschedule request sent to parent.');
+        return back()->with('success', $successResponse);
     }
 
     public function getAvailability(Request $request)

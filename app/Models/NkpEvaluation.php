@@ -14,9 +14,8 @@ class NkpEvaluation extends Model
         'school_year_id',
         'category',
         'skill',
-        'q1',
-        'q2',
-        'q3',
-        'q4',
+        'term1',
+        'term2',
+        'term3',
     ];
 }

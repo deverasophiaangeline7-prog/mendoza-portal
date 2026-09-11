@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\Student;
 use App\Models\Grade;
 use App\Models\Section;
@@ -24,7 +25,6 @@ class ReportCardController extends Controller
     {
         $user = Auth::user();
 
-        // Custom sorting string to keep NKP on top and Grades 1-6 in order
         $orderLogic = "
             CASE 
                 WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1
@@ -98,7 +98,6 @@ class ReportCardController extends Controller
         $activeYear = SchoolYear::where('status', 'active')->first();
         $activeYearId = $activeYear ? $activeYear->id : null;
 
-        // --- BRANCH 1: NKP STUDENTS ---
         if ($isNkp) {
             $existingEvaluations = NkpEvaluation::where('student_id', $student_id)
                 ->where('school_year_id', $activeYearId) 
@@ -111,11 +110,11 @@ class ReportCardController extends Controller
                 'sectionName' => $student->section ? strtoupper($gradeLevel . ' - ' . $student->section->section_name) : 'UNASSIGNED',
                 'student_id' => $student_id,
                 'savedEvaluations' => $existingEvaluations,
-                'canManage' => $canManage
+                'canManage' => $canManage,
+                'activeYear' => $activeYear
             ]);
         }
 
-        // --- BRANCH 2: GRADE 1 TO 6 STUDENTS ---
         $subjects = ['Language', 'English', 'Mathematics', 'Makabansa', 'GMRC', 'Music', 'Art', 'PE', 'Health'];
         $coreValues = ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'];
 
@@ -157,7 +156,6 @@ class ReportCardController extends Controller
      */
     public function store(Request $request)
     {
-        // BACKEND RESTRICTION: Block Admins and Parents from saving grades
         if (Auth::user()->role !== 'teacher') {
             return response()->json(['message' => 'Unauthorized action. Only teachers can update grades.'], 403);
         }
@@ -167,25 +165,33 @@ class ReportCardController extends Controller
         $behaviors = $request->input('behaviors');
         $nkpEvaluations = $request->input('nkp_evaluations');
 
-        // --- GET THE ACTIVE SCHOOL YEAR ---
         $activeYear = SchoolYear::where('status', 'active')->first();
-        
-        // Safety check: if no active year exists, stop them from saving
         if (!$activeYear) {
             return response()->json(['message' => 'Error: No active school year found!'], 400);
         }
-        
         $activeYearId = $activeYear->id;
 
-        // 1. Save Numeric Grades
+        // EVALUATE ACTIVE TERMS FOR BACKEND SECURITY
+        $today = Carbon::now()->format('Y-m-d');
+        $t1Open = $activeYear->term1_start && $today >= $activeYear->term1_start && $today <= $activeYear->term1_end;
+        $t2Open = $activeYear->term2_start && $today >= $activeYear->term2_start && $today <= $activeYear->term2_end;
+        $t3Open = $activeYear->term3_start && $today >= $activeYear->term3_start && $today <= $activeYear->term3_end;
+
+        if (!$t1Open && !$t2Open && !$t3Open) {
+            return response()->json(['message' => 'All grading terms are currently closed. Contact Administrator.'], 403);
+        }
+
+        // 1. Save Numeric Grades (Strictly allowing updates only for Open Terms)
         if ($grades) {
             foreach ($grades as $subject => $data) {
+                $existing = Grade::where(['student_id' => $student_id, 'subject_name' => $subject, 'school_year_id' => $activeYearId])->first();
+                
                 Grade::updateOrCreate(
                     ['student_id' => $student_id, 'subject_name' => $subject, 'school_year_id' => $activeYearId],
                     [
-                        'term1' => $data['term1'] ?? null, 
-                        'term2' => $data['term2'] ?? null,
-                        'term3' => $data['term3'] ?? null, 
+                        'term1' => $t1Open ? ($data['term1'] ?? null) : ($existing->term1 ?? null), 
+                        'term2' => $t2Open ? ($data['term2'] ?? null) : ($existing->term2 ?? null),
+                        'term3' => $t3Open ? ($data['term3'] ?? null) : ($existing->term3 ?? null), 
                         'final_grade' => $data['final_grade'] ?? null,
                         'remarks' => $data['remarks'] ?? null
                     ]
@@ -193,34 +199,40 @@ class ReportCardController extends Controller
             }
         }
 
-        // 2. Save Observed Values (Grades 1-6)
+        // 2. Save Observed Values
         if ($behaviors) {
             foreach ($behaviors as $value => $data) {
+                $existing = BehaviorReport::where(['student_id' => $student_id, 'core_value' => $value, 'school_year_id' => $activeYearId])->first();
+
                 BehaviorReport::updateOrCreate(
                     ['student_id' => $student_id, 'core_value' => $value, 'school_year_id' => $activeYearId],
                     [
-                        'q1' => $data['q1'] ?? null, 'q2' => $data['q2'] ?? null,
-                        'q3' => $data['q3'] ?? null, 'q4' => $data['q4'] ?? null,
+                        'term1' => $t1Open ? ($data['term1'] ?? null) : ($existing->term1 ?? null), 
+                        'term2' => $t2Open ? ($data['term2'] ?? null) : ($existing->term2 ?? null),
+                        'term3' => $t3Open ? ($data['term3'] ?? null) : ($existing->term3 ?? null), 
                     ]
                 );
             }
         }
 
-        // 3. Save NKP Checklist Evaluations (Nursery, Kinder, Prep)
+        // 3. Save NKP Checklist Evaluations
         if ($nkpEvaluations) {
             foreach ($nkpEvaluations as $skill => $data) {
+                $existing = NkpEvaluation::where(['student_id' => $student_id, 'skill' => $skill, 'school_year_id' => $activeYearId])->first();
+
                 NkpEvaluation::updateOrCreate(
                     ['student_id' => $student_id, 'skill' => $skill, 'school_year_id' => $activeYearId],
                     [
                         'category' => $data['category'] ?? 'General',
-                        'q1' => $data['q1'] ?? null, 'q2' => $data['q2'] ?? null,
-                        'q3' => $data['q3'] ?? null, 'q4' => $data['q4'] ?? null,
+                        'term1' => $t1Open ? ($data['term1'] ?? null) : ($existing->term1 ?? null), 
+                        'term2' => $t2Open ? ($data['term2'] ?? null) : ($existing->term2 ?? null),
+                        'term3' => $t3Open ? ($data['term3'] ?? null) : ($existing->term3 ?? null), 
                     ]
                 );
             }
         }
 
-        // 4. NOTIFY THE PARENT (Custom Table Logic)
+        // 4. NOTIFY THE PARENT
         $student = Student::find($student_id);
 
         if ($student && $student->user_id) {
@@ -250,13 +262,12 @@ class ReportCardController extends Controller
 
     public function importBatch(Request $request, $section_id)
     {
-        // BACKEND RESTRICTION: Block Admins from accessing the import logic
         if (Auth::user()->role !== 'teacher') {
             return redirect()->back()->with('error', 'Unauthorized action. Only assigned teachers can import grades.');
         }
 
         $request->validate([
-            'quarter' => ['required', 'in:q1,q2,q3,q4'],
+            'quarter' => ['required', 'in:term1,term2,term3'],
             'csv_file' => ['required', 'file', 'mimes:csv,txt,xlsx'], 
         ]);
 
@@ -273,6 +284,14 @@ class ReportCardController extends Controller
             return redirect()->back()->with('error', 'No active school year found.');
         }
 
+        // Backend Date Check for Import
+        $today = Carbon::now()->format('Y-m-d');
+        $isOpen = $activeYear->{$quarter.'_start'} && $today >= $activeYear->{$quarter.'_start'} && $today <= $activeYear->{$quarter.'_end'};
+        
+        if (!$isOpen) {
+            return redirect()->back()->with('error', "Import failed. The grading window for {$quarter} is currently closed.");
+        }
+
         $handle = fopen($path, 'rb');
         if ($handle === false) {
             return redirect()->back()->with('error', 'Unable to open the uploaded CSV file.');
@@ -284,27 +303,19 @@ class ReportCardController extends Controller
         $sectionStudents = Student::where('section_id', $section_id)->get();
 
         while (($row = fgetcsv($handle)) !== false) {
-            if ($row === [null] || $row === false) {
-                continue;
-            }
+            if ($row === [null] || $row === false) continue;
 
             $studentName = isset($row[1]) ? trim((string) $row[1]) : '';
-            if ($studentName === '') {
-                continue;
-            }
+            if ($studentName === '') continue;
 
             $cleanCsvName = str_replace([',', ' '], '', strtolower($studentName));
-
             $student = $sectionStudents->first(function ($s) use ($cleanCsvName) {
                 $dbName1 = str_replace(' ', '', strtolower($s->first_name . $s->last_name));
                 $dbName2 = str_replace(' ', '', strtolower($s->last_name . $s->first_name));
-                
                 return $cleanCsvName === $dbName1 || $cleanCsvName === $dbName2;
             });
 
-            if (!$student) {
-                continue;
-            }
+            if (!$student) continue;
 
             $processedStudents++;
 
@@ -323,9 +334,7 @@ class ReportCardController extends Controller
 
             foreach ($subjects as $subjectName => $rawValue) {
                 $gradeValue = trim((string) $rawValue);
-                if ($gradeValue === '') {
-                    continue;
-                }
+                if ($gradeValue === '') continue;
 
                 $existingGrade = Grade::where('student_id', $student->student_id)
                     ->where('subject_name', $subjectName)
@@ -334,29 +343,23 @@ class ReportCardController extends Controller
 
                 if ($existingGrade) {
                     $existingGrade->fill([
-                        'q1' => $quarter === 'q1' ? $gradeValue : ($existingGrade->q1 ?? null),
-                        'q2' => $quarter === 'q2' ? $gradeValue : ($existingGrade->q2 ?? null),
-                        'q3' => $quarter === 'q3' ? $gradeValue : ($existingGrade->q3 ?? null),
-                        'q4' => $quarter === 'q4' ? $gradeValue : ($existingGrade->q4 ?? null),
+                        'term1' => $quarter === 'term1' ? $gradeValue : ($existingGrade->term1 ?? null),
+                        'term2' => $quarter === 'term2' ? $gradeValue : ($existingGrade->term2 ?? null),
+                        'term3' => $quarter === 'term3' ? $gradeValue : ($existingGrade->term3 ?? null),
                     ])->save();
                 } else {
                     Grade::create([
                         'student_id' => $student->student_id,
                         'school_year_id' => $activeYear->id,
                         'subject_name' => $subjectName,
-                        'q1' => $quarter === 'q1' ? $gradeValue : null,
-                        'q2' => $quarter === 'q2' ? $gradeValue : null,
-                        'q3' => $quarter === 'q3' ? $gradeValue : null,
-                        'q4' => $quarter === 'q4' ? $gradeValue : null,
-                        'final_grade' => null,
-                        'remarks' => null,
+                        'term1' => $quarter === 'term1' ? $gradeValue : null,
+                        'term2' => $quarter === 'term2' ? $gradeValue : null,
+                        'term3' => $quarter === 'term3' ? $gradeValue : null,
                     ]);
                 }
-
                 $updatedValues++;
             }
         }
-
         fclose($handle);
 
         return redirect()->route('reportcard.show', ['section_id' => $section_id])
@@ -369,11 +372,9 @@ class ReportCardController extends Controller
         
         $gradeStudentIds = Grade::where('school_year_id', $school_year_id)->pluck('student_id')->toArray();
         $nkpStudentIds = NkpEvaluation::where('school_year_id', $school_year_id)->pluck('student_id')->toArray();
-        
         $allStudentIds = array_unique(array_merge($gradeStudentIds, $nkpStudentIds));
         
         $students = Student::whereIn('student_id', $allStudentIds)->orderBy('last_name')->get();
-        
         $histories = \App\Models\StudentHistory::where('school_year_id', $school_year_id)
             ->whereIn('student_id', $allStudentIds)
             ->get()
@@ -382,16 +383,12 @@ class ReportCardController extends Controller
         return view('archived-students-list', compact('students', 'schoolYear', 'histories'));
     }
 
-    /**
-     * VIEW AN ARCHIVED REPORT CARD (READ-ONLY)
-     */
     public function archivedShowStudent($student_id, $school_year_id)
     {
         $student = Student::findOrFail($student_id);
         $schoolYear = SchoolYear::findOrFail($school_year_id);
         
         $hasNkp = NkpEvaluation::where('student_id', $student_id)->where('school_year_id', $school_year_id)->exists();
-
         $canManage = false; 
 
         if ($hasNkp) {
@@ -428,4 +425,3 @@ class ReportCardController extends Controller
         }
     }
 }
-

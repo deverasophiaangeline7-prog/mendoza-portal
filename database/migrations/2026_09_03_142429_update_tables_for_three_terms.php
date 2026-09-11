@@ -19,14 +19,6 @@ return new class extends Migration
         $table->decimal('term3', 5, 2)->nullable()->after('term2');
     });
 
-    // Update Behavior Reports Table
-    Schema::table('behavior_reports', function (Blueprint $table) {
-        $table->dropColumn(['q1', 'q2', 'q3', 'q4']);
-        $table->string('term1', 10)->nullable()->after('core_value');
-        $table->string('term2', 10)->nullable()->after('term1');
-        $table->string('term3', 10)->nullable()->after('term2');
-    });
-
     // Add Date Locks to School Year
     Schema::table('school_years', function (Blueprint $table) {
         $table->date('term1_start')->nullable();

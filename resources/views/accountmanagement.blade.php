@@ -4,7 +4,11 @@
 
 @section('content')
 <div class="flex-1 bg-white relative p-8 flex flex-col items-center justify-center min-h-screen w-full"
-     x-data="{ finalizeModal: {{ $errors->has('admin_password') ? 'true' : 'false' }}, passwordModal: false, termScheduleModal: false }">
+     x-data="{ 
+        finalizeModal: {{ $errors->has('admin_password') ? 'true' : 'false' }}, 
+        passwordModal: false, 
+        termScheduleModal: {{ $errors->hasAny(['term1_start', 'term1_end', 'term2_start', 'term2_end', 'term3_start', 'term3_end']) ? 'true' : 'false' }} 
+     }">
 
     <div class="absolute top-20 w-full max-w-md z-50">
         @if(session('success'))
@@ -114,7 +118,6 @@
                 Change User Password <i class="fa-solid fa-key ml-2"></i>
             </button>
 
-            <!-- Modified button: Now purple-400 -->
             <button @click="termScheduleModal = true" class="w-full bg-purple-400 text-black font-black text-2xl py-5 px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-purple-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-3">
                 Term Schedule <i class="fa-solid fa-calendar-days ml-2"></i>
             </button>
@@ -188,12 +191,12 @@
                             User ID <span class="text-red-600">*</span>
                         </label>
                         <input type="text" 
-                            name="user_id" 
-                            class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366] transition-colors @error('user_id') border-red-500 bg-red-50 @else bg-white @enderror" 
-                            value="{{ old('user_id') }}" 
+                            name="login_id" 
+                            class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366] transition-colors @error('login_id') border-red-500 bg-red-50 @else bg-white @enderror" 
+                            value="{{ old('login_id') }}" 
                             required>
                             
-                        @error('user_id') 
+                        @error('login_id') 
                             <p class="text-red-600 font-bold text-sm mt-2 flex items-center gap-1">
                                 <i class="fa-solid fa-circle-exclamation"></i> {{ $message }}
                             </p>
@@ -203,6 +206,9 @@
                     <div>
                         <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">New Password</label>
                         <input type="password" name="password" x-model="newPassword" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366]">
+                        @error('password')
+                            <p class="text-red-600 font-bold text-sm mt-2 flex items-center gap-1"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div>
@@ -242,7 +248,6 @@
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
         
-        <!-- Modified modal background: Now purple-400 -->
         <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[4px] border-black rounded-[2rem] p-8 max-w-4xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative my-8">
             
             <button @click="termScheduleModal = false" class="absolute top-4 right-6 text-5xl font-black text-black hover:text-gray-700 transition-colors leading-none">&times;</button>
@@ -268,13 +273,15 @@
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
                                 <input type="date" name="term1_start" required
                                        value="{{ old('term1_start', $activeYear ? $activeYear->term1_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_start') border-red-500 bg-red-50 @else bg-white @enderror">
+                                @error('term1_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
                                 <input type="date" name="term1_end" required
                                        value="{{ old('term1_end', $activeYear ? $activeYear->term1_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_end') border-red-500 bg-red-50 @else bg-white @enderror">
+                                @error('term1_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     </div>
@@ -287,13 +294,15 @@
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
                                 <input type="date" name="term2_start" required
                                        value="{{ old('term2_start', $activeYear ? $activeYear->term2_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_start') border-red-500 bg-red-50 @else bg-white @enderror">
+                                @error('term2_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
                                 <input type="date" name="term2_end" required
                                        value="{{ old('term2_end', $activeYear ? $activeYear->term2_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_end') border-red-500 bg-red-50 @else bg-white @enderror">
+                                @error('term2_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     </div>
@@ -306,13 +315,15 @@
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
                                 <input type="date" name="term3_start" required
                                        value="{{ old('term3_start', $activeYear ? $activeYear->term3_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_start') border-red-500 bg-red-50 @else bg-white @enderror">
+                                @error('term3_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
                                 <input type="date" name="term3_end" required
                                        value="{{ old('term3_end', $activeYear ? $activeYear->term3_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 bg-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_end') border-red-500 bg-red-50 @else bg-white @enderror">
+                                @error('term3_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     </div>

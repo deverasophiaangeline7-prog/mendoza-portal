@@ -353,17 +353,16 @@
 
     .btn-flat {
         padding: 8px 18px;
-        border: none;
+        border: 2px solid #000;
         border-radius: 20px;
-        color: white;
+        color: black;
         font-weight: 900;
         font-size: 14px;
         cursor: pointer;
     }
 
-    .btn-approve { background-color: var(--ma-green); }
-    .btn-decline { background-color: var(--ma-red); }
-    .btn-reschedule { background-color: var(--ma-orange); } 
+    .btn-approve { background-color: var(--ma-green); color: white; border: none; }
+    .btn-decline { background-color: var(--ma-red); color: white; border: none; }
 
     .nested-modal {
         position: absolute;
@@ -387,35 +386,33 @@
 
     .nested-modal-content h3 { margin-top: 0; font-size: 20px; }
 
-    .reason-input {
-        width: 90%;
-        padding: 15px;
-        border: 2px solid #000;
-        border-radius: 10px;
-        background: var(--ma-bg-grey);
-        margin-bottom: 25px;
-        font-size: 16px;
-    }
-
     .nested-modal-actions {
         display: flex;
         justify-content: center;
         gap: 20px;
+        margin-top: 20px;
     }
 </style>
+
+{{-- FLOATING TOAST NOTIFICATION --}}
+@if(session('success'))
+<div id="toast-success" style="position: fixed; bottom: 40px; right: 40px; z-index: 9999; background-color: var(--ma-green); color: black; border: 4px solid #000; border-radius: 20px; padding: 15px 30px; font-weight: 900; font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); display: flex; align-items: center; gap: 15px; text-transform: uppercase;">
+    <i class="fa-solid fa-circle-check" style="font-size: 24px;"></i> 
+    <span>{{ session('success') }}</span>
+    <button onclick="document.getElementById('toast-success').style.display='none'" style="background: none; border: none; font-size: 24px; font-weight: black; cursor: pointer; padding: 0;">&times;</button>
+</div>
+<script>
+    setTimeout(() => {
+        const toast = document.getElementById('toast-success');
+        if(toast) toast.style.display = 'none';
+    }, 4000);
+</script>
+@endif
 
 <div class="dashboard-container">
     <div class="main-content">
         <div class="left-column">
             
-            {{-- SUCCESS NOTIFICATION BANNER --}}
-            @if(session('success'))
-            <div style="background-color: #d4edda; color: #155724; border: 2px solid #000; border-radius: 15px; padding: 12px 20px; font-weight: bold; display: flex; align-items: center; justify-content: space-between;">
-                <span><i class="fa-solid fa-circle-check" style="margin-right: 8px; color: #34a853;"></i> {{ session('success') }}</span>
-                <button type="button" onclick="this.parentElement.style.display='none';" style="background:none; border:none; font-size: 18px; font-weight: bold; cursor: pointer;">&times;</button>
-            </div>
-            @endif
-
             <div class="appointment-form-card">
                 <h3>Appoint with a parent</h3>
                 <form id="appointmentForm" action="{{ route('appointments.store') }}" method="POST" onsubmit="return validateAppointmentForm(event)">
@@ -637,6 +634,7 @@
     </div>
 </div>
 
+<!-- INCOMING REQUESTS MODAL -->
 <div id="requestsModalOverlay" class="modal-overlay hidden">
     <div class="requests-modal">
         <div class="modal-header">
@@ -671,7 +669,7 @@
                                 @csrf @method('PATCH')
                                 <button type="submit" class="btn-flat btn-approve">Approve</button>
                             </form>
-                            <button type="button" class="btn-flat btn-reschedule" onclick="openRescheduleModal({{ $request->id }})">Reschedule</button>
+                            <button type="button" class="btn-flat btn-decline" onclick="openDeclineModal({{ $request->id }})">Decline</button>
                         </div>
                     </td>
                 </tr>
@@ -683,17 +681,42 @@
             </tbody>
         </table>
 
-        <div id="rescheduleModal" class="nested-modal hidden">
+        <!-- Decline / Suggest New Schedule Modal (Nested) -->
+        <div id="declineModal" class="nested-modal hidden">
             <div class="nested-modal-content">
-                <h3>State your reason for rescheduling</h3>
+                <h3 style="color: var(--ma-red); text-transform: uppercase;">State your reason for rescheduling</h3>
                 
-                <form id="rescheduleForm" method="POST" action="">
+                <form id="declineForm" method="POST" action="">
                     @csrf @method('PATCH')
-                    <input type="text" name="reason" class="reason-input" placeholder="" required>
+                    
+                    <div style="text-align: left; margin-bottom: 15px;">
+                        <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Reason</label>
+                        <input type="text" name="reason" class="form-control" placeholder="e.g. Conflict with schedule" required>
+                    </div>
+                    
+                    <h4 style="font-weight: 900; margin-bottom: 10px; margin-top: 20px;">RESCHEDULE</h4>
+
+                    <div style="text-align: left; margin-bottom: 15px;">
+                        <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Date</label>
+                        <input type="date" name="suggested_date" class="form-control" required
+                               min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                               max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
+                    </div>
+                    
+                    <div class="time-group" style="text-align: left;">
+                        <div style="flex: 1;">
+                            <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Start Time</label>
+                            <input type="time" name="suggested_start_time" class="form-control" required>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">End Time</label>
+                            <input type="time" name="suggested_end_time" class="form-control" required>
+                        </div>
+                    </div>
                     
                     <div class="nested-modal-actions">
-                        <button type="button" class="btn-flat btn-decline" onclick="closeModal('rescheduleModal')" style="border: 2px solid #000; padding: 10px 30px;">Cancel</button>
-                        <button type="submit" class="btn-flat btn-approve" style="border: 2px solid #000; padding: 10px 30px;">Send</button>
+                        <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('declineModal')">Cancel</button>
+                        <button type="submit" class="btn-flat btn-decline">Reschedule</button>
                     </div>
                 </form>
             </div>
@@ -748,10 +771,8 @@
 
         const startParts = startTimeInput.split(':');
         const endParts = endTimeInput.split(':');
-
         const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
         const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
-
         const duration = endMins - startMins;
 
         if (duration <= 0) {
@@ -784,7 +805,7 @@
                 const cellStatus = matchingCell.getAttribute('data-status');
                 if (cellStatus === 'leave') {
                     event.preventDefault();
-                    showValidationPopUp('Cannot book an appointment! You are marked On Leave for this day.');
+                    showValidationPopUp('Cannot book an appointment! The teacher is On Leave for this day.');
                     return false;
                 } else if (cellStatus === 'class') {
                     event.preventDefault();
@@ -797,21 +818,23 @@
                 }
             }
         }
-
         return true;
     }
 
-    function openRescheduleModal(appointmentId) {
-        const form = document.getElementById('rescheduleForm');
-        form.action = `/appointments/${appointmentId}/reschedule`;
-        openModal('rescheduleModal');
+    function openDeclineModal(appointmentId) {
+        const form = document.getElementById('declineForm');
+        form.action = `/appointments/${appointmentId}/decline`;
+        openModal('declineModal');
     }
 
     window.onclick = function(event) {
         const overlay = document.getElementById('requestsModalOverlay');
         const valOverlay = document.getElementById('validationModalOverlay');
+        const decOverlay = document.getElementById('declineModal');
+        
         if (event.target === overlay) closeModal('requestsModalOverlay');
         if (event.target === valOverlay) closeModal('validationModalOverlay');
+        if (event.target === decOverlay) closeModal('declineModal');
     }
 </script>
 @endsection

@@ -1,7 +1,7 @@
 <x-guest-layout>
 
     <main class="relative flex-grow flex items-center justify-center py-12 bg-cover bg-center w-full" 
-          style="background-image: url('{{ asset('images/faqs.jpg') }}');">
+          style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{{ asset('images/faqs.jpg') }}');">
         
         <div class="absolute inset-0 bg-black/20"></div>
 

@@ -9,10 +9,10 @@
             $type = strtolower(trim($notification->type));
 
             if ($role === 'teacher') {
-                // ADDED 'deadline_alert' to the allowed types for teachers
-                return in_array($type, ['announcement', 'event', 'school event', 'calendar', 'deadline_alert']); 
+                // Added 'appointment' so teachers can see requests!
+                return in_array($type, ['announcement', 'event', 'school event', 'calendar', 'deadline_alert', 'appointment']); 
             }
-            return true; 
+            return true; // Parents see everything
         });
     @endphp
 

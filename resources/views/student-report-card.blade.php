@@ -201,7 +201,6 @@
             generalAverage: '', finalStatus: '', 
             behaviors: {},
 
-            // Bring backend centralized term dates into JavaScript
             termDates: {
                 term1: { start: '{{ $activeYear->term1_start ?? "" }}', end: '{{ $activeYear->term1_end ?? "" }}' },
                 term2: { start: '{{ $activeYear->term2_start ?? "" }}', end: '{{ $activeYear->term2_end ?? "" }}' },
@@ -215,14 +214,12 @@
                 let rawBehaviors = @json((object)($savedBehaviors ?? []));
                 this.behaviors = (Array.isArray(rawBehaviors) || !rawBehaviors) ? {} : rawBehaviors;
 
-                // Initialize grades array for 3 terms
                 this.subjects.forEach(sub => { 
                     if (!this.grades[sub]) {
                         this.grades[sub] = { term1: '', term2: '', term3: '', final_grade: '', remarks: '' }; 
                     }
                 });
 
-                // Initialize behaviors array for 3 terms
                 const behaviorKeys = [
                     'Expresses ones spiritual beliefs',
                     'Shows adherence to ethical principles',
@@ -253,7 +250,6 @@
                 const today = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
                 const term = this.termDates['term' + termNumber];
                 
-                // If admin hasn't set dates yet in central settings, keep locked safely
                 if (!term.start || !term.end) return false; 
                 
                 return today >= term.start && today <= term.end;
@@ -266,7 +262,7 @@
                     let vals = [parseFloat(g.term1), parseFloat(g.term2), parseFloat(g.term3)];
                     
                     if (vals.every(v => !isNaN(v))) {
-                        let avg = vals.reduce((a,b) => a+b, 0) / 3; // Divided by 3 terms
+                        let avg = vals.reduce((a,b) => a+b, 0) / 3; 
                         g.final_grade = Math.round(avg);
                         g.remarks = g.final_grade >= 75 ? 'Passed' : 'Failed';
                         totalScore += avg; count++;
