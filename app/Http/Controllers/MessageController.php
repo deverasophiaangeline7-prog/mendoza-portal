@@ -54,7 +54,7 @@ class MessageController extends Controller
             'message' => 'required|string',
         ]);
 
-        // 1. Save the student's actual message to the database first
+        // 1. Save the actual message to the database first
         $currentMessage = Message::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $request->receiver_id,
@@ -68,7 +68,6 @@ class MessageController extends Controller
         $apiKey = env('GEMINI_API_KEY');
         
         if ($apiKey) {
-            // A. Fetch school events from the database
             $upcomingEvents = SchoolCalendar::orderBy('start_date', 'asc')->limit(10)->get();
             
             $eventsKnowledge = "";
@@ -87,7 +86,6 @@ class MessageController extends Controller
                 $eventsKnowledge = "- No upcoming events scheduled.\n";
             }
 
-            // B. Fetch the last 4 messages to give the AI "Memory" for context
             $history = Message::where(function($query) use ($request) {
                 $query->where('sender_id', Auth::id())->where('receiver_id', $request->receiver_id);
             })->orWhere(function($query) use ($request) {
@@ -107,7 +105,6 @@ class MessageController extends Controller
             }
             if (empty($historyContext)) $historyContext = "No previous messages.";
 
-            // C. Fetch active school year for dynamic term dates
             $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
             $termInfo = "- Term schedules are not set yet.\n";
             $lastDayOfSchool = "TBA";
@@ -124,11 +121,9 @@ class MessageController extends Controller
                             "- Term 2: {$t2s} to {$t2e}.\n" .
                             "- Term 3: {$t3s} to {$t3e}.\n";
                             
-                // Dynamically assign the end of Term 3 as the last day of classes
                 $lastDayOfSchool = $t3e;
             }
 
-            // D. Build the highly intelligent system prompt
             $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc. 
             
             Guidelines:
@@ -193,9 +188,14 @@ class MessageController extends Controller
                 ]);
             }
         }
+
         // ==========================================
-        // END AI INTERCEPTOR LOGIC
+        // 3. AJAX RESPONSE TRIGGER
         // ==========================================
+        // If the frontend sends this via JS, return JSON so the page doesn't refresh instantly
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
 
         return redirect()->route('messages.show', ['id' => $request->receiver_id]);
     }

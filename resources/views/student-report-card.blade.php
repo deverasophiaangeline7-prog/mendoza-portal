@@ -202,9 +202,9 @@
             behaviors: {},
 
             termDates: {
-                term1: { start: '{{ $activeYear->term1_start ?? "" }}', end: '{{ $activeYear->term1_end ?? "" }}' },
-                term2: { start: '{{ $activeYear->term2_start ?? "" }}', end: '{{ $activeYear->term2_end ?? "" }}' },
-                term3: { start: '{{ $activeYear->term3_start ?? "" }}', end: '{{ $activeYear->term3_end ?? "" }}' }
+                term1: { start: '{{ $activeYear ? $activeYear->term1_start : "" }}', end: '{{ $activeYear ? $activeYear->term1_end : "" }}' },
+                term2: { start: '{{ $activeYear ? $activeYear->term2_start : "" }}', end: '{{ $activeYear ? $activeYear->term2_end : "" }}' },
+                term3: { start: '{{ $activeYear ? $activeYear->term3_start : "" }}', end: '{{ $activeYear ? $activeYear->term3_end : "" }}' }
             },
 
             init() {
@@ -247,12 +247,20 @@
             },
 
             isTermUnlocked(termNumber) {
-                const today = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
                 const term = this.termDates['term' + termNumber];
                 
+                // 1. Lock if no dates are set in the database
                 if (!term.start || !term.end) return false; 
                 
-                return today >= term.start && today <= term.end;
+                // 2. Adjust for timezone offset to strictly get local YYYY-MM-DD
+                const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+                const today = (new Date(Date.now() - tzOffset)).toISOString().split("T")[0];
+                
+                // 3. Strip any time data Laravel might append (e.g., "2026-09-15 00:00:00")
+                const startDate = term.start.split(' ')[0];
+                const endDate = term.end.split(' ')[0];
+                
+                return today >= startDate && today <= endDate;
             },
 
             calculateGrades() {
