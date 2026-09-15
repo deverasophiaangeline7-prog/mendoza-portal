@@ -21,6 +21,7 @@ use App\Models\Teacher;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ReportCardController extends Controller
 {
@@ -123,7 +124,43 @@ class ReportCardController extends Controller
         }
 
         // --- BRANCH 2: GRADE 1 TO 6 STUDENTS ---
-        $subjects = ['Language', 'English', 'Mathematics', 'Makabansa', 'GMRC', 'Music', 'Art', 'PE', 'Health'];
+        
+        // 1. Extract the exact number from the grade level
+        preg_match('/\d+/', $gradeLevel, $matches);
+        $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
+
+        // 2. Dynamically assign subjects based on the curriculum differences
+        if ($gradeNum == 1) {
+            $subjects = [
+                'Language', 
+                'Reading and Literacy', 
+                'Mathematics', 
+                'Makabansa', 
+                'GMRC'
+            ];
+        } elseif ($gradeNum == 2 || $gradeNum == 3) {
+            $subjects = [
+                'English', 
+                'Filipino', 
+                'Mathematics', 
+                'Makabansa', 
+                'GMRC'
+            ];
+        } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
+            $subjects = [
+                'Filipino', 
+                'English', 
+                'Mathematics', 
+                'Science', 
+                'Araling Panlipunan', 
+                'GMRC', 
+                'TLE', 
+                'MAPEH'
+            ];
+        } else {
+            $subjects = []; // Fallback
+        }
+
         $coreValues = ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'];
 
         $existingGrades = Grade::where('student_id', $student_id)
@@ -200,28 +237,30 @@ class ReportCardController extends Controller
             }
         }
 
-        // 2. Save Observed Values (Grades 1-6)
+        // 2. Save Observed Values (Grades 1-6) - SAFELY UPDATED TO TERMS!
         if ($behaviors) {
             foreach ($behaviors as $value => $data) {
                 BehaviorReport::updateOrCreate(
                     ['student_id' => $student_id, 'core_value' => $value, 'school_year_id' => $activeYearId],
                     [
-                        'q1' => $data['q1'] ?? null, 'q2' => $data['q2'] ?? null,
-                        'q3' => $data['q3'] ?? null, 'q4' => $data['q4'] ?? null,
+                        'term1' => $data['term1'] ?? null,
+                        'term2' => $data['term2'] ?? null,
+                        'term3' => $data['term3'] ?? null,
                     ]
                 );
             }
         }
 
-        // 3. Save NKP Checklist Evaluations (Nursery, Kinder, Prep)
+        // 3. Save NKP Checklist Evaluations (Nursery, Kinder, Prep) - SAFELY UPDATED TO TERMS!
         if ($nkpEvaluations) {
             foreach ($nkpEvaluations as $skill => $data) {
                 NkpEvaluation::updateOrCreate(
                     ['student_id' => $student_id, 'skill' => $skill, 'school_year_id' => $activeYearId],
                     [
                         'category' => $data['category'] ?? 'General',
-                        'q1' => $data['q1'] ?? null, 'q2' => $data['q2'] ?? null,
-                        'q3' => $data['q3'] ?? null, 'q4' => $data['q4'] ?? null,
+                        'term1' => $data['term1'] ?? null,
+                        'term2' => $data['term2'] ?? null,
+                        'term3' => $data['term3'] ?? null,
                     ]
                 );
             }
@@ -256,7 +295,7 @@ class ReportCardController extends Controller
     }
 
     /**
-     * 5. THE NEW EXCEL SUBJECT IMPORT ENGINE
+     * 5. THE NEW EXCEL SUBJECT IMPORT ENGINE (PhpSpreadsheet + Term Lock)
      */
     public function importBatch(Request $request, $section_id)
     {
@@ -278,39 +317,84 @@ class ReportCardController extends Controller
             return back()->with('error', 'No active school year found.');
         }
 
-        $data = Excel::toArray([], $request->file('excel_file'))[0];
-        $processed = 0;
+        // --- THE PHPSPREADSHEET APPROACH ---
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($request->file('excel_file')->getPathname());
         
-        // Scan every row, skipping title blocks, gender dividers, and text headers
-        for ($i = 0; $i < count($data); $i++) {
-            $lrn = $data[$i][0] ?? null;
+        $targetSheet = null;
+
+        // 1. DYNAMICALLY FIND THE "SUMMARY OF GRADES" SHEET
+        foreach ($spreadsheet->getAllSheets() as $sheet) {
+            for ($row = 1; $row <= 20; $row++) {
+                $cellValue = (string) $sheet->getCell('A' . $row)->getCalculatedValue();
+                
+                if (stripos(trim($cellValue), 'Summary of Quarterly Grades') !== false) {
+                    $targetSheet = $sheet;
+                    break 2; // Found it! Break out of both loops
+                }
+            }
+        }
+
+        if (!$targetSheet) {
+            return back()->with('error', 'Could not detect the "Summary of Quarterly Grades" page. Please upload a valid DepEd e-Class Record.');
+        }
+
+        $processed = 0;
+        $highestRow = $targetSheet->getHighestDataRow();
+        
+        // --- TERM LOCKING SETUP ---
+        $currentDate = now();
+        
+        // Replace these placeholder dates with your actual locking dates.
+        $term1_deadline = \Carbon\Carbon::parse('2026-10-31 23:59:59'); 
+        $term2_deadline = \Carbon\Carbon::parse('2027-01-31 23:59:59');
+        $term3_deadline = \Carbon\Carbon::parse('2027-04-30 23:59:59');
+
+        // 2. PROCESS THE TARGET SHEET
+        for ($row = 1; $row <= $highestRow; $row++) {
+            $lrn = (string) $targetSheet->getCell('A' . $row)->getCalculatedValue();
             
-            // Skip non-numeric LRN rows (MALE, FEMALE, titles, blanks)
             if (!$lrn || !is_numeric(trim($lrn))) {
                 continue;
             }
 
-            // Map columns: Col C = Term 1 (2), Col D = Term 2 (3), Col E = Term 3 (4)
-            $term1 = isset($data[$i][2]) && trim($data[$i][2]) !== '' ? trim($data[$i][2]) : null;
-            $term2 = isset($data[$i][3]) && trim($data[$i][3]) !== '' ? trim($data[$i][3]) : null;
-            $term3 = isset($data[$i][4]) && trim($data[$i][4]) !== '' ? trim($data[$i][4]) : null;
+            $term1Val = (string) $targetSheet->getCell('F' . $row)->getCalculatedValue();
+            $term2Val = (string) $targetSheet->getCell('J' . $row)->getCalculatedValue();
+            $term3Val = (string) $targetSheet->getCell('N' . $row)->getCalculatedValue();
+
+            $term1 = trim($term1Val) !== '' ? trim($term1Val) : null;
+            $term2 = trim($term2Val) !== '' ? trim($term2Val) : null;
+            $term3 = trim($term3Val) !== '' ? trim($term3Val) : null;
+
+            if ($term1 === null && $term2 === null && $term3 === null) {
+                continue;
+            }
 
             $student = Student::where('lrn', trim($lrn))->where('section_id', $section_id)->first();
 
             if ($student) {
-                Grade::updateOrCreate(
-                    [
-                        'student_id' => $student->student_id,
-                        'subject_name' => $request->subject,
-                        'school_year_id' => $activeYear->id,
-                    ],
-                    [
-                        'term1' => $term1,
-                        'term2' => $term2,
-                        'term3' => $term3,
-                    ]
-                );
-                $processed++;
+                $updateData = [];
+
+                if ($currentDate->lessThanOrEqualTo($term1_deadline)) {
+                    $updateData['term1'] = $term1;
+                } 
+                elseif ($currentDate->lessThanOrEqualTo($term2_deadline)) {
+                    $updateData['term2'] = $term2;
+                } 
+                elseif ($currentDate->lessThanOrEqualTo($term3_deadline)) {
+                    $updateData['term3'] = $term3;
+                }
+
+                if (!empty($updateData)) {
+                    Grade::updateOrCreate(
+                        [
+                            'student_id' => $student->student_id,
+                            'subject_name' => $request->subject,
+                            'school_year_id' => $activeYear->id,
+                        ],
+                        $updateData
+                    );
+                    $processed++;
+                }
             }
         }
 
@@ -339,7 +423,6 @@ class ReportCardController extends Controller
             }
 
             public function headings(): array {
-                // Matches your exact column headers
                 return ['LRN', 'LEARNERS\' NAMES', 'TERM 1', 'TERM 2', 'TERM 3', 'FINAL GRADE', 'DESCRIPTOR', 'REMARK'];
             }
 
@@ -354,7 +437,7 @@ class ReportCardController extends Controller
                     $data[] = [
                         $student->lrn,
                         $fullName,
-                        '', '', '', '', '', '' // Blank columns ready for teacher input
+                        '', '', '', '', '', '' 
                     ];
                 }
                 return $data;
@@ -396,6 +479,7 @@ class ReportCardController extends Controller
         $schoolYear = SchoolYear::findOrFail($school_year_id);
         
         $hasNkp = NkpEvaluation::where('student_id', $student_id)->where('school_year_id', $school_year_id)->exists();
+        $gradeLevel = strtoupper($student->section ? $student->section->grade_level : '');
 
         $canManage = false;
 
@@ -412,6 +496,20 @@ class ReportCardController extends Controller
                 'canManage' => $canManage
             ]);
         } else {
+            // Dynamic Subjects for Archived Students
+            preg_match('/\d+/', $gradeLevel, $matches);
+            $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
+
+            if ($gradeNum == 1) {
+                $subjects = ['Language', 'Reading and Literacy', 'Mathematics', 'Makabansa', 'GMRC'];
+            } elseif ($gradeNum == 2 || $gradeNum == 3) {
+                $subjects = ['English', 'Filipino', 'Mathematics', 'Makabansa', 'GMRC'];
+            } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
+                $subjects = ['Filipino', 'English', 'Mathematics', 'Science', 'Araling Panlipunan', 'GMRC', 'TLE', 'MAPEH'];
+            } else {
+                $subjects = []; 
+            }
+
             $existingGrades = Grade::where('student_id', $student_id)
                 ->where('school_year_id', $school_year_id)
                 ->get()->keyBy('subject_name')->toArray();
@@ -424,7 +522,7 @@ class ReportCardController extends Controller
                 'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
                 'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year,
                 'student_id' => $student_id,
-                'subjects' => ['Language', 'English', 'Mathematics', 'Makabansa', 'GMRC', 'Music', 'Art', 'PE', 'Health'],
+                'subjects' => $subjects,
                 'coreValues' => ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'],
                 'savedGrades' => $existingGrades,
                 'savedBehaviors' => $existingBehaviors,

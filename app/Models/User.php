@@ -24,6 +24,7 @@ class User extends Authenticatable
         'email',
         'role',
         'profile_photo_path',
+        'section_id',
     ];
 
     /**
@@ -99,14 +100,22 @@ class User extends Authenticatable
      */
     public function getNameAttribute(): ?string
     {
-        // If the user has a linked student profile, return their full name
+        // If the user has a linked student profile
         if ($this->student) {
-            return trim($this->student->first_name . ' ' . $this->student->last_name);
+            return implode(' ', array_filter([
+                $this->student->first_name, 
+                $this->student->middle_name, 
+                $this->student->last_name
+            ]));
         }
 
-        // If the user has a linked teacher profile (adjust columns if needed)
+        // If the user has a linked teacher profile
         if ($this->teacher) {
-            return trim(($this->teacher->first_name ?? '') . ' ' . ($this->teacher->last_name ?? ''));
+            return implode(' ', array_filter([
+                $this->teacher->first_name ?? '', 
+                $this->teacher->middle_name ?? '', 
+                $this->teacher->last_name ?? ''
+            ]));
         }
 
         // If the fallback username or email is the admin email, return 'Admin'

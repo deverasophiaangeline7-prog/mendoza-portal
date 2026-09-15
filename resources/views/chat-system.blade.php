@@ -125,7 +125,7 @@
             
             <div id="message-container" class="flex-1 overflow-y-auto p-4 flex flex-col">
                 
-                <!-- Added dedicated chat messages wrapper here -->
+                <!-- Dedicated chat messages wrapper -->
                 <div id="chat-messages" class="space-y-4 flex-1">
                     @if(isset($messages) && count($messages) > 0)
                         @foreach($messages as $message)
@@ -143,7 +143,7 @@
                     @endif
                 </div>
                 
-                <!-- Live Typing Bubble (Isolated at bottom) -->
+                <!-- Live Typing Bubble -->
                 <div class="text-left mt-4 flex-shrink-0" x-show="isTyping" x-cloak>
                     <div class="typing-indicator shadow-sm">
                         <span></span><span></span><span></span>
@@ -178,6 +178,76 @@
                 <p class="text-lg font-semibold text-gray-500">Click a message to view</p>
             </div>
         @endisset
+    </div>
+
+    <!-- New Message Modal -->
+    <div x-show="newMsgModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-transition.opacity>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col" @click.away="newMsgModal = false">
+            <div class="p-4 border-b bg-[#6d0101] text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg">New Message</h3>
+                <button @click="newMsgModal = false" class="hover:text-gray-300 transition text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-6" x-data="{ userSearch: '' }">
+                
+                <!-- Search Bar -->
+                <div class="relative mb-4">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
+                    <input type="text" x-model="userSearch" placeholder="Search by name or role..." class="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#6d0101] transition-colors">
+                </div>
+
+                <!-- Scrollable Contact List -->
+                <div class="max-h-60 overflow-y-auto border-2 border-gray-100 rounded-xl divide-y divide-gray-100">
+                    <!-- FIX: Connected properly to $contacts from the Controller -->
+                    @if(isset($contacts) && count($contacts) > 0)
+                        @foreach($contacts as $contact)
+                            <a href="{{ route('messages.show', $contact->user_id) }}" 
+                               class="flex items-center p-3 hover:bg-red-50 transition-colors"
+                               x-show="userSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' . $contact->role)) }}'.includes(userSearch.toLowerCase())">
+                                
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($contact->name) }}" class="w-10 h-10 rounded-full mr-3 border" alt="User">
+                                
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-sm leading-tight">{{ $contact->name }}</h4>
+                                    <span class="text-[10px] font-black uppercase tracking-wider {{ $contact->role === 'admin' ? 'text-blue-600' : ($contact->role === 'teacher' ? 'text-amber-600' : 'text-gray-500') }}">
+                                        {{ $contact->role }}
+                                    </span>
+                                </div>
+                            </a>
+                        @endforeach
+                    @else
+                        <div class="p-6 text-center text-gray-500 text-sm font-bold">
+                            No contacts available.
+                        </div>
+                    @endif
+                </div>
+
+                <div class="flex justify-end mt-4">
+                    <button @click="newMsgModal = false" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-xl font-bold hover:bg-gray-300 transition">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Group Chat Modal -->
+    <div x-show="createGroupModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-transition.opacity>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col" @click.away="createGroupModal = false">
+            <div class="p-4 border-b bg-[#6d0101] text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg">Create Group Chat</h3>
+                <button @click="createGroupModal = false" class="hover:text-gray-300 transition text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <!-- Group Creation Form Placeholder -->
+                <p class="text-gray-500 text-center mb-4">Add members to your new group.</p>
+                <div class="flex justify-end mt-4">
+                    <button @click="createGroupModal = false" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-xl font-bold hover:bg-gray-300 transition">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

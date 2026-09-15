@@ -37,7 +37,7 @@
                     <i class="fa-solid fa-bars text-2xl"></i>
                 </button>
 
-                <a href="{{ url('/') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer">
+                <a href="{{ auth()->check() ? route('dashboard') : url('/') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer">
                     <img src="{{ asset('images/MAILogo.png') }}"
                         class="h-10 w-10 p-1 rounded shadow"
                         alt="Logo">
@@ -185,5 +185,40 @@
             </main>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set timeout to 15 minutes (15 mins * 60 seconds * 1000 milliseconds)
+            const idleTimeout = 15 * 60 * 1000; 
+            let idleTimer;
+
+            function resetIdleTimer() {
+                clearTimeout(idleTimer);
+                idleTimer = setTimeout(logoutUser, idleTimeout);
+            }
+
+            function logoutUser() {
+                // Create a hidden form to safely POST to the logout route
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route('logout') }}'; 
+                
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = '_token';
+                csrfToken.value = '{{ csrf_token() }}';
+                
+                form.appendChild(csrfToken);
+                document.body.appendChild(form);
+                form.submit();
+            }
+
+            // Reset the timer whenever the user does something
+            const events = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'];
+            events.forEach(event => document.addEventListener(event, resetIdleTimer, true));
+
+            // Start the timer initially
+            resetIdleTimer();
+        });
+    </script>
 </body>
 </html>

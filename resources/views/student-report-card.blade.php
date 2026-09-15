@@ -66,12 +66,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @php 
-                            $regularSubs = ['Filipino', 'English', 'Mathematics', 'Science', 'Araling Panlipunan (AP)', 'GMRC', 'EPP / TLE'];
-                            $mapehSubs = ['Music and Arts', 'Physical Education and Health'];
-                        @endphp
-
-                        @foreach($regularSubs as $subject)
+                        <!-- DYNAMIC SUBJECT LOOP -->
+                        @foreach($subjects as $subject)
                         <tr>
                             <td class="font-bold">{{ $subject }}</td>
                             @for($t = 1; $t <= 3; $t++)
@@ -87,30 +83,7 @@
                             <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
                         </tr>
                         @endforeach
-
-                        <tr>
-                            <td class="font-bold">MAPEH</td>
-                            <td colspan="3" class="bg-gray-100"></td>
-                            <td class="text-center font-bold bg-gray-100"></td>
-                            <td class="text-center bg-gray-100"></td>
-                        </tr>
-
-                        @foreach($mapehSubs as $subject)
-                        <tr>
-                            <td class="pl-8">{{ $subject }}</td>
-                            @for($t = 1; $t <= 3; $t++)
-                            <td class="input-cell text-center">
-                                <input x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" type="number" min="0" max="100" step="0.01" 
-                                       oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" 
-                                       x-model="grades['{{ $subject }}'].term{{ $t }}" @input="calculateGrades()" 
-                                       class="form-input-pill">
-                                <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" x-text="grades['{{ $subject }}'].term{{ $t }}"></span>
-                            </td>
-                            @endfor
-                            <td class="text-center font-bold" x-text="grades['{{ $subject }}'].final_grade"></td>
-                            <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
-                        </tr>
-                        @endforeach
+                        <!-- END DYNAMIC SUBJECT LOOP -->
 
                         <tr>
                             <td colspan="4" class="text-right font-bold pr-4">General Average</td>

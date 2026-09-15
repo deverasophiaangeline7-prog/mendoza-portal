@@ -4,42 +4,45 @@
 
 @section('content')
 
-        <main class="flex-1 p-4 md:p-8 bg-white overflow-y-auto" x-data="{ 
-            openModal: false, 
-            showNotification: false,
-            notificationMessage: '',
-            triggerNotification(msg) { this.notificationMessage = msg; this.showNotification = true; setTimeout(() => this.showNotification = false, 3000); },
-            selectedDate: {{ now()->day }}, 
-            isEditing: false,
-            tempName: '',
-            tempStartTime: '', 
-            tempEndTime: '',
-            tempPs: '',
-            currentMonth: {{ now()->month - 1 }}, 
-            currentYear: {{ now()->year }},
-            monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-            events: {{ json_encode($eventsData ?? []) ?: '{}' }},
+    <!-- We wrapped EVERYTHING in this x-data block so the button and modal can see each other -->
+    <div x-data="{ 
+        openModal: false, 
+        showNotification: false,
+        notificationMessage: '',
+        triggerNotification(msg) { this.notificationMessage = msg; this.showNotification = true; setTimeout(() => this.showNotification = false, 3000); },
+        selectedDate: {{ now()->day }}, 
+        isEditing: false,
+        tempName: '',
+        tempStartTime: '', 
+        tempEndTime: '',
+        tempPs: '',
+        currentMonth: {{ now()->month - 1 }}, 
+        currentYear: {{ now()->year }},
+        monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        events: {{ json_encode($eventsData ?? []) ?: '{}' }},
 
-            get daysInMonth() { return new Date(this.currentYear, this.currentMonth + 1, 0).getDate(); },
-            get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); },
-            
-            nextMonth() { if(this.currentMonth === 11) { this.currentMonth = 0; this.currentYear++; } else { this.currentMonth++; } },
-            prevMonth() { if(this.currentMonth === 0) { this.currentMonth = 11; this.currentYear--; } else { this.currentMonth--; } },
+        get daysInMonth() { return new Date(this.currentYear, this.currentMonth + 1, 0).getDate(); },
+        get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); },
+        
+        nextMonth() { if(this.currentMonth === 11) { this.currentMonth = 0; this.currentYear++; } else { this.currentMonth++; } },
+        prevMonth() { if(this.currentMonth === 0) { this.currentMonth = 11; this.currentYear--; } else { this.currentMonth--; } },
 
-            formatTime(time) {
-                if (!time) return 'No time set';
-                let parts = time.split(':');
-                let hours = parseInt(parts[0]);
-                let minutes = parts[1];
-                let ampm = hours >= 12 ? 'PM' : 'AM';
-                hours = hours % 12 || 12; 
-                return `${hours}:${minutes} ${ampm}`;
-            },
+        formatTime(time) {
+            if (!time) return 'No time set';
+            let parts = time.split(':');
+            let hours = parseInt(parts[0]);
+            let minutes = parts[1];
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12; 
+            return `${hours}:${minutes} ${ampm}`;
+        },
 
-            getDateKey(day) {
-                return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-            }
-        }">
+        getDateKey(day) {
+            return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        }
+    }">
+    
+        <main class="flex-1 p-4 md:p-8 bg-white overflow-y-auto">
             
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl md:text-3xl font-extrabold tracking-tight uppercase">Welcome, Admin!</h2>
@@ -245,40 +248,41 @@
                 </div>
             </div>
         </main>
-    </div>
-
-    <div x-show="openModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]" x-cloak>
-        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-4 border-amber-700">
-            <h3 class="text-2xl font-black mb-6 text-red-800 uppercase italic">Upload New Image</h3>
-            <form action="{{ route('announcement-images.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div class="mb-4">
-                    <label class="block font-bold text-gray-700 mb-2 uppercase text-xs">Select File</label>
-                    <input type="file" name="image" required class="block w-full text-sm border-2 border-dashed p-4 rounded-xl cursor-pointer hover:border-amber-700 transition">
-                </div>
-                <div class="mb-6">
-                    <label class="block font-bold text-gray-700 mb-2 uppercase text-xs">Caption</label>
-                    <input type="text" name="caption" placeholder="Ex: School Holiday" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-red-600 outline-none">
-                </div>
-                <div class="flex space-x-3">
-                    <button type="button" @click="openModal = false" class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl">CANCEL</button>
-                    <button type="submit" class="flex-1 px-4 py-3 bg-red-700 text-white font-bold rounded-xl shadow-lg">UPLOAD</button>
-                </div>
-            </form>
+    
+        <div x-show="openModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]" x-cloak>
+            <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-4 border-amber-700">
+                <h3 class="text-2xl font-black mb-6 text-red-800 uppercase italic">Upload New Image</h3>
+                <form action="{{ route('announcement-images.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="mb-4">
+                        <label class="block font-bold text-gray-700 mb-2 uppercase text-xs">Select File</label>
+                        <input type="file" name="image" required class="block w-full text-sm border-2 border-dashed p-4 rounded-xl cursor-pointer hover:border-amber-700 transition">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block font-bold text-gray-700 mb-2 uppercase text-xs">Caption</label>
+                        <input type="text" name="caption" placeholder="Ex: School Holiday" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-red-600 outline-none">
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="button" @click="openModal = false" class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl">CANCEL</button>
+                        <button type="submit" class="flex-1 px-4 py-3 bg-red-700 text-white font-bold rounded-xl shadow-lg">UPLOAD</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
 
-    <div x-show="showNotification" 
-         x-cloak 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 translate-y-10"
-         x-transition:enter-end="opacity-100 translate-y-0"
-         x-transition:leave="transition ease-in duration-300"
-         x-transition:leave-start="opacity-100 translate-y-0"
-         x-transition:leave-end="opacity-0 translate-y-10"
-         class="fixed bottom-10 right-10 bg-red-600 text-white font-black px-6 py-4 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black z-[200] flex items-center space-x-3">
-        <i class="fa-solid fa-circle-exclamation text-2xl"></i>
-        <span x-text="notificationMessage"></span>
-    </div>
+        <div x-show="showNotification" 
+             x-cloak 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-10"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-300"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 translate-y-10"
+             class="fixed bottom-10 right-10 bg-red-600 text-white font-black px-6 py-4 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black z-[200] flex items-center space-x-3">
+            <i class="fa-solid fa-circle-exclamation text-2xl"></i>
+            <span x-text="notificationMessage"></span>
+        </div>
+        
+    </div> <!-- Closes the wrapper div we added at the top -->
 
 @endsection

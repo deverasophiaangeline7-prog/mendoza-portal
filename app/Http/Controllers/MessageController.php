@@ -215,24 +215,42 @@ class MessageController extends Controller
 
     private function getAllowedContacts($authUser)
     {
-        return User::where('user_id', '!=', $authUser->user_id)
+        $users = User::where('user_id', '!=', $authUser->user_id)
             ->where(function ($query) use ($authUser) {
                 
-                if ($authUser->role === 'teacher') {
-                    $query->whereIn('role', ['admin', 'teacher'])
-                          ->orWhere(function($subQuery) use ($authUser) {
-                              $subQuery->where('role', 'parent')
-                                       ->where('section_id', $authUser->section_id); 
-                          });
-                } elseif ($authUser->role === 'parent') {
-                    $query->where('role', 'admin')
-                          ->orWhere(function($subQuery) use ($authUser) {
-                              $subQuery->whereIn('role', ['teacher', 'parent'])
-                                       ->where('section_id', $authUser->section_id);
-                          });
-                } else {
+                if ($authUser->role === 'admin') {
+                    // Admins see everyone
                     $query->whereNotNull('user_id'); 
+                } 
+                elseif ($authUser->role === 'teacher') {
+                    // 1. Get ALL sections assigned to this teacher (covers regular and NKP)
+                    $teacherSectionIds = \App\Models\Section::where('teacher_id', $authUser->user_id)->pluck('section_id')->toArray();
+                    
+                    // 2. Teachers see: Admins, Other Teachers, and Parents in their sections
+                    $query->whereIn('role', ['admin', 'teacher'])
+                          ->orWhere(function($q) use ($teacherSectionIds) {
+                              $q->where('role', 'parent')
+                                ->whereIn('section_id', $teacherSectionIds);
+                          });
+                } 
+                elseif ($authUser->role === 'parent') {
+                    // 1. Find exactly who the teacher is for this parent's section
+                    $mySection = \App\Models\Section::where('section_id', $authUser->section_id)->first();
+                    $myTeacherId = $mySection ? $mySection->teacher_id : null;
+
+                    // 2. Parents see: Admins, and their specific Teacher
+                    $query->where('role', 'admin');
+                    
+                    if ($myTeacherId) {
+                        $query->orWhere('user_id', $myTeacherId);
+                    }
                 }
-            })->get();
+            })
+            ->get();
+
+        // FIX: Sort the list AFTER fetching from the database so it doesn't crash looking for a "name" column!
+        return $users->sortBy(function($user) {
+            return $user->name;
+        })->values();
     }
 }

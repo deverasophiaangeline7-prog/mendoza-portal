@@ -51,17 +51,19 @@
     <option value="" {{ $assignedSubj !== 'ALL' ? 'disabled' : '' }}>SELECT SUBJECT</option>
     
     @php
-        $subjectList = [
-            'Filipino', 
-            'English', 
-            'Mathematics', 
-            'Science', 
-            'Araling Panlipunan (AP)', 
-            'GMRC', 
-            'EPP / TLE', 
-            'Music and Arts', 
-            'Physical Education and Health'
-        ];
+        // Dynamically build the dropdown list based on the section name
+        preg_match('/\d+/', $sectionName, $matches);
+        $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
+
+        if ($gradeNum == 1) {
+            $subjectList = ['Language', 'Reading and Literacy', 'Mathematics', 'Makabansa', 'GMRC'];
+        } elseif ($gradeNum == 2 || $gradeNum == 3) {
+            $subjectList = ['English', 'Filipino', 'Mathematics', 'Makabansa', 'GMRC'];
+        } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
+            $subjectList = ['Filipino', 'English', 'Mathematics', 'Science', 'Araling Panlipunan', 'GMRC', 'TLE', 'MAPEH'];
+        } else {
+            $subjectList = []; // Fallback
+        }
     @endphp
 
     @foreach($subjectList as $subj)

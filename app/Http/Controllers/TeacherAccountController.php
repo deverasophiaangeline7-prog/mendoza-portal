@@ -52,6 +52,7 @@ class TeacherAccountController extends Controller
             'password'           => Hash::make($request->password),
             'role'               => 'teacher',
             'status'             => 'active',
+            'section_id'         => $request->advisory === 'NKP' ? null : $request->advisory,
             'profile_photo_path' => $path,
         ]);
 

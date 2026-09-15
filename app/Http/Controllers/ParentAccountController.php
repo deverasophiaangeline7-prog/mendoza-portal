@@ -55,8 +55,10 @@ class ParentAccountController extends Controller
 
         $user = User::create([
             'username' => $request->username,
+            'email'    => $request->username,
             'password' => Hash::make($request->password),
             'role'     => 'parent',
+            'section_id' => $request->section_id,
             'profile_photo_path' => $path,
         ]);
 
