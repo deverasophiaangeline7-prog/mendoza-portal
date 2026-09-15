@@ -55,7 +55,7 @@
                         <tr class="border-b-2 border-black hover:bg-gray-50 transition">
                             <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
                             <td class="p-4 border-r-2 border-black font-bold">{{ $student->lrn }}</td>
-                            <td class="p-4 font-bold uppercase">{{ $student->first_name }} {{ $student->last_name }}</td>
+                          <td class="p-4 font-bold uppercase">{{ $student->first_name }} {{ $student->middle_name }} {{ $student->last_name }}</td>
                             <td class="p-4">
                                 <div class="flex justify-center gap-2 items-center">
                                     <button type="button" 
@@ -86,7 +86,7 @@
                         <tr class="border-b-2 border-black hover:bg-gray-50 transition">
                             <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
                             <td class="p-4 border-r-2 border-black font-bold">{{ $student->lrn }}</td>
-                            <td class="p-4 font-bold uppercase">{{ $student->first_name }} {{ $student->last_name }}</td>
+                           <td class="p-4 font-bold uppercase">{{ $student->first_name }} {{ $student->middle_name }} {{ $student->last_name }}</td>
                             <td class="p-4">
                                 <div class="flex justify-center gap-2 items-center">
                                     <button type="button" 

@@ -87,7 +87,7 @@
                             </td>
                             
                             <td class="p-4 border-r-[3px] border-black font-bold uppercase">
-                                {{ $student->last_name }}, {{ $student->first_name }}
+                                {{ $student->last_name }}, {{ $student->first_name }} {{ $student->middle_name }}
                             </td>
                             
                             <td class="p-4 border-r-[3px] border-black text-center font-medium">
@@ -161,7 +161,7 @@
                             </td>
                             
                             <td class="p-4 border-r-[3px] border-black font-bold uppercase">
-                                {{ $student->last_name }}, {{ $student->first_name }}
+                                {{ $student->last_name }}, {{ $student->first_name }} {{ $student->middle_name }}
                             </td>
                             
                             <td class="p-4 border-r-[3px] border-black text-center font-medium">

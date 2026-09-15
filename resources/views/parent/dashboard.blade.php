@@ -24,7 +24,7 @@
             <h2 class="text-xl md:text-3xl font-extrabold tracking-tight uppercase">
                 Welcome, Parent of 
                 @if(auth()->check() && auth()->user()->student)
-                    {{ auth()->user()->student->first_name }} {{ auth()->user()->student->last_name }}!
+                   {{ auth()->user()->student->first_name }} {{ auth()->user()->student->middle_name }} {{ auth()->user()->student->last_name }}!
                 @elseif(auth()->check() && auth()->user()->parent)
                     {{ auth()->user()->parent->first_name }} {{ auth()->user()->parent->last_name }}!
                 @else

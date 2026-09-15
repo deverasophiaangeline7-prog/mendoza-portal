@@ -47,18 +47,32 @@
         <form action="{{ route('batch.import', $section_id) }}" method="POST" enctype="multipart/form-data" class="mb-6 flex flex-wrap items-center justify-end gap-3">
             @csrf
             
-            <select name="subject" required class="border-[3px] border-black rounded-xl px-3 py-2 font-black text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <option value="">SELECT SUBJECT</option>
-                <option value="Filipino">Filipino</option>
-                <option value="English">English</option>
-                <option value="Mathematics">Mathematics</option>
-                <option value="Science">Science</option>
-                <option value="Araling Panlipunan (AP)">Araling Panlipunan (AP)</option>
-                <option value="GMRC">GMRC</option>
-                <option value="EPP / TLE">EPP / TLE</option>
-                <option value="Music and Arts">Music and Arts</option>
-                <option value="Physical Education and Health">Physical Education and Health</option>
-            </select>
+           <select name="subject" required class="border-[3px] border-black rounded-xl px-3 py-2 font-black text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+    <option value="" {{ $assignedSubj !== 'ALL' ? 'disabled' : '' }}>SELECT SUBJECT</option>
+    
+    @php
+        $subjectList = [
+            'Filipino', 
+            'English', 
+            'Mathematics', 
+            'Science', 
+            'Araling Panlipunan (AP)', 
+            'GMRC', 
+            'EPP / TLE', 
+            'Music and Arts', 
+            'Physical Education and Health'
+        ];
+    @endphp
+
+    @foreach($subjectList as $subj)
+        <option value="{{ $subj }}" 
+            {{ ($assignedSubj !== 'ALL' && $assignedSubj !== $subj) ? 'disabled' : '' }}
+            class="{{ ($assignedSubj !== 'ALL' && $assignedSubj !== $subj) ? 'text-gray-300 bg-gray-100' : 'text-black font-bold' }}"
+            {{ $assignedSubj === $subj ? 'selected' : '' }}>
+            {{ $subj }}
+        </option>
+    @endforeach
+</select>
             
             <div x-data="{ fileName: '' }">
                 <label :class="fileName ? 'bg-red-500 text-white' : 'bg-white text-black'" 
@@ -97,7 +111,7 @@
                         @foreach($students->where('gender', $gender) as $student)
                         <tr class="border-b-[2px] border-black last:border-b-0 hover:bg-yellow-50 transition-colors text-black">
                             <td class="p-4 text-center font-bold text-xl border-r-[3px] border-black text-gray-500">{{ $count++ }}</td>
-                            <td class="p-4 px-6 font-black text-2xl uppercase">{{ $student->last_name }}, {{ $student->first_name }}</td>
+                            <td class="p-4 px-6 font-black text-2xl uppercase">{{ $student->last_name }}, {{ $student->first_name }} {{ $student->middle_name }}</td>
                             <td class="p-4 text-center">
                                 <a href="{{ route('reportcard.showStudent', $student->student_id) }}" 
                                    class="bg-[#b26905] hover:bg-amber-700 text-black px-8 py-2 rounded-xl font-black border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all inline-block uppercase tracking-wider">
