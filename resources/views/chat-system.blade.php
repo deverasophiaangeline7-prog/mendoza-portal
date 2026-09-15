@@ -32,7 +32,8 @@
 
 <div class="h-[calc(100vh-100px)] w-full bg-white overflow-hidden flex" x-data="chatSystem()">
     
-    <div class="w-80 border-r flex flex-col bg-white flex-shrink-0">
+    <!-- Sidebar / Chat List Container -->
+    <div class="{{ isset($selectedUser) ? 'hidden md:flex' : 'flex w-full md:w-80' }} border-r flex-col bg-white flex-shrink-0">
         <div class="p-4 font-bold text-lg border-b bg-gray-50 flex justify-between items-center relative" x-data="{ searchOpen: false, searchQuery: '' }">
             <div class="flex items-center flex-1 mr-2 relative">
                 <span x-show="!searchOpen" class="text-gray-800">Chats</span>
@@ -98,10 +99,16 @@
         </div>
     </div>
 
-    <div class="flex-1 flex flex-col bg-white overflow-hidden">
+    <!-- Main Chat Area Container -->
+    <div class="{{ isset($selectedUser) ? 'flex' : 'hidden md:flex' }} flex-1 flex-col bg-white overflow-hidden">
         @isset($selectedUser)
             <div class="p-4 border-b bg-white flex items-center justify-between shadow-sm flex-shrink-0">
                 <div class="flex items-center">
+                    <!-- Mobile Back Button -->
+                    <a href="javascript:history.back()" class="md:hidden mr-3 text-gray-500 hover:text-gray-800">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+
                     <img src="https://ui-avatars.com/api/?name={{ urlencode($selectedUser->name) }}" class="w-10 h-10 rounded-full mr-3 border" alt="User">
                     <div>
                         <h3 class="font-bold text-gray-800 flex items-center gap-2">
@@ -116,24 +123,28 @@
                 </div>
             </div>
             
-            <div id="message-container" class="flex-1 overflow-y-auto p-4 space-y-4">
-                @if(isset($messages) && count($messages) > 0)
-                    @foreach($messages as $message)
-                        <div class="{{ $message->sender_id === auth()->user()->user_id ? 'text-right' : 'text-left' }}">
-                            <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm {{ $message->sender_id === auth()->user()->user_id ? 'bg-[#6d0101] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none' }}">
-                                {{ $message->content }}
-                            </span>
-                            <div class="text-[10px] text-gray-400 mt-1">{{ $message->created_at->format('g:i A') }}</div>
-                        </div>
-                    @endforeach
-                @else
-                    <div class="h-full flex flex-col items-center justify-center text-gray-400">
-                        <p class="text-sm">No messages yet. Send a message to start the conversation.</p>
-                    </div>
-                @endif
+            <div id="message-container" class="flex-1 overflow-y-auto p-4 flex flex-col">
                 
-                <!-- Live Typing Bubble -->
-                <div class="text-left" x-show="isTyping" x-cloak>
+                <!-- Added dedicated chat messages wrapper here -->
+                <div id="chat-messages" class="space-y-4 flex-1">
+                    @if(isset($messages) && count($messages) > 0)
+                        @foreach($messages as $message)
+                            <div class="{{ $message->sender_id === auth()->user()->user_id ? 'text-right' : 'text-left' }}">
+                                <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm {{ $message->sender_id === auth()->user()->user_id ? 'bg-[#6d0101] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none' }}">
+                                    {{ $message->content }}
+                                </span>
+                                <div class="text-[10px] text-gray-400 mt-1">{{ $message->created_at->format('g:i A') }}</div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="h-full flex flex-col items-center justify-center text-gray-400">
+                            <p class="text-sm">No messages yet. Send a message to start the conversation.</p>
+                        </div>
+                    @endif
+                </div>
+                
+                <!-- Live Typing Bubble (Isolated at bottom) -->
+                <div class="text-left mt-4 flex-shrink-0" x-show="isTyping" x-cloak>
                     <div class="typing-indicator shadow-sm">
                         <span></span><span></span><span></span>
                     </div>
@@ -217,17 +228,22 @@
                 const text = this.messageInput;
                 this.messageInput = ''; 
                 
-                const container = document.getElementById('message-container');
-                container.insertAdjacentHTML('beforeend', `
+                // Inject the message directly into the new wrapper so dots stay below
+                const chatMessages = document.getElementById('chat-messages');
+                chatMessages.insertAdjacentHTML('beforeend', `
                     <div class="text-right mb-4">
                         <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
                             ${text}
                         </span>
+                        <div class="text-[10px] text-gray-400 mt-1">Just now</div>
                     </div>
                 `);
                 
                 this.isTyping = true;
-                this.$nextTick(() => { container.scrollTop = container.scrollHeight; });
+                this.$nextTick(() => { 
+                    const container = document.getElementById('message-container');
+                    if(container) container.scrollTop = container.scrollHeight; 
+                });
 
                 try {
                     const response = await fetch('{{ route('messages.store') }}', {

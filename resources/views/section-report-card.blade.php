@@ -28,33 +28,53 @@
             </div>
         @endif
 
-        {{-- Wrap the import form to ONLY show for teachers --}}
+        @if(auth()->user()->role === 'teacher')
+            @php
+                $teacherData = \App\Models\Teacher::where('user_id', auth()->id())->first();
+                $assignedSubj = $teacherData ? $teacherData->assigned_subject : 'NONE';
+            @endphp
+            
+            <div class="mb-4 inline-flex items-center gap-3 bg-blue-50 border-[3px] border-black px-4 py-2 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <i class="fa-solid fa-shield-halved text-blue-600 text-xl"></i>
+                <span class="font-bold text-gray-800">
+                     You are assigned to grade <span class="text-red-600 font-black uppercase underline">{{ $assignedSubj }}</span>
+                </span>
+            </div>
+        @endif
+
+        {{-- NEW EXCEL SUBJECT IMPORT FORM --}}
         @if(auth()->user()->role === 'teacher')
         <form action="{{ route('batch.import', $section_id) }}" method="POST" enctype="multipart/form-data" class="mb-6 flex flex-wrap items-center justify-end gap-3">
             @csrf
-            <select name="quarter" required class="border-[3px] border-black rounded-xl px-3 py-2 font-black text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <option value="">SELECT QUARTER</option>
-                <option value="q1">Q1</option>
-                <option value="q2">Q2</option>
-                <option value="q3">Q3</option>
-                <option value="q4">Q4</option>
+            
+            <select name="subject" required class="border-[3px] border-black rounded-xl px-3 py-2 font-black text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <option value="">SELECT SUBJECT</option>
+                <option value="Filipino">Filipino</option>
+                <option value="English">English</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="Science">Science</option>
+                <option value="Araling Panlipunan (AP)">Araling Panlipunan (AP)</option>
+                <option value="GMRC">GMRC</option>
+                <option value="EPP / TLE">EPP / TLE</option>
+                <option value="Music and Arts">Music and Arts</option>
+                <option value="Physical Education and Health">Physical Education and Health</option>
             </select>
             
             <div x-data="{ fileName: '' }">
                 <label :class="fileName ? 'bg-red-500 text-white' : 'bg-white text-black'" 
                     class="cursor-pointer border-[3px] border-black rounded-xl px-3 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors inline-flex items-center">
                     
-                    <i class="fa-solid fa-file-csv mr-2" :class="fileName ? 'text-white' : 'text-black'"></i>
+                    <i class="fa-solid fa-file-excel mr-2" :class="fileName ? 'text-white' : 'text-black'"></i>
                     
-                    <span class="mr-2" x-text="fileName ? fileName : 'Choose CSV'"></span>
+                    <span class="mr-2" x-text="fileName ? fileName : 'Choose XLSX'"></span>
                     
-                    <input type="file" name="csv_file" accept=".csv, .xlsx" required class="hidden" 
+                    <input type="file" name="excel_file" accept=".xlsx, .xls" required class="hidden" 
                         @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''">
                 </label>
             </div>
 
             <button type="submit" class="bg-[#b26905] text-black font-black px-4 py-2 border-[3px] border-black rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
-                IMPORT BATCH
+                IMPORT GRADES
             </button>
         </form>
         @endif

@@ -98,7 +98,7 @@
                 <a href="{{ url('tuitionfee') }}" class="px-6 py-4 border-b border-gray-200 hover:bg-gray-100 transition-colors {{ request()->is('tuitionfee') ? 'bg-orange-100 text-orange-800' : '' }}">Courses</a>
                 <a href="{{ url('faqs') }}" class="px-6 py-4 border-b border-gray-200 hover:bg-gray-100 transition-colors {{ request()->is('faqs') ? 'bg-orange-100 text-orange-800' : '' }}">FAQs</a>
                 
-                <a href="{{ route('login') }}" class="px-6 py-3 mt-6 mx-4 text-center bg-[#0070c0] text-white rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:brightness-95 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all">
+                <a href="{{ route('login') }}" class="px-6 py-3 mt-6 mx-4 text-center bg-[#FB923C] text-red-900 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:brightness-95 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all">
                     SMS / LOG IN <i class="fa-solid fa-arrow-right-to-bracket ml-2"></i>
                 </a>
             </div>

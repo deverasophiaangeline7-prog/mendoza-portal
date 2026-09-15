@@ -16,6 +16,7 @@ class Teacher extends Model
     'last_name',
     'advisory',
     'gender',
+    'assigned_subject',
     'birthdate',
 ];
 

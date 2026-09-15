@@ -3,7 +3,7 @@
 @section('title', 'Account Management')
 
 @section('content')
-<div class="flex-1 p-8 bg-gray-100 min-h-screen" 
+<div class="flex-1 p-4 md:p-8 bg-gray-100 min-h-screen" 
      x-data="{ 
          openModal: false, 
          archiveModal: false, 
@@ -18,26 +18,29 @@
      }">
 
     <main class="max-w-6xl mx-auto">
-        <div class="mb-8 flex justify-between items-center">
+        
+        <!-- RESPONSIVE HEADER SECTION -->
+        <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
             <div>
-                <h2 class="text-4xl font-black text-black uppercase">Account Management</h2>
-                <h3 class="text-3xl font-black text-amber-700 italic uppercase" style="-webkit-text-stroke: 1.5px black;">
+                <h2 class="text-3xl md:text-4xl font-black text-black uppercase leading-none">Account Management</h2>
+                <h3 class="text-2xl md:text-3xl font-black text-amber-700 italic uppercase mt-1" style="-webkit-text-stroke: 1.5px black;">
                     {{ str_replace('-', ' ', $grade) }} - {{ $section->section_name ?? 'General' }}
                 </h3>
             </div>
             
-            <div class="flex gap-4">
-                <a href="{{ route('parent.archived') }}" class="bg-gray-200 hover:bg-gray-300 text-black px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black">
+            <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                <a href="{{ route('parent.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black whitespace-nowrap text-sm md:text-base">
                     <i class="fa-solid fa-box-archive"></i> View Archives
                 </a>
-                <a href="{{ route('parent.list') }}" class="bg-gray-800 hover:bg-black text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black">
+                <a href="{{ route('parent.list') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black whitespace-nowrap text-sm md:text-base">
                     <i class="fa-solid fa-arrow-left"></i> Back
                 </a>
             </div>
         </div>
 
-        <div class="border-2 border-black rounded-lg overflow-hidden bg-white">
-            <table class="w-full text-left border-collapse">
+        <!-- SCROLLABLE TABLE CONTAINER -->
+        <div class="overflow-x-auto border-2 border-black rounded-lg shadow-sm bg-white w-full">
+            <table class="w-full min-w-[600px] text-left border-collapse">
                 <thead class="bg-gray-200 border-b-2 border-black text-xl font-bold">
                     <tr>
                         <th class="p-4 border-r-2 border-black text-center w-24">No.</th>
@@ -122,7 +125,7 @@
                 @csrf
                 @method('PUT')
 
-                <div class="grid grid-cols-3 gap-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">First Name</label>
                         <input type="text" name="first_name" x-model="editFirstName" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-yellow-400 uppercase">
@@ -147,9 +150,9 @@
                     </select>
                 </div>
 
-                <div class="flex justify-end space-x-4">
-                    <button type="button" @click="studentEditModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4">Cancel</button>
-                    <button type="submit" class="bg-yellow-400 text-black font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-500 active:translate-y-1 active:shadow-none transition-all">
+                <div class="flex flex-col md:flex-row justify-end space-y-3 md:space-y-0 md:space-x-4">
+                    <button type="button" @click="studentEditModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4 py-3 md:py-0 text-center">Cancel</button>
+                    <button type="submit" class="bg-yellow-400 text-black font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-500 active:translate-y-1 active:shadow-none transition-all flex justify-center items-center">
                         <i class="fa-solid fa-save mr-2"></i> Save Record
                     </button>
                 </div>

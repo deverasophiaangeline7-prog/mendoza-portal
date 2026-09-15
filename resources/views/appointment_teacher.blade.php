@@ -16,8 +16,8 @@
         display: flex;
         font-family: 'Arial', sans-serif;
         width: 100%;
-        height: 100%;
-        overflow: hidden;
+        min-height: calc(100vh - 80px);
+        box-sizing: border-box;
     }
 
     .main-content {
@@ -26,16 +26,32 @@
         display: flex;
         gap: 30px;
         background-color: #ffffff;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
     }
 
-    .left-column { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-    .right-column { flex: 1.2; position: relative; }
+    .left-column { 
+        flex: 1; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 20px; 
+        min-width: 0; 
+    }
+    
+    .right-column { 
+        flex: 1.2; 
+        position: relative; 
+        min-width: 0; 
+    }
 
     .appointment-form-card {
         border: 2px solid #000;
         border-radius: 25px;
         padding: 20px;
         background: #fff;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .appointment-form-card h3 {
@@ -67,7 +83,7 @@
         box-sizing: border-box;
     }
 
-    .time-group { display: flex; gap: 15px; }
+    .time-group { display: flex; gap: 15px; width: 100%; }
 
     .btn-submit {
         background-color: var(--ma-green);
@@ -82,10 +98,19 @@
         cursor: pointer;
     }
 
+    /* Responsive Table Wrapper */
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+    }
+
     .pending-table {
         width: 100%;
         border-collapse: collapse;
         border: 2px solid #000;
+        min-width: 300px; 
     }
 
     .pending-table th {
@@ -119,11 +144,13 @@
         align-items: center;
         margin-bottom: 15px;
         min-height: 40px;
+        width: 100%;
     }
 
     .calendar-navigation {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 15px;
     }
 
@@ -133,6 +160,7 @@
         font-weight: 900;
         font-size: 32px;
         margin: 0;
+        text-align: center;
     }
 
     .nav-arrow {
@@ -234,6 +262,7 @@
         margin-top: 15px;
         font-weight: 900;
         font-size: 14px;
+        flex-wrap: wrap; 
     }
     
     .legend-item span {
@@ -264,16 +293,19 @@
         z-index: 1000;
     }
     
-    .hidden { display: none !important; }
+    /* MODIFIED CLASS NAME HERE */
+    .modal-hidden { display: none !important; }
 
     .requests-modal, .validation-modal {
         background: white;
         border: 4px solid #000;
         border-radius: 25px;
-        width: 80%;
+        width: 90%;
         max-width: 900px;
         padding: 20px;
         position: relative;
+        max-height: 90vh;
+        overflow-y: auto;
     }
 
     .validation-modal {
@@ -379,7 +411,8 @@
         background: white;
         border: 4px solid #000;
         padding: 30px;
-        width: 60%;
+        width: 90%;
+        max-width: 600px;
         text-align: center;
         box-shadow: 10px 10px 0px var(--ma-orange);
     }
@@ -391,6 +424,70 @@
         justify-content: center;
         gap: 20px;
         margin-top: 20px;
+    }
+
+    /* RESPONSIVE CSS FIXES */
+    @media (max-width: 992px) {
+        .dashboard-container {
+            display: block; 
+        }
+
+        .main-content {
+            flex-direction: column; 
+            padding: 15px;
+            gap: 25px;
+        }
+
+        .left-column, .right-column {
+            width: 100%;
+            display: block; 
+        }
+
+        .schedule-grid {
+            min-width: 650px; 
+        }
+
+        .time-group {
+            flex-direction: column; 
+            gap: 10px;
+        }
+
+        .calendar-header-wrapper {
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-top: 10px;
+        }
+
+        .month-title {
+            font-size: 26px; 
+        }
+
+        .requests-trigger {
+            position: relative; 
+            top: 0;
+            right: 0;
+            margin-top: 10px;
+        }
+
+        .modal-table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .nested-modal-content {
+            padding: 20px 15px;
+        }
+
+        .nested-modal-actions {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .nested-modal-actions button {
+            width: 100%;
+        }
     }
 </style>
 
@@ -456,30 +553,33 @@
                 </form>
             </div>
 
-            <table class="pending-table">
-                <thead>
-                    <tr>
-                        <th colspan="2">My Sent Requests</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($mySentRequests as $request)
+            <!-- Wrapped Table in table-responsive -->
+            <div class="table-responsive">
+                <table class="pending-table">
+                    <thead>
                         <tr>
-                            <td>
-                                {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
-                            </td>
-                            <td>
-                                {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }},
-                                {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }}
-                            </td>
+                            <th colspan="2">My Sent Requests</th>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="2" style="text-align: center;">No sent requests.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @forelse($mySentRequests as $request)
+                            <tr>
+                                <td>
+                                    {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
+                                </td>
+                                <td>
+                                    {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }},
+                                    {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="2" style="text-align: center;">No sent requests.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div class="right-column">
@@ -524,93 +624,96 @@
                 </div>
             </div>
 
-            <table class="schedule-grid">
-                <thead>
-                    <tr>
-                        <th class="time-col"></th>
-                        @foreach($weekDays as $day)
-                            <th>
-                                <div class="day-header">{{ $day->format('D') }}</div>
-                                <div class="date-header">{{ $day->format('j') }}</div>
-                            </th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($timeSlots as $time)
+            <!-- Wrapped Table in table-responsive -->
+            <div class="table-responsive">
+                <table class="schedule-grid">
+                    <thead>
                         <tr>
-                            <td class="time-col">{{ $time }}</td>
+                            <th class="time-col"></th>
                             @foreach($weekDays as $day)
-                                @php
-                                    $slot = $schedules->first(function ($schedule) use ($day, $time) {
-                                        $schedTime = isset($schedule->time) ? $schedule->time : ($schedule->time_slot ?? '');
-                                        return $schedule->date === $day->format('Y-m-d') && $schedTime === $time;
-                                    });
-                                    
-                                    $cellClass = 'cell-white';
-                                    $statusValue = 'available';
-
-                                    if ($slot) {
-                                        if ($slot->status === 'class' || $slot->status === 'class_hours') {
-                                            $cellClass = 'cell-red';
-                                            $statusValue = 'class';
-                                        } elseif ($slot->status === 'leave' || $slot->status === 'on_leave') {
-                                            $cellClass = 'cell-grey';
-                                            $statusValue = 'leave';
-                                        } elseif ($slot->status === 'booked') {
-                                            $cellClass = 'cell-green';
-                                            $statusValue = 'booked';
-                                        } elseif ($slot->status === 'booked-half') {
-                                            $cellClass = 'cell-half-top';
-                                            $statusValue = 'booked';
-                                        }
-                                    }
-
-                                    $cellStartTime = \Carbon\Carbon::parse($day->format('Y-m-d') . ' ' . $time); 
-                                    $cellEndTime = $cellStartTime->copy()->addHour(); 
-
-                                    $meetingTooltip = '';
-                                    $meeting = $bookedAppointments->first(function ($appointment) use ($cellStartTime, $cellEndTime) {
-                                        $appStart = \Carbon\Carbon::parse($appointment->appointment_date . ' ' . $appointment->start_time);
-                                        $appEnd = \Carbon\Carbon::parse($appointment->appointment_date . ' ' . $appointment->end_time);
-                                        return $appStart->lt($cellEndTime) && $appEnd->gt($cellStartTime);
-                                    });
-
-                                    if ($meeting) {
-                                        $statusValue = 'booked';
-                                        $parentName = strtoupper(optional($meeting->parent->student)->first_name . ' ' . optional($meeting->parent->student)->last_name ?: optional($meeting->parent)->username);
-                                        $meetingTooltip = $parentName . ' • ' . $meeting->discussion_topic . ' • ' . \Carbon\Carbon::parse($meeting->start_time)->format('g:iA') . ' - ' . \Carbon\Carbon::parse($meeting->end_time)->format('g:iA');
-                                        
-                                        $appStart = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->start_time);
-                                        $appEnd = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->end_time);
-
-                                        $overlapStart = $appStart->max($cellStartTime);
-                                        $overlapEnd = $appEnd->min($cellEndTime);
-                                        
-                                        $durationInCell = $overlapStart->diffInMinutes($overlapEnd);
-                                        
-                                        if ($durationInCell >= 60) {
-                                            $cellClass = 'cell-green';
-                                        } elseif ($durationInCell <= 30) {
-                                            if ($overlapStart->minute >= 30) {
-                                                $cellClass = 'cell-half-bottom';
-                                            } else {
-                                                $cellClass = 'cell-half-top';
-                                            }
-                                        }
-                                    }
-                                @endphp
-                                <td class="{{ $cellClass }}" 
-                                    data-date="{{ $day->format('Y-m-d') }}" 
-                                    data-time="{{ $time }}" 
-                                    data-status="{{ $statusValue }}" 
-                                    title="{{ $meetingTooltip }}">
-                                </td>
+                                <th>
+                                    <div class="day-header">{{ $day->format('D') }}</div>
+                                    <div class="date-header">{{ $day->format('j') }}</div>
+                                </th>
                             @endforeach
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach($timeSlots as $time)
+                            <tr>
+                                <td class="time-col">{{ $time }}</td>
+                                @foreach($weekDays as $day)
+                                    @php
+                                        $slot = $schedules->first(function ($schedule) use ($day, $time) {
+                                            $schedTime = isset($schedule->time) ? $schedule->time : ($schedule->time_slot ?? '');
+                                            return $schedule->date === $day->format('Y-m-d') && $schedTime === $time;
+                                        });
+                                        
+                                        $cellClass = 'cell-white';
+                                        $statusValue = 'available';
+
+                                        if ($slot) {
+                                            if ($slot->status === 'class' || $slot->status === 'class_hours') {
+                                                $cellClass = 'cell-red';
+                                                $statusValue = 'class';
+                                            } elseif ($slot->status === 'leave' || $slot->status === 'on_leave') {
+                                                $cellClass = 'cell-grey';
+                                                $statusValue = 'leave';
+                                            } elseif ($slot->status === 'booked') {
+                                                $cellClass = 'cell-green';
+                                                $statusValue = 'booked';
+                                            } elseif ($slot->status === 'booked-half') {
+                                                $cellClass = 'cell-half-top';
+                                                $statusValue = 'booked';
+                                            }
+                                        }
+
+                                        $cellStartTime = \Carbon\Carbon::parse($day->format('Y-m-d') . ' ' . $time); 
+                                        $cellEndTime = $cellStartTime->copy()->addHour(); 
+
+                                        $meetingTooltip = '';
+                                        $meeting = $bookedAppointments->first(function ($appointment) use ($cellStartTime, $cellEndTime) {
+                                            $appStart = \Carbon\Carbon::parse($appointment->appointment_date . ' ' . $appointment->start_time);
+                                            $appEnd = \Carbon\Carbon::parse($appointment->appointment_date . ' ' . $appointment->end_time);
+                                            return $appStart->lt($cellEndTime) && $appEnd->gt($cellStartTime);
+                                        });
+
+                                        if ($meeting) {
+                                            $statusValue = 'booked';
+                                            $parentName = strtoupper(optional($meeting->parent->student)->first_name . ' ' . optional($meeting->parent->student)->last_name ?: optional($meeting->parent)->username);
+                                            $meetingTooltip = $parentName . ' • ' . $meeting->discussion_topic . ' • ' . \Carbon\Carbon::parse($meeting->start_time)->format('g:iA') . ' - ' . \Carbon\Carbon::parse($meeting->end_time)->format('g:iA');
+                                            
+                                            $appStart = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->start_time);
+                                            $appEnd = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->end_time);
+
+                                            $overlapStart = $appStart->max($cellStartTime);
+                                            $overlapEnd = $appEnd->min($cellEndTime);
+                                            
+                                            $durationInCell = $overlapStart->diffInMinutes($overlapEnd);
+                                            
+                                            if ($durationInCell >= 60) {
+                                                $cellClass = 'cell-green';
+                                            } elseif ($durationInCell <= 30) {
+                                                if ($overlapStart->minute >= 30) {
+                                                    $cellClass = 'cell-half-bottom';
+                                                } else {
+                                                    $cellClass = 'cell-half-top';
+                                                }
+                                            }
+                                        }
+                                    @endphp
+                                    <td class="{{ $cellClass }}" 
+                                        data-date="{{ $day->format('Y-m-d') }}" 
+                                        data-time="{{ $time }}" 
+                                        data-status="{{ $statusValue }}" 
+                                        title="{{ $meetingTooltip }}">
+                                    </td>
+                                @endforeach
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
 
             <div class="legend">
                 <div class="legend-item"><span class="cell-white"></span>Available</div>
@@ -625,8 +728,8 @@
     </div>
 </div>
 
-<!-- VALIDATION POPUP MODAL -->
-<div id="validationModalOverlay" class="modal-overlay hidden">
+<!-- VALIDATION POPUP MODAL (Class updated to modal-hidden) -->
+<div id="validationModalOverlay" class="modal-overlay modal-hidden">
     <div class="validation-modal">
         <h3 id="valModalTitle"><i class="fa-solid fa-triangle-exclamation"></i> Invalid Action</h3>
         <p id="valModalMessage" style="font-weight: bold; font-size: 15px; margin: 20px 0; color: #333;"></p>
@@ -634,55 +737,57 @@
     </div>
 </div>
 
-<!-- INCOMING REQUESTS MODAL -->
-<div id="requestsModalOverlay" class="modal-overlay hidden">
+<!-- INCOMING REQUESTS MODAL (Class updated to modal-hidden) -->
+<div id="requestsModalOverlay" class="modal-overlay modal-hidden">
     <div class="requests-modal">
         <div class="modal-header">
             <h2><i class="fa-solid fa-user-plus"></i> Incoming Requests</h2>
             <button class="close-btn" onclick="closeModal('requestsModalOverlay')">&times;</button>
         </div>
 
-        <table class="modal-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Topic</th>
-                    <th>Date and Time</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($incomingRequests as $request)
-                <tr>
-                    <td>
-                        {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
-                    </td>
-                    <td>{{ $request->discussion_topic }}</td>
-                    <td>
-                        {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
-                        {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
-                        {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <form action="{{ route('appointments.approve', $request->id) }}" method="POST" style="display:inline;">
-                                @csrf @method('PATCH')
-                                <button type="submit" class="btn-flat btn-approve">Approve</button>
-                            </form>
-                            <button type="button" class="btn-flat btn-decline" onclick="openDeclineModal({{ $request->id }})">Decline</button>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="4" style="text-align: center;">No incoming appointment requests.</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Topic</th>
+                        <th>Date and Time</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($incomingRequests as $request)
+                    <tr>
+                        <td>
+                            {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
+                        </td>
+                        <td>{{ $request->discussion_topic }}</td>
+                        <td>
+                            {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
+                            {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
+                            {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <form action="{{ route('appointments.approve', $request->id) }}" method="POST" style="display:inline;">
+                                    @csrf @method('PATCH')
+                                    <button type="submit" class="btn-flat btn-approve">Approve</button>
+                                </form>
+                                <button type="button" class="btn-flat btn-decline" onclick="openDeclineModal({{ $request->id }})">Decline</button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" style="text-align: center;">No incoming appointment requests.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
-        <!-- Decline / Suggest New Schedule Modal (Nested) -->
-        <div id="declineModal" class="nested-modal hidden">
+        <!-- Decline / Suggest New Schedule Modal (Nested) (Class updated to modal-hidden) -->
+        <div id="declineModal" class="nested-modal modal-hidden">
             <div class="nested-modal-content">
                 <h3 style="color: var(--ma-red); text-transform: uppercase;">State your reason for rescheduling</h3>
                 
@@ -726,11 +831,13 @@
 
 <script>
     function openModal(modalId) {
-        document.getElementById(modalId).classList.remove('hidden');
+        // Updated to use 'modal-hidden'
+        document.getElementById(modalId).classList.remove('modal-hidden');
     }
 
     function closeModal(modalId) {
-        document.getElementById(modalId).classList.add('hidden');
+        // Updated to use 'modal-hidden'
+        document.getElementById(modalId).classList.add('modal-hidden');
     }
 
     function showValidationPopUp(message) {

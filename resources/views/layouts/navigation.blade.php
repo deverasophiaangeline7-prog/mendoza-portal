@@ -24,36 +24,46 @@
     </style>
 </head>
 
-<body class="bg-gray-100">
-    <div class="min-h-screen">
+<!-- Wrap body in Alpine state -->
+<body class="bg-gray-100" x-data="{ sidebarOpen: false }">
+    <div class="min-h-screen flex flex-col">
+        
         {{-- TOP HEADER --}}
-        <header class="hero-gradient text-white py-4 px-6 shadow-lg flex justify-between items-center relative z-50">
-            <a href="{{ url('/') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer">
-                <img src="{{ asset('images/MAILogo.png') }}"
-                    class="h-10 w-10 bg-white p-1 rounded shadow"
-                    alt="Logo">
-                <h1 class="text-2xl font-bold uppercase tracking-tight">
-                    Mendoza Academy, Inc.
-                </h1>
-            </a>
+        <header class="hero-gradient text-white py-4 px-4 sm:px-6 shadow-lg flex justify-between items-center relative z-50 shrink-0">
+            <div class="flex items-center">
+                
+                <!-- Hamburger Menu Button (Mobile Only) -->
+                <button @click="sidebarOpen = true" class="md:hidden text-white focus:outline-none hover:scale-110 transition-transform mr-4">
+                    <i class="fa-solid fa-bars text-2xl"></i>
+                </button>
 
-            <div class="flex items-center space-x-6 text-2xl">
-    
-            
-   <a href="{{ route('messages.index') }}" class="relative transition inline-flex items-center p-2 rounded-lg {{ request()->routeIs('messages*') ? 'text-orange-400' : 'text-white hover:text-orange-400' }}">
-    <i class="fa-solid fa-envelope text-xl"></i>
-    @if(isset($unreadTotal) && $unreadTotal > 0)
-        <span class="absolute -top-1 -right-1 bg-yellow-400 text-red-600 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold shadow-sm">
-            {{ $unreadTotal }}
-        </span>
-    @endif
-</a>
-            @include('components.notification-bell')
+                <a href="{{ url('/') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer">
+                    <img src="{{ asset('images/MAILogo.png') }}"
+                        class="h-10 w-10 p-1 rounded shadow"
+                        alt="Logo">
+                    <h1 class="text-xl sm:text-2xl font-bold uppercase tracking-tight hidden sm:block">
+                        Mendoza Academy, Inc.
+                    </h1>
+                </a>
+            </div>
+
+            <div class="flex items-center space-x-4 sm:space-x-6 text-2xl">
+                
+                <a href="{{ route('messages.index') }}" class="relative transition inline-flex items-center p-2 rounded-lg {{ request()->routeIs('messages*') ? 'text-orange-400' : 'text-white hover:text-orange-400' }}">
+                    <i class="fa-solid fa-envelope text-xl"></i>
+                    @if(isset($unreadTotal) && $unreadTotal > 0)
+                        <span class="absolute -top-1 -right-1 bg-yellow-400 text-red-600 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold shadow-sm">
+                            {{ $unreadTotal }}
+                        </span>
+                    @endif
+                </a>
+                
+                @include('components.notification-bell')
 
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" @click.away="open = false"
                             class="hover:scale-110 transition-transform focus:outline-none flex items-center">
-                        <i class="fa-solid fa-circle-user text-orange-400 text-4xl"></i>
+                        <i class="fa-solid fa-circle-user text-orange-400 text-3xl sm:text-4xl"></i>
                     </button>
 
                     <div x-show="open"
@@ -82,9 +92,19 @@
             </div>
         </header>
 
-        <div class="flex min-h-screen">
+        <div class="flex flex-1 relative overflow-hidden">
+            
+            <!-- Mobile Sidebar Overlay -->
+            <div x-show="sidebarOpen" 
+                 @click="sidebarOpen = false" 
+                 class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:hidden" 
+                 x-transition.opacity 
+                 x-cloak>
+            </div>
+
             {{-- SIDEBAR --}}
-            <nav class="w-64 bg-[#6d0101] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
+            <nav :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+                 class="absolute inset-y-0 left-0 z-[70] w-64 bg-[#6d0101] text-white pt-4 shadow-2xl transform transition-transform duration-300 md:relative md:translate-x-0 overflow-y-auto">
                 <ul class="space-y-1">
                     <x-sidebar-link href="{{ route('dashboard') }}"
                         icon="fa-solid fa-chart-line"
@@ -160,7 +180,7 @@
             </nav>
 
             {{-- MAIN CONTENT --}}
-            <main class="flex-1 bg-white">
+            <main class="flex-1 bg-white overflow-y-auto w-full relative z-10">
                 @yield('content')
             </main>
         </div>

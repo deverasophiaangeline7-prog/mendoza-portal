@@ -18,7 +18,6 @@
     
     .adviser-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; width: 100%; max-width: 1100px; }
     
-    /* UPDATED: Box shape, border thickness, and hard shadow to match Attendance */
     .adviser-btn { 
         background-color: var(--ma-orange); 
         border: 2px solid #000; 
@@ -40,19 +39,32 @@
     
     .adviser-btn span { display: block; color: #fff; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; font-weight: 900; font-size: 22px; }
 
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-    .hidden { display: none !important; }
-    .admin-modal { background: white; border: 4px solid #000; border-radius: 25px; width: 95%; max-width: 1400px; padding: 20px 30px; position: relative; }
+    /* FIX 1: Set z-index to 999999 and ensure width/height use viewport units (vw/vh) */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 999999; }
     
-    .modal-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .header-controls { display: flex; align-items: center; gap: 15px; }
-    .calendar-navigation { display: flex; align-items: center; gap: 15px; }
+    .modal-overlay.hidden, .toast-banner.hidden { display: none !important; }
+    /* Modal container padding adjusted for mobile */
+    .admin-modal { background: white; border: 4px solid #000; border-radius: 25px; width: 95%; max-width: 1400px; padding: 20px 15px; position: relative; }
+    @media (min-width: 768px) { .admin-modal { padding: 20px 30px; } }
+    
+    /* Header layout: Stack on mobile, side-by-side on desktop */
+    .modal-header-top { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 20px; margin-top: 35px; }
+    @media (min-width: 768px) { .modal-header-top { flex-direction: row; justify-content: space-between; margin-top: 0; } }
+
+    .header-controls { display: flex; align-items: center; gap: 15px; justify-content: center; }
+    .calendar-navigation { display: flex; align-items: center; gap: 10px; justify-content: center; }
     .nav-arrow { color: var(--ma-orange); font-size: 32px; text-decoration: none; font-weight: 900; cursor: pointer; }
-    .month-title { font-size: 24px; font-weight: 900; margin: 0; min-width: 300px; text-align: center; }
     
-    .manage-btn { color: var(--ma-green); font-size: 20px; font-weight: 900; background: none; border: none; cursor: pointer; }
-    .leave-btn { color: var(--ma-dark-grey); font-size: 20px; font-weight: 900; background: none; border: none; cursor: pointer; }
-    .close-btn { background: var(--ma-red); color: white; border: 3px solid #fff; border-radius: 50%; width: 45px; height: 45px; font-size: 28px; cursor: pointer; }
+    /* Text sizing adjusted for mobile */
+    .month-title { font-size: 18px; font-weight: 900; margin: 0; text-align: center; }
+    @media (min-width: 768px) { .month-title { font-size: 24px; min-width: 300px; } }
+    
+    .manage-btn { color: var(--ma-green); font-size: 18px; font-weight: 900; background: none; border: none; cursor: pointer; }
+    .leave-btn { color: var(--ma-dark-grey); font-size: 18px; font-weight: 900; background: none; border: none; cursor: pointer; }
+    @media (min-width: 768px) { .manage-btn, .leave-btn { font-size: 20px; } }
+    
+    /* Absolute positioning locks the close button to the top right */
+    .close-btn { position: absolute; top: 15px; right: 15px; background: var(--ma-red); color: white; border: 3px solid #fff; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; padding-bottom: 4px; z-index: 10; }s
 
     .schedule-grid { width: 100%; border-collapse: collapse; text-align: center; border: 2px solid #000; }
     .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 5px; height: 40px; font-size: 13px; font-weight: 900; }
@@ -64,7 +76,6 @@
     .cell-white { background-color: #ffffff; }
     .cell-grey { background-color: var(--ma-dark-grey); }
 
-    /* Custom Toast Message */
     .toast-banner {
         position: absolute;
         top: 15px;
@@ -115,7 +126,6 @@
                 $currentDate = \Carbon\Carbon::parse($dateParam);
             } else {
                 $currentDate = \Carbon\Carbon::now();
-                // Auto-skip to upcoming Monday if today is Saturday or Sunday
                 if ($currentDate->isWeekend()) {
                     $currentDate = $currentDate->next(\Carbon\Carbon::MONDAY);
                 }
@@ -186,6 +196,14 @@
 </div>
 
 <script>
+    // FIX 2: Move the modal outside of the restricted content layout and into the main body tag
+    document.addEventListener("DOMContentLoaded", function() {
+        const modal = document.getElementById('adminCalendarModal');
+        if (modal) {
+            document.body.appendChild(modal);
+        }
+    });
+
     let currentTeacherId = null;
     let isManageMode = false;
     let isLeaveMode = false;

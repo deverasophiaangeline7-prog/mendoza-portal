@@ -35,6 +35,7 @@ class TeacherAccountController extends Controller
             'last_name'     => 'required',
             'first_name'    => 'required',
             'advisory'      => 'required',
+            'assigned_subject' => 'required_unless:advisory,NKP',
             'gender'        => 'required',
             'birthdate'     => 'required|date',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -62,6 +63,7 @@ class TeacherAccountController extends Controller
             'gender'      => $request->gender,
             'birthdate'   => $request->birthdate,
             'advisory'    => $request->advisory === 'NKP' ? '1,2,3' : $request->advisory,
+            'assigned_subject' => $request->assigned_subject,
         ]);
 
         // DYNAMIC NKP ASSIGNMENT (No more hardcoded IDs 1, 2, 3)
@@ -168,6 +170,7 @@ class TeacherAccountController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name'  => 'required|string|max:255',
             'advisory'   => 'required',
+            'assigned_subject' => 'required_unless:advisory,NKP',
         ]);
 
         $targetAdvisory = ($request->advisory === 'NKP') ? '1,2,3' : $request->advisory;
@@ -211,6 +214,7 @@ class TeacherAccountController extends Controller
                     'first_name' => $request->first_name,
                     'last_name'  => $request->last_name,
                     'advisory'   => $targetAdvisory,
+                    'assigned_subject' => $request->assigned_subject,
                 ]);
             }
         });

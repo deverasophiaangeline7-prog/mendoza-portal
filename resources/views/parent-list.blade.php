@@ -6,19 +6,21 @@
 <main class="flex-1 p-8 bg-white min-h-screen" x-data="{ addSectionModal: false, deleteSectionModal: false }">
     <div class="max-w-6xl mx-auto">
         
-        <div class="flex justify-between items-center mb-8">
+        <!-- RESPONSIVE HEADER SECTION -->
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 w-full">
             <div>
-                <h2 class="text-4xl font-black text-black uppercase tracking-tight">List of Accounts</h2>
-                <h3 class="text-4xl font-bold text-amber-700 mt-1 italic">Parents</h3>
+                <h2 class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight leading-none">List of Accounts</h2>
+                <h3 class="text-2xl md:text-4xl font-bold text-amber-700 mt-1 italic">Parents</h3>
             </div>
-            <div class="flex items-center gap-3">
-                <button @click="addSectionModal = true" type="button" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-bold transition flex items-center gap-2">
+            
+            <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                <button @click="addSectionModal = true" type="button" class="flex-1 lg:flex-none justify-center bg-green-600 hover:bg-green-700 text-white px-3 md:px-5 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
                     <i class="fa-solid fa-plus"></i> Add Section
                 </button>
-                <button @click="deleteSectionModal = true" type="button" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-bold transition flex items-center gap-2">
+                <button @click="deleteSectionModal = true" type="button" class="flex-1 lg:flex-none justify-center bg-red-600 hover:bg-red-700 text-white px-3 md:px-5 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
                     <i class="fa-solid fa-trash"></i> Delete Section
                 </button>
-                <a href="{{ route('account.management') }}" class="bg-gray-800 hover:bg-black text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2">
+                <a href="{{ route('account.management') }}" class="w-full sm:w-auto flex-1 lg:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
                     <i class="fa-solid fa-arrow-left"></i> Back
                 </a>
             </div>

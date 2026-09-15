@@ -4,27 +4,61 @@
 
 @section('content')
 <!-- Top-level div holds the Alpine state for the Edit & Archive Modals -->
-<div class="flex-1 flex flex-col bg-white min-h-screen relative" x-data="{ archiveModal: false, archiveUrl: '', editModal: false, editId: '', editFirstName: '', editLastName: '', editAdvisory: '' }">
+<div class="flex-1 flex flex-col bg-white min-h-screen relative" x-data="{ 
+    archiveModal: false, archiveUrl: '', 
+    editModal: false, editId: '', editFirstName: '', editLastName: '', editAdvisory: '',
+    
+    /* NEW SUBJECT LOGIC FOR EDIT MODAL */
+    editSubject: '', showEditSubject: false, editSubjectsList: [],
+    subjectMap: {
+        '1': ['ALL (Class Adviser)', 'GMRC', 'Language', 'Makabansa', 'Mathematics', 'Reading and Literacy'],
+        '2': ['ALL (Class Adviser)', 'English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
+        '3': ['ALL (Class Adviser)', 'English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
+        '4': ['ALL (Class Adviser)', 'Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE'],
+        '5': ['ALL (Class Adviser)', 'Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE'],
+        '6': ['ALL (Class Adviser)', 'Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE']
+    },
+    updateEditSubjects(selectEl) {
+        if (!selectEl || this.editAdvisory === 'NKP' || this.editAdvisory === '') {
+            this.showEditSubject = false;
+            this.editSubjectsList = [];
+            return;
+        }
+        let selectedOption = selectEl.options[selectEl.selectedIndex];
+        let grade = selectedOption.getAttribute('data-grade');
+        
+        if (this.subjectMap[grade]) {
+            this.editSubjectsList = this.subjectMap[grade];
+            this.showEditSubject = true;
+        } else {
+            this.showEditSubject = false;
+        }
+    }
+}">
     
     <main class="flex-1 p-8">
         <div class="max-w-6xl mx-auto">
-            <div class="flex justify-between items-center mb-8">
+            
+            <!-- RESPONSIVE HEADER SECTION -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 w-full">
                 <div>
-                    <h2 class="text-4xl font-black text-black uppercase tracking-tight">List of Accounts</h2>
-                    <h3 class="text-2xl font-bold text-amber-700 mt-1 italic">Teachers</h3>
+                    <h2 class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight leading-none">List of Accounts</h2>
+                    <h3 class="text-xl md:text-2xl font-bold text-amber-700 mt-1 italic">Teachers</h3>
                 </div>
-                <div class="flex gap-4">
-                    <a href="{{ route('teacher.archived') }}" class="bg-gray-200 hover:bg-gray-300 text-black px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black">
+                
+                <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                    <a href="{{ route('teacher.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black text-sm md:text-base whitespace-nowrap">
                         <i class="fa-solid fa-box-archive"></i> View Archives
                     </a>
-                    <a href="{{ route('account.management') }}" class="bg-gray-800 hover:bg-black text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black">
+                    <a href="{{ route('account.management') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black text-sm md:text-base whitespace-nowrap">
                         <i class="fa-solid fa-arrow-left"></i> Back
                     </a>
                 </div>
             </div>
 
-            <div class="overflow-hidden border-2 border-black rounded-lg shadow-sm">
-                <table class="w-full text-left border-collapse">
+            <!-- SCROLLABLE TABLE CONTAINER -->
+            <div class="overflow-x-auto border-2 border-black rounded-lg shadow-sm w-full">
+                <table class="w-full min-w-[600px] text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-200 border-b-2 border-black">
                             <th class="px-4 py-4 border-r-2 border-black text-center font-bold text-xl w-24">No.</th>
@@ -38,6 +72,9 @@
                             <td class="px-4 py-4 border-r-2 border-black text-center font-bold text-lg text-gray-700">{{ $index + 1 }}</td>
                             <td class="px-6 py-4 border-r-2 border-black font-bold text-lg uppercase">
                                 {{ $teacherUser->teacher?->first_name ?? 'NO PROFILE' }} {{ $teacherUser->teacher?->last_name ?? '' }}
+                                @if($teacherUser->teacher?->assigned_subject)
+                                    <div class="text-xs text-blue-600 font-bold mt-1 tracking-wider"><i class="fa-solid fa-book"></i> {{ $teacherUser->teacher->assigned_subject }}</div>
+                                @endif
                             </td>
                             <td class="px-6 py-4 flex justify-between items-center">
                                 <span class="font-bold text-lg">
@@ -48,7 +85,7 @@
                                 @else
                                     No Advisory
                                 @endif
-                            </span>
+                                </span>
                                 <div class="flex gap-2 items-center">
                                     
                                     <!-- WIRED UP EDIT BUTTON -->
@@ -57,7 +94,9 @@
                                                     editId = '{{ $teacherUser->user_id }}'; 
                                                     editFirstName = '{{ addslashes($teacherUser->teacher?->first_name) }}'; 
                                                     editLastName = '{{ addslashes($teacherUser->teacher?->last_name) }}'; 
-                                                    editAdvisory = '{{ in_array($teacherUser->teacher?->advisory, ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep']) || in_array($teacherUser->teacher?->section?->grade_level, ['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3']) ? 'NKP' : $teacherUser->teacher?->advisory }}';"
+                                                    editAdvisory = '{{ in_array($teacherUser->teacher?->advisory, ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep']) || in_array($teacherUser->teacher?->section?->grade_level, ['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3']) ? 'NKP' : $teacherUser->teacher?->advisory }}';
+                                                    editSubject = '{{ addslashes($teacherUser->teacher?->assigned_subject) }}';
+                                                    setTimeout(() => { updateEditSubjects($refs.advisorySelect) }, 50);"
                                             class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
                                         Edit
                                     </button>
@@ -99,18 +138,29 @@
                     </div>
                 </div>
 
-                <div class="mb-8">
+                <div class="mb-4">
                     <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Reassign Grade Level</label>
-                    <select name="advisory" x-model="editAdvisory" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 appearance-none bg-white">
-                        <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
+                    <select x-ref="advisorySelect" name="advisory" x-model="editAdvisory" @change="updateEditSubjects($event.target)" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 appearance-none bg-white">
+                        <option value="NKP" data-grade="NKP">NKP (Nursery, Kinder, Prep)</option>
                         @php
                             $dynamicSections = \App\Models\Section::orderByRaw("CAST(grade_level AS UNSIGNED) ASC")->get();
                         @endphp
                         @foreach($dynamicSections as $sec)
                             @if(!in_array(strtoupper($sec->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY', 'NKP']))
-                                <option value="{{ $sec->section_id }}">Grade {{ $sec->grade_level }} - {{ $sec->section_name }}</option>
+                                <option value="{{ $sec->section_id }}" data-grade="{{ $sec->grade_level }}">Grade {{ $sec->grade_level }} - {{ $sec->section_name }}</option>
                             @endif
                         @endforeach
+                    </select>
+                </div>
+
+                {{-- REACTIVE SUBJECT FIELD FOR EDIT MODAL --}}
+                <div class="mb-8" x-show="showEditSubject" x-cloak>
+                    <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Reassign Subject <span class="text-red-600">*</span></label>
+                    <select name="assigned_subject" x-model="editSubject" :required="showEditSubject" class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 appearance-none bg-white">
+                        <option value="" disabled>Select Subject</option>
+                        <template x-for="subj in editSubjectsList" :key="subj">
+                            <option :value="subj" x-text="subj" :selected="subj === editSubject"></option>
+                        </template>
                     </select>
                 </div>
 

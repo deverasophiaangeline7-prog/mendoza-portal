@@ -19,9 +19,9 @@
     }
 }">
 
-    <main class="flex-1 p-8 bg-white overflow-y-auto">
+    <main class="flex-1 p-4 md:p-8 bg-white overflow-y-auto">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-extrabold tracking-tight uppercase">
+            <h2 class="text-xl md:text-3xl font-extrabold tracking-tight uppercase">
                 Welcome, Parent of 
                 @if(auth()->check() && auth()->user()->student)
                     {{ auth()->user()->student->first_name }} {{ auth()->user()->student->last_name }}!
@@ -45,7 +45,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-12">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             <div>
                 <h3 class="text-4xl font-black text-center mb-6 tracking-tighter uppercase">SCHOOL CALENDAR</h3>
                 <div class="bg-[#b26905] rounded-[40px] p-6 border-[3px] border-black shadow-lg">

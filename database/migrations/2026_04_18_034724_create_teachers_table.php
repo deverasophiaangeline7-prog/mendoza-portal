@@ -16,6 +16,7 @@ return new class extends Migration
         $table->string('middle_name')->nullable();
         $table->string('last_name', 100);
         $table->string('advisory')->unique()->nullable(); 
+        $table->string('assigned_subject')->nullable();
         $table->string('cv_path')->nullable(); 
         $table->string('gender');
         $table->date('birthdate');

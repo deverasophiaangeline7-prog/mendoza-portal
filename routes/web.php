@@ -40,7 +40,6 @@ Route::get('/faqs', function () { return view('faqs'); })->name('faqs');
 Route::get('forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
 Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
 
-
 // ==========================================
 // 2. GENERAL LOGGED-IN USERS (View Only)
 // ==========================================
@@ -91,7 +90,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/appointments/update-availability', [AppointmentController::class, 'updateAvailability'])->name('appointments.updateAvailability');
 
     Route::get('/teacher/profile', [TeacherController::class, 'view'])->name('teacher.view');
-    });
+});
 
 // ==========================================
 // 3. TEACHER ONLY ROUTES (Data Entry/Updates)
@@ -109,6 +108,7 @@ Route::middleware(['auth', 'teacher'])->group(function () {
     // Report Card / Grading Actions
     Route::post('/report-card/save', [ReportCardController::class, 'store'])->name('reportcard.store');
     Route::post('/report-card/import-batch/{section_id}', [ReportCardController::class, 'importBatch'])->name('batch.import');
+    Route::get('/report-card/section/{section_id}/download-template', [ReportCardController::class, 'downloadTemplate'])->name('batch.download_template'); // ADDED EXCEL TEMPLATE ROUTE HERE
     Route::get('/report-card/edit/{student_id}', [ReportCardController::class, 'edit'])->name('reportcard.edit');
     Route::post('/report-card/update/{student_id}', [ReportCardController::class, 'update'])->name('reportcard.update');
 
@@ -211,7 +211,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
     Route::put('/admin/terms/update', [App\Http\Controllers\Admin\UserController::class, 'updateTerms'])->name('admin.terms.update');
 
-    });
+});
 
 // Both Admins and Teachers are allowed inside this group
 Route::middleware(['auth', 'role:admin,teacher'])->group(function () {
