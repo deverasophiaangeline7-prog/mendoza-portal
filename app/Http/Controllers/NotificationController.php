@@ -26,6 +26,7 @@ class NotificationController extends Controller
             'event_participation', 
             'event', 
             'school event'        => redirect()->route($isTeacher ? 'student.calendar.index' : 'student.calendar'),
+            'appointment'         => redirect()->route('appointments.index'), // <-- ADDED THIS LINE
             default               => redirect()->route('dashboard')
         };
     }

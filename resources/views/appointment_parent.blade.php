@@ -344,7 +344,7 @@
     }
 </style>
 
-{{-- FLOATING TOAST NOTIFICATION --}}
+{{-- FLOATING TOAST NOTIFICATION FOR SUCCESS --}}
 @if(session('success'))
 <div id="toast-success" style="position: fixed; bottom: 40px; right: 40px; z-index: 9999; background-color: var(--ma-green); color: black; border: 4px solid #000; border-radius: 20px; padding: 15px 30px; font-weight: 900; font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); display: flex; align-items: center; gap: 15px; text-transform: uppercase;">
     <i class="fa-solid fa-circle-check" style="font-size: 24px;"></i> 
@@ -354,6 +354,21 @@
 <script>
     setTimeout(() => {
         const toast = document.getElementById('toast-success');
+        if(toast) toast.style.display = 'none';
+    }, 4000);
+</script>
+@endif
+
+{{-- FLOATING TOAST NOTIFICATION FOR ERRORS --}}
+@if(session('error'))
+<div id="toast-error" style="position: fixed; bottom: 40px; right: 40px; z-index: 9999; background-color: var(--ma-red); color: white; border: 4px solid #000; border-radius: 20px; padding: 15px 30px; font-weight: 900; font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); display: flex; align-items: center; gap: 15px; text-transform: uppercase;">
+    <i class="fa-solid fa-circle-exclamation" style="font-size: 24px;"></i> 
+    <span>{{ session('error') }}</span>
+    <button onclick="document.getElementById('toast-error').style.display='none'" style="background: none; border: none; font-size: 24px; font-weight: black; cursor: pointer; padding: 0; color: white;">&times;</button>
+</div>
+<script>
+    setTimeout(() => {
+        const toast = document.getElementById('toast-error');
         if(toast) toast.style.display = 'none';
     }, 4000);
 </script>

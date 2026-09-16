@@ -195,6 +195,24 @@ class AppointmentController extends Controller
 
     public function approve(Appointment $appointment)
     {
+        // 1. CHECK FOR DOUBLE BOOKING BEFORE APPROVING
+        $hasConflict = Appointment::where('teacher_id', $appointment->teacher_id)
+            ->where('appointment_date', $appointment->appointment_date)
+            ->where('status', 'booked') // Only check against already approved/booked slots
+            ->where('id', '!=', $appointment->id) // Exclude the current appointment just in case
+            ->where(function ($query) use ($appointment) {
+                // Time overlap logic: Existing start is before New end AND Existing end is after New start
+                $query->where('start_time', '<', $appointment->end_time)
+                      ->where('end_time', '>', $appointment->start_time);
+            })
+            ->exists();
+
+        // 2. IF CONFLICT EXISTS, STOP AND RETURN ERROR
+        if ($hasConflict) {
+            return back()->with('error', 'Cannot approve: This time slot has already been booked.');
+        }
+
+        // 3. IF NO CONFLICT, PROCEED WITH APPROVAL
         $appointment->update(['status' => 'booked']);
 
         $startTime = \Carbon\Carbon::parse($appointment->start_time);

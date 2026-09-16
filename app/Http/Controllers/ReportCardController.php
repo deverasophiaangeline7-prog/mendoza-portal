@@ -295,7 +295,7 @@ class ReportCardController extends Controller
     }
 
     /**
-     * 5. THE NEW EXCEL SUBJECT IMPORT ENGINE (PhpSpreadsheet + Term Lock)
+     * 5. THE NEW EXCEL SUBJECT IMPORT ENGINE (PhpSpreadsheet + Term Lock + STRICT LRN)
      */
     public function importBatch(Request $request, $section_id)
     {
@@ -338,7 +338,39 @@ class ReportCardController extends Controller
             return back()->with('error', 'Could not detect the "Summary of Quarterly Grades" page. Please upload a valid DepEd e-Class Record.');
         }
 
+        // ==========================================
+        // NEW: STRICT SUBJECT MISMATCH PROTECTOR
+        // ==========================================
+        $subjectFound = false;
+        $expectedSubject = trim($request->subject);
+        $fileName = $request->file('excel_file')->getClientOriginalName();
+
+        // Check 1: Does the filename contain the subject? (e.g., GMRC_Grades.xlsx)
+        if (stripos(str_replace(['_', '-'], ' ', $fileName), $expectedSubject) !== false) {
+            $subjectFound = true;
+        }
+
+        // Check 2: If not in filename, scan the top 15 rows of the Excel sheet to find the subject name
+        if (!$subjectFound) {
+            for ($r = 1; $r <= 15; $r++) {
+                foreach (range('A', 'K') as $col) {
+                    $cellValue = (string) $targetSheet->getCell($col . $r)->getCalculatedValue();
+                    if (stripos($cellValue, $expectedSubject) !== false) {
+                        $subjectFound = true;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        // If the subject is nowhere to be found, BLOCK THE UPLOAD
+        if (!$subjectFound) {
+            return back()->with('error', "SUBJECT MISMATCH: You selected '{$expectedSubject}', but this Excel file appears to be for a different subject. Please upload the correct file.");
+        }
+        // ==========================================
+
         $processed = 0;
+        $errors = []; // STRICT CHECK: Array to track wrong LRNs
         $highestRow = $targetSheet->getHighestDataRow();
         
         // --- TERM LOCKING SETUP ---
@@ -369,33 +401,44 @@ class ReportCardController extends Controller
                 continue;
             }
 
+            // STRICT MATCHING: Check if LRN actually belongs to a student in this section
             $student = Student::where('lrn', trim($lrn))->where('section_id', $section_id)->first();
 
-            if ($student) {
-                $updateData = [];
-
-                if ($currentDate->lessThanOrEqualTo($term1_deadline)) {
-                    $updateData['term1'] = $term1;
-                } 
-                elseif ($currentDate->lessThanOrEqualTo($term2_deadline)) {
-                    $updateData['term2'] = $term2;
-                } 
-                elseif ($currentDate->lessThanOrEqualTo($term3_deadline)) {
-                    $updateData['term3'] = $term3;
-                }
-
-                if (!empty($updateData)) {
-                    Grade::updateOrCreate(
-                        [
-                            'student_id' => $student->student_id,
-                            'subject_name' => $request->subject,
-                            'school_year_id' => $activeYear->id,
-                        ],
-                        $updateData
-                    );
-                    $processed++;
-                }
+            if (!$student) {
+                $excelName = (string) $targetSheet->getCell('B' . $row)->getCalculatedValue();
+                $errors[] = "Row {$row}: LRN {$lrn} ({$excelName}) does not match any student in this section.";
+                continue; 
             }
+
+            $updateData = [];
+
+            if ($currentDate->lessThanOrEqualTo($term1_deadline)) {
+                $updateData['term1'] = $term1;
+            } 
+            elseif ($currentDate->lessThanOrEqualTo($term2_deadline)) {
+                $updateData['term2'] = $term2;
+            } 
+            elseif ($currentDate->lessThanOrEqualTo($term3_deadline)) {
+                $updateData['term3'] = $term3;
+            }
+
+            if (!empty($updateData)) {
+                Grade::updateOrCreate(
+                    [
+                        'student_id' => $student->student_id,
+                        'subject_name' => $request->subject,
+                        'school_year_id' => $activeYear->id,
+                    ],
+                    $updateData
+                );
+                $processed++;
+            }
+        }
+
+        // 3. RETURN RESULTS WITH STRICT ERROR REPORTING
+        if (count($errors) > 0) {
+            $errorMessage = "Import partially completed. {$processed} student(s) updated, but we blocked invalid LRNs: " . implode(" | ", $errors);
+            return back()->with('error', $errorMessage);
         }
 
         return back()->with('success', "{$request->subject} grades successfully imported. {$processed} student(s) updated.");

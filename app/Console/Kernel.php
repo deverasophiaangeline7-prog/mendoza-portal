@@ -12,8 +12,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Add your term deadline command here:
-        $schedule->command('terms:check-deadlines')->dailyAt('08:00');
+        // This runs our checker every day at 8:00 AM!
+        $schedule->command('app:check-term-deadlines')->dailyAt('08:00');
     }
 
     /**

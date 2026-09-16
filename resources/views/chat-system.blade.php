@@ -33,7 +33,7 @@
 <div class="h-[calc(100vh-100px)] w-full bg-white overflow-hidden flex" x-data="chatSystem()">
     
     <!-- Sidebar / Chat List Container -->
-    <div class="{{ isset($selectedUser) ? 'hidden md:flex' : 'flex w-full md:w-80' }} border-r flex-col bg-white flex-shrink-0">
+    <div class="{{ isset($selectedUser) ? 'hidden md:flex' : 'flex w-full' }} md:w-80 border-r flex-col bg-white flex-shrink-0">
         <div class="p-4 font-bold text-lg border-b bg-gray-50 flex justify-between items-center relative" x-data="{ searchOpen: false, searchQuery: '' }">
             <div class="flex items-center flex-1 mr-2 relative">
                 <span x-show="!searchOpen" class="text-gray-800">Chats</span>
@@ -137,7 +137,8 @@
                             </div>
                         @endforeach
                     @else
-                        <div class="h-full flex flex-col items-center justify-center text-gray-400">
+                        <!-- Added ID here -->
+                        <div id="empty-chat-state" class="h-full flex flex-col items-center justify-center text-gray-400">
                             <p class="text-sm">No messages yet. Send a message to start the conversation.</p>
                         </div>
                     @endif
@@ -162,11 +163,11 @@
                         <input type="text" 
                                x-model="messageInput" 
                                @input="sendTyping()"
-                               :disabled="isTyping" 
+                               :disabled="isTyping || isSending" 
                                class="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:border-[#6d0101] focus:ring-1 focus:ring-[#6d0101] transition-all disabled:opacity-50" 
                                placeholder="Type your message here..." 
                                required>
-                        <button type="submit" :disabled="isTyping" class="bg-[#6d0101] text-white px-6 py-2 rounded-full hover:bg-red-900 transition disabled:opacity-50">
+                        <button type="submit" :disabled="isTyping || isSending" x-text="isSending ? 'Sending...' : 'Send'" class="bg-[#6d0101] text-white px-6 py-2 rounded-full hover:bg-red-900 transition disabled:opacity-50">
                             Send
                         </button>
                     </form>
@@ -200,7 +201,6 @@
 
                 <!-- Scrollable Contact List -->
                 <div class="max-h-60 overflow-y-auto border-2 border-gray-100 rounded-xl divide-y divide-gray-100">
-                    <!-- FIX: Connected properly to $contacts from the Controller -->
                     @if(isset($contacts) && count($contacts) > 0)
                         @foreach($contacts as $contact)
                             <a href="{{ route('messages.show', $contact->user_id) }}" 
@@ -258,8 +258,11 @@
             createGroupModal: false,
             messageInput: '',
             isTyping: false,
+            isSending: false,
             myId: '{{ auth()->user()->user_id }}',
             selectedUserId: '{{ isset($selectedUser) ? $selectedUser->user_id : "" }}',
+            selectedUserName: '{{ isset($selectedUser) ? $selectedUser->name : "" }}',
+            
             typingTimer: null,
 
             init() {
@@ -298,18 +301,37 @@
                 const text = this.messageInput;
                 this.messageInput = ''; 
                 
-                // Inject the message directly into the new wrapper so dots stay below
+                // Remove the "No messages yet" text if it exists
+                const emptyState = document.getElementById('empty-chat-state');
+                if (emptyState) {
+                    emptyState.remove();
+                }
+                
+                // Inject the user's message immediately
                 const chatMessages = document.getElementById('chat-messages');
                 chatMessages.insertAdjacentHTML('beforeend', `
-                    <div class="text-right mb-4">
+                    <div class="text-right mb-4 w-full">
                         <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
                             ${text}
                         </span>
                         <div class="text-[10px] text-gray-400 mt-1">Just now</div>
                     </div>
                 `);
+
+                // ==========================================
+                // SMART TYPING INDICATOR LOGIC
+                // ==========================================
+                const lowercaseText = text.toLowerCase();
+                const aiKeywords = ['tuition', 'fee', 'password', 'schedule', 'term', 'when', 'how much'];
                 
-                this.isTyping = true;
+                const triggersAI = aiKeywords.some(keyword => lowercaseText.includes(keyword));
+
+                if (triggersAI) {
+                    this.isTyping = true;
+                } else {
+                    this.isSending = true;
+                }
+                
                 this.$nextTick(() => { 
                     const container = document.getElementById('message-container');
                     if(container) container.scrollTop = container.scrollHeight; 
@@ -330,10 +352,15 @@
                     });
 
                     if (response.ok) {
+                        // Keep the dots bouncing smoothly until the page reloads completely
                         window.location.reload(); 
+                    } else {
+                        this.isTyping = false;
+                        this.isSending = false;
                     }
                 } catch (err) {
                     this.isTyping = false;
+                    this.isSending = false;
                     console.error("Message failed to send", err);
                 }
             }

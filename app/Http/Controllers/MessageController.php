@@ -54,7 +54,6 @@ class MessageController extends Controller
             'message' => 'required|string',
         ]);
 
-        // 1. Save the actual message to the database first
         $currentMessage = Message::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $request->receiver_id,
@@ -68,6 +67,9 @@ class MessageController extends Controller
         $apiKey = env('GEMINI_API_KEY');
         
         if ($apiKey) {
+            $receiver = User::find($request->receiver_id);
+            $receiverRole = $receiver ? ucfirst($receiver->role) : 'Staff';
+
             $upcomingEvents = SchoolCalendar::orderBy('start_date', 'asc')->limit(10)->get();
             
             $eventsKnowledge = "";
@@ -124,7 +126,10 @@ class MessageController extends Controller
                 $lastDayOfSchool = $t3e;
             }
 
+            // UPDATED SYSTEM PROMPT: Now tells AI to IGNORE complex/unknown questions
             $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc. 
+            
+            IMPORTANT: You are currently responding on behalf of a {$receiverRole} account.
             
             Guidelines:
             - Maintain a polite, professional, and helpful tone.
@@ -132,26 +137,39 @@ class MessageController extends Controller
             - Use the [PREVIOUS CHAT HISTORY] to understand the context of the user's current question.
             - Convert dates to friendly natural language (e.g., 'September 3, 2026').
             - Answer using ONLY the provided facts below.
-            - If the question cannot be answered using these exact facts, respond with exactly one word: ESCALATE.
+            - If the user's message is just a greeting (e.g., 'hello'), a short phrase, or is NOT a clear question, respond with exactly one word: IGNORE.
+            - If the user asks a complex question that CANNOT be answered using these exact facts, respond with exactly one word: IGNORE.
 
             *** MENDOZA ACADEMY CHEAT SHEET ***\n\n"
                 . "[PREVIOUS CHAT HISTORY FOR CONTEXT]\n" . $historyContext . "\n\n"
+                . "[ACCOUNT & SETTINGS]\n"
+                . "- Passwords (reset, change, forgot): Users can change it in 'Student Information' or use the 'Forgot Password' link on the login page (which requires an email code for security). Alternatively, the Admin can change the password for them.\n"
+                . "- Email Address: The email address is fixed and cannot be changed.\n"
+                . "- Appointments (Cancel or Reschedule): Users can cancel or reschedule appointments, but they must choose a new time. It is subject to the teacher's availability.\n\n"
                 . "[TUITION & FEES]\n"
                 . "- Tuition is 1,000 PHP per month. Miscellaneous fee is 3,500 PHP.\n"
                 . "- Tuition fee payment schedule: Every second Friday of the month.\n\n"
                 . "[SCHOOL YEAR & TERMS]\n"
                 . $termInfo
                 . "- Last day of classes (School year ends): {$lastDayOfSchool}.\n\n"
-                . "[GRADES RELEASE]\n"
+                . "[GRADES RELEASE & DEADLINES]\n"
+                . "- Teachers receive an automated system alert exactly 1 week before the end of each term to remind them to finalize grades.\n"
                 . "- Grades are released via the Report Card module 1 to 2 weeks after the end of each Term.\n\n"
                 . "[UPCOMING CALENDAR EVENTS]\n"
                 . $eventsKnowledge;
 
-            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' . $apiKey;
+            // RESTORED 2.5 API VERSION
+            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' . $apiKey;
 
             $data = [
                 "systemInstruction" => ["parts" => [["text" => $systemPrompt]]],
-                "contents" => [["parts" => [["text" => $request->message]]]]
+                "contents" => [["parts" => [["text" => $request->message]]]],
+                "safetySettings" => [
+                    ["category" => "HARM_CATEGORY_HARASSMENT", "threshold" => "BLOCK_NONE"],
+                    ["category" => "HARM_CATEGORY_HATE_SPEECH", "threshold" => "BLOCK_NONE"],
+                    ["category" => "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold" => "BLOCK_NONE"],
+                    ["category" => "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold" => "BLOCK_NONE"]
+                ]
             ];
 
             $ch = curl_init($url);
@@ -167,23 +185,23 @@ class MessageController extends Controller
             curl_close($ch);
 
             $responseData = json_decode($response);
-            $aiText = "ESCALATE"; 
+            $aiText = "IGNORE"; // Default to ignore if something goes wrong
+            
             if (isset($responseData->candidates[0]->content->parts[0]->text)) {
                 $aiText = trim($responseData->candidates[0]->content->parts[0]->text);
+            } elseif (isset($responseData->error)) {
+                $aiText = "API ERROR: " . $responseData->error->message;
             }
 
-            if (strpos($aiText, 'ESCALATE') === false) {
+            // NEW SILENT LOGIC:
+            if (strpos($aiText, 'IGNORE') !== false) {
+                // Do absolutely nothing. The AI stays silent and lets the human reply.
+            } else {
+                // The AI knows the answer and replies!
                 Message::create([
                     'sender_id' => $request->receiver_id, 
                     'receiver_id' => Auth::id(),          
                     'content' => "🤖 AI Assistant: " . $aiText,
-                    'is_read' => false,
-                ]);
-            } else {
-                Message::create([
-                    'sender_id' => $request->receiver_id,
-                    'receiver_id' => Auth::id(),
-                    'content' => "🤖 AI Assistant: I'm sorry, I don't have that information. I have escalated your question to the staff.",
                     'is_read' => false,
                 ]);
             }
@@ -192,7 +210,6 @@ class MessageController extends Controller
         // ==========================================
         // 3. AJAX RESPONSE TRIGGER
         // ==========================================
-        // If the frontend sends this via JS, return JSON so the page doesn't refresh instantly
         if ($request->wantsJson()) {
             return response()->json(['success' => true]);
         }
@@ -219,14 +236,11 @@ class MessageController extends Controller
             ->where(function ($query) use ($authUser) {
                 
                 if ($authUser->role === 'admin') {
-                    // Admins see everyone
                     $query->whereNotNull('user_id'); 
                 } 
                 elseif ($authUser->role === 'teacher') {
-                    // 1. Get ALL sections assigned to this teacher (covers regular and NKP)
                     $teacherSectionIds = \App\Models\Section::where('teacher_id', $authUser->user_id)->pluck('section_id')->toArray();
                     
-                    // 2. Teachers see: Admins, Other Teachers, and Parents in their sections
                     $query->whereIn('role', ['admin', 'teacher'])
                           ->orWhere(function($q) use ($teacherSectionIds) {
                               $q->where('role', 'parent')
@@ -234,11 +248,9 @@ class MessageController extends Controller
                           });
                 } 
                 elseif ($authUser->role === 'parent') {
-                    // 1. Find exactly who the teacher is for this parent's section
                     $mySection = \App\Models\Section::where('section_id', $authUser->section_id)->first();
                     $myTeacherId = $mySection ? $mySection->teacher_id : null;
 
-                    // 2. Parents see: Admins, and their specific Teacher
                     $query->where('role', 'admin');
                     
                     if ($myTeacherId) {
@@ -248,7 +260,6 @@ class MessageController extends Controller
             })
             ->get();
 
-        // FIX: Sort the list AFTER fetching from the database so it doesn't crash looking for a "name" column!
         return $users->sortBy(function($user) {
             return $user->name;
         })->values();
