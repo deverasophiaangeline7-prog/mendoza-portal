@@ -81,7 +81,7 @@
                                     @if(isset($user->type) && $user->type === 'announcement') 📌 
                                     @elseif(isset($user->type) && $user->type === 'advisory') 🎓 
                                     @endif    
-                                    <span class="truncate">{{ $user->name }}</span>
+                                    <span class="truncate">{{ $user->custom_name ?? $user->name }}</span>
                                     @if($hasUnread)
                                         <span class="bg-red-600 text-white rounded-full px-2 py-0.5 text-[10px] font-bold ml-1 flex-shrink-0">{{ $user->unreadMessagesCount() }}</span>
                                     @endif
@@ -112,7 +112,7 @@
                     <img src="https://ui-avatars.com/api/?name={{ urlencode($selectedUser->name) }}" class="w-10 h-10 rounded-full mr-3 border" alt="User">
                     <div>
                         <h3 class="font-bold text-gray-800 flex items-center gap-2">
-                            {{ $selectedUser->name }}
+                            {{ $selectedUser->custom_name ?? $selectedUser->name }}
                         </h3>
                         @if($selectedUser->isOnline())
                             <span class="text-xs text-green-500 flex items-center mt-0.5"><span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Active Now</span>
@@ -240,12 +240,61 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <div class="p-6">
-                <!-- Group Creation Form Placeholder -->
-                <p class="text-gray-500 text-center mb-4">Add members to your new group.</p>
-                <div class="flex justify-end mt-4">
-                    <button @click="createGroupModal = false" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-xl font-bold hover:bg-gray-300 transition">Close</button>
-                </div>
+            
+            <div class="p-6" x-data="{ groupName: '', groupSearch: '', selectedMembers: [] }">
+                <!-- NOTE: Update the action to point to your backend route when you build it -->
+                <form action="{{ route('messages.group.store') }}" method="POST">
+                    @csrf
+                    
+                    <!-- Group Name Input -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Group Name <span class="text-red-600">*</span></label>
+                        <input type="text" name="group_name" x-model="groupName" placeholder="E.g., Grade 1 Parents" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#6d0101] transition-colors" required>
+                    </div>
+
+                    <!-- Search Contacts -->
+                    <div class="relative mb-3">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
+                        <input type="text" x-model="groupSearch" placeholder="Search members to add..." class="w-full pl-11 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#6d0101] transition-colors text-sm">
+                    </div>
+
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Select Members</label>
+                    
+                    <!-- Scrollable Contact List -->
+                    <div class="max-h-52 overflow-y-auto border-2 border-gray-100 rounded-xl divide-y divide-gray-100 mb-6 shadow-inner bg-gray-50">
+                        @if(isset($contacts) && count($contacts) > 0)
+                            @foreach($contacts as $contact)
+                                <label class="flex items-center p-3 hover:bg-red-50 cursor-pointer transition-colors bg-white"
+                                       x-show="groupSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' . $contact->role)) }}'.includes(groupSearch.toLowerCase())">
+                                    
+                                    <input type="checkbox" name="members[]" value="{{ $contact->user_id }}" x-model="selectedMembers" class="rounded text-[#6d0101] border-gray-300 focus:ring-[#6d0101] w-4 h-4 mr-3">
+                                    
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($contact->name) }}" class="w-9 h-9 rounded-full mr-3 border" alt="User">
+                                    
+                                    <div>
+                                        <h4 class="font-bold text-gray-800 text-sm leading-tight">{{ $contact->name }}</h4>
+                                        <span class="text-[10px] font-black uppercase tracking-wider {{ $contact->role === 'admin' ? 'text-blue-600' : ($contact->role === 'teacher' ? 'text-amber-600' : 'text-gray-500') }}">
+                                            {{ $contact->role }}
+                                        </span>
+                                    </div>
+                                </label>
+                            @endforeach
+                        @else
+                            <div class="p-6 text-center text-gray-500 text-sm font-bold">No contacts available.</div>
+                        @endif
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex justify-end gap-3 border-t pt-4">
+                        <button type="button" @click="createGroupModal = false" class="bg-gray-200 text-gray-800 px-5 py-2.5 rounded-xl font-bold hover:bg-gray-300 transition">Cancel</button>
+                        
+                        <button type="submit" 
+                                :disabled="groupName.trim() === '' || selectedMembers.length === 0" 
+                                class="bg-[#6d0101] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-red-900 transition disabled:opacity-50 flex items-center gap-2 shadow-sm">
+                            <i class="fa-solid fa-users"></i> Create Group
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -269,7 +318,6 @@
                 const container = document.getElementById('message-container');
                 if (container) container.scrollTop = container.scrollHeight;
 
-                // Listen for human-to-human typing via Pusher
                 if (window.Echo && this.myId && this.selectedUserId) {
                     window.Echo.private(`chat.${this.myId}`)
                         .listenForWhisper('typing', (e) => {
@@ -301,13 +349,11 @@
                 const text = this.messageInput;
                 this.messageInput = ''; 
                 
-                // Remove the "No messages yet" text if it exists
                 const emptyState = document.getElementById('empty-chat-state');
                 if (emptyState) {
                     emptyState.remove();
                 }
                 
-                // Inject the user's message immediately
                 const chatMessages = document.getElementById('chat-messages');
                 chatMessages.insertAdjacentHTML('beforeend', `
                     <div class="text-right mb-4 w-full">
@@ -325,8 +371,9 @@
                 const aiKeywords = ['tuition', 'fee', 'password', 'schedule', 'term', 'when', 'how much'];
                 
                 const triggersAI = aiKeywords.some(keyword => lowercaseText.includes(keyword));
+                const isParent = '{{ strtolower(auth()->user()->role) }}' === 'parent';
 
-                if (triggersAI) {
+                if (triggersAI && isParent) {
                     this.isTyping = true;
                 } else {
                     this.isSending = true;
@@ -352,7 +399,6 @@
                     });
 
                     if (response.ok) {
-                        // Keep the dots bouncing smoothly until the page reloads completely
                         window.location.reload(); 
                     } else {
                         this.isTyping = false;

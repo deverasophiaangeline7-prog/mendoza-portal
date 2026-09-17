@@ -69,6 +69,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Chat Routes
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
+    // NOTE: group route must come BEFORE the {id} route so Laravel doesn't confuse 'group' for an ID!
+    Route::post('/messages/group', [MessageController::class, 'storeGroup'])->name('messages.group.store'); 
     Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
 
