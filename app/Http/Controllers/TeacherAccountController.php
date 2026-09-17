@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Teacher; 
 use App\Models\Section;
 use App\Models\AuditLog;
+use App\Models\SubjectAssignment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -16,11 +17,16 @@ class TeacherAccountController extends Controller
 {
     public function create()
     {
-        $sections = Section::whereNotIn('grade_level', [
-            'Nursery', 'Kindergarten', 'Preparatory', 
-            'NURSERY', 'KINDER', 'PREPARATORY'
-        ])
-        ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+        // Get all sections for the dropdowns
+        $sections = Section::orderByRaw("
+            CASE 
+                WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1 
+                WHEN grade_level IN ('Kindergarten', 'Kinder', 'KINDER') THEN 2 
+                WHEN grade_level IN ('Preparatory', 'Prep', 'PREPARATORY') THEN 3 
+                ELSE 4 
+            END ASC
+        ")
+        ->orderByRaw("CAST(REGEXP_REPLACE(grade_level, '[^0-9]', '') AS UNSIGNED) ASC")
         ->orderBy('section_name', 'asc')
         ->get(); 
         
@@ -30,15 +36,19 @@ class TeacherAccountController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'username'      => 'required|unique:users,username',
-            'password'      => 'required|confirmed',
-            'last_name'     => 'required',
-            'first_name'    => 'required',
-            'advisory'      => 'required',
-            'assigned_subject' => 'required_unless:advisory,NKP',
-            'gender'        => 'required',
-            'birthdate'     => 'required|date',
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'username'         => 'required|unique:users,username',
+            'password'         => 'required|confirmed',
+            'last_name'        => 'required',
+            'first_name'       => 'required',
+            'advisory'         => 'required',
+            'gender'           => 'required',
+            'birthdate'        => 'required|date',
+            'profile_photo'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            
+            // Validate the dynamic assignments array
+            'assignments'              => 'nullable|array',
+            'assignments.*.section_id' => 'required_with:assignments',
+            'assignments.*.subject'    => 'required_with:assignments',
         ]);
 
         $path = null;
@@ -56,18 +66,36 @@ class TeacherAccountController extends Controller
             'profile_photo_path' => $path,
         ]);
 
+        // Build a combined string of subjects for the Teacher table display
+        $assignedSubjectString = 'Class Adviser';
+        if (!empty($request->assignments)) {
+            $subjects = array_unique(array_column($request->assignments, 'subject'));
+            $assignedSubjectString = implode(', ', $subjects);
+        }
+
         $teacher = Teacher::create([
-            'user_id'     => $user->user_id, 
-            'first_name'  => $request->first_name,
-            'middle_name' => $request->middle_name,
-            'last_name'   => $request->last_name,
-            'gender'      => $request->gender,
-            'birthdate'   => $request->birthdate,
-            'advisory'    => $request->advisory === 'NKP' ? '1,2,3' : $request->advisory,
-            'assigned_subject' => $request->assigned_subject,
+            'user_id'          => $user->user_id, 
+            'first_name'       => $request->first_name,
+            'middle_name'      => $request->middle_name,
+            'last_name'        => $request->last_name,
+            'gender'           => $request->gender,
+            'birthdate'        => $request->birthdate,
+            'advisory'         => $request->advisory === 'NKP' ? '1,2,3' : $request->advisory,
+            'assigned_subject' => $assignedSubjectString,
         ]);
 
-        // DYNAMIC NKP ASSIGNMENT (No more hardcoded IDs 1, 2, 3)
+        // Save strict Subject Assignments
+        if (!empty($request->assignments)) {
+            foreach ($request->assignments as $assignment) {
+                SubjectAssignment::create([
+                    'teacher_id'   => $user->user_id,
+                    'section_id'   => $assignment['section_id'],
+                    'subject_name' => $assignment['subject'],
+                ]);
+            }
+        }
+
+        // DYNAMIC NKP ADVISORY ASSIGNMENT
         if ($request->advisory === 'NKP') {
             $nkpSections = Section::whereIn(DB::raw('UPPER(grade_level)'), ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY', 'PREP', 'NKP'])->get();
             foreach ($nkpSections as $section) {
@@ -75,10 +103,12 @@ class TeacherAccountController extends Controller
                 $section->save();
             }
         } else {
-            $section = Section::where('section_id', $request->advisory)->first();
-            if ($section) {
-                $section->teacher_id = $user->user_id;
-                $section->save();
+            if (is_numeric($request->advisory)) {
+                $section = Section::where('section_id', $request->advisory)->first();
+                if ($section) {
+                    $section->teacher_id = $user->user_id;
+                    $section->save();
+                }
             }
         }
 
@@ -107,14 +137,13 @@ class TeacherAccountController extends Controller
         $user->status = 'archived'; 
         $user->save();
         
-        // 1. Clear the teacher's advisory so it becomes available for others
         $teacher = Teacher::where('user_id', $id)->first();
         if ($teacher) {
             $teacher->update(['advisory' => null]);
         }
 
-        // 2. Unlink sections from this teacher so they can be reassigned
         Section::where('teacher_id', $id)->update(['teacher_id' => null]);
+        SubjectAssignment::where('teacher_id', $id)->delete();
 
         AuditLog::create([
             'user_id'     => Auth::id(), 
@@ -153,6 +182,7 @@ class TeacherAccountController extends Controller
     public function destroy($id)
     {
         $user = User::findOrFail($id);
+        SubjectAssignment::where('teacher_id', $id)->delete();
         $user->delete();
         
         AuditLog::create([
@@ -166,34 +196,51 @@ class TeacherAccountController extends Controller
 
     public function update(Request $request, $id)
     {
-        // REMOVED: gender and birthdate constraints since the modal does not send them
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name'  => 'required|string|max:255',
             'advisory'   => 'required',
-            'assigned_subject' => 'required_unless:advisory,NKP',
+            'assignments'              => 'nullable|array',
+            'assignments.*.section_id' => 'required_with:assignments',
+            'assignments.*.subject'    => 'required_with:assignments',
         ]);
 
         $targetAdvisory = ($request->advisory === 'NKP') ? '1,2,3' : $request->advisory;
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($request, $id, $targetAdvisory) {
             
-            // Unlink the previous teacher who held this advisory
-            $otherTeacher = \App\Models\Teacher::where('advisory', $targetAdvisory)
-                ->where('user_id', '!=', $id)
-                ->first();
+            // Swap advisers
+            if (is_numeric($targetAdvisory)) {
+                $otherTeacher = \App\Models\Teacher::where('advisory', $targetAdvisory)
+                    ->where('user_id', '!=', $id)
+                    ->first();
 
-            if ($otherTeacher) {
-                $otherTeacher->update(['advisory' => null]);
-                
-                \App\Models\Section::where('teacher_id', $otherTeacher->user_id)
-                    ->update(['teacher_id' => null]);
+                if ($otherTeacher) {
+                    $otherTeacher->update(['advisory' => null]);
+                    \App\Models\Section::where('teacher_id', $otherTeacher->user_id)->update(['teacher_id' => null]);
+                }
             }
 
-            // Unlink current teacher from their old sections
             \App\Models\Section::where('teacher_id', $id)->update(['teacher_id' => null]);
 
-            // DYNAMIC NKP ASSIGNMENT
+            // Re-sync assignments
+            SubjectAssignment::where('teacher_id', $id)->delete();
+            
+            $assignedSubjectString = 'Class Adviser';
+            if (!empty($request->assignments)) {
+                $subjects = array_unique(array_column($request->assignments, 'subject'));
+                $assignedSubjectString = implode(', ', $subjects);
+
+                foreach ($request->assignments as $assignment) {
+                    SubjectAssignment::create([
+                        'teacher_id'   => $id,
+                        'section_id'   => $assignment['section_id'],
+                        'subject_name' => $assignment['subject'],
+                    ]);
+                }
+            }
+
+            // Advisory linking
             if ($request->advisory === 'NKP') {
                 $nkpSections = \App\Models\Section::whereIn(\Illuminate\Support\Facades\DB::raw('UPPER(grade_level)'), ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY', 'PREP', 'NKP'])->get();
                 foreach ($nkpSections as $section) {
@@ -201,29 +248,31 @@ class TeacherAccountController extends Controller
                     $section->save();
                 }
             } else {
-                $section = \App\Models\Section::where('section_id', $request->advisory)->first();
-                if ($section) {
-                    $section->teacher_id = $id;
-                    $section->save();
+                if (is_numeric($targetAdvisory)) {
+                    $section = \App\Models\Section::where('section_id', $targetAdvisory)->first();
+                    if ($section) {
+                        $section->teacher_id = $id;
+                        $section->save();
+                    }
                 }
             }
 
-            // Update Teacher Profile
+            // Update profile
             $teacher = \App\Models\Teacher::where('user_id', $id)->first();
             if ($teacher) {
                 $teacher->update([
-                    'first_name' => $request->first_name,
-                    'last_name'  => $request->last_name,
-                    'advisory'   => $targetAdvisory,
-                    'assigned_subject' => $request->assigned_subject,
+                    'first_name'       => $request->first_name,
+                    'last_name'        => $request->last_name,
+                    'advisory'         => $targetAdvisory,
+                    'assigned_subject' => $assignedSubjectString,
                 ]);
             }
         });
 
         AuditLog::create([
             'user_id'     => \Illuminate\Support\Facades\Auth::id(),
-            'action'      => 'Teacher Swapped',
-            'description' => \Illuminate\Support\Facades\Auth::user()->username . " reassigned Teacher ID {$id} to Advisory {$targetAdvisory}."
+            'action'      => 'Teacher Updated',
+            'description' => \Illuminate\Support\Facades\Auth::user()->username . " updated Teacher ID {$id} profile."
         ]);
 
         return redirect()->back()->with('success', 'Teacher reassigned successfully!');

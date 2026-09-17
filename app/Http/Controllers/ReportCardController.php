@@ -52,11 +52,31 @@ class ReportCardController extends Controller
         }
 
         if ($user->role === 'teacher') {
-            $sections = Section::where('teacher_id', $user->user_id)
-                ->orderByRaw($orderLogic)
-                ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
-                ->orderBy('section_name', 'asc')
-                ->get();
+            $teacher = \App\Models\Teacher::where('user_id', $user->user_id)->first();
+            
+            // If they are a Subject Teacher (e.g., 'GMRC') and NOT an Adviser ('ALL')
+            if ($teacher && $teacher->assigned_subject !== 'ALL' && !empty($teacher->assigned_subject)) {
+                
+                // STRICT OPTION B: Pull ONLY the sections they are explicitly assigned to teach
+                $assignedSectionIds = \App\Models\SubjectAssignment::where('teacher_id', $user->user_id)
+                    ->pluck('section_id')
+                    ->toArray();
+
+                $sections = Section::whereIn('section_id', $assignedSectionIds)
+                    ->orderByRaw($orderLogic)
+                    ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+                    ->orderBy('section_name', 'asc')
+                    ->get();
+
+            } else {
+                
+                // ADVISERS / NKP TEACHERS: Pull the section where they are the official adviser
+                $sections = Section::where('teacher_id', $user->user_id)
+                    ->orderByRaw($orderLogic)
+                    ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+                    ->orderBy('section_name', 'asc')
+                    ->get();
+            }
             
             if ($sections->count() > 1) {
                 return view('report-card-index', compact('sections'));
@@ -65,9 +85,11 @@ class ReportCardController extends Controller
             if ($sections->count() === 1) {
                 return redirect()->route('reportcard.show', $sections->first()->section_id);
             }
+            
+            return abort(403, 'You do not have any sections assigned to you.');
         }
 
-        return abort(403, 'You do not have any sections assigned.');
+        return abort(403, 'Unauthorized access.');
     }
 
     /**

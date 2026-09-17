@@ -66,9 +66,8 @@ class MessageController extends Controller
         // ==========================================
         $apiKey = env('GEMINI_API_KEY');
         
-        if ($apiKey) {
+        if ($apiKey && Auth::user()->role === 'parent') {
             $receiver = User::find($request->receiver_id);
-            $receiverRole = $receiver ? ucfirst($receiver->role) : 'Staff';
 
             $upcomingEvents = SchoolCalendar::orderBy('start_date', 'asc')->limit(10)->get();
             
