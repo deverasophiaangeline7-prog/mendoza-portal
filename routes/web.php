@@ -14,14 +14,12 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ParentAttendanceController;
 use App\Http\Controllers\ReportCardController;
 use App\Http\Controllers\StudentCalendarController;
-use App\Http\Controllers\ParentController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\ClassroomAnnouncementController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\SectionController;
-use App\Http\Controllers\ChatbotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -231,6 +229,6 @@ Route::middleware(['auth', 'role:parent'])->group(function () {
     Route::get('/student-view', [ParentAccountController::class, 'showStudentProfile'])->name('student.view');
 });
 
-Route::post('/chatbot/send', [ChatbotController::class, 'handleChat']);
+
 
 require __DIR__.'/auth.php';
