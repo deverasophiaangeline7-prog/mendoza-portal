@@ -4,17 +4,14 @@
 
 @section('content')
 <style>
-    /* Input Styles */
     .form-input-pill { border: 1px solid #ccc; height: 100%; width: 100%; text-align: center; font-weight: 900; font-size: 1.1rem; outline: none; background: transparent; }
     .form-select-pill { border: 1px solid #ccc; height: 100%; width: 100%; text-align: center; font-weight: bold; font-size: 0.9rem; outline: none; background: transparent; cursor: pointer; }
     .form-input-pill:focus, .form-select-pill:focus { background: white; border-color: #3b82f6; }
     
-    /* Hide Up/Down Arrows on Number Inputs */
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
 
-    /* DepEd Table Styling */
     .deped-table th, .deped-table td { border: 1px solid black; padding: 0.25rem 0.5rem; }
     .deped-table th { text-align: center; font-weight: bold; }
     .deped-table td.input-cell { padding: 0; height: 35px; }
@@ -45,7 +42,6 @@
         </div>
 
         <div class="flex flex-col space-y-12 mb-12">
-            <!-- Learning Progress and Achievement Table (3 Terms) -->
             <div>
                 <h4 class="text-center font-bold text-lg mb-2 uppercase">Report on Learning Progress and Achievement</h4>
                 <table class="w-full text-sm deped-table bg-white">
@@ -63,24 +59,22 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- DYNAMIC SUBJECT LOOP -->
                         @foreach($subjects as $subject)
                         <tr>
                             <td class="font-bold">{{ $subject }}</td>
                             @for($t = 1; $t <= 3; $t++)
                             <td class="input-cell text-center">
-                                <input x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" type="number" min="0" max="100" step="0.01" 
+                                <input x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}') && canGradeSubject('{{ $subject }}')" type="number" min="0" max="100" step="0.01" 
                                        oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" 
                                        x-model="grades['{{ $subject }}'].term{{ $t }}" @input="calculateGrades()" 
                                        class="form-input-pill">
-                                <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" x-text="grades['{{ $subject }}'].term{{ $t }}"></span>
+                                <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}') || !canGradeSubject('{{ $subject }}')" x-text="grades['{{ $subject }}'].term{{ $t }}"></span>
                             </td>
                             @endfor
                             <td class="text-center font-bold" x-text="grades['{{ $subject }}'].final_grade"></td>
                             <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
                         </tr>
                         @endforeach
-                        <!-- END DYNAMIC SUBJECT LOOP -->
 
                         <tr>
                             <td colspan="4" class="text-right font-bold pr-4">General Average</td>
@@ -91,7 +85,6 @@
                 </table>
             </div>
 
-            <!-- Observed Values Table (3 Terms) -->
             <div>
                 <h4 class="text-center font-bold text-lg mb-2 uppercase">Report on Learner's Observed Values</h4>
                 <table class="w-full text-xs deped-table bg-white">
@@ -145,7 +138,6 @@
         </div>
     </div>
 
-    <!-- Centered Alert Modal -->
     <div x-show="showErrorModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition.opacity>
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showErrorModal = false"></div>
         <div class="relative bg-red-500 border-[4px] border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-sm w-full flex items-center space-x-4">
@@ -170,6 +162,13 @@
             grades: {}, 
             generalAverage: '', finalStatus: '', 
             behaviors: {},
+            
+            assignedString: '{{ \App\Models\Teacher::where("user_id", auth()->id())->value("assigned_subject") ?? "NONE" }}',
+            
+            canGradeSubject(subj) {
+                let assigned = this.assignedString.toUpperCase();
+                return assigned.includes('ALL') || assigned.includes(subj.toUpperCase());
+            },
 
             termDates: {
                 term1: { start: '{{ $activeYear ? $activeYear->term1_start : "" }}', end: '{{ $activeYear ? $activeYear->term1_end : "" }}' },
@@ -218,15 +217,10 @@
 
             isTermUnlocked(termNumber) {
                 const term = this.termDates['term' + termNumber];
-                
-                // 1. Lock if no dates are set in the database
                 if (!term.start || !term.end) return false; 
                 
-                // 2. Adjust for timezone offset to strictly get local YYYY-MM-DD
                 const tzOffset = (new Date()).getTimezoneOffset() * 60000;
                 const today = (new Date(Date.now() - tzOffset)).toISOString().split("T")[0];
-                
-                // 3. Strip any time data Laravel might append (e.g., "2026-09-15 00:00:00")
                 const startDate = term.start.split(' ')[0];
                 const endDate = term.end.split(' ')[0];
                 
@@ -255,7 +249,13 @@
 
             async saveGrades() {
                 let tKey = 'term' + this.activeTerm;
-                this.missingSubjects = this.subjects.filter(s => String(this.grades[s][tKey] || '').trim() === '');
+                
+                this.missingSubjects = this.subjects.filter(s => {
+                    let canGrade = this.assignedString.toUpperCase().includes('ALL') || this.assignedString.toUpperCase().includes(s.toUpperCase());
+                    let isEmpty = String(this.grades[s][tKey] || '').trim() === '';
+                    return canGrade && isEmpty; 
+                });
+
                 if (this.missingSubjects.length > 0) {
                     this.showErrorModal = true;
                     setTimeout(() => { this.showErrorModal = false; }, 3000);

@@ -47,11 +47,10 @@
         <form action="{{ route('batch.import', $section_id) }}" method="POST" enctype="multipart/form-data" class="mb-6 flex flex-wrap items-center justify-end gap-3">
             @csrf
             
-           <select name="subject" required class="border-[3px] border-black rounded-xl px-3 py-2 font-black text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-    <option value="" {{ $assignedSubj !== 'ALL' ? 'disabled' : '' }}>SELECT SUBJECT</option>
+          <select name="subject" required class="border-[3px] border-black rounded-xl px-3 py-2 font-black text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+    <option value="" {{ stripos($assignedSubj, 'ALL') === false ? 'disabled' : '' }}>SELECT SUBJECT</option>
     
     @php
-        // Dynamically build the dropdown list based on the section name
         preg_match('/\d+/', $sectionName, $matches);
         $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
 
@@ -62,15 +61,19 @@
         } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
             $subjectList = ['Filipino', 'English', 'Mathematics', 'Science', 'Araling Panlipunan', 'GMRC', 'TLE', 'MAPEH'];
         } else {
-            $subjectList = []; // Fallback
+            $subjectList = [];
         }
     @endphp
 
     @foreach($subjectList as $subj)
+        @php
+            $hasAccess = stripos($assignedSubj, 'ALL') !== false || stripos($assignedSubj, $subj) !== false;
+        @endphp
+        
         <option value="{{ $subj }}" 
-            {{ ($assignedSubj !== 'ALL' && $assignedSubj !== $subj) ? 'disabled' : '' }}
-            class="{{ ($assignedSubj !== 'ALL' && $assignedSubj !== $subj) ? 'text-gray-300 bg-gray-100' : 'text-black font-bold' }}"
-            {{ $assignedSubj === $subj ? 'selected' : '' }}>
+            {{ !$hasAccess ? 'disabled' : '' }}
+            class="{{ !$hasAccess ? 'text-gray-300 bg-gray-100' : 'text-black font-bold' }}"
+            {{ stripos($assignedSubj, $subj) !== false && stripos($assignedSubj, 'ALL') === false ? 'selected' : '' }}>
             {{ $subj }}
         </option>
     @endforeach
