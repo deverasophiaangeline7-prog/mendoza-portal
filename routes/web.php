@@ -202,7 +202,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::post('/admin/students/add', [App\Http\Controllers\Admin\StudentController::class, 'storeStudent'])->name('admin.students.store');
     Route::delete('/admin/students/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroyStudent'])->name('admin.students.destroy');
     
-    Route::post('/admin/finalize-year', [StudentController::class, 'finalizeSchoolYear'])->name('admin.finalize_year');
+    // 👇 THIS IS THE CRITICAL LINE THAT WAS UPDATED
+    Route::post('/admin/finalize-year', [UserController::class, 'finalize'])->name('admin.finalize_year');
+    
     Route::put('/admin/reset-user-password', [App\Http\Controllers\Admin\UserController::class, 'resetUserPassword'])->name('admin.password.reset');
 
     // Section Management Routes
@@ -232,4 +234,3 @@ Route::middleware(['auth', 'role:parent'])->group(function () {
 Route::post('/chatbot/send', [ChatbotController::class, 'handleChat']);
 
 require __DIR__.'/auth.php';
-

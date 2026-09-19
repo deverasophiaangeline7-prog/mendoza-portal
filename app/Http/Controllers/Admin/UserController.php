@@ -114,37 +114,88 @@ class UserController extends Controller
             return back()->withErrors(['admin_password' => 'Incorrect Admin Password. Finalization aborted.']);
         }
 
+        $currentYear = \App\Models\SchoolYear::where('status', 'active')->first();
+        if (!$currentYear) return back()->with('error', 'No active school year found.');
+
+        // 2. INITIAL CHECK: Ensure the year isn't completely empty
+        $studentsWithAnyGrades = \App\Models\Student::whereNotNull('section_id')->has('grades')->count();
+        $studentsWithAnyEvals = DB::table('nkp_evaluations')->count();
+
+        if ($studentsWithAnyGrades === 0 && $studentsWithAnyEvals === 0) {
+            return back()->with('error', 'FINALIZATION BLOCKED: This school year has no grades or evaluations recorded yet! You cannot close a school year that just started.');
+        }
+
+        // 3. STRICT CHECK: Missing Grades & Evaluations across all 3 Terms
+        $elementaryLevels = ['1', 'GRADE 1', '2', 'GRADE 2', '3', 'GRADE 3', '4', 'GRADE 4', '5', 'GRADE 5', '6', 'GRADE 6'];
+        $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
+
+        $activeStudents = \App\Models\Student::whereNotNull('section_id')
+            ->where('section_id', '!=', '')
+            ->with('grades')
+            ->get();
+
+        $incompleteElementaryCount = 0;
+        $incompleteNkpCount = 0;
+
+        foreach ($activeStudents as $student) {
+            $grade = strtoupper(trim($student->grade_level));
+            
+            // --- ELEMENTARY CHECK ---
+            if (in_array($grade, $elementaryLevels)) {
+                $expectedSubjects = DB::table('subject_assignments')
+                    ->where('section_id', $student->section_id)
+                    ->count();
+
+                $completedSubjects = $student->grades->filter(function ($gradeRecord) {
+                    return !is_null($gradeRecord->term1) && 
+                           !is_null($gradeRecord->term2) && 
+                           !is_null($gradeRecord->term3);
+                })->count();
+
+                if ($expectedSubjects === 0 || $completedSubjects < $expectedSubjects) {
+                    $incompleteElementaryCount++;
+                }
+            }
+
+            // --- NKP CHECK ---
+            if (in_array($grade, $nkpLevels)) {
+                $evaluation = DB::table('nkp_evaluations')
+                    ->where('student_id', $student->student_id ?? $student->id)
+                    ->first();
+
+                if (!$evaluation || is_null($evaluation->term1) || is_null($evaluation->term2) || is_null($evaluation->term3)) {
+                    $incompleteNkpCount++;
+                }
+            }
+        }
+
+        // 4. BLOCK FINALIZATION IF ANYTHING IS MISSING
+        if ($incompleteElementaryCount > 0 || $incompleteNkpCount > 0) {
+            $errorMessage = "FINALIZATION BLOCKED: ";
+            if ($incompleteElementaryCount > 0) $errorMessage .= "{$incompleteElementaryCount} Elementary student(s) missing grades for all 3 terms. ";
+            if ($incompleteNkpCount > 0) $errorMessage .= "{$incompleteNkpCount} NKP student(s) missing evaluations for all 3 terms. ";
+            return back()->with('error', trim($errorMessage) . " Please complete these records before closing the year.");
+        }
+
         DB::beginTransaction();
-
         try {
-            // --- 2. HANDLE THE SCHOOL YEAR TRANSITION ---
-            $currentYear = \App\Models\SchoolYear::where('status', 'active')->first();
-            if (!$currentYear) throw new \Exception("No active school year found.");
-
+            // 5. HANDLE THE SCHOOL YEAR TRANSITION
             $years = explode('-', $currentYear->school_year);
             $nextYearString = ((int)$years[0] + 1) . '-' . ((int)$years[1] + 1);
 
             $currentYear->update(['status' => 'archived']);
-            \App\Models\SchoolYear::create([
-                'school_year' => $nextYearString,
-                'status' => 'active'
-            ]);
+            \App\Models\SchoolYear::create(['school_year' => $nextYearString, 'status' => 'active']);
 
-            // --- 3. THE "MIXED" WIPE (Crucial Step!) ---
+            // 6. THE "MIXED" WIPE (Wipes temporary data, preserves grades)
             \App\Models\AuditLog::query()->delete(); 
             \App\Models\Attendance::query()->delete(); 
             \App\Models\SchoolCalendar::query()->delete();
-            
-            // Notice: We are NOT truncating Grades, BehaviorReports, or NkpEvaluations!
-            // They stay in the database safely linked to their old school_year_id.
+            DB::table('subject_assignments')->truncate();
 
-            // --- 4. PROMOTE STUDENTS ---
-            // Changed from ::all() to ::with('section')->get() so we can fetch the section names
+            // 7. PROMOTE STUDENTS & RESET SECTIONS
             $students = \App\Models\Student::with('section')->get();
 
             foreach ($students as $student) {
-                
-                // 1. TAKE A SNAPSHOT OF THEIR SECTION BEFORE WIPING IT
                 if ($student->section) {
                     \App\Models\StudentHistory::create([
                         'student_id' => $student->student_id,
@@ -153,7 +204,6 @@ class UserController extends Controller
                     ]);
                 }
 
-                // 2. THE PROMOTION SHIFT
                 if (in_array($student->promotion_status, ['promoted', 'pending']) && $student->next_grade_level) {
                     $student->grade_level = $student->next_grade_level;
                 } elseif ($student->grade_level == '6' && in_array($student->promotion_status, ['promoted', 'pending'])) {
@@ -161,35 +211,27 @@ class UserController extends Controller
                     $student->user->save();
                 }
 
-                // 3. THE AUTO-ASSIGN LOGIC (Replaces the 'null' wipe)
                 if ($student->user->status !== 'archived') {
-                    // Find the first available section for their new grade level
                     $newSection = \App\Models\Section::where('grade_level', $student->grade_level)->first();
-                    
-                    // Assign them to it! (If no section exists yet, it safely falls back to null)
-                    // Make sure 'id' matches the primary key of your sections table (e.g., 'id' or 'section_id')
                     $student->section_id = $newSection ? $newSection->section_id : null; 
                 } else {
-                    $student->section_id = null; // Graduates don't need a room
+                    $student->section_id = null; 
                 }
 
-                // 4. RESET STATUSES FOR THE NEW YEAR
                 $student->promotion_status = 'none';
                 $student->next_grade_level = null;
                 $student->save();
             }
 
-            // --- 5. LOG IT ---
+            // 8. LOG & COMMIT
             \App\Models\AuditLog::create([
                 'user_id' => Auth::id(),
                 'action' => 'Year Finalized',
-                'description' => Auth::user()->username . " finalized {$currentYear->school_year}. Attendance wiped, Grades preserved."
+                'description' => Auth::user()->username . " finalized {$currentYear->school_year}. All 3 terms verified, sections and subjects reset."
             ]);
 
-            DB::commit();
-
-            return redirect()->route('account.management')
-                ->with('success', "Data handled successfully. Welcome to SY {$nextYearString}!");
+            DB::commit(); 
+            return redirect()->route('account.management')->with('success', "Data handled successfully. Welcome to SY {$nextYearString}!");
 
         } catch (\Exception $e) {
             DB::rollBack();
