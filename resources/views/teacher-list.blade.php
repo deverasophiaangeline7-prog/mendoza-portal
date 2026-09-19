@@ -8,9 +8,10 @@
     archiveModal: false, archiveUrl: '', 
     editModal: false, editId: '', editFirstName: '', editLastName: '', editAdvisory: '',
     
-    /* NEW SUBJECT LOGIC FOR EDIT MODAL */
-    editSubject: '', showEditSubject: false, editSubjectsList: [],
+    /* DYNAMIC ARRAY LOGIC FOR MULTIPLE SUBJECTS & GRADES */
+    editAssignments: [],
     subjectMap: {
+        'NKP': [],
         '1': ['ALL (Class Adviser)', 'GMRC', 'Language', 'Makabansa', 'Mathematics', 'Reading and Literacy'],
         '2': ['ALL (Class Adviser)', 'English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
         '3': ['ALL (Class Adviser)', 'English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
@@ -18,21 +19,50 @@
         '5': ['ALL (Class Adviser)', 'Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE'],
         '6': ['ALL (Class Adviser)', 'Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE']
     },
-    updateEditSubjects(selectEl) {
-        if (!selectEl || this.editAdvisory === 'NKP' || this.editAdvisory === '') {
-            this.showEditSubject = false;
-            this.editSubjectsList = [];
-            return;
+    
+    openEditModal(id, fname, lname, advisory, assignmentsJson) {
+        this.editId = id;
+        this.editFirstName = fname;
+        this.editLastName = lname;
+        this.editAdvisory = advisory;
+        
+        let parsed = JSON.parse(assignmentsJson);
+        
+        // Map existing backend data into the dynamic array
+        this.editAssignments = parsed.map(a => {
+            let grade = (['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3'].includes(a.grade)) ? 'NKP' : a.grade;
+            let sectionId = (grade === 'NKP') ? 'NKP' : a.section_id;
+            return {
+                section_id: sectionId,
+                grade: grade,
+                subject: a.subject || '',
+                availableSubjects: this.subjectMap[grade] || []
+            };
+        });
+
+        // Ensure there's always at least one empty row if no data exists
+        if(this.editAssignments.length === 0) {
+            this.addAssignmentRow();
         }
+        
+        this.editModal = true;
+    },
+    
+    addAssignmentRow() {
+        this.editAssignments.push({ section_id: '', grade: '', subject: '', availableSubjects: [] });
+    },
+    
+    removeAssignmentRow(index) {
+        this.editAssignments.splice(index, 1);
+    },
+    
+    updateRowSubjects(index, selectEl) {
         let selectedOption = selectEl.options[selectEl.selectedIndex];
         let grade = selectedOption.getAttribute('data-grade');
         
-        if (this.subjectMap[grade]) {
-            this.editSubjectsList = this.subjectMap[grade];
-            this.showEditSubject = true;
-        } else {
-            this.showEditSubject = false;
-        }
+        this.editAssignments[index].grade = grade;
+        this.editAssignments[index].subject = ''; 
+        this.editAssignments[index].availableSubjects = this.subjectMap[grade] || [];
     }
 }">
     
@@ -63,7 +93,7 @@
                         <tr class="bg-gray-200 border-b-2 border-black">
                             <th class="px-4 py-4 border-r-2 border-black text-center font-bold text-xl w-24">No.</th>
                             <th class="px-6 py-4 border-r-2 border-black font-bold text-xl">Name</th>
-                            <th class="px-6 py-4 font-bold text-xl">Advisory Class</th>
+                            <th class="px-6 py-4 font-bold text-xl">Advisory Class & Subjects</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y-2 divide-black">
@@ -72,32 +102,81 @@
                             <td class="px-4 py-4 border-r-2 border-black text-center font-bold text-lg text-gray-700">{{ $index + 1 }}</td>
                             <td class="px-6 py-4 border-r-2 border-black font-bold text-lg uppercase">
                                 {{ $teacherUser->teacher?->first_name ?? 'NO PROFILE' }} {{ $teacherUser->teacher?->last_name ?? '' }}
-                                @if($teacherUser->teacher?->assigned_subject)
-                                    <div class="text-xs text-blue-600 font-bold mt-1 tracking-wider"><i class="fa-solid fa-book"></i> {{ $teacherUser->teacher->assigned_subject }}</div>
-                                @endif
                             </td>
-                            <td class="px-6 py-4 flex justify-between items-center">
-                                <span class="font-bold text-lg">
-                                @if(in_array($teacherUser->teacher?->advisory, ['1,2,3', 'NKP']) || in_array($teacherUser->teacher?->section?->grade_level, ['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3']))
-                                    NKP
-                                @elseif($teacherUser->teacher?->section)
-                                    {{ $teacherUser->teacher->section->grade_level }} - {{ $teacherUser->teacher->section->section_name }}
-                                @else
-                                    No Advisory
-                                @endif
-                                </span>
-                                <div class="flex gap-2 items-center">
+                            <td class="px-6 py-4 flex justify-between items-center gap-4">
+                                
+                                <div class="flex flex-col gap-2">
                                     
-                                    <!-- WIRED UP EDIT BUTTON -->
+                                    <!-- Main Advisory Display -->
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-users text-amber-700"></i>
+                                        <span class="font-black text-lg">
+                                        @if(in_array($teacherUser->teacher?->advisory, ['1,2,3', 'NKP']) || in_array($teacherUser->teacher?->section?->grade_level, ['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3']))
+                                            NKP
+                                        @elseif($teacherUser->teacher?->section)
+                                            {{ $teacherUser->teacher->section->grade_level }} - {{ $teacherUser->teacher->section->section_name }}
+                                        @else
+                                            No Advisory
+                                        @endif
+                                        </span>
+                                    </div>
+
+                                    @php
+                                        $actualAssignments = \App\Models\SubjectAssignment::where('teacher_id', $teacherUser->user_id)->get();
+                                        $tempAssignments = [];
+                                        
+                                        foreach($actualAssignments as $sa) {
+                                            $grade = 'NKP'; 
+                                            $section = \App\Models\Section::find($sa->section_id);
+                                            
+                                            if($section && !in_array(strtoupper($section->grade_level), ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY', 'PREP', 'NKP', '1,2,3'])) {
+                                                $grade = $section->grade_level;
+                                            }
+
+                                            $tempAssignments[] = [
+                                                'section_id' => $sa->section_id,
+                                                'grade' => $grade,
+                                                'subject' => $sa->subject_name
+                                            ];
+                                        }
+                                        
+                                        $rawAdvisory = in_array($teacherUser->teacher?->advisory, ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep']) || in_array($teacherUser->teacher?->section?->grade_level, ['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3']) ? 'NKP' : $teacherUser->teacher?->advisory;
+                                    @endphp
+
+                                    <!-- Subjects Display -->
+                                    @if($actualAssignments->count() > 0)
+                                        <div class="flex flex-wrap gap-2">
+                                            @foreach($actualAssignments as $sa)
+                                                @php
+                                                    $sec = \App\Models\Section::find($sa->section_id);
+                                                    $gradeDisplay = $sec && !in_array(strtoupper($sec->grade_level), ['NURSERY', 'KINDER', 'PREP', 'NKP']) 
+                                                        ? 'G' . $sec->grade_level 
+                                                        : 'NKP';
+                                                @endphp
+                                                <span class="text-xs text-blue-800 font-bold tracking-wider bg-blue-100 px-2 py-1 rounded border border-blue-600 flex items-center gap-1 shadow-sm">
+                                                    <span class="bg-blue-600 text-white px-1.5 py-0.5 rounded text-[10px]">{{ $gradeDisplay }}</span>
+                                                    {{ $sa->subject_name }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @elseif($teacherUser->teacher?->assigned_subject)
+                                        <!-- Fallback for older data -->
+                                        <span class="text-sm text-blue-600 font-bold tracking-wider bg-blue-100 px-2 py-0.5 rounded border border-blue-600 w-max">
+                                            <i class="fa-solid fa-book mr-1"></i> {{ $teacherUser->teacher->assigned_subject }}
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <div class="flex gap-2 items-center shrink-0">
                                     <button type="button" 
-                                            @click="editModal = true; 
-                                                    editId = '{{ $teacherUser->user_id }}'; 
-                                                    editFirstName = '{{ addslashes($teacherUser->teacher?->first_name) }}'; 
-                                                    editLastName = '{{ addslashes($teacherUser->teacher?->last_name) }}'; 
-                                                    editAdvisory = '{{ in_array($teacherUser->teacher?->advisory, ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep']) || in_array($teacherUser->teacher?->section?->grade_level, ['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3']) ? 'NKP' : $teacherUser->teacher?->advisory }}';
-                                                    editSubject = '{{ addslashes($teacherUser->teacher?->assigned_subject) }}';
-                                                    setTimeout(() => { updateEditSubjects($refs.advisorySelect) }, 50);"
-                                            class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
+                                            @click="openEditModal(
+                                                '{{ $teacherUser->user_id }}', 
+                                                '{{ addslashes($teacherUser->teacher?->first_name) }}', 
+                                                '{{ addslashes($teacherUser->teacher?->last_name) }}',
+                                                '{{ $rawAdvisory }}',
+                                                '{{ json_encode($tempAssignments) }}'
+                                            )"
+                                        class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
                                         Edit
                                     </button>
                                     
@@ -118,55 +197,104 @@
 
     <!-- TEACHER EDIT MODAL -->
     <div x-show="editModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
-        <div @click.away="editModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-lg w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
-            <div class="flex justify-between items-start mb-6">
+        <div @click.away="editModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-2xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-start mb-6 shrink-0">
                 <h2 class="text-3xl font-black uppercase text-black">Edit Teacher</h2>
-                <button @click="editModal = false" class="text-gray-400 hover:text-red-600 text-3xl"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" @click="editModal = false" class="text-gray-400 hover:text-red-600 text-3xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
-            <form :action="'/account/teacher/' + editId + '/edit'" method="POST">
+            <form :action="'/account/teacher/' + editId + '/edit'" method="POST" class="flex flex-col overflow-hidden">
                 @csrf
                 @method('PUT')
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">First Name</label>
-                        <input type="text" name="first_name" x-model="editFirstName" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400">
+                
+                <div class="overflow-y-auto pr-2 pb-4 space-y-6">
+                    <!-- Names -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">First Name</label>
+                            <input type="text" name="first_name" x-model="editFirstName" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400">
+                        </div>
+                        <div>
+                            <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Last Name</label>
+                            <input type="text" name="last_name" x-model="editLastName" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Last Name</label>
-                        <input type="text" name="last_name" x-model="editLastName" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400">
+
+                    <!-- Required Main Advisory Field for the Controller -->
+                    <div class="border-t-4 border-black pt-6">
+                        <label class="block font-black uppercase text-black text-lg mb-2 tracking-widest">Main Advisory Class <span class="text-red-600">*</span></label>
+                        <select name="advisory" x-model="editAdvisory" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 appearance-none bg-gray-50">
+                            <option value="" disabled>Select Main Advisory</option>
+                            <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
+                            @php
+                                $dynamicSections = \App\Models\Section::orderByRaw("CAST(grade_level AS UNSIGNED) ASC")->get();
+                            @endphp
+                            @foreach($dynamicSections as $sec)
+                                @if(!in_array(strtoupper($sec->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY', 'NKP']))
+                                    <option value="{{ $sec->section_id }}">Grade {{ $sec->grade_level }} - {{ $sec->section_name }}</option>
+                                @endif
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-500 font-bold mt-2 uppercase tracking-wide">Sets the primary homeroom class this teacher manages.</p>
+                    </div>
+
+                    <!-- Dynamic Assignments Section -->
+                    <div class="border-t-4 border-black pt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-black uppercase tracking-widest text-lg">Subjects Taught</h3>
+                            <button type="button" @click="addAssignmentRow()" class="bg-blue-600 text-white font-black uppercase text-sm tracking-wider px-4 py-2 rounded-xl border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all">
+                                + Add Subject
+                            </button>
+                        </div>
+
+                        <!-- Rows Wrapper -->
+                        <div class="space-y-4">
+                            <template x-for="(assignment, index) in editAssignments" :key="index">
+                                <div class="flex flex-col sm:flex-row gap-4 p-4 bg-gray-100 border-2 border-black rounded-xl relative">
+                                    
+                                    <button type="button" @click="removeAssignmentRow(index)" class="absolute -top-3 -right-3 bg-red-600 text-white w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center hover:bg-red-700 font-black active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+
+                                    <!-- Grade/Section -->
+                                    <div class="flex-1">
+                                        <label class="block font-bold uppercase text-gray-600 text-xs mb-1 tracking-widest">Target Grade <span class="text-red-600">*</span></label>
+                                        <select :name="'assignments[' + index + '][section_id]'" x-model="assignment.section_id" @change="updateRowSubjects(index, $event.target)" required class="w-full border-2 border-black rounded-xl px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 appearance-none bg-white">
+                                            <option value="" disabled selected>Select Grade</option>
+                                            <option value="NKP" data-grade="NKP">NKP (Nursery, Kinder, Prep)</option>
+                                            @foreach($dynamicSections as $sec)
+                                                @if(!in_array(strtoupper($sec->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY', 'NKP']))
+                                                    <option value="{{ $sec->section_id }}" data-grade="{{ $sec->grade_level }}">Grade {{ $sec->grade_level }} - {{ $sec->section_name }}</option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Subject -->
+                                    <div class="flex-1" x-show="assignment.grade !== 'NKP' && assignment.grade !== ''">
+                                        <label class="block font-bold uppercase text-gray-600 text-xs mb-1 tracking-widest">Subject <span class="text-red-600">*</span></label>
+                                        <select :name="'assignments[' + index + '][subject]'" x-model="assignment.subject" :required="assignment.grade !== 'NKP' && assignment.grade !== ''" class="w-full border-2 border-black rounded-xl px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 appearance-none bg-white">
+                                            <option value="" disabled>Select Subject</option>
+                                            <template x-for="subj in assignment.availableSubjects" :key="subj">
+                                                <option :value="subj" x-text="subj" :selected="subj === assignment.subject"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+
+                                </div>
+                            </template>
+                            
+                            <div x-show="editAssignments.length === 0" class="text-center p-6 border-2 border-dashed border-gray-400 rounded-xl font-bold text-gray-500 italic">
+                                No subjects assigned. Click "Add Subject" to begin.
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="mb-4">
-                    <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Reassign Grade Level</label>
-                    <select x-ref="advisorySelect" name="advisory" x-model="editAdvisory" @change="updateEditSubjects($event.target)" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 appearance-none bg-white">
-                        <option value="NKP" data-grade="NKP">NKP (Nursery, Kinder, Prep)</option>
-                        @php
-                            $dynamicSections = \App\Models\Section::orderByRaw("CAST(grade_level AS UNSIGNED) ASC")->get();
-                        @endphp
-                        @foreach($dynamicSections as $sec)
-                            @if(!in_array(strtoupper($sec->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY', 'NKP']))
-                                <option value="{{ $sec->section_id }}" data-grade="{{ $sec->grade_level }}">Grade {{ $sec->grade_level }} - {{ $sec->section_name }}</option>
-                            @endif
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- REACTIVE SUBJECT FIELD FOR EDIT MODAL --}}
-                <div class="mb-8" x-show="showEditSubject" x-cloak>
-                    <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Reassign Subject <span class="text-red-600">*</span></label>
-                    <select name="assigned_subject" x-model="editSubject" :required="showEditSubject" class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 appearance-none bg-white">
-                        <option value="" disabled>Select Subject</option>
-                        <template x-for="subj in editSubjectsList" :key="subj">
-                            <option :value="subj" x-text="subj" :selected="subj === editSubject"></option>
-                        </template>
-                    </select>
-                </div>
-
-                <div class="flex justify-end space-x-4">
+                <!-- Footer Actions -->
+                <div class="flex justify-end space-x-4 pt-6 mt-2 border-t-2 border-black shrink-0">
                     <button type="button" @click="editModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4">Cancel</button>
-                    <button type="submit" class="bg-[#34C759] text-white font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-green-600 active:translate-y-1 active:shadow-none transition-all">
+                    <button type="submit" class="bg-[#34C759] text-white font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-green-600 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all">
                         <i class="fa-solid fa-save mr-2"></i> Save Changes
                     </button>
                 </div>
@@ -194,4 +322,42 @@
     </div>
 
 </div>
+
+<!-- SUCCESS TOAST -->
+@if(session('success'))
+<div x-data="{ show: true }" x-init="setTimeout(() => show = false, 4000)" x-show="show" 
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 translate-y-10"
+     x-transition:enter-end="opacity-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-300"
+     x-transition:leave-start="opacity-100 translate-y-0"
+     x-transition:leave-end="opacity-0 translate-y-10"
+     class="fixed bottom-10 right-10 z-[200] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center gap-4 bg-[#4ade80] text-black">
+    <i class="fa-solid fa-circle-check text-3xl"></i>
+    <span class="font-black text-xl tracking-wide">{{ session('success') }}</span>
+</div>
+@endif
+
+<!-- ERROR TOAST (Catches missing fields or validation failures) -->
+@if($errors->any())
+<div x-data="{ show: true }" x-init="setTimeout(() => show = false, 6000)" x-show="show" 
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 translate-y-10"
+     x-transition:enter-end="opacity-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-300"
+     x-transition:leave-start="opacity-100 translate-y-0"
+     x-transition:leave-end="opacity-0 translate-y-10"
+     class="fixed bottom-10 right-10 z-[200] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-2 bg-red-500 text-white">
+    <div class="flex items-center gap-4 border-b-2 border-black/20 pb-2">
+        <i class="fa-solid fa-circle-exclamation text-3xl"></i>
+        <span class="font-black text-xl tracking-wide uppercase">Save Failed!</span>
+    </div>
+    <ul class="font-bold text-sm list-disc list-inside">
+        @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
 @endsection

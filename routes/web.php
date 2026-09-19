@@ -71,6 +71,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
     // NOTE: group route must come BEFORE the {id} route so Laravel doesn't confuse 'group' for an ID!
     Route::post('/messages/group', [MessageController::class, 'storeGroup'])->name('messages.group.store'); 
+    Route::post('/messages/group/{id}/archive', [MessageController::class, 'archiveGroup'])->name('messages.group.archive');
+    Route::post('/messages/group/{id}/restore', [MessageController::class, 'restoreGroup'])->name('messages.group.restore'); // <-- NEW ARCHIVE ROUTE
+    Route::delete('/messages/group/{id}/delete', [MessageController::class, 'deleteGroup'])->name('messages.group.delete');
     Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
 
@@ -229,3 +232,4 @@ Route::middleware(['auth', 'role:parent'])->group(function () {
 Route::post('/chatbot/send', [ChatbotController::class, 'handleChat']);
 
 require __DIR__.'/auth.php';
+

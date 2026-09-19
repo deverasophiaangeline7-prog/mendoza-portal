@@ -15,6 +15,12 @@ class NotificationController extends Controller
 
         $notification->update(['is_read' => 1]);
 
+        // ✨ THE MAGIC FIX: If type starts with 'group_chat:', grab the ID and redirect to the chat!
+        if (str_starts_with($notification->type, 'group_chat:')) {
+            $groupId = explode(':', $notification->type)[1];
+            return redirect()->route('messages.show', ['id' => $groupId]);
+        }
+
         $user = Auth::user();
         $isTeacher = strtolower(trim($user->role)) === 'teacher';
 
@@ -26,7 +32,7 @@ class NotificationController extends Controller
             'event_participation', 
             'event', 
             'school event'        => redirect()->route($isTeacher ? 'student.calendar.index' : 'student.calendar'),
-            'appointment'         => redirect()->route('appointments.index'), // <-- ADDED THIS LINE
+            'appointment'         => redirect()->route('appointments.index'), 
             default               => redirect()->route('dashboard')
         };
     }

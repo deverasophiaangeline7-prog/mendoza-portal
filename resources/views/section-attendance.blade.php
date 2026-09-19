@@ -13,51 +13,60 @@
     }
 </style>
 
-<main class="flex-1 p-8 bg-white min-h-screen relative" x-data="attendanceData()">
+<main class="flex-1 p-4 sm:p-8 bg-white min-h-screen relative" x-data="attendanceData()">
     <div class="max-w-6xl mx-auto">
         
-        <div class="flex justify-between items-start mb-8">
-            <a href="{{ route('attendance.index') }}" class="text-red-600 text-5xl hover:scale-110 transition">
-                <i class="fa-solid fa-circle-xmark"></i>
-            </a>
+        <!-- HEADER SECTION -->
+        <div class="flex flex-col lg:flex-row justify-between items-center lg:items-start gap-6 mb-8">
+            <!-- Back Button -->
+            <div class="w-full lg:w-auto flex justify-center lg:justify-start order-2 lg:order-1">
+                <a href="{{ route('attendance.index') }}" class="text-red-600 text-5xl hover:scale-110 transition">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </a>
+            </div>
 
-            <div class="text-center flex-1">
-                <h2 class="text-4xl font-black text-black uppercase tracking-tight">{{ $displayName }}</h2>
-                <div class="text-[#b26905] font-black text-2xl italic uppercase mt-1 drop-shadow-[1px_1px_0px_rgba(0,0,0,1)]">
+            <!-- Title -->
+            <div class="text-center flex-1 order-1 lg:order-2 w-full">
+                <h2 class="text-3xl sm:text-4xl font-black text-black uppercase tracking-tight">{{ $displayName }}</h2>
+                <div class="text-[#b26905] font-black text-xl sm:text-2xl italic uppercase mt-1 drop-shadow-[1px_1px_0px_rgba(0,0,0,1)]">
                     Attendance Sheet
                 </div>
             </div>
 
-            <div class="text-sm font-bold space-y-1 bg-white p-3 border-[3px] border-black rounded-2xl shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]">
-                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-green-500 border-2 border-black"></span> Present</div>
-                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-red-500 border-2 border-black"></span> Absent</div>
-                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-[#facc15] border-2 border-black"></span> Late</div>
-                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-blue-500 border-2 border-black"></span> Excused</div>
+            <!-- Legend -->
+            <div class="w-full lg:w-auto flex justify-center lg:justify-end order-3 lg:order-3">
+                <div class="text-sm font-bold bg-white p-3 border-[3px] border-black rounded-2xl shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] grid grid-cols-2 gap-x-6 gap-y-2 lg:grid-cols-1 lg:gap-1 lg:space-y-1">
+                    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-green-500 border-2 border-black"></span> Present</div>
+                    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-red-500 border-2 border-black"></span> Absent</div>
+                    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-[#facc15] border-2 border-black"></span> Late</div>
+                    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-blue-500 border-2 border-black"></span> Excused</div>
+                </div>
             </div>
         </div>
 
         @if($canManage)
-            <div class="mb-10 p-5 border-[3px] border-black rounded-[25px] bg-gray-50 flex flex-wrap items-center justify-between shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <!-- CONTROL PANEL -->
+            <div class="mb-10 p-4 sm:p-5 border-[3px] border-black rounded-[25px] bg-gray-50 flex flex-col xl:flex-row items-center justify-between gap-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
                 
-                <div class="flex items-center gap-6">
+                <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 sm:gap-6 w-full xl:w-auto">
                     <button @click="isManaging = !isManaging" 
-                        class="font-black px-8 py-3 border-[3px] border-black rounded-xl transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
+                        class="w-full sm:w-auto font-black px-6 sm:px-8 py-3 border-[3px] border-black rounded-xl transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
                         :class="isManaging ? 'bg-green-400 text-black' : 'bg-gray-200 text-gray-500'">
                         <i class="fa-solid" :class="isManaging ? 'fa-unlock' : 'fa-lock'"></i>
                         <span x-text="isManaging ? ' EDITING MODE' : ' VIEW MODE'"></span>
                     </button>
                     
-                    <div x-show="isManaging" x-cloak class="flex items-center gap-4 animate-fade-in">
-                        <span class="font-black uppercase text-sm">Select Day:</span>
-                        <input type="date" x-model="selectedDate" class="border-[3px] border-black p-2 rounded-xl font-black bg-white">
+                    <div x-show="isManaging" x-cloak class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 animate-fade-in w-full sm:w-auto">
+                        <span class="font-black uppercase text-sm whitespace-nowrap">Select Day:</span>
+                        <input type="date" x-model="selectedDate" class="w-full sm:w-auto border-[3px] border-black p-2 rounded-xl font-black bg-white">
                         
-                        <button @click="addDateToTable()" class="bg-blue-600 text-white px-8 py-2 rounded-xl border-[3px] border-black font-black hover:bg-blue-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <button @click="addDateToTable()" class="w-full sm:w-auto bg-blue-600 text-white px-6 sm:px-8 py-2 rounded-xl border-[3px] border-black font-black hover:bg-blue-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                             + ADD DATE
                         </button>
                     </div>
                 </div>
 
-                <button x-show="isManaging" x-cloak @click="saveAttendance()" class="bg-[#b26905] text-black px-8 py-3 rounded-xl border-[3px] border-black font-black hover:bg-amber-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]">
+                <button x-show="isManaging" x-cloak @click="saveAttendance()" class="w-full xl:w-auto bg-[#b26905] text-black px-6 sm:px-8 py-3 rounded-xl border-[3px] border-black font-black hover:bg-amber-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]">
                     <i class="fa-solid fa-floppy-disk mr-2"></i> SAVE ATTENDANCE
                 </button>
 
@@ -85,13 +94,13 @@
         @endif
 
         <div class="border-[3px] border-black overflow-x-auto rounded-[30px] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] bg-white">
-            <table class="w-full border-collapse">
+            <table class="w-full border-collapse min-w-max">
                 <thead>
                     <tr class="bg-gray-100 border-b-[3px] border-black">
-                        <th class="p-5 border-r-[3px] border-black w-1/3 text-left uppercase font-black text-2xl">Learner Name</th>
+                        <th class="p-4 sm:p-5 border-r-[3px] border-black min-w-[200px] w-1/3 text-left uppercase font-black text-xl sm:text-2xl">Learner Name</th>
                         
                         <template x-for="day in addedDates" :key="day">
-                            <th class="border-r-[2px] border-black text-center text-lg w-16 py-4 bg-amber-700 font-black" x-text="new Date(day).getDate()"></th>
+                            <th class="border-r-[2px] border-black text-center text-lg w-14 sm:w-16 py-4 bg-amber-700 font-black" x-text="new Date(day).getDate()"></th>
                         </template>
                         
                         <template x-if="addedDates.length === 0">
@@ -102,12 +111,12 @@
                 <tbody>
                     @foreach($students as $student)
                     <tr class="border-b-[2px] border-black hover:bg-yellow-50/50">
-                        <td class="p-5 border-r-[3px] border-black font-black text-lg text-black">
+                        <td class="p-4 sm:p-5 border-r-[3px] border-black font-black text-base sm:text-lg text-black">
                             {{ strtoupper($student->last_name . ', ' . $student->first_name) }}
                         </td>
                         
                         <template x-for="day in addedDates" :key="day">
-                            <td class="border-r-[2px] border-black h-16 attendance-cell"
+                            <td class="border-r-[2px] border-black h-12 sm:h-16 attendance-cell"
                                 x-data="{ status: getSavedStatus('{{ $student->student_id }}', day) }"
                                 :data-student="'{{ $student->student_id }}'"
                                 :data-date="day"
@@ -141,11 +150,11 @@
          x-transition:leave="transition ease-in duration-300"
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 translate-y-10"
-         class="fixed bottom-10 right-10 z-[100] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center gap-4"
+         class="fixed bottom-10 right-4 sm:right-10 z-[100] px-6 sm:px-8 py-4 rounded-2xl border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center gap-4"
          :class="toastType === 'success' ? 'bg-[#4ade80] text-black' : 'bg-red-500 text-white'">
         
         <i class="fa-solid text-2xl" :class="toastType === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
-        <span class="font-black text-xl tracking-wide" x-text="toastMessage"></span>
+        <span class="font-black text-lg sm:text-xl tracking-wide" x-text="toastMessage"></span>
     </div>
 
 </main>

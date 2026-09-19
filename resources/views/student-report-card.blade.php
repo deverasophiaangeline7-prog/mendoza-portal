@@ -31,9 +31,6 @@
             </div>
             
             <div class="flex flex-col items-end space-y-3">
-                <button onclick="window.history.back()" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
-                    <i class="fa-solid fa-circle-left"></i>
-                </button>
                 @if($canManage ?? true)
                 <div class="flex space-x-2">
                     <button @click="isManaging = !isManaging" class="font-black px-4 py-2 border-[3px] border-black rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all" :class="isManaging ? 'bg-green-400' : 'bg-gray-200'">

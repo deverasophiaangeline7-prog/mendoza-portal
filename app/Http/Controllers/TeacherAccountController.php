@@ -256,6 +256,7 @@ class TeacherAccountController extends Controller
                     }
                 }
             }
+            
 
             // Update profile
             $teacher = \App\Models\Teacher::where('user_id', $id)->first();

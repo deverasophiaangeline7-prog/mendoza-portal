@@ -96,31 +96,94 @@
             @empty
                 <div class="p-8 text-center text-gray-500 text-sm">No active chats. Click the + icon to start a new conversation.</div>
             @endforelse
+            
+            <!-- Archived Groups Dropdown -->
+            @if(isset($archivedGroups) && $archivedGroups->count() > 0)
+            <div x-data="{ showArchived: false }" class="border-t border-gray-200 mt-auto">
+                <button @click="showArchived = !showArchived" class="w-full p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 text-sm font-bold text-gray-600 transition">
+                    <span><i class="fa-solid fa-box-archive mr-2"></i> Archived Groups ({{ $archivedGroups->count() }})</span>
+                    <i class="fa-solid" :class="showArchived ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </button>
+                <div x-show="showArchived" style="display: none;" class="bg-gray-50 border-t border-gray-200">
+                    @foreach($archivedGroups as $archived)
+                        <a href="{{ route('messages.show', ['id' => $archived->user_id]) }}" class="block p-3 border-b border-gray-200 hover:bg-orange-50 transition {{ (isset($selectedUser) && $selectedUser->user_id == $archived->user_id) ? 'border-l-4 border-orange-500 bg-orange-50' : 'border-l-4 border-transparent' }}">
+                            <div class="flex items-center opacity-75">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($archived->custom_name) }}" class="w-10 h-10 rounded-full mr-3 border grayscale" alt="User">
+                                <div class="flex-1 min-w-0">
+                                    <span class="truncate font-bold text-gray-700 text-sm">{{ $archived->custom_name }}</span>
+                                    <p class="text-[10px] text-orange-600 font-bold uppercase mt-0.5">Archived</p>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 
     <!-- Main Chat Area Container -->
     <div class="{{ isset($selectedUser) ? 'flex' : 'hidden md:flex' }} flex-1 flex-col bg-white overflow-hidden">
         @isset($selectedUser)
-            <div class="p-4 border-b bg-white flex items-center justify-between shadow-sm flex-shrink-0">
+            <div class="p-4 border-b bg-white flex items-center justify-between shadow-sm flex-shrink-0 w-full">
                 <div class="flex items-center">
                     <!-- Mobile Back Button -->
                     <a href="javascript:history.back()" class="md:hidden mr-3 text-gray-500 hover:text-gray-800">
                         <i class="fa-solid fa-arrow-left"></i>
                     </a>
 
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode($selectedUser->name) }}" class="w-10 h-10 rounded-full mr-3 border" alt="User">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($selectedUser->custom_name ?? $selectedUser->name) }}" class="w-10 h-10 rounded-full mr-3 border" alt="User">
                     <div>
                         <h3 class="font-bold text-gray-800 flex items-center gap-2">
                             {{ $selectedUser->custom_name ?? $selectedUser->name }}
                         </h3>
-                        @if($selectedUser->isOnline())
+                        @if(isset($isGroupArchived) && $isGroupArchived)
+                            <span class="text-xs text-orange-500 flex items-center mt-0.5"><span class="w-2 h-2 bg-orange-500 rounded-full mr-1"></span> Archived Group</span>
+                        @elseif($selectedUser->isOnline())
                             <span class="text-xs text-green-500 flex items-center mt-0.5"><span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Active Now</span>
                         @else
                             <span class="text-xs text-gray-400 flex items-center mt-0.5"><span class="w-2 h-2 bg-gray-400 rounded-full mr-1"></span> Offline</span>
                         @endif
                     </div>
                 </div>
+
+                <!-- Group Chat Options Menu -->
+                @if(!is_null($selectedUser->custom_name))
+                <div x-data="{ groupMenuOpen: false }" class="relative ml-auto">
+                    <button @click="groupMenuOpen = !groupMenuOpen" @click.away="groupMenuOpen = false" class="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition w-10 h-10 flex items-center justify-center">
+                        <i class="fa-solid fa-ellipsis-vertical text-xl"></i>
+                    </button>
+                    
+                    <div x-show="groupMenuOpen" style="display: none;" class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                        
+                        <!-- Archive Group -->
+                        @if(!isset($isGroupArchived) || !$isGroupArchived)
+                        <form action="{{ route('messages.group.archive', $selectedUser->user_id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-orange-50 transition-colors">
+                                <i class="fa-solid fa-box-archive mr-2 text-orange-600"></i> Archive Group
+                            </button>
+                        </form>
+                        @endif
+
+                        <!-- Restore Group -->
+                        @if(isset($isGroupArchived) && $isGroupArchived)
+                        <form action="{{ route('messages.group.restore', $selectedUser->user_id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-green-50 transition-colors border-b border-gray-100">
+                                <i class="fa-solid fa-clock-rotate-left mr-2 text-green-600"></i> Restore Group
+                            </button>
+                        </form>
+                        @endif
+
+                        <!-- Delete Group -->
+                        <button @click="groupMenuOpen = false; deleteModal = true" type="button" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-red-50 transition-colors border-t border-gray-100">
+                            <i class="fa-solid fa-trash mr-2 text-red-600"></i> Delete Group
+                        </button>
+                        
+                    </div>
+                </div>
+                @endif
             </div>
             
             <div id="message-container" class="flex-1 overflow-y-auto p-4 flex flex-col">
@@ -129,12 +192,28 @@
                 <div id="chat-messages" class="space-y-4 flex-1">
                     @if(isset($messages) && count($messages) > 0)
                         @foreach($messages as $message)
-                            <div class="{{ $message->sender_id === auth()->user()->user_id ? 'text-right' : 'text-left' }}">
-                                <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm {{ $message->sender_id === auth()->user()->user_id ? 'bg-[#6d0101] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none' }}">
-                                    {{ $message->content }}
-                                </span>
-                                <div class="text-[10px] text-gray-400 mt-1">{{ $message->created_at->format('g:i A') }}</div>
-                            </div>
+                            @if(str_contains($message->content, 'created the group:'))
+                                <!-- System Alert Styling -->
+                                <div class="text-center my-4 w-full">
+                                    <span class="inline-block px-4 py-1.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded-full border border-gray-200 shadow-sm">
+                                        @if($message->sender_id == auth()->user()->user_id)
+                                            <!-- If the logged-in user is the one who created it -->
+                                            You created the group: {{ trim(explode('created the group:', $message->content)[1] ?? '') }}
+                                        @else
+                                            <!-- If someone else created it -->
+                                            {{ $message->content }}
+                                        @endif
+                                    </span>
+                                </div>
+                            @else
+                                <!-- Normal Chat Bubble Styling -->
+                                <div class="mb-4 w-full {{ $message->sender_id === auth()->user()->user_id ? 'text-right' : 'text-left' }}">
+                                    <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm {{ $message->sender_id === auth()->user()->user_id ? 'bg-[#6d0101] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none' }}">
+                                        {{ $message->content }}
+                                    </span>
+                                    <div class="text-[10px] text-gray-400 mt-1">{{ $message->created_at->format('g:i A') }}</div>
+                                </div>
+                            @endif
                         @endforeach
                     @else
                         <!-- Added ID here -->
@@ -154,7 +233,11 @@
 
             <div class="p-4 border-t bg-white flex-shrink-0">
                 @php $isAdviser = false; @endphp
-                @if(isset($selectedUser->type) && $selectedUser->type === 'announcement')
+                @if(isset($isGroupArchived) &&$isGroupArchived)
+                    <div class="text-center text-sm text-orange-600 font-bold py-3 bg-orange-50 rounded-full border border-orange-200">
+                        <i class="fa-solid fa-box-archive mr-1"></i> This group is archived. You cannot send new messages.
+                    </div>
+                @elseif(isset($selectedUser->type) &&$selectedUser->type === 'announcement')
                     <div class="text-center text-sm text-gray-500 py-3 bg-gray-50 rounded-full border border-gray-200">
                         <i class="fa-solid fa-lock mr-1"></i> Only administrators can send messages.
                     </div>
@@ -205,7 +288,7 @@
                         @foreach($contacts as $contact)
                             <a href="{{ route('messages.show', $contact->user_id) }}" 
                                class="flex items-center p-3 hover:bg-red-50 transition-colors"
-                               x-show="userSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' . $contact->role)) }}'.includes(userSearch.toLowerCase())">
+                               x-show="userSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(userSearch.toLowerCase())">
                                 
                                 <img src="https://ui-avatars.com/api/?name={{ urlencode($contact->name) }}" class="w-10 h-10 rounded-full mr-3 border" alt="User">
                                 
@@ -263,9 +346,9 @@
                     <!-- Scrollable Contact List -->
                     <div class="max-h-52 overflow-y-auto border-2 border-gray-100 rounded-xl divide-y divide-gray-100 mb-6 shadow-inner bg-gray-50">
                         @if(isset($contacts) && count($contacts) > 0)
-                            @foreach($contacts as $contact)
+                            @foreach ($contacts as $contact)
                                 <label class="flex items-center p-3 hover:bg-red-50 cursor-pointer transition-colors bg-white"
-                                       x-show="groupSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' . $contact->role)) }}'.includes(groupSearch.toLowerCase())">
+                                       x-show="groupSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(groupSearch.toLowerCase())">
                                     
                                     <input type="checkbox" name="members[]" value="{{ $contact->user_id }}" x-model="selectedMembers" class="rounded text-[#6d0101] border-gray-300 focus:ring-[#6d0101] w-4 h-4 mr-3">
                                     
@@ -283,6 +366,7 @@
                             <div class="p-6 text-center text-gray-500 text-sm font-bold">No contacts available.</div>
                         @endif
                     </div>
+                    
 
                     <!-- Action Buttons -->
                     <div class="flex justify-end gap-3 border-t pt-4">
@@ -298,6 +382,30 @@
             </div>
         </div>
     </div>
+
+    <!-- Custom Delete Confirmation Modal (Now safely outside!) -->
+    <div x-show="deleteModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-transition.opacity>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col p-6 text-center" @click.away="deleteModal = false">
+            <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="font-bold text-lg text-gray-800 mb-2">Delete Group Chat?</h3>
+            <p class="text-sm text-gray-500 mb-6">Are you sure you want to permanently delete this group and all its messages? This cannot be undone.</p>
+            
+            <div class="flex justify-center gap-3">
+                <button @click="deleteModal = false" type="button" class="flex-1 bg-gray-100 text-gray-700 px-4 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition">Cancel</button>
+                
+                @isset($selectedUser)
+                <form action="{{ route('messages.group.delete', $selectedUser->user_id ?? 0) }}" method="POST" class="flex-1">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="w-full bg-red-600 text-white px-4 py-2.5 rounded-xl font-bold hover:bg-red-700 transition shadow-sm">Delete</button>
+                </form>
+                @endisset
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -305,12 +413,13 @@
         Alpine.data('chatSystem', () => ({
             newMsgModal: false, 
             createGroupModal: false,
+            deleteModal: false,
             messageInput: '',
             isTyping: false,
             isSending: false,
             myId: '{{ auth()->user()->user_id }}',
-            selectedUserId: '{{ isset($selectedUser) ? $selectedUser->user_id : "" }}',
-            selectedUserName: '{{ isset($selectedUser) ? $selectedUser->name : "" }}',
+            selectedUserId: '{{ isset($selectedUser) ?$selectedUser->user_id : "" }}',
+            selectedUserName: '{{ isset($selectedUser) ? (isset($selectedUser->custom_name) ? $selectedUser->custom_name :$selectedUser->name) : "" }}',
             
             typingTimer: null,
 

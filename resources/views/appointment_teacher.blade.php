@@ -293,7 +293,6 @@
         z-index: 1000;
     }
     
-    /* MODIFIED CLASS NAME HERE */
     .modal-hidden { display: none !important; }
 
     .requests-modal, .validation-modal {
@@ -397,19 +396,19 @@
     .btn-decline { background-color: var(--ma-red); color: white; border: none; }
 
     .nested-modal {
-        position: absolute;
+        position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(255, 255, 255, 0.7);
+        background: rgba(0, 0, 0, 0.6);
         display: flex;
         justify-content: center;
         align-items: center;
-        border-radius: 20px;
         z-index: 1010;
     }
 
     .nested-modal-content {
         background: white;
         border: 4px solid #000;
+        border-radius: 25px;
         padding: 30px;
         width: 90%;
         max-width: 600px;
@@ -506,7 +505,7 @@
 </script>
 @endif
 
-{{-- FLOATING TOAST NOTIFICATION FOR ERRORS (NEWLY ADDED) --}}
+{{-- FLOATING TOAST NOTIFICATION FOR ERRORS --}}
 @if(session('error'))
 <div id="toast-error" style="position: fixed; bottom: 40px; right: 40px; z-index: 9999; background-color: var(--ma-red); color: white; border: 4px solid #000; border-radius: 20px; padding: 15px 30px; font-weight: 900; font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); display: flex; align-items: center; gap: 15px; text-transform: uppercase;">
     <i class="fa-solid fa-circle-exclamation" style="font-size: 24px;"></i> 
@@ -743,7 +742,7 @@
     </div>
 </div>
 
-<!-- VALIDATION POPUP MODAL (Class updated to modal-hidden) -->
+<!-- VALIDATION POPUP MODAL -->
 <div id="validationModalOverlay" class="modal-overlay modal-hidden">
     <div class="validation-modal">
         <h3 id="valModalTitle"><i class="fa-solid fa-triangle-exclamation"></i> Invalid Action</h3>
@@ -752,7 +751,7 @@
     </div>
 </div>
 
-<!-- INCOMING REQUESTS MODAL (Class updated to modal-hidden) -->
+<!-- INCOMING REQUESTS MODAL -->
 <div id="requestsModalOverlay" class="modal-overlay modal-hidden">
     <div class="requests-modal">
         <div class="modal-header">
@@ -800,58 +799,56 @@
                 </tbody>
             </table>
         </div>
+    </div>
+</div>
 
-        <!-- Decline / Suggest New Schedule Modal (Nested) (Class updated to modal-hidden) -->
-        <div id="declineModal" class="nested-modal modal-hidden">
-            <div class="nested-modal-content">
-                <h3 style="color: var(--ma-red); text-transform: uppercase;">State your reason for rescheduling</h3>
-                
-                <form id="declineForm" method="POST" action="">
-                    @csrf @method('PATCH')
-                    
-                    <div style="text-align: left; margin-bottom: 15px;">
-                        <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Reason</label>
-                        <input type="text" name="reason" class="form-control" placeholder="e.g. Conflict with schedule" required>
-                    </div>
-                    
-                    <h4 style="font-weight: 900; margin-bottom: 10px; margin-top: 20px;">RESCHEDULE</h4>
-
-                    <div style="text-align: left; margin-bottom: 15px;">
-                        <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Date</label>
-                        <input type="date" name="suggested_date" class="form-control" required
-                               min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
-                               max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
-                    </div>
-                    
-                    <div class="time-group" style="text-align: left;">
-                        <div style="flex: 1;">
-                            <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Start Time</label>
-                            <input type="time" name="suggested_start_time" class="form-control" required>
-                        </div>
-                        <div style="flex: 1;">
-                            <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">End Time</label>
-                            <input type="time" name="suggested_end_time" class="form-control" required>
-                        </div>
-                    </div>
-                    
-                    <div class="nested-modal-actions">
-                        <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('declineModal')">Cancel</button>
-                        <button type="submit" class="btn-flat btn-decline">Reschedule</button>
-                    </div>
-                </form>
+<!-- DECLINE / SUGGEST NEW SCHEDULE MODAL (Moved completely outside requestsModalOverlay) -->
+<div id="declineModal" class="nested-modal modal-hidden">
+    <div class="nested-modal-content">
+        <h3 style="color: var(--ma-red); font-weight: bold; text-transform: uppercase;">State your reason for rescheduling</h3>
+        
+        <form id="declineForm" method="POST" action="">
+            @csrf @method('PATCH')
+            
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Reason</label>
+                <input type="text" name="reason" class="form-control" placeholder="e.g. Conflict with schedule" required>
             </div>
-        </div>
+            
+            <h4 style="font-weight: 900; margin-bottom: 10px; margin-top: 20px;">RESCHEDULE</h4>
+
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Date</label>
+                <input type="date" name="suggested_date" class="form-control" required
+                        min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                        max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
+            </div>
+            
+            <div class="time-group" style="text-align: left;">
+                <div style="flex: 1;">
+                    <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Start Time</label>
+                    <input type="time" name="suggested_start_time" class="form-control" required>
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">End Time</label>
+                    <input type="time" name="suggested_end_time" class="form-control" required>
+                </div>
+            </div>
+            
+            <div class="nested-modal-actions">
+                <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('declineModal')">Cancel</button>
+                <button type="submit" class="btn-flat btn-decline">Reschedule</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
     function openModal(modalId) {
-        // Updated to use 'modal-hidden'
         document.getElementById(modalId).classList.remove('modal-hidden');
     }
 
     function closeModal(modalId) {
-        // Updated to use 'modal-hidden'
         document.getElementById(modalId).classList.add('modal-hidden');
     }
 
