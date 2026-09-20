@@ -328,8 +328,8 @@ class ReportCardController extends Controller
 
         $teacher = Teacher::where('user_id', Auth::id())->first();
         
-        // SECURITY LOCK: Ensure teacher is assigned to this subject (or is ALL/Adviser)
-        if ($teacher && $teacher->assigned_subject !== 'ALL' && $teacher->assigned_subject !== $request->subject) {
+        
+if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teacher->assigned_subject)) {
             return back()->with('error', 'Unauthorized. You are only allowed to upload grades for: ' . $teacher->assigned_subject);
         }
 
@@ -405,10 +405,18 @@ class ReportCardController extends Controller
 
         // 2. PROCESS THE TARGET SHEET
         for ($row = 1; $row <= $highestRow; $row++) {
-            $lrn = (string) $targetSheet->getCell('A' . $row)->getCalculatedValue();
+            $lrn = trim((string) $targetSheet->getCell('A' . $row)->getCalculatedValue());
+            $excelName = trim((string) $targetSheet->getCell('B' . $row)->getCalculatedValue());
             
-            if (!$lrn || !is_numeric(trim($lrn))) {
+            // 1. Skip completely empty rows at the bottom of the Excel sheet
+            if (empty($lrn) && empty($excelName)) {
                 continue;
+            }
+
+            // 2. STRICT VALIDATION: Must be exactly 12 digits (0-9 only, absolutely no letters)
+            if (!preg_match('/^\d{12}$/', $lrn)) {
+                $errors[] = "Row {$row}: Invalid LRN for '{$excelName}'. It must be exactly 12 digits with no letters.";
+                continue; // Skip updating this row, but record the error for the pink banner
             }
 
             $term1Val = (string) $targetSheet->getCell('F' . $row)->getCalculatedValue();
