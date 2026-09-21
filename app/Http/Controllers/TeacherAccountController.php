@@ -244,7 +244,8 @@ class TeacherAccountController extends Controller
             if ($request->advisory === 'NKP') {
                 $nkpSections = \App\Models\Section::whereIn(\Illuminate\Support\Facades\DB::raw('UPPER(grade_level)'), ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY', 'PREP', 'NKP'])->get();
                 foreach ($nkpSections as $section) {
-                    $section->teacher_id = $id;
+                    $section->teacher_id
+                     = $id;
                     $section->save();
                 }
             } else {

@@ -174,7 +174,7 @@ class MessageController extends Controller
         DB::table('group_members')->where('group_id', $id)->delete();
         $group->delete();
 
-        return redirect('/messages')->with('success', 'Group permanently deleted!');
+        return redirect('/messages?deleted=1');
     }
 
     public function store(Request $request)
@@ -342,9 +342,10 @@ class MessageController extends Controller
     }
 
     private function getAllowedContacts($authUser)
-    {
-        $users = User::where('user_id', '!=', $authUser->user_id)
-            ->where(function ($query) use ($authUser) {
+{
+    $users = User::where('user_id', '!=', $authUser->user_id)
+        ->whereNull('custom_name')
+        ->where(function ($query) use ($authUser) {
                 if ($authUser->role === 'admin') {
                     $query->whereNotNull('user_id');
                 }
@@ -400,5 +401,10 @@ class MessageController extends Controller
         return $individualChats->merge($groupChats)->sortBy(function($user) {
             return $user->custom_name ?? $user->name;
         })->values();
+
     }
-}
+
+} 
+
+    
+  

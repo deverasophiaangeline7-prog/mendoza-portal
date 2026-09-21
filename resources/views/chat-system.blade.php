@@ -3,6 +3,27 @@
 @section('title', 'Messages - Mendoza Academy')
 
 @section('content')
+@if(request()->query('deleted') == 1)
+    <div id="brutal-toast" style="position: fixed; bottom: 40px; right: 40px; z-index: 99999; background-color: #43e276; color: black; border: 4px solid black; border-radius: 12px; box-shadow: 8px 8px 0px 0px black; padding: 16px 28px; font-family: system-ui, sans-serif; font-weight: 900; font-size: 16px; text-transform: uppercase; display: flex; align-items: center; gap: 12px; letter-spacing: 0.5px; transition: opacity 0.4s ease;">
+        <i class="fa-solid fa-circle-check" style="font-size: 22px;"></i>
+        <span>Group Deleted!</span>
+    </div>
+    
+    <script>
+        setTimeout(() => {
+            let toast = document.getElementById('brutal-toast');
+            if (toast) {
+                toast.style.opacity = '0';
+                setTimeout(() => { toast.style.display = 'none'; }, 400); 
+            }
+        }, 4000);
+
+        
+        if(window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    </script>
+@endif
 <style>
     .typing-indicator {
         display: inline-flex;

@@ -111,10 +111,33 @@
                                             $isPassed = (bool)($student->has_nkp_eval ?? false);
                                             $isComplete = $isPassed;
                                         } else {
-                                            $requiredSubjects = 9; 
+                                            // --- DYNAMIC SUBJECT COUNTING FIX ---
+                                            preg_match('/\d+/', $gradeLvl, $matches);
+                                            $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
+                                            
+                                            // Grades 1, 2, and 3 have 5 subjects. Grades 4, 5, and 6 have 8 subjects.
+                                            if ($gradeNum >= 1 && $gradeNum <= 3) {
+                                                $requiredSubjects = 5;
+                                            } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
+                                                $requiredSubjects = 8;
+                                            } else {
+                                                $requiredSubjects = 9; // Fallback
+                                            }
+                                            // ------------------------------------
+
                                             $passingMark = 75; 
-                                            $gradesCount = $student->grades->count(); 
-                                            $failingGrade = $student->grades->first(fn($g) => $g->final_grade < $passingMark); 
+                                            
+                                            // 1. Isolate ONLY the grades for the active school year
+                                            $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
+                                            $currentGrades = $student->grades->where('school_year_id', $activeYear ? $activeYear->id : null);
+                                            
+                                            $gradesCount = $currentGrades->count(); 
+                                            
+                                            // 2. Safely check for failing OR empty final grades in the CURRENT year only
+                                            $failingGrade = $currentGrades->first(function($g) use ($passingMark) {
+                                                return is_null($g->final_grade) || $g->final_grade === '' || (float)$g->final_grade < $passingMark;
+                                            }); 
+                                            
                                             $isComplete = $gradesCount >= $requiredSubjects; 
                                             $isPassed = $isComplete && !$failingGrade;
                                         }
@@ -185,10 +208,33 @@
                                             $isPassed = (bool)($student->has_nkp_eval ?? false);
                                             $isComplete = $isPassed;
                                         } else {
-                                            $requiredSubjects = 9; 
+                                            // --- DYNAMIC SUBJECT COUNTING FIX ---
+                                            preg_match('/\d+/', $gradeLvl, $matches);
+                                            $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
+                                            
+                                            // Grades 1, 2, and 3 have 5 subjects. Grades 4, 5, and 6 have 8 subjects.
+                                            if ($gradeNum >= 1 && $gradeNum <= 3) {
+                                                $requiredSubjects = 5;
+                                            } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
+                                                $requiredSubjects = 8;
+                                            } else {
+                                                $requiredSubjects = 9; // Fallback
+                                            }
+                                            // ------------------------------------
+
                                             $passingMark = 75; 
-                                            $gradesCount = $student->grades->count(); 
-                                            $failingGrade = $student->grades->first(fn($g) => $g->final_grade < $passingMark); 
+                                            
+                                            // 1. Isolate ONLY the grades for the active school year
+                                            $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
+                                            $currentGrades = $student->grades->where('school_year_id', $activeYear ? $activeYear->id : null);
+                                            
+                                            $gradesCount = $currentGrades->count(); 
+                                            
+                                            // 2. Safely check for failing OR empty final grades in the CURRENT year only
+                                            $failingGrade = $currentGrades->first(function($g) use ($passingMark) {
+                                                return is_null($g->final_grade) || $g->final_grade === '' || (float)$g->final_grade < $passingMark;
+                                            }); 
+                                            
                                             $isComplete = $gradesCount >= $requiredSubjects; 
                                             $isPassed = $isComplete && !$failingGrade;
                                         }

@@ -65,6 +65,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
     Route::get('/attendance/{grade}', [AttendanceController::class, 'show'])->name('attendance.show');
     Route::get('/parent/attendance', [ParentAttendanceController::class, 'index'])->name('parent.attendance');
+    Route::get('/fetch-attendance', [App\Http\Controllers\ParentAttendanceController::class, 'fetchAttendance'])->name('attendance.fetch');
 
     // Chat Routes
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
@@ -81,6 +82,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/report-card/list/{section_id}', [ReportCardController::class, 'show'])->name('reportcard.show');
     Route::get('/report-card/view/{student_id}', [ReportCardController::class, 'showStudent'])->name('reportcard.showStudent');
     Route::get('/my-child/report-card', [ReportCardController::class, 'showParentReportCard'])->name('parent.reportcard');
+    Route::get('/fetch-grades/{student_id}', [ReportCardController::class, 'fetchGrades'])->name('reportcard.fetch');
 
     // Appointment
     Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');

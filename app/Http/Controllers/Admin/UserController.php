@@ -152,7 +152,8 @@ class UserController extends Controller
                            !is_null($gradeRecord->term3);
                 })->count();
 
-                if ($expectedSubjects === 0 || $completedSubjects < $expectedSubjects) {
+                // If a section is assigned subjects, they MUST finish them.
+                if ($expectedSubjects > 0 && $completedSubjects < $expectedSubjects) {
                     $incompleteElementaryCount++;
                 }
             }
@@ -169,7 +170,7 @@ class UserController extends Controller
             }
         }
 
-        // 4. BLOCK FINALIZATION IF ANYTHING IS MISSING
+        // 4. BLOCK FINALIZATION IF ANYTHING IS MISSING (SAFELY)
         if ($incompleteElementaryCount > 0 || $incompleteNkpCount > 0) {
             $errorMessage = "FINALIZATION BLOCKED: ";
             if ($incompleteElementaryCount > 0) $errorMessage .= "{$incompleteElementaryCount} Elementary student(s) missing grades for all 3 terms. ";
@@ -177,6 +178,7 @@ class UserController extends Controller
             return back()->with('error', trim($errorMessage) . " Please complete these records before closing the year.");
         }
 
+        // START TRANSACTION ONLY AFTER ALL VALIDATION PASSES
         DB::beginTransaction();
         try {
             // 5. HANDLE THE SCHOOL YEAR TRANSITION
@@ -200,6 +202,7 @@ class UserController extends Controller
                     \App\Models\StudentHistory::create([
                         'student_id' => $student->student_id,
                         'school_year_id' => $currentYear->id,
+                        'grade_level' => strtoupper(trim($student->grade_level)), // CRITICAL: Save their past grade!
                         'section_name' => strtoupper($student->section->grade_level . ' - ' . $student->section->section_name)
                     ]);
                 }
@@ -231,11 +234,13 @@ class UserController extends Controller
             ]);
 
             DB::commit(); 
-            return redirect()->route('account.management')->with('success', "Data handled successfully. Welcome to SY {$nextYearString}!");
+            
+            // Return back explicitly instead of using a redirect string so the toast notification reliably triggers
+            return back()->with('success', "School Year finalized successfully. Welcome to SY {$nextYearString}!");
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'System Error: ' . $e->getMessage());
+            return back()->with('error', 'System Error: ' . $e->getMessage());
         }
     }
 

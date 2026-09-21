@@ -551,9 +551,36 @@ if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teac
         $student = Student::findOrFail($student_id);
         $schoolYear = SchoolYear::findOrFail($school_year_id);
         
-        $hasNkp = NkpEvaluation::where('student_id', $student_id)->where('school_year_id', $school_year_id)->exists();
-        $gradeLevel = strtoupper($student->section ? $student->section->grade_level : '');
+        // 1. Fetch the student's historical data for this specific archived year
+        $history = \App\Models\StudentHistory::where('student_id', $student_id)
+            ->where('school_year_id', $school_year_id)
+            ->first();
 
+        // 2. Smart fallback: Use history if available, otherwise guess based on current grade minus 1
+        $gradeLevel = '';
+        $displaySection = 'ARCHIVED RECORD';
+
+        if ($history && $history->grade_level) {
+            $gradeLevel = strtoupper(trim($history->grade_level));
+            $displaySection = strtoupper($history->grade_level . ' - ' . $history->section_name);
+        } else {
+            // Fallback if history row is missing: assume they were 1 grade lower last year
+            $curr = strtoupper(trim($student->grade_level));
+            
+            if ($curr === '1') {
+                $gradeLevel = 'PREPARATORY';
+            } elseif (is_numeric($curr)) {
+                $gradeLevel = (string)max(1, (int)$curr - 1);
+            } else {
+                $gradeLevel = $curr; // Fallback for NKP if no history is found
+            }
+            
+            $displaySection = $student->section ? strtoupper($gradeLevel . ' - ' . $student->section->section_name) : 'ARCHIVED';
+        }
+
+        $nkpLevels = ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY'];
+        $hasNkp = in_array($gradeLevel, $nkpLevels) || NkpEvaluation::where('student_id', $student_id)->where('school_year_id', $school_year_id)->exists();
+        
         $canManage = false;
 
         if ($hasNkp) {
@@ -563,13 +590,14 @@ if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teac
 
             return view('nkp-report-card', [
                 'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
-                'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year,
+                'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year . ' | ' . $displaySection,
                 'student_id' => $student_id,
                 'savedEvaluations' => $existingEvaluations,
-                'canManage' => $canManage
+                'canManage' => $canManage,
+                'activeYear' => $schoolYear
             ]);
         } else {
-            // Dynamic Subjects for Archived Students
+            // Dynamic Subjects for Archived Students based on PAST grade level
             preg_match('/\d+/', $gradeLevel, $matches);
             $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
 
@@ -593,14 +621,36 @@ if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teac
 
             return view('student-report-card', [
                 'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
-                'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year,
+                'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year . ' | ' . $displaySection,
                 'student_id' => $student_id,
                 'subjects' => $subjects,
                 'coreValues' => ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'],
                 'savedGrades' => $existingGrades,
                 'savedBehaviors' => $existingBehaviors,
-                'canManage' => $canManage
+                'canManage' => $canManage,
+                'activeYear' => $schoolYear
             ]);
         }
+    }
+
+    public function fetchGrades($student_id)
+    {
+        $activeYear = SchoolYear::where('status', 'active')->first();
+        if (!$activeYear) {
+            return response()->json(['grades' => [], 'behaviors' => []]);
+        }
+
+        $grades = Grade::where('student_id', $student_id)
+            ->where('school_year_id', $activeYear->id)
+            ->get()->keyBy('subject_name')->toArray();
+
+        $behaviors = BehaviorReport::where('student_id', $student_id)
+            ->where('school_year_id', $activeYear->id)
+            ->get()->keyBy('core_value')->toArray();
+
+        return response()->json([
+            'grades' => $grades,
+            'behaviors' => $behaviors
+        ]);
     }
 }

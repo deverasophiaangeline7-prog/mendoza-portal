@@ -59,6 +59,28 @@ class ParentAttendanceController extends Controller
         }
 
         // Pass the new prevDate and nextDate to the view
-        return view('parent.parent_attendance', compact('days', 'monthName', 'student', 'firstDayOfWeek', 'prevDate', 'nextDate'));
+        return view('parent.parent_attendance', compact('days', 'monthName', 'student', 'firstDayOfWeek', 'prevDate', 'nextDate', 'rawAttendance', 'currentDate'));
+    }
+
+    public function fetchAttendance(Request $request)
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        if (!$user || !$user->student) return response()->json([]);
+
+        $month = $request->query('month', now()->month);
+        $year = $request->query('year', now()->year);
+
+        $attendances = Attendance::where('student_id', $user->student->student_id)
+            ->whereMonth('attendance_date', $month)
+            ->whereYear('attendance_date', $year)
+            ->get();
+
+        $rawAttendance = [];
+        foreach ($attendances as $att) {
+            // Keep it lowercase to match your CSS logic
+            $rawAttendance[date('Y-m-d', strtotime($att->attendance_date))] = strtolower($att->status); 
+        }
+
+        return response()->json($rawAttendance);
     }
 }

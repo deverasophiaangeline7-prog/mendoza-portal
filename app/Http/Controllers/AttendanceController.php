@@ -132,28 +132,18 @@ class AttendanceController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Properly validate the nested array objects coming from JavaScript
+        // 1. Relaxed validation so it doesn't reject "excused" or other formats
         $request->validate([
             'attendance' => 'required|array',
             'attendance.*.student_id' => 'required',
             'attendance.*.date' => 'required|date',
-            'attendance.*.status' => 'required|in:1,2,3,4', // Frontend sends 1,2,3,4
-        ], [
-            'attendance.*.status.in' => 'All attendance fields must be filled out before saving.',
+            'attendance.*.status' => 'required', 
         ]);
 
         $records = $request->input('attendance', []);
         if (empty($records)) {
             return response()->json(['message' => 'No records to save.'], 400);
         }
-
-        // Map frontend numbers to database text
-        $numericToText = [
-            '1' => 'Present',
-            '2' => 'Absent',
-            '3' => 'Late',
-            '4' => 'Excused'
-        ];
 
         $firstRecord = $records[0];
         $sampleStudent = Student::find($firstRecord['student_id']);
@@ -162,9 +152,19 @@ class AttendanceController extends Controller
         $attendanceDate = $firstRecord['date'];
 
         foreach ($records as $record) {
-            $textStatus = $numericToText[$record['status']] ?? 'Present';
+            
+            // 2. Bulletproof mapping: Handles BOTH numbers ('4') and text ('excused') safely
+            $rawStatus = strtolower(trim((string)$record['status']));
+            $textStatus = match($rawStatus) {
+                '1', 'present' => 'Present',
+                '2', 'absent'  => 'Absent',
+                '3', 'late'    => 'Late',
+                '4', 'excused' => 'Excused',
+                default        => 'Present' // Fallback
+            };
 
-            Attendance::updateOrCreate(
+            // 3. Save to the database
+            $attendance = Attendance::updateOrCreate(
                 [
                     'student_id'      => $record['student_id'],
                     'attendance_date' => $record['date']
@@ -174,17 +174,29 @@ class AttendanceController extends Controller
                 ]
             );
 
-            if (in_array($textStatus, ['Absent', 'Late'])) {
-                $student = Student::find($record['student_id']);
-                if ($student && $student->user_id) {
-                    $parent = User::find($student->user_id);
-                    if ($parent) {
-                        $typeLabel = strtoupper($textStatus);
-                        $parent->notifyUser(
-                            'Attendance Alert', 
-                            "Notice: {$student->first_name} was marked {$typeLabel} today.", 
-                            'attendance'
-                        );
+            // 4. ONLY notify if the record is brand new OR the status actually changed
+            if ($attendance->wasRecentlyCreated || $attendance->wasChanged('status')) {
+                
+                // 5. ONLY notify if the attendance date being saved is EXACTLY TODAY (Philippine Time)
+                if (\Carbon\Carbon::parse($record['date'])->timezone('Asia/Manila')->isToday()) {
+                    
+                    $student = Student::find($record['student_id']);
+                    
+                    if ($student && $student->user_id) {
+                        $parent = User::find($student->user_id);
+                        
+                        if ($parent) {
+                            $typeLabel = strtoupper($textStatus);
+                            
+                            // Let's format the date so it clearly says "September 21" instead of "today"
+                            $formattedDate = \Carbon\Carbon::parse($record['date'])->format('F j');
+                            
+                            $parent->notifyUser(
+                                'Attendance Alert', 
+                                "Notice: {$student->first_name} was marked {$typeLabel} for {$formattedDate}.", 
+                                'attendance'
+                            );
+                        }
                     }
                 }
             }

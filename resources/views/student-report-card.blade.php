@@ -43,8 +43,8 @@
                     @endif
                 </div>
 
-                <!-- Back button restricted to teachers -->
-                @if(auth()->user()->role === 'teacher')
+                <!-- Back button restricted to Teachers and Admins (Hidden from Parents) -->
+                @if(auth()->user()->role !== 'parent')
                 <a href="javascript:history.back()" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
                     <i class="fa-solid fa-circle-left"></i>
                 </a>
@@ -150,6 +150,38 @@
         </div>
     </div>
 
+    <!-- BRAND NEW STRICT LOCK MODAL -->
+    <div x-show="showStrictLockModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition.opacity>
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showStrictLockModal = false"></div>
+        <div class="relative bg-white border-[4px] border-black rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 max-w-lg w-full flex flex-col items-center text-center space-y-4">
+            
+            <div class="bg-red-600 rounded-full w-20 h-20 flex items-center justify-center border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -mt-16">
+                <i class="fa-solid fa-lock text-white text-4xl font-black"></i>
+            </div>
+            
+            <h3 class="text-3xl font-black uppercase text-red-600 tracking-tight leading-tight mt-2">Strict Lock Active</h3>
+            
+            <p class="font-bold text-lg text-gray-800">
+                You cannot save grades for <span class="text-black font-black uppercase underline">Term <span x-text="strictLockTerm"></span></span> because <span class="text-red-600 font-black uppercase underline">Term <span x-text="strictLockPastTerm"></span></span> is incomplete.
+            </p>
+            
+            <div class="bg-gray-100 border-[3px] border-black rounded-xl p-4 w-full text-left shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+                <p class="font-black text-xs uppercase text-gray-500 mb-2 tracking-wider">Missing Grades For:</p>
+                <ul class="font-bold text-md list-disc list-inside text-black">
+                    <template x-for="sub in strictLockMissing" :key="sub">
+                        <li x-text="sub"></li>
+                    </template>
+                </ul>
+            </div>
+            
+            <p class="font-bold text-sm text-gray-600 italic">Please ask the Admin to extend the Term <span x-text="strictLockPastTerm"></span> deadline.</p>
+            
+            <button @click="showStrictLockModal = false" class="mt-4 bg-red-600 text-white font-black text-xl px-8 py-3 border-[3px] border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all w-full uppercase tracking-widest">
+                Understood
+            </button>
+        </div>
+    </div>
+
     <div x-show="showErrorModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition.opacity>
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showErrorModal = false"></div>
         <div class="relative bg-red-500 border-[4px] border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-sm w-full flex items-center space-x-4">
@@ -168,6 +200,7 @@
     document.addEventListener('alpine:init', () => {
         Alpine.data('gradeData', () => ({
             isManaging: false, showErrorModal: false, missingSubjects: [],
+            showStrictLockModal: false, strictLockMissing: [], strictLockTerm: '', strictLockPastTerm: '',
             studentId: '{{ $student_id ?? 1 }}', 
             activeTerm: '1', 
             subjects: @json($subjects), 
@@ -210,6 +243,7 @@
                     'Demonstrates pride in being a Filipino',
                     'Demonstrates appropriate behavior'
                 ];
+                
                 behaviorKeys.forEach(b => {
                     if (!this.behaviors[b]) {
                         this.behaviors[b] = { term1: '', term2: '', term3: '' };
@@ -218,13 +252,65 @@
 
                 this.activeTerm = this.determineActiveTerm();
                 this.calculateGrades();
-            },
+
+                // ==========================================
+                // NEW: REAL-TIME BACKGROUND SYNC
+                // ==========================================
+                // STRICT CHECK: Never run sync on an Archived page, regardless of database status
+                @if(!str_contains($sectionName ?? '', 'ARCHIVED'))
+                setInterval(() => {
+                    // CRITICAL: Only sync if the user is NOT actively editing.
+                    // If we sync while they type, it will erase their unsaved numbers!
+                    if (!this.isManaging) {
+                        fetch(`/fetch-grades/${this.studentId}?t=` + Date.now())
+                            .then(res => res.json())
+                            .then(data => {
+                                let freshGrades = data.grades || {};
+                                let freshBehaviors = data.behaviors || {};
+
+                                // Carefully inject the fresh data into the Alpine objects
+                                this.subjects.forEach(sub => { 
+                                    this.grades[sub] = freshGrades[sub] || { term1: '', term2: '', term3: '', final_grade: '', remarks: '' };
+                                });
+
+                                behaviorKeys.forEach(b => {
+                                    this.behaviors[b] = freshBehaviors[b] || { term1: '', term2: '', term3: '' };
+                                });
+
+                                // Recalculate the General Average immediately
+                                this.calculateGrades(); 
+                            })
+                            .catch(err => console.error('Error syncing grades:', err));
+                    }
+                }, 1000);
+                @endif
+},
 
             determineActiveTerm() {
+                // Get the current date formatted as YYYY-MM-DD
+                const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+                const today = (new Date(Date.now() - tzOffset)).toISOString().split("T")[0];
+
+                // 1. Check the date first! Loop through terms 1, 2, and 3 to see where today fits
+                for (let t = 1; t <= 3; t++) {
+                    const term = this.termDates['term' + t];
+                    if (term && term.start && term.end) {
+                        const startDate = term.start.split(' ')[0];
+                        const endDate = term.end.split(' ')[0];
+                        
+                        // If today is inside this term's scheduled dates, activate this term
+                        if (today >= startDate && today <= endDate) {
+                            return String(t);
+                        }
+                    }
+                }
+
+                // 2. Fallback: If no dates are set or today is outside the schedule, fallback to completion logic
                 const isComplete = (t) => this.subjects.every(s => String(this.grades[s]['term'+t] || '').trim() !== '');
                 if (isComplete(1) && isComplete(2)) return '3';
                 if (isComplete(1)) return '2';
-                return '1';
+                
+                return '1'; // Absolute default
             },
 
             isTermUnlocked(termNumber) {
@@ -260,6 +346,28 @@
             },
 
             async saveGrades() {
+                let currentTermNum = parseInt(this.activeTerm);
+                
+                // 1. STRICT PREVIOUS TERM CHECK
+                if (currentTermNum > 1) {
+                    for (let pastTerm = 1; pastTerm < currentTermNum; pastTerm++) {
+                        let pastMissing = this.subjects.filter(s => {
+                            let canGrade = this.assignedString.toUpperCase().includes('ALL') || this.assignedString.toUpperCase().includes(s.toUpperCase());
+                            return canGrade && String(this.grades[s]['term' + pastTerm] || '').trim() === '';
+                        });
+
+                        if (pastMissing.length > 0) {
+                            // POPULATE AND SHOW THE CUSTOM MODAL INSTEAD OF NATIVE ALERT
+                            this.strictLockTerm = currentTermNum;
+                            this.strictLockPastTerm = pastTerm;
+                            this.strictLockMissing = pastMissing;
+                            this.showStrictLockModal = true;
+                            return; // Blocks the save completely
+                        }
+                    }
+                }
+
+                // 2. CURRENT TERM CHECK (Uses your existing red error modal)
                 let tKey = 'term' + this.activeTerm;
                 
                 this.missingSubjects = this.subjects.filter(s => {
@@ -274,6 +382,7 @@
                     return;
                 }
 
+                // 3. EXECUTE SAVE
                 try {
                     const response = await fetch('{{ route('reportcard.store') }}', {
                         method: 'POST', 

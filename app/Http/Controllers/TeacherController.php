@@ -25,17 +25,22 @@ class TeacherController extends Controller
     {
         $student = Student::findOrFail($student_id);
 
-        // Map out the grade progression
+        // Standardize the database value to ALL CAPS to prevent spelling/case errors
+        $currentGrade = strtoupper(trim($student->grade_level));
+
+        // Map out the grade progression using bulletproof ALL CAPS keys
         $gradeProgression = [
-            'Nursery'      => 'Kindergarten',
-            'Kindergarten' => 'Preparatory',
-            'Preparatory'  => '1',
+            'NURSERY'      => 'Kindergarten',
+            'KINDER'       => 'Preparatory',
+            'KINDERGARTEN' => 'Preparatory',
+            'PREP'         => '1',
+            'PREPARATORY'  => '1',
             '1' => '2', '2' => '3', '3' => '4', 
             '4' => '5', '5' => '6', '6' => 'Graduate'
         ];
 
         // Get the next grade. If they are in Grade 6, they graduate.
-        $nextGrade = $gradeProgression[$student->grade_level] ?? null;
+        $nextGrade = $gradeProgression[$currentGrade] ?? null;
 
         if ($nextGrade) {
             $student->update([
@@ -49,6 +54,6 @@ class TeacherController extends Controller
             return back()->with('success', $student->first_name . ' is queued for promotion to ' . $displayGrade);
         }
 
-        return back()->with('error', 'Cannot promote this student further.');
+        return back()->with('error', 'Cannot promote this student further. Check if their grade level is formatted correctly.');
     }
 }

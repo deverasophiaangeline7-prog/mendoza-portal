@@ -23,25 +23,38 @@
                 @endforeach
             </div>
 
-            <div class="grid grid-cols-7 p-2 sm:p-3 gap-1 sm:gap-2">
+            <div class="grid grid-cols-7 p-2 sm:p-3 gap-1 sm:gap-2"
+                 x-data="{ 
+                    attendanceData: {{ json_encode($rawAttendance) }},
+                    getClass(status) {
+                        if (status === 'present') return 'bg-[#4ade80] border-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]';
+                        if (status === 'absent') return 'bg-[#ef4444] border-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]';
+                        if (status === 'late') return 'bg-[#facc15] border-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]';
+                        if (status === 'excused') return 'bg-[#60a5fa] border-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]';
+                        return 'bg-white border-black text-gray-300 shadow-none';
+                    },
+                    init() {
+                        setInterval(() => {
+                            fetch('{{ route('attendance.fetch') }}?month={{ $currentDate->month }}&year={{ $currentDate->year }}&t=' + Date.now())
+                                .then(res => res.json())
+                                .then(data => { this.attendanceData = { ...data }; })
+                                .catch(err => console.error('Error fetching attendance:', err));
+                        }, 5000); // 5 seconds
+                    }
+                 }">
+                
                 @for ($i = 0; $i < $firstDayOfWeek; $i++)
                     <div class="aspect-square border-none"></div>
                 @endfor
 
                 @foreach($days as $dayNum => $status)
                     @php
-                        $statusClasses = match($status) {
-                            'present' => 'bg-[#4ade80] border-black text-black',
-                            'absent'  => 'bg-[#ef4444] border-black text-black',
-                            'late'    => 'bg-[#facc15] border-black text-black',
-                            'excused' => 'bg-[#60a5fa] border-black text-black',
-                            'holiday' => 'bg-[#9ca3af] border-black text-black',
-                            default   => 'bg-white border-black text-gray-300 shadow-none'
-                        };
+                        // Calculate the exact YYYY-MM-DD for this specific calendar square
+                        $dateString = $currentDate->copy()->day($dayNum)->format('Y-m-d');
                     @endphp
-                    
-                    <div class="{{ $statusClasses }} border-2 sm:border-[3px] aspect-square flex items-center justify-center text-sm sm:text-xl font-black rounded-lg transition-all 
-                        {{ $status !== 'none' ? 'shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]' : '' }}">
+                    <!-- Alpine dynamically changes the class based on the live database status -->
+                    <div class="border-2 sm:border-[3px] aspect-square flex items-center justify-center text-sm sm:text-xl font-black rounded-lg transition-all"
+                         :class="getClass(attendanceData['{{ $dateString }}'] || 'none')">
                         {{ $dayNum }}
                     </div>
                 @endforeach
