@@ -27,17 +27,29 @@
                 <p class="text-sm font-bold text-blue-600 uppercase mt-1">Active Window: Term <span x-text="activeTerm"></span></p>
             </div>
             
-            <div class="flex flex-col items-end space-y-3">
-                @if($canManage ?? true)
-                <div class="flex space-x-2">
-                    <button @click="isManaging = !isManaging" class="font-black px-4 py-2 border-[3px] border-black rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all" :class="isManaging ? 'bg-green-400' : 'bg-gray-200'">
-                        <i class="fa-solid" :class="isManaging ? 'fa-unlock' : 'fa-lock'"></i> <span x-text="isManaging ? ' EDITING' : ' VIEWING'"></span>
-                    </button>
-                    <button x-show="isManaging" x-cloak @click="saveGrades()" class="bg-[#b26905] text-black px-4 py-2 rounded border-[3px] border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
-                        <i class="fa-solid fa-floppy-disk mr-1"></i> SAVE
-                    </button>
+            <!-- Right side wrapper for editing tools and the back button -->
+            <div class="flex items-start gap-6">
+                
+                <div class="flex flex-col items-end space-y-3">
+                    @if($canManage ?? true)
+                    <div class="flex space-x-2">
+                        <button @click="isManaging = !isManaging" class="font-black px-4 py-2 border-[3px] border-black rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all" :class="isManaging ? 'bg-green-400' : 'bg-gray-200'">
+                            <i class="fa-solid" :class="isManaging ? 'fa-unlock' : 'fa-lock'"></i> <span x-text="isManaging ? ' EDITING' : ' VIEWING'"></span>
+                        </button>
+                        <button x-show="isManaging" x-cloak @click="saveGrades()" class="bg-[#b26905] text-black px-4 py-2 rounded border-[3px] border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
+                            <i class="fa-solid fa-floppy-disk mr-1"></i> SAVE
+                        </button>
+                    </div>
+                    @endif
                 </div>
+
+                <!-- Back button restricted to teachers -->
+                @if(auth()->user()->role === 'teacher')
+                <a href="javascript:history.back()" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
+                    <i class="fa-solid fa-circle-left"></i>
+                </a>
                 @endif
+
             </div>
         </div>
 

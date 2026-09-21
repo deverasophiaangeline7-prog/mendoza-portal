@@ -36,4 +36,33 @@ class NotificationController extends Controller
             default               => redirect()->route('dashboard')
         };
     }
+
+    public function fetchNotifications()
+    {
+        $user = auth()->user();
+        if (!$user) return response()->json([]);
+
+        $filteredNotifications = $user->customNotifications->filter(function($notification) use ($user) {
+            $role = strtolower(trim($user->role));
+            $type = strtolower(trim($notification->type));
+
+            if ($role === 'teacher') {
+                return in_array($type, ['announcement', 'event', 'school event', 'calendar', 'deadline_alert', 'appointment']); 
+            }
+            return true; // Parents see everything
+        })->values(); // Ensure it returns as a clean array
+
+        // Format the dates so JavaScript can easily display "2 minutes ago"
+        $formatted = $filteredNotifications->map(function($notif) {
+            return [
+                'notification_id' => $notif->notification_id,
+                'type' => strtolower(trim($notif->type)),
+                'title' => $notif->title,
+                'message' => $notif->message,
+                'time_ago' => $notif->created_at->diffForHumans()
+            ];
+        });
+
+        return response()->json($formatted);
+    }
 }

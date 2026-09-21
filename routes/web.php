@@ -43,6 +43,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
 // ==========================================
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [SchoolCalendarController::class, 'index'])->name('dashboard');
+    Route::get('/fetch-events', [App\Http\Controllers\SchoolCalendarController::class, 'fetchEvents'])->name('events.fetch');
     Route::get('/my-calendar', [StudentCalendarController::class, 'studentCalendar'])->name('student.calendar');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -55,7 +56,7 @@ Route::middleware(['auth'])->group(function () {
     
     // Notifications Route (Moved here so teachers & parents both have access)
     Route::get('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-
+    Route::get('/fetch-notifications', [App\Http\Controllers\NotificationController::class, 'fetchNotifications'])->name('notifications.fetch');
     // General Views
     Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
     Route::get('/calendar', [SchoolCalendarController::class, 'index'])->name('calendar.index');
@@ -191,6 +192,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('/calendar/{schoolCalendar}/edit', [SchoolCalendarController::class, 'edit'])->name('calendar.edit');
     Route::put('/calendar/{schoolCalendar}', [SchoolCalendarController::class, 'update'])->name('calendar.update');
     Route::delete('/calendar/delete/{id}', [SchoolCalendarController::class, 'destroy'])->name('calendar.delete');
+   
 
     // Sections & Students
     Route::get('/students/section/{id}', [App\Http\Controllers\Admin\StudentController::class, 'showSection'])->name('students.showSection');

@@ -39,6 +39,17 @@
 
         getDateKey(day) {
             return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        },
+
+        init() {
+            setInterval(() => {
+                fetch('/fetch-events?t=' + Date.now())
+                    .then(response => response.json())
+                    .then(data => {
+                        this.events = { ...data }; 
+                    })
+                    .catch(error => console.error(error));
+            }, 1000);
         }
     }">
     

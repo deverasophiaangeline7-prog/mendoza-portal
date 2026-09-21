@@ -137,4 +137,22 @@ class SchoolCalendarController extends Controller
         
         return response()->json(['error' => 'Event not found'], 404);
     }
+
+    public function fetchEvents()
+    {
+        $dbEvents = \App\Models\SchoolCalendar::all();
+        $eventsData = [];
+
+        foreach ($dbEvents as $event) {
+            $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
+            $eventsData[$event->start_date] = [
+                'name'       => $event->event_title,
+                'start_time' => $timeParts[0] ?? '',
+                'end_time'   => $timeParts[1] ?? '',
+                'ps'         => $event->description,
+            ];
+        }
+
+        return response()->json($eventsData);
+    }
 }
