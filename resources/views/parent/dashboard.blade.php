@@ -45,17 +45,38 @@
             </h2>
         </div>
 
-        <div class="relative w-full h-80 bg-amber-700 rounded-3xl p-6 shadow-lg border-2 border-black mb-12">
-            <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-amber-600 relative overflow-hidden flex items-center justify-center">
-                @if(isset($announcementImages) && $announcementImages->count() > 0)
-                    <div class="absolute inset-0">
-                        <img src="{{ asset('storage/' . $announcementImages->first()->image_path) }}" class="w-full h-full object-cover">
-                    </div>
-                @else
-                    <div class="text-center text-gray-400 italic font-bold">No Active Announcements</div>
-                @endif
+        <div class="relative w-full h-80 bg-amber-700 rounded-3xl p-6 shadow-lg border-2 border-black mb-12"
+     x-data="{
+         hasImage: {{ (isset($announcementImages) && $announcementImages->count() > 0) ? 'true' : 'false' }},
+         imageUrl: '{{ (isset($announcementImages) && $announcementImages->count() > 0) ? asset('storage/' . $announcementImages->first()->image_path) : '' }}',
+         init() {
+             // Fetch the latest image from the server every 5 seconds
+             setInterval(() => {
+                 fetch('{{ route('banner.fetch') }}')
+                     .then(response => response.json())
+                     .then(data => {
+                         this.hasImage = data.has_image;
+                         if(data.has_image) {
+                             this.imageUrl = data.url;
+                         }
+                     });
+             }, 5000); 
+         }
+     }">
+    <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-amber-600 relative overflow-hidden flex items-center justify-center">
+        
+        <template x-if="hasImage">
+            <div class="absolute inset-0 transition-opacity duration-500">
+                <img :src="imageUrl" class="w-full h-full object-cover">
             </div>
-        </div>
+        </template>
+        
+        <template x-if="!hasImage">
+            <div class="text-center text-gray-400 italic font-bold">No Active Announcements</div>
+        </template>
+        
+    </div>
+</div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             <div>

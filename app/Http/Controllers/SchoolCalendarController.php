@@ -17,15 +17,16 @@ class SchoolCalendarController extends Controller
     $dbEvents = \App\Models\SchoolCalendar::all();
     $eventsData = [];
 
-    foreach ($dbEvents as $event) {
-        $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
-        $eventsData[$event->start_date] = [
-            'name'       => $event->event_title,
-            'start_time' => $timeParts[0] ?? '',
-            'end_time'   => $timeParts[1] ?? '',
-            'ps'         => $event->description,
-        ];
-    }
+   foreach ($dbEvents as $event) {
+    $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
+    $eventsData[$event->start_date] = [
+        'name'       => $event->event_title,
+        'start_time' => $timeParts[0] ?? '',
+        'end_time'   => $timeParts[1] ?? '',
+        'time'       => $event->time, 
+        'ps'         => $event->description,
+    ];
+}
 
     $announcementImages = \App\Models\AnnouncementImage::where('status', 'active')->get();
 
@@ -144,14 +145,15 @@ class SchoolCalendarController extends Controller
         $eventsData = [];
 
         foreach ($dbEvents as $event) {
-            $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
-            $eventsData[$event->start_date] = [
-                'name'       => $event->event_title,
-                'start_time' => $timeParts[0] ?? '',
-                'end_time'   => $timeParts[1] ?? '',
-                'ps'         => $event->description,
-            ];
-        }
+        $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
+        $eventsData[$event->start_date] = [
+            'name'       => $event->event_title,
+            'start_time' => $timeParts[0] ?? '',
+            'end_time'   => $timeParts[1] ?? '',
+            'time'       => $event->time, // <-- ADDED THIS LINE
+            'ps'         => $event->description,
+        ];
+    }
 
         return response()->json($eventsData);
     }

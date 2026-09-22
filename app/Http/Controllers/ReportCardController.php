@@ -325,12 +325,13 @@ class ReportCardController extends Controller
             'subject' => 'required|string',
             'excel_file' => 'required|mimes:xlsx,xls'
         ]);
-
+        
         $teacher = Teacher::where('user_id', Auth::id())->first();
         
-        
-if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teacher->assigned_subject)) {
-            return back()->with('error', 'Unauthorized. You are only allowed to upload grades for: ' . $teacher->assigned_subject);
+        if ($teacher && !str_contains(strtoupper($teacher->assigned_subject), 'ALL') && !empty($teacher->assigned_subject)) {
+            if (!str_contains(strtoupper($teacher->assigned_subject), strtoupper($request->subject))) {
+                return back()->with('error', 'Unauthorized. You are only allowed to upload grades for: ' . $teacher->assigned_subject);
+            }
         }
 
         $activeYear = SchoolYear::where('status', 'active')->first();
@@ -339,19 +340,37 @@ if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teac
             return back()->with('error', 'No active school year found.');
         }
 
+        // ==========================================
+        // DYNAMIC TERM CHECK (USING SCHOOL YEAR MODEL)
+        // ==========================================
+        $currentDate = now();
+        $activeTerm = 0;
+
+        // Automatically determine active term based on SchoolYear deadlines
+        // Change 'term1_end' to match your actual database column names if they are different (e.g., 'term1_deadline')
+        if ($currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term1_end)->endOfDay())) {
+            $activeTerm = 1;
+        } elseif ($currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term2_end)->endOfDay())) {
+            $activeTerm = 2;
+        } elseif ($currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term3_end)->endOfDay())) {
+            $activeTerm = 3;
+        }
+
+        if ($activeTerm === 0) {
+            return back()->with('error', 'All grading terms have ended.');
+        }
+
         // --- THE PHPSPREADSHEET APPROACH ---
         $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($request->file('excel_file')->getPathname());
-        
         $targetSheet = null;
 
-        // 1. DYNAMICALLY FIND THE "SUMMARY OF GRADES" SHEET
         foreach ($spreadsheet->getAllSheets() as $sheet) {
             for ($row = 1; $row <= 20; $row++) {
                 $cellValue = (string) $sheet->getCell('A' . $row)->getCalculatedValue();
                 
                 if (stripos(trim($cellValue), 'Summary of Quarterly Grades') !== false) {
                     $targetSheet = $sheet;
-                    break 2; // Found it! Break out of both loops
+                    break 2;
                 }
             }
         }
@@ -360,19 +379,15 @@ if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teac
             return back()->with('error', 'Could not detect the "Summary of Quarterly Grades" page. Please upload a valid DepEd e-Class Record.');
         }
 
-        // ==========================================
-        // NEW: STRICT SUBJECT MISMATCH PROTECTOR
-        // ==========================================
+        // SUBJECT MISMATCH PROTECTOR
         $subjectFound = false;
         $expectedSubject = trim($request->subject);
         $fileName = $request->file('excel_file')->getClientOriginalName();
 
-        // Check 1: Does the filename contain the subject? (e.g., GMRC_Grades.xlsx)
         if (stripos(str_replace(['_', '-'], ' ', $fileName), $expectedSubject) !== false) {
             $subjectFound = true;
         }
 
-        // Check 2: If not in filename, scan the top 15 rows of the Excel sheet to find the subject name
         if (!$subjectFound) {
             for ($r = 1; $r <= 15; $r++) {
                 foreach (range('A', 'K') as $col) {
@@ -385,38 +400,26 @@ if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teac
             }
         }
 
-        // If the subject is nowhere to be found, BLOCK THE UPLOAD
         if (!$subjectFound) {
-            return back()->with('error', "SUBJECT MISMATCH: You selected '{$expectedSubject}', but this Excel file appears to be for a different subject. Please upload the correct file.");
+            return back()->with('error', "SUBJECT MISMATCH: You selected '{$expectedSubject}', but this Excel file appears to be for a different subject.");
         }
-        // ==========================================
 
         $processed = 0;
-        $errors = []; // STRICT CHECK: Array to track wrong LRNs
+        $errors = []; 
         $highestRow = $targetSheet->getHighestDataRow();
-        
-        // --- TERM LOCKING SETUP ---
-        $currentDate = now();
-        
-        // Replace these placeholder dates with your actual locking dates.
-        $term1_deadline = \Carbon\Carbon::parse('2026-10-31 23:59:59'); 
-        $term2_deadline = \Carbon\Carbon::parse('2027-01-31 23:59:59');
-        $term3_deadline = \Carbon\Carbon::parse('2027-04-30 23:59:59');
 
-        // 2. PROCESS THE TARGET SHEET
+        // PROCESS THE TARGET SHEET
         for ($row = 1; $row <= $highestRow; $row++) {
             $lrn = trim((string) $targetSheet->getCell('A' . $row)->getCalculatedValue());
             $excelName = trim((string) $targetSheet->getCell('B' . $row)->getCalculatedValue());
             
-            // 1. Skip completely empty rows at the bottom of the Excel sheet
             if (empty($lrn) && empty($excelName)) {
                 continue;
             }
 
-            // 2. STRICT VALIDATION: Must be exactly 12 digits (0-9 only, absolutely no letters)
             if (!preg_match('/^\d{12}$/', $lrn)) {
-                $errors[] = "Row {$row}: Invalid LRN for '{$excelName}'. It must be exactly 12 digits with no letters.";
-                continue; // Skip updating this row, but record the error for the pink banner
+                $errors[] = "Row {$row}: Invalid LRN for '{$excelName}'.";
+                continue; 
             }
 
             $term1Val = (string) $targetSheet->getCell('F' . $row)->getCalculatedValue();
@@ -431,24 +434,25 @@ if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teac
                 continue;
             }
 
-            // STRICT MATCHING: Check if LRN actually belongs to a student in this section
             $student = Student::where('lrn', trim($lrn))->where('section_id', $section_id)->first();
 
             if (!$student) {
                 $excelName = (string) $targetSheet->getCell('B' . $row)->getCalculatedValue();
-                $errors[] = "Row {$row}: LRN {$lrn} ({$excelName}) does not match any student in this section.";
+                $errors[] = "Row {$row}: LRN {$lrn} does not match.";
                 continue; 
             }
 
             $updateData = [];
 
-            if ($currentDate->lessThanOrEqualTo($term1_deadline)) {
+            // ==========================================
+            // STRICT ACTIVE-TERM-ONLY IMPORT
+            // ==========================================
+            // It completely ignores the columns for inactive terms
+            if ($activeTerm === 1 && $term1 !== null) {
                 $updateData['term1'] = $term1;
-            } 
-            elseif ($currentDate->lessThanOrEqualTo($term2_deadline)) {
+            } elseif ($activeTerm === 2 && $term2 !== null) {
                 $updateData['term2'] = $term2;
-            } 
-            elseif ($currentDate->lessThanOrEqualTo($term3_deadline)) {
+            } elseif ($activeTerm === 3 && $term3 !== null) {
                 $updateData['term3'] = $term3;
             }
 
@@ -465,13 +469,12 @@ if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teac
             }
         }
 
-        // 3. RETURN RESULTS WITH STRICT ERROR REPORTING
         if (count($errors) > 0) {
             $errorMessage = "Import partially completed. {$processed} student(s) updated, but we blocked invalid LRNs: " . implode(" | ", $errors);
             return back()->with('error', $errorMessage);
         }
 
-        return back()->with('success', "{$request->subject} grades successfully imported. {$processed} student(s) updated.");
+        return back()->with('success', "{$request->subject} Term {$activeTerm} grades successfully imported. {$processed} student(s) updated.");
     }
 
     /**
@@ -560,11 +563,14 @@ if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teac
         $gradeLevel = '';
         $displaySection = 'ARCHIVED RECORD';
 
-        if ($history && $history->grade_level) {
-            $gradeLevel = strtoupper(trim($history->grade_level));
-            $displaySection = strtoupper($history->grade_level . ' - ' . $history->section_name);
-        } else {
-            // Fallback if history row is missing: assume they were 1 grade lower last year
+        if ($history) {
+            // Use historical data directly
+            $gradeLevel = $history->grade_level ? strtoupper(trim($history->grade_level)) : '';
+            
+            // The section_name already contains the grade level, so just use it directly
+            $displaySection = strtoupper($history->section_name);
+        }else {
+            // Fallback if history row is missing entirely: assume they were 1 grade lower last year
             $curr = strtoupper(trim($student->grade_level));
             
             if ($curr === '1') {
@@ -572,7 +578,7 @@ if ($teacher && !str_contains($teacher->assigned_subject, 'ALL') && !empty($teac
             } elseif (is_numeric($curr)) {
                 $gradeLevel = (string)max(1, (int)$curr - 1);
             } else {
-                $gradeLevel = $curr; // Fallback for NKP if no history is found
+                $gradeLevel = $curr; 
             }
             
             $displaySection = $student->section ? strtoupper($gradeLevel . ' - ' . $student->section->section_name) : 'ARCHIVED';

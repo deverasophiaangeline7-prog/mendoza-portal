@@ -342,25 +342,32 @@ class MessageController extends Controller
     }
 
     private function getAllowedContacts($authUser)
-{
-    $users = User::where('user_id', '!=', $authUser->user_id)
-        ->whereNull('custom_name')
-        ->where(function ($query) use ($authUser) {
+    {
+        $users = User::where('user_id', '!=', $authUser->user_id)
+            ->whereNull('custom_name') // Don't pull virtual group chat "users" into the direct message list
+            ->where('status', 'active') // Only show active users
+            ->where(function ($query) use ($authUser) {
+                
+                // ADMIN: Can message absolutely everyone
                 if ($authUser->role === 'admin') {
                     $query->whereNotNull('user_id');
                 }
+                
+                // TEACHER: Can message Admins, ALL Teachers, and ALL Parents
                 elseif ($authUser->role === 'teacher') {
-                    $teacherSectionIds = \App\Models\Section::where('teacher_id', $authUser->user_id)->pluck('section_id')->toArray();
-                    $query->whereIn('role', ['admin', 'teacher'])
-                          ->orWhere(function($q) use ($teacherSectionIds) {
-                              $q->where('role', 'parent')
-                                ->whereIn('section_id', $teacherSectionIds);
-                          });
+                    $query->whereIn('role', ['admin', 'teacher', 'parent']);
                 }
+                
                 elseif ($authUser->role === 'parent') {
-                    $mySection = \App\Models\Section::where('section_id', $authUser->section_id)->first();
+                    // Start by allowing Admins and all other Parents
+                    $query->whereIn('role', ['admin', 'parent']);
+                    
+                    // FIX: Pull the section_id directly from the linked student profile 
+                    $currentSectionId = $authUser->student ? $authUser->student->section_id : $authUser->section_id;
+                    
+                    $mySection = \App\Models\Section::where('section_id', $currentSectionId)->first();
                     $myTeacherId = $mySection ? $mySection->teacher_id : null;
-                    $query->where('role', 'admin');
+                    
                     if ($myTeacherId) {
                         $query->orWhere('user_id', $myTeacherId);
                     }
@@ -368,6 +375,7 @@ class MessageController extends Controller
             })
             ->get();
             
+        // Sort the final list alphabetically by name
         return $users->sortBy(function($user) {
             return $user->name;
         })->values();

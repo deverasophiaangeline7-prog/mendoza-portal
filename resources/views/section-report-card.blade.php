@@ -3,30 +3,62 @@
 @section('title', 'Student List')
 
 @section('content')
-<main class="flex-1 p-8 bg-white min-h-screen">
+<main class="flex-1 p-8 bg-white min-h-screen relative">
+    
+    {{-- TEST 2: RAW ALERT TO VERIFY SESSION WORKS --}}
+    @if(session('success'))
+        <script>
+            alert("TEST: Laravel Session Success is working!\nMessage: {{ session('success') }}");
+        </script>
+        
+        {{-- 1. ALPINE.JS FLOATING TOAST NOTIFICATIONS --}}
+        <div x-data="{ show: true }" 
+             x-show="show" 
+             x-transition
+             x-init="setTimeout(() => show = false, 5000)" 
+             class="fixed top-6 right-6 z-[9999] flex items-center justify-between gap-4 min-w-[300px] rounded-xl border-[3px] border-black bg-green-100 px-5 py-4 font-black text-green-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-circle-check text-2xl"></i>
+                <span class="text-base">{{ session('success') }}</span>
+            </div>
+            <button @click="show = false" class="text-2xl hover:scale-110 transition ml-2">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <script>
+            alert("TEST: Laravel Session Error is working!\nMessage: {{ session('error') }}");
+        </script>
+
+        <div x-data="{ show: true }" 
+             x-show="show" 
+             x-transition
+             x-init="setTimeout(() => show = false, 5000)" 
+             class="fixed top-6 right-6 z-[9999] flex items-center justify-between gap-4 min-w-[300px] rounded-xl border-[3px] border-black bg-red-100 px-5 py-4 font-black text-red-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                <span class="text-base">{{ session('error') }}</span>
+            </div>
+            <button @click="show = false" class="text-2xl hover:scale-110 transition ml-2">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    @endif
+
     <div class="max-w-6xl mx-auto">
         
         <div class="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
             <div>
-                <h2 class="text-4xl font-black text-black uppercase tracking-tight">Student List</h2>
+                {{-- TEST 1: CHANGED TITLE TO VERIFY CORRECT FILE --}}
+                <h2 class="text-4xl font-black text-black uppercase tracking-tight">Student List (TEST)</h2>
                 <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName }}</h3>
             </div>
             <a href="{{ route('reportcard.index') }}" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
                 <i class="fa-solid fa-circle-left"></i>
             </a>
         </div>
-
-        @if(session('success'))
-            <div class="mb-4 rounded-xl border-[3px] border-black bg-green-100 px-4 py-3 font-black text-green-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="mb-4 rounded-xl border-[3px] border-black bg-red-100 px-4 py-3 font-black text-red-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                {{ session('error') }}
-            </div>
-        @endif
 
         @if(auth()->user()->role === 'teacher')
             @php
@@ -48,36 +80,36 @@
             @csrf
             
           <select name="subject" required class="border-[3px] border-black rounded-xl px-3 py-2 font-black text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-    <option value="" {{ stripos($assignedSubj, 'ALL') === false ? 'disabled' : '' }}>SELECT SUBJECT</option>
-    
-    @php
-        preg_match('/\d+/', $sectionName, $matches);
-        $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
+            <option value="" {{ stripos($assignedSubj, 'ALL') === false ? 'disabled' : '' }}>SELECT SUBJECT</option>
+            
+            @php
+                preg_match('/\d+/', $sectionName, $matches);
+                $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
 
-        if ($gradeNum == 1) {
-            $subjectList = ['Language', 'Reading and Literacy', 'Mathematics', 'Makabansa', 'GMRC'];
-        } elseif ($gradeNum == 2 || $gradeNum == 3) {
-            $subjectList = ['English', 'Filipino', 'Mathematics', 'Makabansa', 'GMRC'];
-        } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
-            $subjectList = ['Filipino', 'English', 'Mathematics', 'Science', 'Araling Panlipunan', 'GMRC', 'TLE', 'MAPEH'];
-        } else {
-            $subjectList = [];
-        }
-    @endphp
+                if ($gradeNum == 1) {
+                    $subjectList = ['Language', 'Reading and Literacy', 'Mathematics', 'Makabansa', 'GMRC'];
+                } elseif ($gradeNum == 2 || $gradeNum == 3) {
+                    $subjectList = ['English', 'Filipino', 'Mathematics', 'Makabansa', 'GMRC'];
+                } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
+                    $subjectList = ['Filipino', 'English', 'Mathematics', 'Science', 'Araling Panlipunan', 'GMRC', 'TLE', 'MAPEH'];
+                } else {
+                    $subjectList = [];
+                }
+            @endphp
 
-    @foreach($subjectList as $subj)
-        @php
-            $hasAccess = stripos($assignedSubj, 'ALL') !== false || stripos($assignedSubj, $subj) !== false;
-        @endphp
-        
-        <option value="{{ $subj }}" 
-            {{ !$hasAccess ? 'disabled' : '' }}
-            class="{{ !$hasAccess ? 'text-gray-300 bg-gray-100' : 'text-black font-bold' }}"
-            {{ stripos($assignedSubj, $subj) !== false && stripos($assignedSubj, 'ALL') === false ? 'selected' : '' }}>
-            {{ $subj }}
-        </option>
-    @endforeach
-</select>
+            @foreach($subjectList as $subj)
+                @php
+                    $hasAccess = stripos($assignedSubj, 'ALL') !== false || stripos($assignedSubj, $subj) !== false;
+                @endphp
+                
+                <option value="{{ $subj }}" 
+                    {{ !$hasAccess ? 'disabled' : '' }}
+                    class="{{ !$hasAccess ? 'text-gray-300 bg-gray-100' : 'text-black font-bold' }}"
+                    {{ stripos($assignedSubj, $subj) !== false && stripos($assignedSubj, 'ALL') === false ? 'selected' : '' }}>
+                    {{ $subj }}
+                </option>
+            @endforeach
+        </select>
             
             <div x-data="{ fileName: '' }">
                 <label :class="fileName ? 'bg-red-500 text-white' : 'bg-white text-black'" 

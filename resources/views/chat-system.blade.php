@@ -55,7 +55,7 @@
     
     <!-- Sidebar / Chat List Container -->
     <div class="{{ isset($selectedUser) ? 'hidden md:flex' : 'flex w-full' }} md:w-80 border-r flex-col bg-white flex-shrink-0">
-        <div class="p-4 font-bold text-lg border-b bg-gray-50 flex justify-between items-center relative" x-data="{ searchOpen: false, searchQuery: '' }">
+        <div class="p-4 font-bold text-lg border-b bg-gray-50 flex justify-between items-center relative">
             <div class="flex items-center flex-1 mr-2 relative">
                 <span x-show="!searchOpen" class="text-gray-800">Chats</span>
                 <div x-show="searchOpen" class="w-full flex items-center" style="display: none;">
@@ -93,7 +93,9 @@
                     $hasUnread = $user->unreadMessagesCount() > 0;
                     $latestMsg = $user->latestMessageWithAuthUser();
                 @endphp
-                <a href="{{ route('messages.show', ['id' => $user->user_id]) }}" class="block p-4 border-b border-gray-200 transition {{ $hasUnread ? 'bg-blue-50/70' : 'bg-white hover:bg-gray-50' }} {{ (isset($selectedUser) && $selectedUser->user_id == $user->user_id) ? 'border-l-4 border-[#6d0101] bg-gray-50' : 'border-l-4 border-transparent' }}">
+                <a href="{{ route('messages.show', ['id' => $user->user_id]) }}" 
+                    x-show="searchQuery === '' || '{{ strtolower(addslashes($user->custom_name ?? $user->name)) }}'.includes(searchQuery.toLowerCase())"
+                    class="block p-4 border-b border-gray-200 transition {{ $hasUnread ? 'bg-blue-50/70' : 'bg-white hover:bg-gray-50' }} {{ (isset($selectedUser) && $selectedUser->user_id == $user->user_id) ? 'border-l-4 border-[#6d0101] bg-gray-50' : 'border-l-4 border-transparent' }}">
                     <div class="flex items-center">
                         <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}" class="w-12 h-12 rounded-full mr-3 border flex-shrink-0" alt="User">
                         <div class="flex-1 min-w-0">
@@ -432,6 +434,8 @@
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('chatSystem', () => ({
+            searchOpen: false,
+            searchQuery: '',
             newMsgModal: false, 
             createGroupModal: false,
             deleteModal: false,

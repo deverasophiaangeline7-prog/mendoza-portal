@@ -85,7 +85,7 @@ class StudentController extends Controller
 
     public function showSection($id)
     {
-        $section = Section::findOrFail($id);
+        $section = Section::with('adviser')->findOrFail($id);
 
         $students = Student::where('section_id', $section->id ?? $section->section_id)
                            ->with(['section', 'grades']) 

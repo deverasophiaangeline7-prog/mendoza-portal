@@ -51,7 +51,14 @@
             <div class="text-right border-r-4 border-[#b91c1c] pr-4">
                 <p class="text-gray-500 font-bold uppercase tracking-widest text-sm mb-1">Adviser</p>
                 <p class="text-2xl font-black text-black uppercase">
-                    {{ optional($students->first())->adviser_name ?? 'Surname, First Name, MI' }}
+                    @if($section->adviser)
+                        {{ $section->adviser->last_name }}, {{ $section->adviser->first_name }} 
+                        @if($section->adviser->middle_name)
+                            {{ substr($section->adviser->middle_name, 0, 1) }}.
+                        @endif
+                    @else
+                        No Adviser Assigned
+                    @endif
                 </p>
             </div>
         </div>

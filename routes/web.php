@@ -44,6 +44,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [SchoolCalendarController::class, 'index'])->name('dashboard');
     Route::get('/fetch-events', [App\Http\Controllers\SchoolCalendarController::class, 'fetchEvents'])->name('events.fetch');
+    Route::get('/fetch-active-banner', [App\Http\Controllers\AnnouncementImageController::class, 'fetchActive'])->name('banner.fetch');
     Route::get('/my-calendar', [StudentCalendarController::class, 'studentCalendar'])->name('student.calendar');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

@@ -52,4 +52,17 @@ class AnnouncementImageController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Image restored!');
     }
+    public function fetchActive()
+{
+    $image = \App\Models\AnnouncementImage::where('status', 'active')->latest()->first();
+    
+    if ($image) {
+        return response()->json([
+            'has_image' => true, 
+            'url' => asset('storage/' . $image->image_path)
+        ]);
+    }
+    
+    return response()->json(['has_image' => false]);
+}
 }

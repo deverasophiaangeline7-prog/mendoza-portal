@@ -174,32 +174,30 @@ class AttendanceController extends Controller
                 ]
             );
 
-            // 4. ONLY notify if the record is brand new OR the status actually changed
-            if ($attendance->wasRecentlyCreated || $attendance->wasChanged('status')) {
-                
-                // 5. ONLY notify if the attendance date being saved is EXACTLY TODAY (Philippine Time)
-                if (\Carbon\Carbon::parse($record['date'])->timezone('Asia/Manila')->isToday()) {
-                    
-                    $student = Student::find($record['student_id']);
-                    
-                    if ($student && $student->user_id) {
-                        $parent = User::find($student->user_id);
-                        
-                        if ($parent) {
-                            $typeLabel = strtoupper($textStatus);
-                            
-                            // Let's format the date so it clearly says "September 21" instead of "today"
-                            $formattedDate = \Carbon\Carbon::parse($record['date'])->format('F j');
-                            
-                            $parent->notifyUser(
-                                'Attendance Alert', 
-                                "Notice: {$student->first_name} was marked {$typeLabel} for {$formattedDate}.", 
-                                'attendance'
-                            );
-                        }
-                    }
-                }
-            }
+        // 4. ONLY notify if the record is brand new OR the status actually changed
+if ($attendance->wasRecentlyCreated || $attendance->wasChanged('status')) {
+    
+    $student = Student::find($record['student_id']);
+    
+    if ($student && $student->user_id) {
+        $parent = User::find($student->user_id);
+        
+        if ($parent) {
+            $typeLabel = strtoupper($textStatus);
+            
+            // Format the date using Philippine Time
+            $formattedDate = \Carbon\Carbon::parse($record['date'])
+                                ->timezone('Asia/Manila')
+                                ->format('F j');
+            
+            $parent->notifyUser(
+                'Attendance Alert', 
+                "Notice: {$student->first_name} was marked {$typeLabel} for {$formattedDate}.", 
+                'attendance'
+            );
+        }
+    }
+}
         }
 
         \App\Models\AuditLog::create([

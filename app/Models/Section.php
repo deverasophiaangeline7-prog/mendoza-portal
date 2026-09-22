@@ -24,4 +24,8 @@ class Section extends Model
     return $this->belongsTo(User::class, 'teacher_id', 'user_id');
     }
 
+    public function adviser()
+    {
+        return $this->hasOne(Teacher::class, 'advisory', 'section_id');
+    }
 }
