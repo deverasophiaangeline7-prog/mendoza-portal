@@ -7,11 +7,13 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     public function up(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
+{
+    Schema::table('users', function (Blueprint $table) {
+        if (!Schema::hasColumn('users', 'custom_name')) {
             $table->string('custom_name')->nullable()->after('password');
-        });
-    }
+        }
+    });
+}
 
     public function down(): void
     {
