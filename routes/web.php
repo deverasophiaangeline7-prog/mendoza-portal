@@ -199,8 +199,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
     // Sections & Students
     Route::get('/students/section/{id}', [App\Http\Controllers\Admin\StudentController::class, 'showSection'])->name('students.showSection');
-    Route::post('/sections/add', [App\Http\Controllers\Admin\StudentController::class, 'storeSection'])->name('sections.store');
-    Route::delete('/sections/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroySection'])->name('sections.destroy');
+    Route::post('/sections/add', [App\Http\Controllers\Admin\StudentController::class, 'storeSection'])->name('students.sections.store');
+    Route::delete('/sections/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroySection'])->name('students.sections.destroy');
 
     Route::post('/admin/students/add', [App\Http\Controllers\Admin\StudentController::class, 'storeStudent'])->name('admin.students.store');
     Route::delete('/admin/students/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroyStudent'])->name('admin.students.destroy');
