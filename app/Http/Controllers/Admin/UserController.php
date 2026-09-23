@@ -27,39 +27,39 @@ class UserController extends Controller
     {
         $role = auth()->user()->role;
 
-        // 1. Fetch active announcement images for the banner slider
         $announcementImages = AnnouncementImage::where('status', 'active')
                                 ->latest()
                                 ->get();
 
-        // 2. Fetch and format calendar events for the dashboard
-        // We fetch all events to populate the red highlights and details box
         $dbEvents = SchoolCalendar::all();
         $eventsData = [];
 
         foreach ($dbEvents as $event) {
-            // We use Carbon to ensure the date format is ALWAYS YYYY-MM-DD
-            // This matches the Alpine.js padding logic (e.g., 2026-04-09)
             $formattedDate = Carbon::parse($event->start_date)->format('Y-m-d');
             
             $eventsData[$formattedDate] = [
                 'name' => $event->event_title,
                 'ps'   => $event->description,
-                'time' => $event->time, // The fix for the missing time!
+                'time' => $event->time,
             ];
         }
 
-        // Logic for Admin
         if ($role === 'admin') {
             $users = User::where('status', 'active')->get();
-            // Passing 'eventsData' so the admin can manage and view the calendar
-            return view('dashboard', compact('users', 'announcementImages', 'eventsData'));
+            $activeYear = SchoolYear::where('status', 'active')->first(); 
+            
+            $hasAnyGrades = false;
+            if ($activeYear) {
+                $gradesExist = DB::table('grades')->where('school_year_id', $activeYear->id)->exists();
+                $nkpExist = DB::table('nkp_evaluations')->where('school_year_id', $activeYear->id)->exists();
+                $hasAnyGrades = $gradesExist || $nkpExist;
+            }
+            
+            return view('dashboard', compact('users', 'announcementImages', 'eventsData', 'activeYear'));
         }
 
-        // Logic for Teacher and Parent
         if ($role === 'teacher' || $role === 'parent') {
             $announcements = Announcement::latest()->take(5)->get();
-            // Passing 'eventsData' ensures teachers/parents see the same highlights and details
             return view($role . '.dashboard', compact('announcements', 'announcementImages', 'eventsData'));
         }
 
@@ -105,7 +105,6 @@ class UserController extends Controller
 
     public function finalize(Request $request)
     {
-        // 1. VALIDATE PASSWORD
         $request->validate([
             'admin_password' => 'required|string'
         ]);
@@ -117,7 +116,15 @@ class UserController extends Controller
         $currentYear = \App\Models\SchoolYear::where('status', 'active')->first();
         if (!$currentYear) return back()->with('error', 'No active school year found.');
 
-        // 2. INITIAL CHECK: Ensure the year isn't completely empty
+        // ==========================================
+        // NEW: STRICT TERM 3 TIME-LOCK
+        // ==========================================
+        if (!$currentYear->term3_end || \Carbon\Carbon::now()->lessThan(\Carbon\Carbon::parse($currentYear->term3_end)->endOfDay())) {
+            $endDate = $currentYear->term3_end ? \Carbon\Carbon::parse($currentYear->term3_end)->format('M d, Y') : 'UNSET';
+            return back()->with('error', "FINALIZATION BLOCKED: You cannot finalize the school year until Term 3 has officially ended (Expected: {$endDate}).");
+        }
+        // ==========================================
+
         $studentsWithAnyGrades = \App\Models\Student::whereNotNull('section_id')->has('grades')->count();
         $studentsWithAnyEvals = DB::table('nkp_evaluations')->count();
 
@@ -125,7 +132,6 @@ class UserController extends Controller
             return back()->with('error', 'FINALIZATION BLOCKED: This school year has no grades or evaluations recorded yet! You cannot close a school year that just started.');
         }
 
-        // 3. STRICT CHECK: Missing Grades & Evaluations across all 3 Terms
         $elementaryLevels = ['1', 'GRADE 1', '2', 'GRADE 2', '3', 'GRADE 3', '4', 'GRADE 4', '5', 'GRADE 5', '6', 'GRADE 6'];
         $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
 
@@ -140,7 +146,6 @@ class UserController extends Controller
         foreach ($activeStudents as $student) {
             $grade = strtoupper(trim($student->grade_level));
             
-            // --- ELEMENTARY CHECK ---
             if (in_array($grade, $elementaryLevels)) {
                 $expectedSubjects = DB::table('subject_assignments')
                     ->where('section_id', $student->section_id)
@@ -152,13 +157,11 @@ class UserController extends Controller
                            !is_null($gradeRecord->term3);
                 })->count();
 
-                // If a section is assigned subjects, they MUST finish them.
                 if ($expectedSubjects > 0 && $completedSubjects < $expectedSubjects) {
                     $incompleteElementaryCount++;
                 }
             }
 
-            // --- NKP CHECK ---
             if (in_array($grade, $nkpLevels)) {
                 $evaluation = DB::table('nkp_evaluations')
                     ->where('student_id', $student->student_id ?? $student->id)
@@ -170,7 +173,6 @@ class UserController extends Controller
             }
         }
 
-        // 4. BLOCK FINALIZATION IF ANYTHING IS MISSING (SAFELY)
         if ($incompleteElementaryCount > 0 || $incompleteNkpCount > 0) {
             $errorMessage = "FINALIZATION BLOCKED: ";
             if ($incompleteElementaryCount > 0) $errorMessage .= "{$incompleteElementaryCount} Elementary student(s) missing grades for all 3 terms. ";
@@ -178,23 +180,19 @@ class UserController extends Controller
             return back()->with('error', trim($errorMessage) . " Please complete these records before closing the year.");
         }
 
-        // START TRANSACTION ONLY AFTER ALL VALIDATION PASSES
         DB::beginTransaction();
         try {
-            // 5. HANDLE THE SCHOOL YEAR TRANSITION
             $years = explode('-', $currentYear->school_year);
             $nextYearString = ((int)$years[0] + 1) . '-' . ((int)$years[1] + 1);
 
             $currentYear->update(['status' => 'archived']);
             \App\Models\SchoolYear::create(['school_year' => $nextYearString, 'status' => 'active']);
 
-            // 6. THE "MIXED" WIPE (Wipes temporary data, preserves grades)
             \App\Models\AuditLog::query()->delete(); 
             \App\Models\Attendance::query()->delete(); 
             \App\Models\SchoolCalendar::query()->delete();
-            DB::table('subject_assignments')->truncate();
+            DB::table('subject_assignments')->delete(); 
 
-            // 7. PROMOTE STUDENTS & RESET SECTIONS
             $students = \App\Models\Student::with('section')->get();
 
             foreach ($students as $student) {
@@ -202,7 +200,7 @@ class UserController extends Controller
                     \App\Models\StudentHistory::create([
                         'student_id' => $student->student_id,
                         'school_year_id' => $currentYear->id,
-                        'grade_level' => strtoupper(trim($student->grade_level)), // CRITICAL: Save their past grade!
+                        'grade_level' => strtoupper(trim($student->grade_level)),
                         'section_name' => strtoupper($student->section->grade_level . ' - ' . $student->section->section_name)
                     ]);
                 }
@@ -226,7 +224,6 @@ class UserController extends Controller
                 $student->save();
             }
 
-            // 8. LOG & COMMIT
             \App\Models\AuditLog::create([
                 'user_id' => Auth::id(),
                 'action' => 'Year Finalized',
@@ -235,7 +232,6 @@ class UserController extends Controller
 
             DB::commit(); 
             
-            // Return back explicitly instead of using a redirect string so the toast notification reliably triggers
             return back()->with('success', "School Year finalized successfully. Welcome to SY {$nextYearString}!");
 
         } catch (\Exception $e) {
@@ -378,38 +374,37 @@ class UserController extends Controller
     }
 
     public function updateTerms(Request $request)
-{
-    // Validate the dates
-    $validated = $request->validate([
-        'term1_start' => 'required|date',
-        'term1_end'   => 'required|date|after_or_equal:term1_start',
-        
-        'term2_start' => 'required|date|after_or_equal:term1_end',
-        'term2_end'   => 'required|date|after_or_equal:term2_start',
-        
-        'term3_start' => 'required|date|after_or_equal:term2_end',
-        'term3_end'   => 'required|date|after_or_equal:term3_start',
-    ]);
+    {
+        // Validate the dates
+        $validated = $request->validate([
+            'term1_start' => 'required|date',
+            'term1_end'   => 'required|date|after_or_equal:term1_start',
+            
+            'term2_start' => 'required|date|after_or_equal:term1_end',
+            'term2_end'   => 'required|date|after_or_equal:term2_start',
+            
+            'term3_start' => 'required|date|after_or_equal:term2_end',
+            'term3_end'   => 'required|date|after_or_equal:term3_start',
+        ]);
 
-    // Fetch the currently active school year 
-    // (Note: your web.php uses 'status' => 'active')
-    $activeYear = SchoolYear::where('status', 'active')->first();
+        // Fetch the currently active school year 
+        // (Note: your web.php uses 'status' => 'active')
+        $activeYear = SchoolYear::where('status', 'active')->first();
 
-    if (!$activeYear) {
-        return back()->with('error', 'No active school year found to update.');
+        if (!$activeYear) {
+            return back()->with('error', 'No active school year found to update.');
+        }
+
+        // Update the record in the database
+        $activeYear->update([
+            'term1_start' => $validated['term1_start'],
+            'term1_end'   => $validated['term1_end'],
+            'term2_start' => $validated['term2_start'],
+            'term2_end'   => $validated['term2_end'],
+            'term3_start' => $validated['term3_start'],
+            'term3_end'   => $validated['term3_end'],
+        ]);
+
+        return back()->with('success', 'Term Schedule securely updated.');
     }
-
-    // Update the record in the database
-    $activeYear->update([
-        'term1_start' => $validated['term1_start'],
-        'term1_end'   => $validated['term1_end'],
-        'term2_start' => $validated['term2_start'],
-        'term2_end'   => $validated['term2_end'],
-        'term3_start' => $validated['term3_start'],
-        'term3_end'   => $validated['term3_end'],
-    ]);
-
-    return back()->with('success', 'Term Schedule securely updated.');
-}
-
 }

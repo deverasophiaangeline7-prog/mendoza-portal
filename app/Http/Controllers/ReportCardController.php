@@ -10,11 +10,9 @@ use App\Models\BehaviorReport;
 use App\Models\NkpEvaluation;
 use App\Models\User;
 use App\Models\AuditLog;
-use App\Notifications\GradeUploaded;
 use App\Models\SchoolYear;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification;
 
 // EXCEL & TEACHER IMPORTS
 use App\Models\Teacher;
@@ -25,14 +23,10 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ReportCardController extends Controller
 {
-    /**
-     * 1. THE MENU
-     */
     public function index()
     {
         $user = Auth::user();
 
-        // Custom sorting string to keep NKP on top and Grades 1-6 in order
         $orderLogic = "
             CASE 
                 WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1 
@@ -54,10 +48,7 @@ class ReportCardController extends Controller
         if ($user->role === 'teacher') {
             $teacher = \App\Models\Teacher::where('user_id', $user->user_id)->first();
             
-            // If they are a Subject Teacher (e.g., 'GMRC') and NOT an Adviser ('ALL')
             if ($teacher && $teacher->assigned_subject !== 'ALL' && !empty($teacher->assigned_subject)) {
-                
-                // STRICT OPTION B: Pull ONLY the sections they are explicitly assigned to teach
                 $assignedSectionIds = \App\Models\SubjectAssignment::where('teacher_id', $user->user_id)
                     ->pluck('section_id')
                     ->toArray();
@@ -67,10 +58,7 @@ class ReportCardController extends Controller
                     ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
                     ->orderBy('section_name', 'asc')
                     ->get();
-
             } else {
-                
-                // ADVISERS / NKP TEACHERS: Pull the section where they are the official adviser
                 $sections = Section::where('teacher_id', $user->user_id)
                     ->orderByRaw($orderLogic)
                     ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
@@ -92,9 +80,6 @@ class ReportCardController extends Controller
         return abort(403, 'Unauthorized access.');
     }
 
-    /**
-     * 2. THE STUDENT LIST
-     */
     public function show($section_id)
     {
         $students = Student::where('section_id', $section_id)->get();
@@ -108,27 +93,51 @@ class ReportCardController extends Controller
         ]);
     }
 
-    /**
-     * 3. THE GRADE SHEET (Branching Logic)
-     */
     public function showStudent($student_id)
     {
         $student = Student::with('section')->findOrFail($student_id);
         
-        // Security check
+        // ==========================================
+        // 1. FIXED PERMISSIONS FOR THE EDIT BUTTON
+        // ==========================================
         $canManage = false;
         if (Auth::user()->role === 'teacher' && $student->section) {
-            $canManage = $student->section->teacher_id == Auth::user()->user_id;
+            // Check 1: Is this teacher the main adviser of the section?
+            $isAdviser = $student->section->teacher_id == Auth::user()->user_id;
+            
+            // Check 2: Is this teacher an assigned Subject Teacher for this section?
+            $isSubjectTeacher = \App\Models\SubjectAssignment::where('teacher_id', Auth::user()->user_id)
+                                ->where('section_id', $student->section_id)
+                                ->exists();
+
+            // If they are either the adviser OR a subject teacher, show the Edit button
+            if ($isAdviser || $isSubjectTeacher) {
+                $canManage = true;
+            }
         }
 
         $gradeLevel = strtoupper($student->section ? $student->section->grade_level : '');
         $isNkp = in_array($gradeLevel, ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREPARATORY']);
 
-        // --- GET THE ACTIVE SCHOOL YEAR ---
         $activeYear = SchoolYear::where('status', 'active')->first();
         $activeYearId = $activeYear ? $activeYear->id : null;
 
-        // --- BRANCH 1: NKP STUDENTS ---
+        // ==========================================
+        // 2. CALCULATE ACTIVE TERM FOR THE UI 
+        // ==========================================
+        $currentDate = now();
+        $activeTerm = 0;
+
+        if ($activeYear) {
+            if ($activeYear->term1_end && $currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term1_end)->endOfDay())) {
+                $activeTerm = 1;
+            } elseif ($activeYear->term2_end && $currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term2_end)->endOfDay())) {
+                $activeTerm = 2;
+            } elseif ($activeYear->term3_end && $currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term3_end)->endOfDay())) {
+                $activeTerm = 3;
+            }
+        }
+
         if ($isNkp) {
             $existingEvaluations = NkpEvaluation::where('student_id', $student_id)
                 ->where('school_year_id', $activeYearId)
@@ -140,47 +149,24 @@ class ReportCardController extends Controller
                 'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
                 'sectionName' => $student->section ? strtoupper($gradeLevel . ' - ' . $student->section->section_name) : 'UNASSIGNED',
                 'student_id' => $student_id,
+                'section_id' => $student->section_id,
                 'savedEvaluations' => $existingEvaluations,
-                'canManage' => $canManage
+                'canManage' => $canManage,
+                'activeTerm' => $activeTerm // Passes term number to the Blade file
             ]);
         }
 
-        // --- BRANCH 2: GRADE 1 TO 6 STUDENTS ---
-        
-        // 1. Extract the exact number from the grade level
         preg_match('/\d+/', $gradeLevel, $matches);
         $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
 
-        // 2. Dynamically assign subjects based on the curriculum differences
         if ($gradeNum == 1) {
-            $subjects = [
-                'Language', 
-                'Reading and Literacy', 
-                'Mathematics', 
-                'Makabansa', 
-                'GMRC'
-            ];
+            $subjects = ['Language', 'Reading and Literacy', 'Mathematics', 'Makabansa', 'GMRC'];
         } elseif ($gradeNum == 2 || $gradeNum == 3) {
-            $subjects = [
-                'English', 
-                'Filipino', 
-                'Mathematics', 
-                'Makabansa', 
-                'GMRC'
-            ];
+            $subjects = ['English', 'Filipino', 'Mathematics', 'Makabansa', 'GMRC'];
         } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
-            $subjects = [
-                'Filipino', 
-                'English', 
-                'Mathematics', 
-                'Science', 
-                'Araling Panlipunan', 
-                'GMRC', 
-                'TLE', 
-                'MAPEH'
-            ];
+            $subjects = ['Filipino', 'English', 'Mathematics', 'Science', 'Araling Panlipunan', 'GMRC', 'TLE', 'MAPEH'];
         } else {
-            $subjects = []; // Fallback
+            $subjects = []; 
         }
 
         $coreValues = ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'];
@@ -197,12 +183,14 @@ class ReportCardController extends Controller
             'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
             'sectionName' => $student->section ? strtoupper($gradeLevel . ' - ' . $student->section->section_name) : 'UNASSIGNED',
             'student_id' => $student_id,
+            'section_id' => $student->section_id,
             'subjects' => $subjects,
             'coreValues' => $coreValues,
             'savedGrades' => $existingGrades,
             'savedBehaviors' => $existingBehaviors,
             'canManage' => $canManage,
-            'activeYear' => $activeYear
+            'activeYear' => $activeYear,
+            'activeTerm' => $activeTerm // Passes term number to the Blade file
         ]);
     }
 
@@ -218,12 +206,8 @@ class ReportCardController extends Controller
         return $this->showStudent($student->student_id);
     }
 
-    /**
-     * 4. THE SAVE ENGINE (Handles both standard and NKP data)
-     */
     public function store(Request $request)
     {
-        // BACKEND RESTRICTION: Block Admins and Parents from saving grades
         if (Auth::user()->role !== 'teacher') {
             return response()->json(['message' => 'Unauthorized action. Only teachers can update grades.'], 403);
         }
@@ -233,17 +217,14 @@ class ReportCardController extends Controller
         $behaviors = $request->input('behaviors');
         $nkpEvaluations = $request->input('nkp_evaluations');
 
-        // --- GET THE ACTIVE SCHOOL YEAR ---
         $activeYear = SchoolYear::where('status', 'active')->first();
 
-        // Safety check: if no active year exists, stop them from saving
         if (!$activeYear) {
             return response()->json(['message' => 'Error: No active school year found!'], 400);
         }
         
         $activeYearId = $activeYear->id;
 
-        // 1. Save Numeric Grades
         if ($grades) {
             foreach ($grades as $subject => $data) {
                 Grade::updateOrCreate(
@@ -259,7 +240,6 @@ class ReportCardController extends Controller
             }
         }
 
-        // 2. Save Observed Values (Grades 1-6) - SAFELY UPDATED TO TERMS!
         if ($behaviors) {
             foreach ($behaviors as $value => $data) {
                 BehaviorReport::updateOrCreate(
@@ -273,7 +253,6 @@ class ReportCardController extends Controller
             }
         }
 
-        // 3. Save NKP Checklist Evaluations (Nursery, Kinder, Prep) - SAFELY UPDATED TO TERMS!
         if ($nkpEvaluations) {
             foreach ($nkpEvaluations as $skill => $data) {
                 NkpEvaluation::updateOrCreate(
@@ -288,7 +267,6 @@ class ReportCardController extends Controller
             }
         }
 
-        // 4. NOTIFY THE PARENT (Custom Table Logic)
         $student = Student::find($student_id);
 
         if ($student && $student->user_id) {
@@ -316,9 +294,6 @@ class ReportCardController extends Controller
         return response()->json(['message' => 'Saved Successfully!']);
     }
 
-    /**
-     * 5. THE NEW EXCEL SUBJECT IMPORT ENGINE (PhpSpreadsheet + Term Lock + STRICT LRN)
-     */
     public function importBatch(Request $request, $section_id)
     {
         $request->validate([
@@ -330,14 +305,22 @@ class ReportCardController extends Controller
         
         if ($teacher && !str_contains(strtoupper($teacher->assigned_subject), 'ALL') && !empty($teacher->assigned_subject)) {
             if (!str_contains(strtoupper($teacher->assigned_subject), strtoupper($request->subject))) {
-                return back()->with('error', 'Unauthorized. You are only allowed to upload grades for: ' . $teacher->assigned_subject);
+                return redirect()->route('reportcard.show', [
+                    'section_id' => $section_id,
+                    'toast_status' => 'error',
+                    'toast_message' => 'Unauthorized. You are only allowed to upload grades for: ' . $teacher->assigned_subject
+                ]);
             }
         }
 
         $activeYear = SchoolYear::where('status', 'active')->first();
         
         if (!$activeYear) {
-            return back()->with('error', 'No active school year found.');
+            return redirect()->route('reportcard.show', [
+                'section_id' => $section_id,
+                'toast_status' => 'error',
+                'toast_message' => 'No active school year found.'
+            ]);
         }
 
         // ==========================================
@@ -346,18 +329,20 @@ class ReportCardController extends Controller
         $currentDate = now();
         $activeTerm = 0;
 
-        // Automatically determine active term based on SchoolYear deadlines
-        // Change 'term1_end' to match your actual database column names if they are different (e.g., 'term1_deadline')
-        if ($currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term1_end)->endOfDay())) {
+        if ($activeYear->term1_end && $currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term1_end)->endOfDay())) {
             $activeTerm = 1;
-        } elseif ($currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term2_end)->endOfDay())) {
+        } elseif ($activeYear->term2_end && $currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term2_end)->endOfDay())) {
             $activeTerm = 2;
-        } elseif ($currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term3_end)->endOfDay())) {
+        } elseif ($activeYear->term3_end && $currentDate->lessThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term3_end)->endOfDay())) {
             $activeTerm = 3;
         }
 
         if ($activeTerm === 0) {
-            return back()->with('error', 'All grading terms have ended.');
+            return redirect()->route('reportcard.show', [
+                'section_id' => $section_id,
+                'toast_status' => 'error',
+                'toast_message' => 'All grading terms have ended or dates are not set.'
+            ]);
         }
 
         // --- THE PHPSPREADSHEET APPROACH ---
@@ -376,7 +361,11 @@ class ReportCardController extends Controller
         }
 
         if (!$targetSheet) {
-            return back()->with('error', 'Could not detect the "Summary of Quarterly Grades" page. Please upload a valid DepEd e-Class Record.');
+            return redirect()->route('reportcard.show', [
+                'section_id' => $section_id,
+                'toast_status' => 'error',
+                'toast_message' => 'Could not detect the "Summary of Quarterly Grades" page. Please upload a valid DepEd e-Class Record.'
+            ]);
         }
 
         // SUBJECT MISMATCH PROTECTOR
@@ -401,8 +390,42 @@ class ReportCardController extends Controller
         }
 
         if (!$subjectFound) {
-            return back()->with('error', "SUBJECT MISMATCH: You selected '{$expectedSubject}', but this Excel file appears to be for a different subject.");
+            return redirect()->route('reportcard.show', [
+                'section_id' => $section_id,
+                'toast_status' => 'error',
+                'toast_message' => "SUBJECT MISMATCH: You selected '{$expectedSubject}', but this Excel file appears to be for a different subject."
+            ]);
         }
+
+        // ==========================================
+        // GRADE & SECTION MISMATCH PROTECTOR
+        // ==========================================
+        $section = Section::findOrFail($section_id);
+        $expectedGrade = strtoupper(trim($section->grade_level)); 
+        $expectedSection = strtoupper(trim($section->section_name));
+
+        $sectionFound = false;
+
+        // Scan the header rows (1 to 15) and columns (A to K) for the Grade & Section
+        for ($r = 1; $r <= 15; $r++) {
+            foreach (range('A', 'K') as $col) {
+                $cellValue = strtoupper((string) $targetSheet->getCell($col . $r)->getCalculatedValue());
+                
+                if (str_contains($cellValue, $expectedSection) && (str_contains($cellValue, $expectedGrade) || str_contains($cellValue, 'GRADE ' . $expectedGrade))) {
+                    $sectionFound = true;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$sectionFound) {
+            return redirect()->route('reportcard.show', [
+                'section_id' => $section_id,
+                'toast_status' => 'error',
+                'toast_message' => "GRADE/SECTION MISMATCH: The uploaded file does not appear to belong to Grade {$expectedGrade} - {$expectedSection}."
+            ]);
+        }
+        // ==========================================
 
         $processed = 0;
         $errors = []; 
@@ -437,17 +460,16 @@ class ReportCardController extends Controller
             $student = Student::where('lrn', trim($lrn))->where('section_id', $section_id)->first();
 
             if (!$student) {
-                $excelName = (string) $targetSheet->getCell('B' . $row)->getCalculatedValue();
-                $errors[] = "Row {$row}: LRN {$lrn} does not match.";
+                // Only log an error if there's actually a name typed in, ignoring blank spaces
+                if (!empty($excelName) && strtoupper($lrn) !== 'MALE' && strtoupper($lrn) !== 'FEMALE') {
+                    $errors[] = "Row {$row}: LRN {$lrn} does not match.";
+                }
                 continue; 
             }
 
             $updateData = [];
 
-            // ==========================================
             // STRICT ACTIVE-TERM-ONLY IMPORT
-            // ==========================================
-            // It completely ignores the columns for inactive terms
             if ($activeTerm === 1 && $term1 !== null) {
                 $updateData['term1'] = $term1;
             } elseif ($activeTerm === 2 && $term2 !== null) {
@@ -469,17 +491,25 @@ class ReportCardController extends Controller
             }
         }
 
-        if (count($errors) > 0) {
-            $errorMessage = "Import partially completed. {$processed} student(s) updated, but we blocked invalid LRNs: " . implode(" | ", $errors);
-            return back()->with('error', $errorMessage);
-        }
+        // =================================================================
+        // GUARANTEED REDIRECT (URL PARAMETERS)
+        // =================================================================
+        $status = 'success';
+        $message = "{$request->subject} Term {$activeTerm} grades imported! {$processed} student(s) updated.";
 
-        return back()->with('success', "{$request->subject} Term {$activeTerm} grades successfully imported. {$processed} student(s) updated.");
+        // If nothing processed, then it's a true error
+        if ($processed === 0) {
+            $status = 'error';
+            $message = "Import failed. No valid students found in the file.";
+        } 
+        
+        return redirect()->route('reportcard.show', [
+            'section_id' => $section_id, 
+            'toast_status' => $status,
+            'toast_message' => $message
+        ]);
     }
 
-    /**
-     * 6. EXCEL DOWNLOAD TEMPLATE
-     */
     public function downloadTemplate(Request $request, $section_id)
     {
         $request->validate([
@@ -487,7 +517,7 @@ class ReportCardController extends Controller
         ]);
 
         $students = Student::where('section_id', $section_id)
-                        ->orderBy('gender', 'desc') // Puts MALE first
+                        ->orderBy('gender', 'desc')
                         ->orderBy('last_name', 'asc')
                         ->get();
 
@@ -524,9 +554,6 @@ class ReportCardController extends Controller
         return Excel::download($export, $fileName);
     }
 
-    /**
-     * 7. ARCHIVES
-     */
     public function archivedIndex($school_year_id)
     {
         $schoolYear = SchoolYear::findOrFail($school_year_id);
@@ -546,31 +573,22 @@ class ReportCardController extends Controller
         return view('archived-students-list', compact('students', 'schoolYear', 'histories'));
     }
 
-    /**
-     * VIEW AN ARCHIVED REPORT CARD (READ-ONLY)
-     */
     public function archivedShowStudent($student_id, $school_year_id)
     {
         $student = Student::findOrFail($student_id);
         $schoolYear = SchoolYear::findOrFail($school_year_id);
         
-        // 1. Fetch the student's historical data for this specific archived year
         $history = \App\Models\StudentHistory::where('student_id', $student_id)
             ->where('school_year_id', $school_year_id)
             ->first();
 
-        // 2. Smart fallback: Use history if available, otherwise guess based on current grade minus 1
         $gradeLevel = '';
         $displaySection = 'ARCHIVED RECORD';
 
         if ($history) {
-            // Use historical data directly
             $gradeLevel = $history->grade_level ? strtoupper(trim($history->grade_level)) : '';
-            
-            // The section_name already contains the grade level, so just use it directly
             $displaySection = strtoupper($history->section_name);
         }else {
-            // Fallback if history row is missing entirely: assume they were 1 grade lower last year
             $curr = strtoupper(trim($student->grade_level));
             
             if ($curr === '1') {
@@ -603,7 +621,6 @@ class ReportCardController extends Controller
                 'activeYear' => $schoolYear
             ]);
         } else {
-            // Dynamic Subjects for Archived Students based on PAST grade level
             preg_match('/\d+/', $gradeLevel, $matches);
             $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
 

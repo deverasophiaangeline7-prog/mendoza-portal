@@ -5,9 +5,10 @@
 @section('content')
 <div class="flex-1 bg-white relative p-4 md:p-8 flex flex-col items-center min-h-screen w-full pt-16 md:pt-8"
      x-data="{ 
-        finalizeModal: {{ $errors->has('admin_password') ? 'true' : 'false' }}, 
-        passwordModal: false, 
-        termScheduleModal: {{ $errors->hasAny(['term1_start', 'term1_end', 'term2_start', 'term2_end', 'term3_start', 'term3_end']) ? 'true' : 'false' }} 
+         finalizeModal: {{ $errors->has('admin_password') ? 'true' : 'false' }}, 
+         passwordModal: false, 
+         termScheduleModal: {{ $errors->hasAny(['term1_start', 'term1_end', 'term2_start', 'term2_end', 'term3_start', 'term3_end']) ? 'true' : 'false' }},
+         blockedModal: false 
      }">
 
     <div class="absolute top-4 md:top-20 w-full max-w-md z-50 px-4">
@@ -115,8 +116,40 @@
                 View Activity Logs
             </a>
         
-            <button @click="finalizeModal = true" class="w-full bg-green-500 hover:bg-green-600 text-black text-lg md:text-2xl font-black py-4 md:py-5 px-4 md:px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center text-center">
-                Finalize School Year
+            @php
+                $canFinalize = false;
+                $term3EndDate = 'UNSET';
+                $isTerm3Ended = false;
+                $hasAnyGrades = false; // Initialize the missing variable
+                
+                if (isset($activeYear)) {
+                    // Check if the current school year has ANY grades or NKP evaluations right here
+                    $gradesExist = \Illuminate\Support\Facades\DB::table('grades')->where('school_year_id', $activeYear->id)->exists();
+                    $nkpExist = \Illuminate\Support\Facades\DB::table('nkp_evaluations')->where('school_year_id', $activeYear->id)->exists();
+                    $hasAnyGrades = $gradesExist || $nkpExist;
+
+                    if ($activeYear->term3_end) {
+                        $term3EndDate = \Carbon\Carbon::parse($activeYear->term3_end)->format('F d, Y');
+                        $isTerm3Ended = \Carbon\Carbon::now()->greaterThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term3_end)->endOfDay());
+                    }
+                }
+
+                // Must pass BOTH checks: Term 3 is done AND there is at least one grade in the database
+                if ($isTerm3Ended && $hasAnyGrades) {
+                    $canFinalize = true;
+                }
+            @endphp
+
+            <button 
+                @if($canFinalize)
+                    @click="finalizeModal = true"
+                    class="w-full bg-green-500 hover:bg-green-600 text-black text-lg md:text-2xl font-black py-4 md:py-5 px-4 md:px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center text-center"
+                @else
+                    @click="blockedModal = true"
+                    class="w-full bg-gray-300 hover:bg-gray-400 text-gray-600 text-lg md:text-2xl font-black py-4 md:py-5 px-4 md:px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center text-center gap-3"
+                @endif
+            >
+                Finalize School Year @if(!$canFinalize) <i class="fa-solid fa-lock"></i> @endif
             </button>
 
             <button @click="passwordModal = true" class="w-full bg-[#ff3366] hover:bg-[#ff1a53] text-black font-black text-lg md:text-2xl py-4 md:py-5 px-4 md:px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-3">
@@ -129,6 +162,43 @@
         </div>
 
     </div>
+
+    <!-- START: Blocked Finalization Modal -->
+    <div x-show="blockedModal" 
+         x-transition:opacity
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
+         x-cloak>
+        <div @click.away="blockedModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
+            
+            <button @click="blockedModal = false" class="absolute top-4 right-6 text-3xl font-black text-gray-400 hover:text-black transition-colors">&times;</button>
+
+            <div class="text-center">
+                <i class="fa-solid fa-lock text-6xl text-gray-500 mb-6 drop-shadow-md"></i>
+                
+                @if(!$hasAnyGrades)
+                    <h2 class="text-3xl font-black mb-3 uppercase tracking-tight text-red-600">No Grades Found</h2>
+                    <p class="text-lg font-bold text-gray-700 mb-6 leading-tight">
+                        You cannot finalize the school year because <span class="text-red-600 underline">there are no grades or evaluations</span> recorded yet.
+                        <br><br>
+                        Teachers must input grades before the year can be closed.
+                    </p>
+                @else
+                    <h2 class="text-3xl font-black mb-3 uppercase tracking-tight text-red-600">Action Locked</h2>
+                    <p class="text-lg font-bold text-gray-700 mb-6 leading-tight">
+                        You cannot finalize the school year until Term 3 officially ends. 
+                        <br><br>
+                        Expected Unlock Date: <br>
+                        <span class="text-black text-2xl uppercase underline mt-2 inline-block">{{ $term3EndDate }}</span>
+                    </p>
+                @endif
+
+                <button @click="blockedModal = false" class="w-full bg-gray-200 text-black font-black py-4 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-300 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all text-lg">
+                    UNDERSTOOD
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- END: Blocked Finalization Modal -->
 
     <!-- Modals Section remains unchanged below this point -->
     <div x-show="finalizeModal" 

@@ -5,54 +5,38 @@
 @section('content')
 <main class="flex-1 p-8 bg-white min-h-screen relative">
     
-    {{-- TEST 2: RAW ALERT TO VERIFY SESSION WORKS --}}
-    @if(session('success'))
-        <script>
-            alert("TEST: Laravel Session Success is working!\nMessage: {{ session('success') }}");
-        </script>
+    {{-- BULLETPROOF VANILLA JS TOAST (MOVED TO BOTTOM RIGHT) --}}
+    @if(request()->has('toast_status'))
+        <div id="import-toast" class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-4 min-w-[320px] rounded-xl border-[3px] border-black {{ request('toast_status') === 'success' ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900' }} px-5 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-opacity duration-500">
+            <div class="flex items-center gap-3">
+                @if(request('toast_status') === 'success')
+                    <i class="fa-solid fa-circle-check text-2xl"></i>
+                @else
+                    <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                @endif
+                <span class="text-base">{{ request('toast_message') }}</span>
+            </div>
+            <button onclick="document.getElementById('import-toast').style.display='none'" class="text-2xl hover:scale-110 transition ml-2">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
         
-        {{-- 1. ALPINE.JS FLOATING TOAST NOTIFICATIONS --}}
-        <div x-data="{ show: true }" 
-             x-show="show" 
-             x-transition
-             x-init="setTimeout(() => show = false, 5000)" 
-             class="fixed top-6 right-6 z-[9999] flex items-center justify-between gap-4 min-w-[300px] rounded-xl border-[3px] border-black bg-green-100 px-5 py-4 font-black text-green-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-circle-check text-2xl"></i>
-                <span class="text-base">{{ session('success') }}</span>
-            </div>
-            <button @click="show = false" class="text-2xl hover:scale-110 transition ml-2">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-    @endif
-
-    @if(session('error'))
         <script>
-            alert("TEST: Laravel Session Error is working!\nMessage: {{ session('error') }}");
+            setTimeout(function() {
+                var toast = document.getElementById('import-toast');
+                if (toast) {
+                    toast.style.opacity = '0';
+                    setTimeout(function() { toast.style.display = 'none'; }, 500);
+                }
+            }, 5000);
         </script>
-
-        <div x-data="{ show: true }" 
-             x-show="show" 
-             x-transition
-             x-init="setTimeout(() => show = false, 5000)" 
-             class="fixed top-6 right-6 z-[9999] flex items-center justify-between gap-4 min-w-[300px] rounded-xl border-[3px] border-black bg-red-100 px-5 py-4 font-black text-red-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
-                <span class="text-base">{{ session('error') }}</span>
-            </div>
-            <button @click="show = false" class="text-2xl hover:scale-110 transition ml-2">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
     @endif
 
     <div class="max-w-6xl mx-auto">
         
         <div class="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
             <div>
-                {{-- TEST 1: CHANGED TITLE TO VERIFY CORRECT FILE --}}
-                <h2 class="text-4xl font-black text-black uppercase tracking-tight">Student List (TEST)</h2>
+                <h2 class="text-4xl font-black text-black uppercase tracking-tight">Student List</h2>
                 <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName }}</h3>
             </div>
             <a href="{{ route('reportcard.index') }}" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
