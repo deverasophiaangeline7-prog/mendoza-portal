@@ -104,7 +104,7 @@
     <div class="main-content">
         <h1 class="page-title">Appointment Scheduling</h1>
         <div class="adviser-grid">
-            @foreach($advisersList as$adviser)
+            @foreach ( $advisersList as$adviser )
                 @php 
                     $assigned = !empty($adviser['user_id']);$teacherId = $assigned ? $adviser['user_id'] : 'null';
                 @endphp
@@ -161,18 +161,19 @@
                 <thead>
                     <tr>
                         <th class="time-col"></th>
-                        @foreach($calendarDays as$day)
+                        @foreach ( $calendarDays as$day )
                             <th class="day-header" data-date="{{ $day->format('Y-m-d') }}">{{ $day->format('D d') }}</th>
                         @endforeach
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($timeSlots as$time)
+                    @foreach ( $timeSlots as$time )
                         <tr>
                             <td class="time-col">{{ $time }}</td>
-                            @foreach($calendarDays as$day)
+                            @foreach ( $calendarDays as$day )
                                 @php
-                                    $cellKey = $day->format('Y-m-d') . '\vert{}' .$time;
+                                    // chr(124) renders a pipe '|' without triggering editor bugs
+                                    $cellKey = $day->format('Y-m-d') . chr(124) . $time;
                                     $cellStatus = $scheduleRows[$cellKey] ?? 'available';
                                     $cellClass = ['available' => 'cell-white', 'booked' => 'cell-green', 'class' => 'cell-red', 'leave' => 'cell-grey'][$cellStatus] ?? 'cell-white';
                                 @endphp
