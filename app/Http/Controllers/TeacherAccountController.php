@@ -48,7 +48,7 @@ class TeacherAccountController extends Controller
             // Validate the dynamic assignments array
             'assignments'              => 'nullable|array',
             'assignments.*.section_id' => 'required_with:assignments',
-            'assignments.*.subject'    => 'required_with:assignments',
+            'assignments.*.subject'    => 'nullable|string',
         ]);
 
         $path = null;
@@ -202,7 +202,7 @@ class TeacherAccountController extends Controller
             'advisory'   => 'required',
             'assignments'              => 'nullable|array',
             'assignments.*.section_id' => 'required_with:assignments',
-            'assignments.*.subject'    => 'required_with:assignments',
+            'assignments.*.subject'    => 'nullable|string',
         ]);
 
         $targetAdvisory = ($request->advisory === 'NKP') ? '1,2,3' : $request->advisory;

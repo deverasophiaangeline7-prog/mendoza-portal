@@ -176,10 +176,11 @@
                                 </select>
                             </div>
 
-                            {{-- Subject Taught Dropdown --}}
-                            <div class="w-full md:w-1/2">
+                            {{-- Subject Taught Dropdown (MODIFIED: Hides when NKP is selected) --}}
+                            <div class="w-full md:w-1/2" x-show="assignment.section_id !== 'NKP'" x-cloak>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Subject Taught</label>
-                                <select :name="`assignments[${index}][subject]`" x-model="assignment.subject" class="form-input-pill bg-white cursor-pointer" required>
+                                <!-- Notice the :required here! It prevents form submission errors when hidden -->
+                                <select :name="`assignments[${index}][subject]`" x-model="assignment.subject" class="form-input-pill bg-white cursor-pointer" :required="assignment.section_id !== 'NKP'">
                                     <option value="" disabled selected>Select a Subject...</option>
                                     <template x-for="subj in assignment.available_subjects" :key="subj">
                                         <option :value="subj" x-text="subj"></option>
