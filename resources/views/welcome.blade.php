@@ -3,7 +3,7 @@
     <style>
         /* Controls the smooth fade transition between images */
         #sliderImage {
-            transition: opacity 0.5s ease-in-out;
+            transition: opacity 0.3s ease-in-out;
         }
         /* Adds the red shadow effect to the text */
         .banner-text-shadow {
@@ -54,32 +54,57 @@
 
         let currentIndex = 0;
         const sliderImage = document.getElementById('sliderImage');
+        let slideInterval;
+        let isTransitioning = false;
+
+        // Preload images so they render instantly when called
+        images.forEach(src => {
+            const img = new Image();
+            img.src = src;
+        });
 
         function updateImage() {
+            // Prevent overlapping transitions if the user clicks too fast
+            if (isTransitioning) return;
+            isTransitioning = true;
+            
             // Start the fade out
             sliderImage.style.opacity = 0;
             
-            // Wait for 300ms (matching CSS transition), then change image and fade in
+            // Wait for 300ms (matching CSS transition), change image, and fade in
             setTimeout(() => {
                 sliderImage.src = images[currentIndex];
                 sliderImage.style.opacity = 1;
+                
+                // Unlock the transition after the fade-in completes
+                setTimeout(() => {
+                    isTransitioning = false;
+                }, 300);
             }, 300); 
         }
 
         function nextImage() {
-            // Loop back to index 0 after the 5th image
+            if (isTransitioning) return;
             currentIndex = (currentIndex + 1) % images.length;
             updateImage();
+            resetInterval(); // Restart the 8-second timer
         }
 
         function prevImage() {
-            // Loop back to the 5th image if going back from the 1st
+            if (isTransitioning) return;
             currentIndex = (currentIndex - 1 + images.length) % images.length;
             updateImage();
+            resetInterval(); // Restart the 8-second timer
         }
 
-        // Automatic transition every 8 seconds
-        setInterval(nextImage, 8000);
+        // Clear and restart the auto-slider to prevent jumping after a manual click
+        function resetInterval() {
+            clearInterval(slideInterval);
+            slideInterval = setInterval(nextImage, 8000);
+        }
+
+        // Initialize the automatic transition
+        resetInterval();
     </script>
 
 </x-guest-layout>
