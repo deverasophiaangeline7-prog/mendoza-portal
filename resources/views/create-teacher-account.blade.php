@@ -115,7 +115,7 @@
                     <div class="flex flex-col">
                         <div class="flex flex-col md:flex-row md:items-center">
                             <label class="w-full md:w-32 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0">Homeroom: <span class="text-red-600">*</span></label>
-                            <select name="advisory" class="form-input-pill bg-white cursor-pointer focus:outline-none" required>
+                            <select name="advisory" x-model="selectedHomeroom" class="form-input-pill bg-white cursor-pointer focus:outline-none" required>
                                 <option value="" disabled selected>Select Advisory Section</option>
                                 <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
                                 @foreach($filteredSections as $section)
@@ -155,7 +155,7 @@
                 </div>
 
                 {{-- FULL WIDTH DYNAMIC SUBJECT BUILDER --}}
-                <div class="col-span-1 md:col-span-2 mt-4 bg-gray-50 border-2 border-black rounded-xl p-6">
+                <div class="col-span-1 md:col-span-2 mt-4 bg-gray-50 border-2 border-black rounded-xl p-6" x-show="selectedHomeroom !== 'NKP'" x-cloak>
                     <div class="mb-4">
                         <h3 class="font-black text-xl text-black">CLASS ASSIGNMENTS</h3>
                         <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">Assign specific subjects to specific classes below. (Leave empty if they are strictly a Class Adviser without subject load).</p>
@@ -214,6 +214,7 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('teacherForm', () => ({
+        selectedHomeroom: '',
         sectionsList: @json($alpineSections),
         assignments: [],
         

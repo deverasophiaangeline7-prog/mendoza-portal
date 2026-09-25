@@ -24,61 +24,61 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 class ReportCardController extends Controller
 {
     public function index()
-    {
-        $user = Auth::user();
+{
+    $user = Auth::user();
 
-        $orderLogic = "
-            CASE 
-                WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1 
-                WHEN grade_level IN ('Kindergarten', 'Kinder', 'KINDER') THEN 2 
-                WHEN grade_level IN ('Preparatory', 'Prep', 'PREPARATORY') THEN 3 
-                ELSE 4 
-            END ASC
-        ";
+    $orderLogic = "
+        CASE 
+            WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1 
+            WHEN grade_level IN ('Kindergarten', 'Kinder', 'KINDER') THEN 2 
+            WHEN grade_level IN ('Preparatory', 'Prep', 'PREPARATORY') THEN 3 
+            ELSE 4 
+        END ASC
+    ";
 
-        if ($user->role === 'admin') {
-            $sections = Section::orderByRaw($orderLogic)
-                ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
-                ->orderBy('section_name', 'asc')
-                ->get();
-            
+    if ($user->role === 'admin') {
+        $sections = Section::orderByRaw($orderLogic)
+            ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+            ->orderBy('section_name', 'asc')
+            ->get();
+        
+        return view('report-card-index', compact('sections'));
+    }
+
+    if ($user->role === 'teacher') {
+        // 1. Get sections where they are the HOMEROOM ADVISER
+        $adviserSectionIds = Section::where('teacher_id', $user->user_id)
+            ->pluck('section_id')
+            ->toArray();
+        
+        // 2. Get sections where they are a SUBJECT TEACHER
+        $subjectSectionIds = \App\Models\SubjectAssignment::where('teacher_id', $user->user_id)
+            ->pluck('section_id')
+            ->toArray();
+        
+        // 3. Combine both lists safely
+        $allAssignedIds = array_unique(array_merge($adviserSectionIds, $subjectSectionIds));
+
+        // 4. Fetch the sections
+        $sections = Section::whereIn('section_id', $allAssignedIds)
+            ->orderByRaw($orderLogic)
+            ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+            ->orderBy('section_name', 'asc')
+            ->get();
+        
+        if ($sections->count() > 1) {
             return view('report-card-index', compact('sections'));
         }
 
-        if ($user->role === 'teacher') {
-            $teacher = \App\Models\Teacher::where('user_id', $user->user_id)->first();
-            
-            if ($teacher && $teacher->assigned_subject !== 'ALL' && !empty($teacher->assigned_subject)) {
-                $assignedSectionIds = \App\Models\SubjectAssignment::where('teacher_id', $user->user_id)
-                    ->pluck('section_id')
-                    ->toArray();
-
-                $sections = Section::whereIn('section_id', $assignedSectionIds)
-                    ->orderByRaw($orderLogic)
-                    ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
-                    ->orderBy('section_name', 'asc')
-                    ->get();
-            } else {
-                $sections = Section::where('teacher_id', $user->user_id)
-                    ->orderByRaw($orderLogic)
-                    ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
-                    ->orderBy('section_name', 'asc')
-                    ->get();
-            }
-            
-            if ($sections->count() > 1) {
-                return view('report-card-index', compact('sections'));
-            }
-
-            if ($sections->count() === 1) {
-                return redirect()->route('reportcard.show', $sections->first()->section_id);
-            }
-            
-            return abort(403, 'You do not have any sections assigned to you.');
+        if ($sections->count() === 1) {
+            return redirect()->route('reportcard.show', $sections->first()->section_id);
         }
-
-        return abort(403, 'Unauthorized access.');
+        
+        return abort(403, 'You do not have any sections assigned to you.');
     }
+
+    return abort(403, 'Unauthorized access.');
+}
 
     public function show($section_id)
     {
