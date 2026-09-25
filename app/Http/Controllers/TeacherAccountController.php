@@ -17,7 +17,6 @@ class TeacherAccountController extends Controller
 {
     public function create()
     {
-        // Get all sections for the dropdowns
         $sections = Section::orderByRaw("
             CASE 
                 WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1 
@@ -44,8 +43,6 @@ class TeacherAccountController extends Controller
             'gender'           => 'required',
             'birthdate'        => 'required|date',
             'profile_photo'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            
-            // Validate the dynamic assignments array
             'assignments'              => 'nullable|array',
             'assignments.*.section_id' => 'required_with:assignments',
             'assignments.*.subject'    => 'nullable|string',
@@ -66,11 +63,20 @@ class TeacherAccountController extends Controller
             'profile_photo_path' => $path,
         ]);
 
-        // Build a combined string of subjects for the Teacher table display
         $assignedSubjectString = 'Class Adviser';
         if (!empty($request->assignments)) {
             $subjects = array_unique(array_column($request->assignments, 'subject'));
             $assignedSubjectString = implode(', ', $subjects);
+        }
+
+        // 1. DYNAMICALLY FETCH REAL NKP IDs 
+        $advisoryValue = $request->advisory;
+        $nkpSections = collect();
+
+        if ($request->advisory === 'NKP') {
+            $nkpSections = Section::whereIn(DB::raw('UPPER(grade_level)'), ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY', 'PREP', 'NKP'])->get();
+            // Grabs the real database IDs (e.g., "4,5,6") and combines them
+            $advisoryValue = $nkpSections->pluck('section_id')->implode(','); 
         }
 
         $teacher = Teacher::create([
@@ -80,11 +86,10 @@ class TeacherAccountController extends Controller
             'last_name'        => $request->last_name,
             'gender'           => $request->gender,
             'birthdate'        => $request->birthdate,
-            'advisory'         => $request->advisory === 'NKP' ? '1,2,3' : $request->advisory,
+            'advisory'         => $advisoryValue, // <-- Now uses dynamic IDs!
             'assigned_subject' => $assignedSubjectString,
         ]);
 
-        // Save strict Subject Assignments
         if (!empty($request->assignments)) {
             foreach ($request->assignments as $assignment) {
                 SubjectAssignment::create([
@@ -95,9 +100,7 @@ class TeacherAccountController extends Controller
             }
         }
 
-        // DYNAMIC NKP ADVISORY ASSIGNMENT
         if ($request->advisory === 'NKP') {
-            $nkpSections = Section::whereIn(DB::raw('UPPER(grade_level)'), ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY', 'PREP', 'NKP'])->get();
             foreach ($nkpSections as $section) {
                 $section->teacher_id = $user->user_id;
                 $section->save();
@@ -205,11 +208,17 @@ class TeacherAccountController extends Controller
             'assignments.*.subject'    => 'nullable|string',
         ]);
 
-        $targetAdvisory = ($request->advisory === 'NKP') ? '1,2,3' : $request->advisory;
+        // DYNAMIC UPDATE FOR NKP IDs
+        $targetAdvisory = $request->advisory;
+        $nkpSections = collect();
+        
+        if ($request->advisory === 'NKP') {
+            $nkpSections = Section::whereIn(DB::raw('UPPER(grade_level)'), ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY', 'PREP', 'NKP'])->get();
+            $targetAdvisory = $nkpSections->pluck('section_id')->implode(','); 
+        }
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $id, $targetAdvisory) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $id, $targetAdvisory, $nkpSections) {
             
-            // Swap advisers
             if (is_numeric($targetAdvisory)) {
                 $otherTeacher = \App\Models\Teacher::where('advisory', $targetAdvisory)
                     ->where('user_id', '!=', $id)
@@ -222,8 +231,6 @@ class TeacherAccountController extends Controller
             }
 
             \App\Models\Section::where('teacher_id', $id)->update(['teacher_id' => null]);
-
-            // Re-sync assignments
             SubjectAssignment::where('teacher_id', $id)->delete();
             
             $assignedSubjectString = 'Class Adviser';
@@ -240,12 +247,9 @@ class TeacherAccountController extends Controller
                 }
             }
 
-            // Advisory linking
             if ($request->advisory === 'NKP') {
-                $nkpSections = \App\Models\Section::whereIn(\Illuminate\Support\Facades\DB::raw('UPPER(grade_level)'), ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY', 'PREP', 'NKP'])->get();
                 foreach ($nkpSections as $section) {
-                    $section->teacher_id
-                     = $id;
+                    $section->teacher_id = $id;
                     $section->save();
                 }
             } else {
@@ -258,8 +262,6 @@ class TeacherAccountController extends Controller
                 }
             }
             
-
-            // Update profile
             $teacher = \App\Models\Teacher::where('user_id', $id)->first();
             if ($teacher) {
                 $teacher->update([

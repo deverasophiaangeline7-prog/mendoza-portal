@@ -14,13 +14,11 @@
 
     .dashboard-container { display: flex; font-family: 'Arial', sans-serif; width: 100%; height: 100%; overflow: hidden; }
     
-    /* Reduced mobile padding and enforced hidden horizontal overflow */
     .main-content { flex: 1; padding: 20px 15px; background-color: #ffffff; display: flex; flex-direction: column; align-items: center; overflow-y: auto; overflow-x: hidden; width: 100%; }
     @media (min-width: 768px) { .main-content { padding: 30px 50px; } }
     
     .page-title { font-size: 36px; font-weight: 900; text-align: center; margin-bottom: 40px; text-transform: uppercase; }
     
-    /* Responsive grid (1 column mobile, 2 tablet, 3 desktop) */
     .adviser-grid { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 1100px; }
     @media (min-width: 600px) { .adviser-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (min-width: 1024px) { .adviser-grid { grid-template-columns: repeat(3, 1fr); gap: 30px; } }
@@ -69,7 +67,6 @@
     
     .close-btn { position: absolute; top: 15px; right: 15px; background: var(--ma-red); color: white; border: 3px solid #fff; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; padding-bottom: 4px; z-index: 10; }
 
-    /* Allow table to scroll horizontally inside modal on mobile */
     .schedule-grid-wrapper { width: 100%; overflow-x: auto; }
     .schedule-grid { width: 100%; border-collapse: collapse; text-align: center; border: 2px solid #000; min-width: 500px; }
     .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 5px; height: 40px; font-size: 13px; font-weight: 900; }
@@ -99,7 +96,6 @@
     .schedule-grid td.active-manage-cell { outline: 3px dashed #000; outline-offset: -3px; }
     .day-header-active { background-color: var(--ma-dark-grey) !important; color: #fff; cursor: pointer; }
 
-    /* Wrap legend items on narrow screens */
     .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 15px; font-weight: 900; }
     .legend-item span { display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #000; vertical-align: middle; margin-right: 5px; }
 </style>
@@ -137,7 +133,10 @@
             }
 
             $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);$prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');$nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');$calendarDays = [];
-            for ($i = 0; $i < 5; $i++) { $calendarDays[] =$startOfWeek->copy()->addDays($i); }$timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
+            for ($i = 0; $i < 5; $i++) {$calendarDays[] = $startOfWeek->copy()->addDays($i); 
+            }
+            
+            $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
         @endphp
 
         <div class="modal-header-top">
@@ -198,7 +197,6 @@
 </div>
 
 <script>
-    // Move the modal outside of the restricted content layout and into the main body tag
     document.addEventListener("DOMContentLoaded", function() {
         const modal = document.getElementById('adminCalendarModal');
         if (modal) {
