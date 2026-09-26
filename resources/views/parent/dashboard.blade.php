@@ -51,7 +51,10 @@
                  images: [
                      @if(isset($announcementImages) &&$announcementImages->count() > 0)
                          @foreach($announcementImages as$img)
-                             { url: '{{ asset('storage/' . $img->image_path) }}', caption: '{{ addslashes($img->caption) }}' },
+                             { 
+                                 url: {!! json_encode(asset('storage/' . $img->image_path)) !!}, 
+                                 caption: {!! json_encode($img->caption ?? '') !!} 
+                             },
                          @endforeach
                      @endif
                  ],
