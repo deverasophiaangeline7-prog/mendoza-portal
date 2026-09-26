@@ -27,7 +27,6 @@ x-data="{
         this.editLastName = lname;
         this.editAdvisory = advisory;
         
-        // We use assignmentsData here instead of 'parsed'
         this.editAssignments = assignmentsData.map(a => {
             let grade = (['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3'].includes(a.grade)) ? 'NKP' : a.grade;
             let sectionId = (grade === 'NKP') ? 'NKP' : a.section_id;
@@ -61,7 +60,7 @@ x-data="{
         this.editAssignments[index].subject = ''; 
     },
 
-    // NEW: Prevents duplicate subjects for the same section
+    // Prevents duplicate subjects for the same section
     getAvailableSubjects(currentIndex) {
         let current = this.editAssignments[currentIndex];
         if (!current.grade || current.grade === 'NKP') return [];
@@ -76,7 +75,7 @@ x-data="{
         // Return only the subjects that are not taken yet
         return allSubjects.filter(subject => !takenSubjects.includes(subject));
     }
-}"
+}">
     
     <main class="flex-1 p-8">
         <div class="max-w-6xl mx-auto">
@@ -207,7 +206,7 @@ x-data="{
         </div>
     </main>
 
-    <!-- TEACHER EDIT MODAL (Smaller box, pushed down on mobile) -->
+    <!-- TEACHER EDIT MODAL -->
     <div x-show="editModal" class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
         <div @click.away="editModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-2xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] mt-24 mx-auto mb-10 md:m-auto max-h-[70vh] flex flex-col flex-shrink-0">
             <div class="flex justify-between items-start mb-6 shrink-0">
@@ -314,7 +313,7 @@ x-data="{
         </div>
     </div>
 
-    <!-- Archive Confirmation Modal (Smaller box, pushed down on mobile) -->
+    <!-- Archive Confirmation Modal -->
     <div x-show="archiveModal" x-transition:opacity class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
         <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] mt-24 mx-auto mb-10 md:m-auto max-h-[70vh] flex-shrink-0" @click.away="archiveModal = false">
             <div class="text-center">

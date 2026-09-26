@@ -29,7 +29,10 @@
                  setInterval(() => {
                      fetch('{{ route('notifications.fetch') }}?t=' + Date.now())
                          .then(res => res.json())
-                         .then(data => { this.notifications = { ...data }; })
+                         .then(data => { 
+                             // Normalizes data so Alpine updates the list and badge smoothly without refreshing
+                             this.notifications = Array.isArray(data) ? data : Object.values(data); 
+                         })
                          .catch(err => console.error('Error fetching notifications:', err));
                  }, 5000); // 5 seconds
              }
