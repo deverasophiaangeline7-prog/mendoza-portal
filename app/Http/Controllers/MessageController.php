@@ -299,7 +299,7 @@ class MessageController extends Controller
             . $eventsKnowledge;
 
          
-            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' . $apiKey;
+            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' . $apiKey;
             
             $data = [
             "systemInstruction" => ["parts" => [["text" => $systemPrompt]]],
