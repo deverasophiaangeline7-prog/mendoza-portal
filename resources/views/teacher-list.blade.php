@@ -191,9 +191,6 @@ x-data="{
                                             class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
                                             Edit
                                     </button>
-                                            class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
-                                            Edit
-                                    </button>
                                     
                                     <button type="button" @click="archiveModal = true; archiveUrl = '{{ route('account.teacher.archive', $teacherUser->user_id) }}'" title="Archive" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
                                         <i class="fa-solid fa-box-archive"></i>
