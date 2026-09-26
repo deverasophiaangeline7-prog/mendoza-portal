@@ -27,7 +27,7 @@ x-data="{
         this.editLastName = lname;
         this.editAdvisory = advisory;
         
-        let parsed = JSON.parse(assignmentsJson);
+        
         
         this.editAssignments = parsed.map(a => {
             let grade = (['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3'].includes(a.grade)) ? 'NKP' : a.grade;
@@ -183,14 +183,14 @@ x-data="{
                                 <div class="flex gap-2 items-center shrink-0">
                                     <button type="button" 
                                             @click="openEditModal(
-                                                '{{ $teacherUser->user_id }}', 
-                                                '{{ addslashes($teacherUser->teacher?->first_name) }}', 
-                                                '{{ addslashes($teacherUser->teacher?->last_name) }}',
-                                                '{{ $rawAdvisory }}',
-                                                '{{ json_encode($tempAssignments) }}'
+                                                {{ json_encode($teacherUser->user_id) }}, 
+                                                {{ json_encode($teacherUser->teacher?->first_name ?? '') }}, 
+                                                {{ json_encode($teacherUser->teacher?->last_name ?? '') }},
+                                                {{ json_encode($rawAdvisory) }},
+                                                {{ json_encode($tempAssignments) }}
                                             )"
-                                        class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
-                                        Edit
+                                            class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
+                                            Edit
                                     </button>
                                     
                                     <button type="button" @click="archiveModal = true; archiveUrl = '{{ route('account.teacher.archive', $teacherUser->user_id) }}'" title="Archive" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">

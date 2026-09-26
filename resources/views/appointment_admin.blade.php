@@ -78,7 +78,6 @@
     }
     @media (min-width: 768px) { .admin-modal { padding: 30px 40px; width: 95%; } }
     
-    /* Header layout: Stack on mobile, side-by-side on desktop */
     .modal-header-top { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 20px; margin-top: 35px; }
     @media (min-width: 768px) { .modal-header-top { flex-direction: row; justify-content: space-between; margin-top: 0; } }
 
@@ -98,6 +97,8 @@
     /* SCROLLABLE TABLE CSS */
     .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; box-sizing: border-box; margin-bottom: 15px; }
     .schedule-grid { width: 100%; min-width: 650px; border-collapse: collapse; text-align: center; border: 2px solid #000; table-layout: fixed; }
+    @media (min-width: 768px) { .schedule-grid { min-width: 100%; } }
+    
     .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 5px; height: 40px; font-size: 13px; font-weight: 900; }
     .schedule-grid th { background-color: var(--ma-bg-grey); }
     .time-col { background-color: var(--ma-bg-grey); width: 80px; }
@@ -133,15 +134,20 @@
     <div class="main-content">
         <h1 class="page-title">Appointment Scheduling</h1>
         <div class="adviser-grid">
-            @foreach($advisersList as$adviser)
+            @forelse($advisersList ?? [] as $adviser)
                 @php 
-                    $assigned = !empty($adviser['user_id']);$teacherId = $assigned ? $adviser['user_id'] : 'null';
+                    /* BULLETPROOF: Safely extract data whether $adviser is an Object or an Array */
+                    $advUserId = is_object($adviser) ? ($adviser->user_id ?? null) : ($adviser['user_id'] ?? null);
+                    $advSection = is_object($adviser) ? ($adviser->section ?? '') : ($adviser['section'] ?? '');$advName = is_object($adviser) ? ($adviser->name ?? '') : ($adviser['name'] ?? '');$assigned = !empty($advUserId);$teacherId = $assigned ? $advUserId : 'null';
                 @endphp
-                <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{$teacherId }}')" @endif>
-                    <span>{{ $adviser['section'] }}</span>
-                    <span>{{ $adviser['name'] }}</span>
+                <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" 
+                     @if($assigned) onclick="openAdminModal('{{ addslashes((string)$advSection) }}', '{{ addslashes((string)$advName) }}', '{{$teacherId }}')" @endif>
+                    <span>{{ $advSection }}</span>
+                    <span>{{ $advName }}</span>
                 </div>
-            @endforeach
+            @empty
+                <div class="col-span-full text-center font-bold text-gray-500">No teachers available.</div>
+            @endforelse
         </div>
     </div>
 </div>
@@ -199,8 +205,13 @@
                             @foreach($calendarDays as$day)
                                 @php
                                     $cellKey = $day->format('Y-m-d') . '\vert{}' .$time;
-                                    $cellStatus = $scheduleRows[$cellKey] ?? 'available';
-                                    $cellClass = ['available' => 'cell-white', 'booked' => 'cell-green', 'class' => 'cell-red', 'leave' => 'cell-grey'][$cellStatus] ?? 'cell-white';
+                                    
+                                    /* BULLETPROOF: Ensure scheduleRows exists before checking keys */
+                                    $cellStatus = (isset($scheduleRows) && is_array($scheduleRows) && isset($scheduleRows[$cellKey])) 
+                                                    ? $scheduleRows[$cellKey] 
+                                                    : 'available';
+                                                    
+                                    $cellClass = [                                         'available' => 'cell-white',                                          'booked' => 'cell-green',                                          'class' => 'cell-red',                                          'leave' => 'cell-grey'                                     ][$cellStatus] ?? 'cell-white';
                                 @endphp
                                 <td class="{{ $cellClass }}" 
                                     data-date="{{ $day->format('Y-m-d') }}" 
