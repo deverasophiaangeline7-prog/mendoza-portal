@@ -13,25 +13,25 @@
                 </h2>
 
                 <div class="space-y-12">
-                    <div class="text-justify">
+                    <div class="text-left">
                         <h3 class="text-2xl font-bold text-red-700">1. What grade levels do you offer?</h3>
                         <p class="text-xl font-semibold text-black mt-2">Pre-elementary (Nursery, Kinder, and Preparatory) to Elementary (Grades 1-6)</p>
                     </div>
 
-                    <div class="text-justify">
+                    <div class="text-left">
                         <h3 class="text-2xl font-bold text-red-700">2. Where is the school located?</h3>
                         <p class="text-xl font-semibold text-black mt-2">
                             Blk. 9 Lot 88 Mapagkawanggawa St. Purok 4, Lupang Arenda, Sta. Ana, Taytay, Rizal
                         </p>
                     </div>
 
-                    <div class="text-justify">
+                    <div class="text-left">
                         <h3 class="text-2xl font-bold text-red-700">3. What are your office hours?</h3>
                         <p class="text-xl font-semibold text-black mt-2">Monday to Friday (8:00AM - 5:00PM)</p>
                     </div>
 
                     <div class="mt-12">
-                        <h3 class="text-2xl font-bold text-red-700 mb-8 text-justify uppercase tracking-tight">4. What are the admission requirements?</h3>
+                        <h3 class="text-2xl font-bold text-red-700 mb-8 text-left uppercase tracking-tight">4. What are the admission requirements?</h3>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-4xl mx-auto px-2">
                             
@@ -39,16 +39,16 @@
                                 <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">For incoming Kindergarten:</h4>
                                     <div class="flex items-start gap-3 text-white font-bold">
-                                        <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center mt-1 text-xs font-black">✔</span>
-                                        <p class="text-sm text-justify">Must be five (5) years old on or before August 31, 2026. (Reference: DepEd Order No. 47 s. 2016/ DepEd Order No. 20, s. 2018)</p>
+                                        <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center left-center mt-1 text-xs font-black">✔</span>
+                                        <p class="text-sm text-left">Must be five (5) years old on or before August 31, 2026. (Reference: DepEd Order No. 47 s. 2016/ DepEd Order No. 20, s. 2018)</p>
                                     </div>
                                 </div>
 
                                 <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">Document to be submitted:</h4>
                                     <div class="flex items-start gap-3 text-white font-bold">
-                                        <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center mt-1 text-xs font-black">✔</span>
-                                        <p class="text-sm text-justify">Photocopy of Birth Certificate [In the absence of PSA/NSO Birth Certificate, submit a photocopy of Baptismal or Barangay Certificate.]</p>
+                                        <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center left-center mt-1 text-xs font-black">✔</span>
+                                        <p class="text-sm text-left">Photocopy of Birth Certificate [In the absence of PSA/NSO Birth Certificate, submit a photocopy of Baptismal or Barangay Certificate.]</p>
                                     </div>
                                 </div>
                             </div>
@@ -57,20 +57,20 @@
                                 <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">For incoming Grade 1:</h4>
                                     <div class="flex items-start gap-3 text-white font-bold">
-                                        <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center mt-1 text-xs font-black">✔</span>
-                                        <p class="text-sm text-justify">Must be Kindergarten Completer</p>
+                                        <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center left-center mt-1 text-xs font-black">✔</span>
+                                        <p class="text-sm text-left">Must be Kindergarten Completer</p>
                                     </div>
                                 </div>
 
                                 <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
                                     <h4 class="font-black text-white text-lg mb-3 uppercase">For more information:</h4>
-                                    <div class="space-y-4 text-white font-bold text-sm text-justify">
+                                    <div class="space-y-4 text-white font-bold text-sm text-left">
                                         <div class="flex items-start gap-3">
-                                            <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center text-xs font-black">✔</span>
+                                            <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center left-center text-xs font-black">✔</span>
                                             <span>Visit our school or send a message to our official FB Page.</span>
                                         </div>
                                         <div class="flex items-start gap-3">
-                                            <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center justify-center text-xs font-black">✔</span>
+                                            <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center left-center text-xs font-black">✔</span>
                                             <span>Contact the following persons:</span>
                                         </div>
                                         <div class="pl-8 space-y-3 border-l-2 border-white/30 ml-2">

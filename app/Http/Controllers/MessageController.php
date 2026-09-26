@@ -278,7 +278,7 @@ class MessageController extends Controller
         1. Personal, complex, or specific student concerns (e.g., 'I have a concern about my child', 'My child is being bullied', 'Can you check my child's grade?', 'Here is my child's name').
         2. Greetings, small talk, or random nonsense (e.g., 'hello', 'hi', 'good morning', 'thanks').
         3. Any language other than English or Tagalog.
-        4. Any topic completely unrelated to the school facts provided below.
+        4. Any topic completely unrelated to the school facts provided below. (CRITICAL EXCEPTION: If the user asks about a valid school topic like 'events', 'calendar', or 'schedule', but there is no current data for it in your cheat sheet, DO NOT output IGNORE. Instead, politely reply that there are no scheduled events or information at this time.)
 
         *** MENDOZA ACADEMY CHEAT SHEET ***\n\n"
             . "[PREVIOUS CHAT HISTORY FOR CONTEXT]\n" . $historyContext . "\n\n"
