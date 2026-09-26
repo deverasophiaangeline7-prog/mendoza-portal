@@ -14,12 +14,13 @@
             
             <div class="flex gap-4">
                 <a href="{{ route('parent.list') }}" class="bg-white hover:bg-gray-50 text-black px-6 py-3 rounded-xl font-bold transition flex items-center gap-2 border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-wider">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Accounts
+                    <i class="fa-solid fa-arrow-left"></i> Back
                 </a>
             </div>
         </div>
 
-        <div class="border-[3px] border-black rounded-2xl overflow-hidden bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <!-- Changed overflow-hidden to overflow-x-auto here -->
+        <div class="border-[3px] border-black rounded-2xl overflow-x-auto bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
             <table class="w-full text-left border-collapse min-w-max">
                 <thead class="bg-[#f59e0b] border-b-[3px] border-black text-xl font-bold text-black uppercase">
                     <tr>

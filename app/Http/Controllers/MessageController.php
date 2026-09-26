@@ -272,6 +272,7 @@ class MessageController extends Controller
         - Use the [PREVIOUS CHAT HISTORY] to understand the context of the user's current question.
         - Answer using ONLY the provided facts below. Do not invent or assume any other information.
         - Convert dates to friendly natural language (e.g., 'September 3, 2026').
+        - BE FORGIVING: Highly tolerate typos, incorrect spelling (e.g., 'ngayung', 'sked'), bad grammar, and very short phrases. Automatically translate Tagalog questions in your head to match the English cheat sheet facts below.
 
         *** STRICT 'IGNORE' RULES (CRITICAL) ***
         You MUST output exactly the word IGNORE (and nothing else) if the user's message falls into ANY of these categories. By outputting IGNORE, you allow the real human {$receiverRole} to handle the message personally:

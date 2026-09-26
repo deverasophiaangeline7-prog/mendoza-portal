@@ -320,11 +320,11 @@
     <!-- START: Term Schedule Modal -->
     <div x-show="termScheduleModal" 
          x-transition:opacity
-         class="fixed inset-0 z-[100] flex items-start md:items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto" 
+         class="fixed inset-0 z-[100] flex items-start justify-center p-4 md:p-8 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
         
-        <!-- Added mt-12 md:my-8 so it doesn't touch the very top edge of the phone -->
-        <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[4px] border-black rounded-[2rem] p-5 md:p-8 max-w-4xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-16 mb-8 md:my-8 flex-shrink-0">
+        <!-- Adjusted margins to prevent top cut-off on desktop -->
+        <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[4px] border-black rounded-[2rem] p-5 md:p-8 max-w-4xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-16 md:mt-20 mb-8 md:mb-20 flex-shrink-0">
             
             <button @click="termScheduleModal = false" class="absolute top-3 md:top-4 right-5 md:right-6 text-4xl md:text-5xl font-black text-black hover:text-gray-700 transition-colors leading-none">&times;</button>
 

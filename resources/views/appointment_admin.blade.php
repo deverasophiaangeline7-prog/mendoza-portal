@@ -16,7 +16,10 @@
     .main-content { flex: 1; padding: 30px 50px; background-color: #ffffff; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
     .page-title { font-size: 36px; font-weight: 900; text-align: center; margin-bottom: 40px; text-transform: uppercase; }
     
-    .adviser-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; width: 100%; max-width: 1100px; }
+    /* FIX: Mobile stacking for teacher cards */
+    .adviser-grid { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 1100px; }
+    @media (min-width: 768px) { .adviser-grid { grid-template-columns: repeat(2, 1fr); gap: 25px; } }
+    @media (min-width: 1024px) { .adviser-grid { grid-template-columns: repeat(3, 1fr); gap: 30px; } }
     
     .adviser-btn { 
         background-color: var(--ma-orange); 
@@ -64,9 +67,10 @@
     @media (min-width: 768px) { .manage-btn, .leave-btn { font-size: 20px; } }
     
     /* Absolute positioning locks the close button to the top right */
-    .close-btn { position: absolute; top: 15px; right: 15px; background: var(--ma-red); color: white; border: 3px solid #fff; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; padding-bottom: 4px; z-index: 10; }s
+    .close-btn { position: absolute; top: 15px; right: 15px; background: var(--ma-red); color: white; border: 3px solid #fff; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; padding-bottom: 4px; z-index: 10; }
 
-    .schedule-grid { width: 100%; border-collapse: collapse; text-align: center; border: 2px solid #000; }
+    /* FIX: Added table-layout: fixed to force full width */
+    .schedule-grid { width: 100%; border-collapse: collapse; text-align: center; border: 2px solid #000; table-layout: fixed; }
     .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 5px; height: 40px; font-size: 13px; font-weight: 900; }
     .schedule-grid th { background-color: var(--ma-bg-grey); }
     .time-col { background-color: var(--ma-bg-grey); width: 80px; }
@@ -102,12 +106,11 @@
     <div class="main-content">
         <h1 class="page-title">Appointment Scheduling</h1>
         <div class="adviser-grid">
-            @foreach($advisersList as $adviser)
+            @foreach($advisersList as$adviser)
                 @php 
-                    $assigned = !empty($adviser['user_id']); 
-                    $teacherId = $assigned ? $adviser['user_id'] : 'null';
+                    $assigned = !empty($adviser['user_id']);$teacherId = $assigned ? $adviser['user_id'] : 'null';
                 @endphp
-                <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{ $teacherId }}')" @endif>
+                <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{$teacherId }}')" @endif>
                     <span>{{ $adviser['section'] }}</span>
                     <span>{{ $adviser['name'] }}</span>
                 </div>
@@ -127,17 +130,12 @@
             } else {
                 $currentDate = \Carbon\Carbon::now();
                 if ($currentDate->isWeekend()) {
-                    $currentDate = $currentDate->next(\Carbon\Carbon::MONDAY);
+                    $currentDate =$currentDate->next(\Carbon\Carbon::MONDAY);
                 }
             }
 
-            $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
-            $prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');
-            $nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');
-            
-            $calendarDays = [];
-            for ($i = 0; $i < 5; $i++) { $calendarDays[] = $startOfWeek->copy()->addDays($i); }
-            $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
+            $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);$prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');$nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');$calendarDays = [];
+            for ($i = 0; $i < 5; $i++) { $calendarDays[] =$startOfWeek->copy()->addDays($i); }$timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
         @endphp
 
         <div class="modal-header-top">
@@ -151,7 +149,7 @@
             </div>
             <div class="calendar-navigation">
                 <a href="{{ request()->fullUrlWithQuery(['date' => $prevWeekDate]) }}" class="nav-arrow">&laquo;</a>
-                <h2 class="month-title">{{ $startOfWeek->format('M d') }} - {{ $startOfWeek->copy()->addDays(4)->format('M d, Y') }}</h2>
+                <h2 class="month-title">{{ $startOfWeek->format('M d') }} - {{$startOfWeek->copy()->addDays(4)->format('M d, Y') }}</h2>
                 <a href="{{ request()->fullUrlWithQuery(['date' => $nextWeekDate]) }}" class="nav-arrow">&raquo;</a>
             </div>
             <button class="close-btn" onclick="closeAdminModal()">&times;</button>
@@ -161,18 +159,18 @@
             <thead>
                 <tr>
                     <th class="time-col"></th>
-                    @foreach($calendarDays as $day)
+                    @foreach($calendarDays as$day)
                         <th class="day-header" data-date="{{ $day->format('Y-m-d') }}">{{ $day->format('D d') }}</th>
                     @endforeach
                 </tr>
             </thead>
             <tbody>
-                @foreach($timeSlots as $time)
+                @foreach($timeSlots as$time)
                     <tr>
                         <td class="time-col">{{ $time }}</td>
-                        @foreach($calendarDays as $day)
+                        @foreach($calendarDays as$day)
                             @php
-                                $cellKey = $day->format('Y-m-d') . '|' . $time;
+                                $cellKey = $day->format('Y-m-d') . '\vert{}' .$time;
                                 $cellStatus = $scheduleRows[$cellKey] ?? 'available';
                                 $cellClass = ['available' => 'cell-white', 'booked' => 'cell-green', 'class' => 'cell-red', 'leave' => 'cell-grey'][$cellStatus] ?? 'cell-white';
                             @endphp
