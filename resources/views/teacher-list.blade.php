@@ -21,15 +21,14 @@ x-data="{
         '6': ['Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE']
     },
     
-    openEditModal(id, fname, lname, advisory, assignmentsJson) {
+    openEditModal(id, fname, lname, advisory, assignmentsData) {
         this.editId = id;
         this.editFirstName = fname;
         this.editLastName = lname;
         this.editAdvisory = advisory;
         
-        
-        
-        this.editAssignments = parsed.map(a => {
+        // We use assignmentsData here instead of 'parsed'
+        this.editAssignments = assignmentsData.map(a => {
             let grade = (['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3'].includes(a.grade)) ? 'NKP' : a.grade;
             let sectionId = (grade === 'NKP') ? 'NKP' : a.section_id;
             return {

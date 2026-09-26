@@ -12,31 +12,11 @@
         --ma-dark-grey: #b0b0b0; 
     }
 
-    .dashboard-container { 
-        display: flex; 
-        flex-direction: column;
-        font-family: 'Arial', sans-serif; 
-        width: 100%; 
-        min-height: 100vh; 
-        overflow-x: hidden; 
-    }
+    .dashboard-container { display: flex; font-family: 'Arial', sans-serif; width: 100%; height: 100%; overflow: hidden; }
+    .main-content { flex: 1; padding: 30px 50px; background-color: #ffffff; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
+    .page-title { font-size: 36px; font-weight: 900; text-align: center; margin-bottom: 40px; text-transform: uppercase; }
     
-    .main-content { 
-        flex: 1; 
-        padding: 20px 15px;
-        background-color: #ffffff; 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        overflow-y: auto; 
-        box-sizing: border-box;
-    }
-    @media (min-width: 768px) { .main-content { padding: 30px 50px; } }
-
-    .page-title { font-size: 28px; font-weight: 900; text-align: center; margin-bottom: 30px; text-transform: uppercase; }
-    @media (min-width: 768px) { .page-title { font-size: 36px; margin-bottom: 40px; } }
-    
-    /* Responsive Grid for Adviser Cards */
+    /* FIX: Responsive grid for adviser cards */
     .adviser-grid { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 1100px; }
     @media (min-width: 768px) { .adviser-grid { grid-template-columns: repeat(2, 1fr); gap: 25px; } }
     @media (min-width: 1024px) { .adviser-grid { grid-template-columns: repeat(3, 1fr); gap: 30px; } }
@@ -52,32 +32,25 @@
         display: block; 
         box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
     }
-    .adviser-btn:hover { transform: translateY(-4px); }
-    .adviser-btn:active { transform: scale(0.95); box-shadow: 2px 2px 0px 0px rgba(0,0,0,1); }
+    .adviser-btn:hover { 
+        transform: translateY(-4px); 
+    }
+    .adviser-btn:active { 
+        transform: scale(0.95); 
+        box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+    }
     
     .adviser-btn span { display: block; color: #fff; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; font-weight: 900; font-size: 22px; }
 
-    /* Modal Overlay Setup */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 999999; padding: 15px; box-sizing: border-box; }
+    /* FIX 1: Set z-index to 999999 and ensure width/height use viewport units (vw/vh) */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 999999; }
+    
     .modal-overlay.hidden, .toast-banner.hidden { display: none !important; }
+    /* Modal container padding adjusted for mobile */
+    .admin-modal { background: white; border: 4px solid #000; border-radius: 25px; width: 95%; max-width: 1400px; padding: 20px 15px; position: relative; max-height: 90vh; overflow-y: auto; }
+    @media (min-width: 768px) { .admin-modal { padding: 20px 30px; } }
     
-    /* Responsive Modal Box */
-    .admin-modal { 
-        background: white; 
-        border: 4px solid #000; 
-        border-radius: 25px; 
-        width: 100%; 
-        max-width: 1000px; 
-        padding: 20px 15px; 
-        position: relative; 
-        margin: auto;
-        max-height: 90vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-        box-sizing: border-box;
-    }
-    @media (min-width: 768px) { .admin-modal { padding: 30px 40px; width: 95%; } }
-    
+    /* Header layout: Stack on mobile, side-by-side on desktop */
     .modal-header-top { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 20px; margin-top: 35px; }
     @media (min-width: 768px) { .modal-header-top { flex-direction: row; justify-content: space-between; margin-top: 0; } }
 
@@ -85,6 +58,7 @@
     .calendar-navigation { display: flex; align-items: center; gap: 10px; justify-content: center; }
     .nav-arrow { color: var(--ma-orange); font-size: 32px; text-decoration: none; font-weight: 900; cursor: pointer; }
     
+    /* Text sizing adjusted for mobile */
     .month-title { font-size: 18px; font-weight: 900; margin: 0; text-align: center; }
     @media (min-width: 768px) { .month-title { font-size: 24px; min-width: 300px; } }
     
@@ -92,10 +66,11 @@
     .leave-btn { color: var(--ma-dark-grey); font-size: 18px; font-weight: 900; background: none; border: none; cursor: pointer; }
     @media (min-width: 768px) { .manage-btn, .leave-btn { font-size: 20px; } }
     
+    /* Absolute positioning locks the close button to the top right */
     .close-btn { position: absolute; top: 15px; right: 15px; background: var(--ma-red); color: white; border: 3px solid #fff; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; padding-bottom: 4px; z-index: 10; }
 
-    /* SCROLLABLE TABLE CSS */
-    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; box-sizing: border-box; margin-bottom: 15px; }
+    /* FIX: Scrollable table setup */
+    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 15px; }
     .schedule-grid { width: 100%; min-width: 650px; border-collapse: collapse; text-align: center; border: 2px solid #000; table-layout: fixed; }
     @media (min-width: 768px) { .schedule-grid { min-width: 100%; } }
     
@@ -126,7 +101,7 @@
     .schedule-grid td.active-manage-cell { outline: 3px dashed #000; outline-offset: -3px; }
     .day-header-active { background-color: var(--ma-dark-grey) !important; color: #fff; cursor: pointer; }
 
-    .legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-top: 15px; font-weight: 900; }
+    .legend { display: flex; justify-content: center; gap: 15px; margin-top: 15px; font-weight: 900; flex-wrap: wrap; }
     .legend-item span { display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #000; vertical-align: middle; margin-right: 5px; }
 </style>
 
@@ -134,20 +109,15 @@
     <div class="main-content">
         <h1 class="page-title">Appointment Scheduling</h1>
         <div class="adviser-grid">
-            @forelse($advisersList ?? [] as $adviser)
+            @foreach($advisersList as$adviser)
                 @php 
-                    /* BULLETPROOF: Safely extract data whether $adviser is an Object or an Array */
-                    $advUserId = is_object($adviser) ? ($adviser->user_id ?? null) : ($adviser['user_id'] ?? null);
-                    $advSection = is_object($adviser) ? ($adviser->section ?? '') : ($adviser['section'] ?? '');$advName = is_object($adviser) ? ($adviser->name ?? '') : ($adviser['name'] ?? '');$assigned = !empty($advUserId);$teacherId = $assigned ? $advUserId : 'null';
+                    $assigned = !empty($adviser['user_id']);$teacherId = $assigned ? $adviser['user_id'] : 'null';
                 @endphp
-                <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" 
-                     @if($assigned) onclick="openAdminModal('{{ addslashes((string)$advSection) }}', '{{ addslashes((string)$advName) }}', '{{$teacherId }}')" @endif>
-                    <span>{{ $advSection }}</span>
-                    <span>{{ $advName }}</span>
+                <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{$teacherId }}')" @endif>
+                    <span>{{ $adviser['section'] }}</span>
+                    <span>{{ $adviser['name'] }}</span>
                 </div>
-            @empty
-                <div class="col-span-full text-center font-bold text-gray-500">No teachers available.</div>
-            @endforelse
+            @endforeach
         </div>
     </div>
 </div>
@@ -205,13 +175,8 @@
                             @foreach($calendarDays as$day)
                                 @php
                                     $cellKey = $day->format('Y-m-d') . '\vert{}' .$time;
-                                    
-                                    /* BULLETPROOF: Ensure scheduleRows exists before checking keys */
-                                    $cellStatus = (isset($scheduleRows) && is_array($scheduleRows) && isset($scheduleRows[$cellKey])) 
-                                                    ? $scheduleRows[$cellKey] 
-                                                    : 'available';
-                                                    
-                                    $cellClass = [                                         'available' => 'cell-white',                                          'booked' => 'cell-green',                                          'class' => 'cell-red',                                          'leave' => 'cell-grey'                                     ][$cellStatus] ?? 'cell-white';
+                                    $cellStatus = $scheduleRows[$cellKey] ?? 'available';
+                                    $cellClass = ['available' => 'cell-white', 'booked' => 'cell-green', 'class' => 'cell-red', 'leave' => 'cell-grey'][$cellStatus] ?? 'cell-white';
                                 @endphp
                                 <td class="{{ $cellClass }}" 
                                     data-date="{{ $day->format('Y-m-d') }}" 
