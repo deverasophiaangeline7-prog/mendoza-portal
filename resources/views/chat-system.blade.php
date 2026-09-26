@@ -279,8 +279,8 @@
                     <form @submit.prevent="sendMessage('{{ $selectedUser->user_id }}')" class="flex gap-2">
                         <input type="text" 
                                x-model="messageInput" 
-                               @input="sendTyping()"
-                               :disabled="isTyping || isSending" 
+                               @input="sendTypingWhisper()"
+                               :disabled="thisUserIsTyping || isSending"
                                class="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:border-[#6d0101] focus:ring-1 focus:ring-[#6d0101] transition-all disabled:opacity-50" 
                                placeholder="Type your message here..." 
                                required>
@@ -447,17 +447,18 @@
         Alpine.data('chatSystem', () => ({
             searchOpen: false,
             searchQuery: '',
-            newMsgModal: false, 
+            newMsgModal: false,
             createGroupModal: false,
             deleteModal: false,
             messageInput: '',
-            isTyping: false,
+            thisUserIsTyping: false, // RENAMED: was isTyping, now this is the sender side
+            otherUserIsTyping: false, // RENAMED: was isTyping, this is for tracking other user
             isSending: false,
             myId: '{{ auth()->user()->user_id }}',
             selectedUserId: '{{ isset($selectedUser) ?$selectedUser->user_id : "" }}',
             selectedUserName: '{{ isset($selectedUser) ? (isset($selectedUser->custom_name) ? $selectedUser->custom_name :$selectedUser->name) : "" }}',
             
-            typingTimer: null,
+            otherUserTypingTimer: null,
 
             init() {
                 const container = document.getElementById('message-container');
@@ -465,17 +466,27 @@
 
                 if (window.Echo && this.myId && this.selectedUserId) {
 
-                    // --- REAL-TIME SEEN LOGIC ---
-                    // 1. Tell the other person I have opened this chat
+                    // ==========================================
+                    // 1. REAL-TIME SEEN LOGIC
+                    // ==========================================
+                    
+                    // --- SEND WHISPER ---
+                    // Tell the person I am messaging that I have opened this chat (I've "Seen" their messages)
+                    // The backend Controller logic will have already marked their unread messages as 'read' in the database on page reload.
+                    // This whisper tells their open client to update the UI *instantly* without reload.
                     window.Echo.private(`chat.${this.selectedUserId}`)
                         .whisper('read', { senderId: this.myId });
 
-                    // 2. Listen for when THEY open my chat
+                    // --- RECEIVE WHISPER ---
+                    // Listen for when THEY open my chat. This updates my screen to show "· Seen" for the messages I sent them.
                     window.Echo.private(`chat.${this.myId}`)
                         .listenForWhisper('read', (e) => {
+                            // Ensure the 'read' whisper is coming from the person I'm currently looking at
                             if (e.senderId == this.selectedUserId) {
+                                // Find all MY unread sent message timestamp containers and add the seen text
                                 const containers = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
                                 containers.forEach(statusSpan => {
+                                    // Prevents duplicates if Seen text is already present from a database reload
                                     if (statusSpan.innerHTML.trim() === '') {
                                         statusSpan.innerHTML = '<span class="font-bold ml-1 text-gray-500">· Seen</span>';
                                     }
@@ -483,23 +494,31 @@
                             }
                         });
 
-                    // --- TYPING INDICATOR LOGIC ---
+
+                    // ==========================================
+                    // 2. TYPING INDICATOR LOGIC (RECEIVE ONLY)
+                    // ==========================================
+                    // Listen for their typing whispers.
                     window.Echo.private(`chat.${this.myId}`)
                         .listenForWhisper('typing', (e) => {
                             if (e.senderId == this.selectedUserId) {
-                                this.isTyping = true;
+                                this.otherUserIsTyping = true; // Show the 3 AI dots bubble
                                 if (container) container.scrollTop = container.scrollHeight;
 
-                                clearTimeout(this.typingTimer);
-                                this.typingTimer = setTimeout(() => {
-                                    this.isTyping = false;
+                                clearTimeout(this.otherUserTypingTimer);
+                                this.otherUserTypingTimer = setTimeout(() => {
+                                    this.otherUserIsTyping = false;
                                 }, 2000);
                             }
                         });
                 }
             },
 
-            sendTyping() {
+            // ==========================================
+            // 3. TYPING INDICATOR LOGIC (SEND WHISPER)
+            // ==========================================
+            // Renamed from sendTyping() for consistency. This is used by the @input on the input field.
+            sendTypingWhisper() {
                 if (window.Echo && this.selectedUserId) {
                     window.Echo.private(`chat.${this.selectedUserId}`)
                         .whisper('typing', {
@@ -520,6 +539,7 @@
                 }
                 
                 const chatMessages = document.getElementById('chat-messages');
+                // Optimistically insert your new bubble to the DOM instantly
                 chatMessages.insertAdjacentHTML('beforeend', `
                     <div class="text-right mb-4 w-full">
                         <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
@@ -532,14 +552,11 @@
                 `);
 
                 // ==========================================
-                // SMART TYPING INDICATOR LOGIC
+                // 4. SMART FRONTEND AI INDICATOR PROTECTOR
                 // ==========================================
+                // We keep this "faking AI typing" logic only for specific keyword combinations.
                 const lowercaseText = text.toLowerCase();
-                
-                // Words that the AI knows how to answer (Triggers the 3 dots)
                 const aiKeywords = ['tuition', 'fee', 'password', 'schedule', 'term', 'when', 'how much', 'date', 'event', 'start', 'end'];
-                
-                // Words that are clearly complex human concerns (Blocks the 3 dots)
                 const complexKeywords = ['concern', 'grade', 'bully', 'problem', 'help', 'anak', 'absent', 'sick'];
                 
                 const triggersAI = aiKeywords.some(keyword => lowercaseText.includes(keyword));
@@ -547,21 +564,23 @@
                 const isParent = '{{ strtolower(auth()->user()->role) }}' === 'parent';
                 const isDirectMessage = '{{ is_null($selectedUser->custom_name ?? null) ? "true" : "false" }}' === 'true';
 
-                // Only show the AI typing dots if it's a simple question AND it doesn't contain complex keywords
+                // We only pretend AI is typing (three dots) if it's a direct, simple school question from a parent.
                 if (triggersAI && !isComplex && isParent && isDirectMessage) {
-                    this.isTyping = true;  // Shows the 3 AI dots
+                    this.otherUserIsTyping = true;  // Manually toggle the three-dots bubble on
                     this.isSending = false;
                 } else {
-                    this.isTyping = false; // Hides the AI dots
-                    this.isSending = true; // Just shows the normal "Sending..." button text
+                    this.otherUserIsTyping = false; // Stay silent
+                    this.isSending = true; // Normal "Sending..." button text
                 }
                 
+                // Immediately scroll down to keep new optimistic bubble in view
                 this.$nextTick(() => { 
                     const container = document.getElementById('message-container');
                     if(container) container.scrollTop = container.scrollHeight; 
                 });
 
                 try {
+                    // Send message to backend (for real logic, AI response saving, or silent ignore)
                     const response = await fetch('{{ route('messages.store') }}', {
                         method: 'POST',
                         headers: {
@@ -576,13 +595,17 @@
                     });
 
                     if (response.ok) {
+                        // After successful save, reload page to capture final database state (e.g., AI response bubble)
+                        // Page reload naturally destroys the temporary fake AI dots.
                         window.location.reload(); 
                     } else {
-                        this.isTyping = false;
+                        // Handle server error, e.g., POST request failed.
+                        this.otherUserIsTyping = false;
                         this.isSending = false;
                     }
                 } catch (err) {
-                    this.isTyping = false;
+                    // Handle fetch/network error.
+                    this.otherUserIsTyping = false;
                     this.isSending = false;
                     console.error("Message failed to send", err);
                 }
