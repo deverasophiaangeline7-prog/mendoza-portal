@@ -18,7 +18,7 @@
                     'type' => strtolower(trim($notif->type)),
                     'title' => $notif->title,
                     'message' => $notif->message,
-                    'time_ago' => $notif->created_at->diffForHumans() 
+                  'time_ago' => $notif->created_at ? $notif->created_at->setTimezone('Asia/Manila')->diffForHumans() : 'Just now'
                 ];
             });
     @endphp
