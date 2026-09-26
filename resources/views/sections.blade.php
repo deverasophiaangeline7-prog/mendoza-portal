@@ -114,43 +114,46 @@
         </div>
     </main>
 
-    <div x-show="studentEditModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
-        <div @click.away="studentEditModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-lg w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
-            <div class="flex justify-between items-start mb-6">
+    <!-- EDIT STUDENT MODAL (Fixed z-index and Mobile Centering) -->
+    <div x-show="studentEditModal" class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
+        <div @click.away="studentEditModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-lg w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] m-auto max-h-[90vh] flex flex-col flex-shrink-0">
+            <div class="flex justify-between items-start mb-6 shrink-0">
                 <h2 class="text-3xl font-black uppercase text-black">Edit Student</h2>
                 <button @click="studentEditModal = false" class="text-gray-400 hover:text-red-600 text-3xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
-            <form :action="'/admin/students/' + editStudentId + '/edit'" method="POST">
+            <form :action="'/admin/students/' + editStudentId + '/edit'" method="POST" class="flex flex-col overflow-hidden">
                 @csrf
                 @method('PUT')
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">First Name</label>
-                        <input type="text" name="first_name" x-model="editFirstName" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-yellow-400 uppercase">
+                <div class="overflow-y-auto pr-2 pb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">First Name</label>
+                            <input type="text" name="first_name" x-model="editFirstName" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-yellow-400 uppercase">
+                        </div>
+                        <div>
+                            <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Middle Name</label>
+                            <input type="text" name="middle_name" x-model="editMiddleName" class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-yellow-400 uppercase">
+                        </div>
+                        <div>
+                            <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Last Name</label>
+                            <input type="text" name="last_name" x-model="editLastName" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-yellow-400 uppercase">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Middle Name</label>
-                        <input type="text" name="middle_name" x-model="editMiddleName" class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-yellow-400 uppercase">
-                    </div>
-                    <div>
-                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Last Name</label>
-                        <input type="text" name="last_name" x-model="editLastName" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-yellow-400 uppercase">
+
+                    <div class="mb-8">
+                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Assign to Section</label>
+                        <select name="section_id" x-model="editSectionId" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-yellow-400 appearance-none bg-white">
+                            <option value="">-- Select Section --</option>
+                            @foreach(\App\Models\Section::orderBy('grade_level')->get() as $sec)
+                                <option value="{{ $sec->section_id }}">{{ $sec->grade_level }} - {{ $sec->section_name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
-                <div class="mb-8">
-                    <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Assign to Section</label>
-                    <select name="section_id" x-model="editSectionId" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-yellow-400 appearance-none bg-white">
-                        <option value="">-- Select Section --</option>
-                        @foreach(\App\Models\Section::orderBy('grade_level')->get() as $sec)
-                            <option value="{{ $sec->section_id }}">{{ $sec->grade_level }} - {{ $sec->section_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="flex flex-col md:flex-row justify-end space-y-3 md:space-y-0 md:space-x-4">
+                <div class="flex flex-col md:flex-row justify-end space-y-3 md:space-y-0 md:space-x-4 shrink-0 mt-4 pt-4 border-t-2 border-gray-100">
                     <button type="button" @click="studentEditModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4 py-3 md:py-0 text-center">Cancel</button>
                     <button type="submit" class="bg-yellow-400 text-black font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-500 active:translate-y-1 active:shadow-none transition-all flex justify-center items-center">
                         <i class="fa-solid fa-save mr-2"></i> Save Record
@@ -160,7 +163,8 @@
         </div>
     </div>
 
-    <div x-show="archiveModal" x-transition:opacity class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
+    <!-- Archive Confirmation Modal (Increased z-index to 9999) -->
+    <div x-show="archiveModal" x-transition:opacity class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
         <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]" @click.away="archiveModal = false">
             <div class="text-center">
                 <i class="fa-solid fa-box-archive text-6xl text-[#ffb72b] mb-6"></i>

@@ -106,7 +106,7 @@
     <div class="main-content">
         <h1 class="page-title">Appointment Scheduling</h1>
         <div class="adviser-grid">
-            @foreach($advisersList as$adviser)
+            @foreach($advisersList ?? [] as $adviser)
                 @php 
                     $assigned = !empty($adviser['user_id']);$teacherId = $assigned ? $adviser['user_id'] : 'null';
                 @endphp
@@ -135,7 +135,10 @@
             }
 
             $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);$prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');$nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');$calendarDays = [];
-            for ($i = 0; $i < 5; $i++) { $calendarDays[] =$startOfWeek->copy()->addDays($i); }$timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
+            for ($i = 0; $i < 5; $i++) {$calendarDays[] = $startOfWeek->copy()->addDays($i); 
+            }
+            
+            $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
         @endphp
 
         <div class="modal-header-top">
@@ -171,7 +174,7 @@
                         @foreach($calendarDays as$day)
                             @php
                                 $cellKey = $day->format('Y-m-d') . '\vert{}' .$time;
-                                $cellStatus = $scheduleRows[$cellKey] ?? 'available';
+                                $cellStatus = ($scheduleRows ?? [])[$cellKey] ?? 'available';
                                 $cellClass = ['available' => 'cell-white', 'booked' => 'cell-green', 'class' => 'cell-red', 'leave' => 'cell-grey'][$cellStatus] ?? 'cell-white';
                             @endphp
                             <td class="{{ $cellClass }}" 

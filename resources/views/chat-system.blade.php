@@ -481,12 +481,12 @@
                     // Listen for when THEY open my chat. This updates my screen to show "· Seen" for the messages I sent them.
                     window.Echo.private(`chat.${this.myId}`)
                         .listenForWhisper('read', (e) => {
-                            // Ensure the 'read' whisper is coming from the person I'm currently looking at
-                            if (e.senderId == this.selectedUserId) {
-                                // Find all MY unread sent message timestamp containers and add the seen text
-                                const containers = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
-                                containers.forEach(statusSpan => {
-                                    // Prevents duplicates if Seen text is already present from a database reload
+                            // Ensure strict: check selectedUserId exists AND matches whisper sender
+                            if (this.selectedUserId && e.senderId == this.selectedUserId) {
+                                // Find all MY currently visible unread sent message status containers
+                                const unreadStatusContainers = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
+                                unreadStatusContainers.forEach(statusSpan => {
+                                    // Prevents duplicates if Seen text is already present
                                     if (statusSpan.innerHTML.trim() === '') {
                                         statusSpan.innerHTML = '<span class="font-bold ml-1 text-gray-500">· Seen</span>';
                                     }

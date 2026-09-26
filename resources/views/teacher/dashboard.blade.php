@@ -3,37 +3,13 @@
 @section('title', 'Teacher Dashboard')
 
 @section('content')
-
-@php
-    // Bulletproof Teacher Name (Prevents 500 error if profile is incomplete or returns a collection)
-    $teacherName = auth()->user()->username ?? 'User';
-    if (auth()->check() && auth()->user()->teacher) {
-        $profile = auth()->user()->teacher;
-        if ($profile instanceof \Illuminate\Support\Collection) {
-            $profile = $profile->first();
-        }
-        if ($profile) {
-            $fname = $profile->first_name ?? '';
-            $lname = $profile->last_name ?? '';
-            $teacherName = trim("$fname $lname") ?: $teacherName;
-        }
-    }
-
-    // Bulletproof Announcement Images (Prevents 500 error if controller passes an array instead of a Collection)
-    $images = isset($announcementImages) ? collect($announcementImages) : collect();
-    $hasImage = $images->isNotEmpty();
-    $firstImage = $images->first();
-    $imagePath = $firstImage ? (is_object($firstImage) ? ($firstImage->image_path ?? '') : ($firstImage['image_path'] ?? '')) : '';
-    $imageUrl = $imagePath ? asset('storage/' . $imagePath) : '';
-@endphp
-
 <!-- We wrap the main content and modal in a single div so they share the Alpine data -->
 <div class="flex-1 flex flex-col min-h-screen" x-data="{ 
     currentMonth: {{ now()->month - 1 }}, 
     currentYear: {{ now()->year }}, 
     selectedDate: {{ now()->day }},
     monthNames: ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'],
-    events: @json($eventsData ?? new \stdClass()), 
+    events: {{ json_encode($eventsData ?? new \stdClass()) }}, 
     passwordModal: {{ $errors->has('current_password') || $errors->has('password') ? 'true' : 'false' }},
     get daysInMonth() { return new Date(this.currentYear, this.currentMonth + 1, 0).getDate(); },
     get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); },
@@ -65,15 +41,21 @@
 
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl md:text-3xl font-extrabold tracking-tight uppercase">
-                Welcome, Teacher {{ $teacherName }}!
+                Welcome, Teacher 
+                @if(auth()->check() && auth()->user()->teacher)
+                    {{ auth()->user()->teacher->first_name }} {{ auth()->user()->teacher->last_name }}!
+                @else
+                    {{ auth()->user()->username ?? 'User' }}!
+                @endif
             </h2>
         </div>
 
         <div class="relative w-full h-80 bg-amber-700 rounded-3xl p-6 shadow-lg border-2 border-black mb-12"
              x-data="{
-                 hasImage: {{ $hasImage ? 'true' : 'false' }},
-                 imageUrl: '{{ $imageUrl }}',
+                 hasImage: {{ (isset($announcementImages) && $announcementImages->count() > 0) ? 'true' : 'false' }},
+                 imageUrl: '{{ (isset($announcementImages) && $announcementImages->count() > 0) ? asset('storage/' . $announcementImages->first()->image_path) : '' }}',
                  init() {
+                     // Fetch the latest image from the server every 5 seconds
                      setInterval(() => {
                          fetch('{{ route('banner.fetch') }}')
                              .then(response => response.json())
@@ -119,6 +101,7 @@
                     </div>
                     
                     <div class="bg-white rounded-2xl p-4 border-2 border-black">
+                        <!-- Upgraded to native Tailwind Grid so the numbers align perfectly -->
                         <div class="grid grid-cols-7 gap-2 mb-4">
                             @foreach(['SUN','MON','TUE','WED','THU','FRI','SAT'] as $day)
                                 <span class="text-[#b91c1c] text-center font-black text-sm">{{ $day }}</span>

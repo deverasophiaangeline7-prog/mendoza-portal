@@ -121,11 +121,11 @@
                     @endif
 
                     @if(auth()->user()->role === 'teacher')
-                        <x-sidebar-link href="{{ route('teacher.view') }}"
-                            icon="fa-solid fa-user-tie"
-                            :active="request()->routeIs('teacher.view')">
-                            Teacher Information
-                        </x-sidebar-link>
+                    <x-sidebar-link href="{{ route('teacher.information') }}"
+                        icon="fa-solid fa-user-tie"
+                        :active="request()->routeIs('teacher.information')">
+                        Teacher Information
+                    </x-sidebar-link>
 
                         <x-sidebar-link href="{{ route('students.index') }}"
                             icon="fa-solid fa-chalkboard-user"

@@ -120,10 +120,9 @@
                 $canFinalize = false;
                 $term3EndDate = 'UNSET';
                 $isTerm3Ended = false;
-                $hasAnyGrades = false; // Initialize the missing variable
+                $hasAnyGrades = false; 
                 
                 if (isset($activeYear)) {
-                    // Check if the current school year has ANY grades or NKP evaluations right here
                     $gradesExist = \Illuminate\Support\Facades\DB::table('grades')->where('school_year_id', $activeYear->id)->exists();
                     $nkpExist = \Illuminate\Support\Facades\DB::table('nkp_evaluations')->where('school_year_id', $activeYear->id)->exists();
                     $hasAnyGrades = $gradesExist || $nkpExist;
@@ -134,7 +133,6 @@
                     }
                 }
 
-                // Must pass BOTH checks: Term 3 is done AND there is at least one grade in the database
                 if ($isTerm3Ended && $hasAnyGrades) {
                     $canFinalize = true;
                 }
@@ -166,7 +164,7 @@
     <!-- START: Blocked Finalization Modal -->
     <div x-show="blockedModal" 
          x-transition:opacity
-         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
+         class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
          x-cloak>
         <div @click.away="blockedModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
             
@@ -203,7 +201,7 @@
     <!-- Modals Section remains unchanged below this point -->
     <div x-show="finalizeModal" 
          x-transition:opacity
-         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
+         class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
          x-cloak>
         <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
             
@@ -247,7 +245,7 @@
 
     <div x-show="passwordModal" 
          x-data="{ userId: '', newPassword: '', confirmPassword: '' }"
-         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
+         class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
          x-cloak>
         <div @click.away="passwordModal = false; userId = ''; newPassword = ''; confirmPassword = ''" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
             
@@ -317,13 +315,12 @@
         </div>
     </div>
 
-<!-- START: Term Schedule Modal -->
+    <!-- START: Term Schedule Modal -->
     <div x-show="termScheduleModal" 
          x-transition:opacity
-         class="fixed inset-0 z-[100] flex p-4 md:p-8 bg-black/80 backdrop-blur-sm overflow-y-auto" 
+         class="fixed inset-0 z-[9999] flex p-4 md:p-8 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
         
-        <!-- Replaced top/bottom margins with m-auto and added max-h-[90vh] overflow-y-auto -->
         <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[4px] border-black rounded-[2rem] p-5 md:p-8 max-w-4xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative m-auto flex-shrink-0 max-h-[90vh] overflow-y-auto scrollbar-hide">
             
             <button @click="termScheduleModal = false" class="absolute top-3 md:top-4 right-5 md:right-6 text-4xl md:text-5xl font-black text-black hover:text-gray-700 transition-colors leading-none z-10">&times;</button>

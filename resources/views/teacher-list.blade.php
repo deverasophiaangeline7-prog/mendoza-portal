@@ -195,9 +195,8 @@
         </div>
     </main>
 
-    <!-- TEACHER EDIT MODAL (Fixed Mobile Centering) -->
-    <div x-show="editModal" class="fixed inset-0 z-[100] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
-        <!-- Replaced items-center with m-auto to fix top cutoff -->
+    <!-- TEACHER EDIT MODAL (Increased z-index to 9999) -->
+    <div x-show="editModal" class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
         <div @click.away="editModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-2xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] m-auto max-h-[90vh] flex flex-col flex-shrink-0">
             <div class="flex justify-between items-start mb-6 shrink-0">
                 <h2 class="text-3xl font-black uppercase text-black">Edit Teacher</h2>
@@ -303,8 +302,8 @@
         </div>
     </div>
 
-    <!-- Archive Confirmation Modal (Fixed Mobile Centering) -->
-    <div x-show="archiveModal" x-transition:opacity class="fixed inset-0 z-[100] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
+    <!-- Archive Confirmation Modal (Increased z-index to 9999) -->
+    <div x-show="archiveModal" x-transition:opacity class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
         <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] m-auto flex-shrink-0" @click.away="archiveModal = false">
             <div class="text-center">
                 <i class="fa-solid fa-box-archive text-6xl text-[#ffb72b] mb-6"></i>
@@ -333,7 +332,7 @@
      x-transition:leave="transition ease-in duration-300"
      x-transition:leave-start="opacity-100 translate-y-0"
      x-transition:leave-end="opacity-0 translate-y-10"
-     class="fixed bottom-10 right-10 z-[200] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center gap-4 bg-[#4ade80] text-black">
+     class="fixed bottom-10 right-10 z-[9999] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center gap-4 bg-[#4ade80] text-black">
     <i class="fa-solid fa-circle-check text-3xl"></i>
     <span class="font-black text-xl tracking-wide">{{ session('success') }}</span>
 </div>
@@ -348,7 +347,7 @@
      x-transition:leave="transition ease-in duration-300"
      x-transition:leave-start="opacity-100 translate-y-0"
      x-transition:leave-end="opacity-0 translate-y-10"
-     class="fixed bottom-10 right-10 z-[200] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-2 bg-red-500 text-white">
+     class="fixed bottom-10 right-10 z-[9999] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-2 bg-red-500 text-white">
     <div class="flex items-center gap-4 border-b-2 border-black/20 pb-2">
         <i class="fa-solid fa-circle-exclamation text-3xl"></i>
         <span class="font-black text-xl tracking-wide uppercase">Save Failed!</span>
