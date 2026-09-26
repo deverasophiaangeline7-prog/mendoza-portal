@@ -120,9 +120,10 @@
                 $canFinalize = false;
                 $term3EndDate = 'UNSET';
                 $isTerm3Ended = false;
-                $hasAnyGrades = false; 
+                $hasAnyGrades = false; // Initialize the missing variable
                 
                 if (isset($activeYear)) {
+                    // Check if the current school year has ANY grades or NKP evaluations right here
                     $gradesExist = \Illuminate\Support\Facades\DB::table('grades')->where('school_year_id', $activeYear->id)->exists();
                     $nkpExist = \Illuminate\Support\Facades\DB::table('nkp_evaluations')->where('school_year_id', $activeYear->id)->exists();
                     $hasAnyGrades = $gradesExist || $nkpExist;
@@ -133,6 +134,7 @@
                     }
                 }
 
+                // Must pass BOTH checks: Term 3 is done AND there is at least one grade in the database
                 if ($isTerm3Ended && $hasAnyGrades) {
                     $canFinalize = true;
                 }
@@ -164,9 +166,9 @@
     <!-- START: Blocked Finalization Modal -->
     <div x-show="blockedModal" 
          x-transition:opacity
-         class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
+         class="fixed inset-0 z-[9999] flex p-4 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
-        <div @click.away="blockedModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
+        <div @click.away="blockedModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto">
             
             <button @click="blockedModal = false" class="absolute top-4 right-6 text-3xl font-black text-gray-400 hover:text-black transition-colors">&times;</button>
 
@@ -190,7 +192,7 @@
                     </p>
                 @endif
 
-                <button @click="blockedModal = false" class="w-full bg-gray-200 text-black font-black py-4 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-300 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all text-lg">
+                <button @click="blockedModal = false" class="w-full bg-gray-200 text-black font-black py-4 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-300 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all text-lg mt-4">
                     UNDERSTOOD
                 </button>
             </div>
@@ -201,9 +203,9 @@
     <!-- Modals Section remains unchanged below this point -->
     <div x-show="finalizeModal" 
          x-transition:opacity
-         class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
+         class="fixed inset-0 z-[9999] flex p-4 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
-        <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
+        <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto">
             
             <button @click="finalizeModal = false" class="absolute top-4 right-6 text-3xl font-black text-gray-400 hover:text-black transition-colors">&times;</button>
 
@@ -245,9 +247,9 @@
 
     <div x-show="passwordModal" 
          x-data="{ userId: '', newPassword: '', confirmPassword: '' }"
-         class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" 
+         class="fixed inset-0 z-[9999] flex p-4 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
-        <div @click.away="passwordModal = false; userId = ''; newPassword = ''; confirmPassword = ''" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
+        <div @click.away="passwordModal = false; userId = ''; newPassword = ''; confirmPassword = ''" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto">
             
             <button @click="passwordModal = false; userId = ''; newPassword = ''; confirmPassword = ''" class="absolute top-4 right-6 text-3xl font-black text-gray-400 hover:text-black transition-colors">&times;</button>
 
@@ -321,7 +323,8 @@
          class="fixed inset-0 z-[9999] flex p-4 md:p-8 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
         
-        <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[4px] border-black rounded-[2rem] p-5 md:p-8 max-w-4xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative m-auto flex-shrink-0 max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <!-- Adjusted margins to prevent top cut-off on mobile -->
+        <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[4px] border-black rounded-[2rem] p-5 md:p-8 max-w-4xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto scrollbar-hide">
             
             <button @click="termScheduleModal = false" class="absolute top-3 md:top-4 right-5 md:right-6 text-4xl md:text-5xl font-black text-black hover:text-gray-700 transition-colors leading-none z-10">&times;</button>
 
@@ -402,7 +405,7 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-3">
+                <div class="flex flex-col gap-3 shrink-0">
                     <button type="submit" class="w-full bg-[#00e5ff] hover:bg-[#00cce6] text-black text-lg md:text-2xl font-black py-4 md:py-5 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center gap-2 md:gap-3">
                         Save Term Schedule <i class="fa-solid fa-floppy-disk"></i>
                     </button>

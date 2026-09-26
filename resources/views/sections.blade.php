@@ -114,9 +114,75 @@
         </div>
     </main>
 
-    <!-- EDIT STUDENT MODAL (Fixed z-index and Mobile Centering) -->
+    <!-- ADD SECTION MODAL (Smaller box, pushed down on mobile) -->
+    <div x-show="addSectionModal" class="fixed inset-0 z-[9999] flex p-4 bg-black/50 overflow-y-auto" x-cloak>
+        <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto">
+            <button @click="addSectionModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
+            <h3 class="text-2xl font-black mb-4">Add Section</h3>
+            <form action="{{ route('sections.store') }}" method="POST">
+                @csrf
+                <div class="mb-4">
+                    <label class="block font-bold mb-1">Grade Level</label>
+                    <select name="grade_level" required class="w-full border rounded-lg p-2 font-bold bg-white">
+                        <option value="" disabled selected>-- Select Grade Level --</option>
+                        <option value="Nursery">Nursery</option>
+                        <option value="Kindergarten">Kindergarten</option>
+                        <option value="Preparatory">Preparatory</option>
+                        <option value="1">Grade 1</option>
+                        <option value="2">Grade 2</option>
+                        <option value="3">Grade 3</option>
+                        <option value="4">Grade 4</option>
+                        <option value="5">Grade 5</option>
+                        <option value="6">Grade 6</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block font-bold mb-1">Section Name</label>
+                    <input type="text" name="section_name" required class="w-full border rounded-lg p-2 font-bold" oninput="this.value = this.value.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())">
+                </div>
+                <div class="flex justify-end gap-2 mt-4 shrink-0">
+                    <button type="button" @click="addSectionModal = false" class="px-4 py-2 bg-gray-200 rounded-lg font-bold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg font-bold">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- DELETE SECTION MODAL (Smaller box, pushed down on mobile) -->
+    <div x-show="deleteSectionModal" class="fixed inset-0 z-[9999] flex p-4 bg-black/50 overflow-y-auto" x-cloak>
+        <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto">
+            <button @click="deleteSectionModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
+            <h3 class="text-2xl font-black mb-4">Delete Section</h3>
+            <form action="{{ route('sections.destroy') }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this section?');">
+                @csrf
+                @method('DELETE')
+                <div class="mb-4">
+                    <label class="block font-bold mb-1">Select Section</label>
+                    <select name="section_id" required class="w-full border rounded-lg p-2 font-bold bg-white">
+                        <option value="" disabled selected>-- Select Section --</option>
+                        @foreach($sections ?? [] as $sec)
+                            <option value="{{ $sec->section_id }}">
+                                @if(is_numeric($sec->grade_level))
+                                    Grade {{ $sec->grade_level }}
+                                @else
+                                    {{ $sec->grade_level }}
+                                @endif
+                                - {{ $sec->section_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 mt-4 shrink-0">
+                    <button type="button" @click="deleteSectionModal = false" class="px-4 py-2 bg-gray-200 rounded-lg font-bold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT STUDENT MODAL (Smaller box, pushed down on mobile) -->
     <div x-show="studentEditModal" class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
-        <div @click.away="studentEditModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-lg w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] m-auto max-h-[90vh] flex flex-col flex-shrink-0">
+        <div @click.away="studentEditModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-lg w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] mt-24 mx-auto mb-10 md:m-auto max-h-[70vh] flex flex-col flex-shrink-0">
             <div class="flex justify-between items-start mb-6 shrink-0">
                 <h2 class="text-3xl font-black uppercase text-black">Edit Student</h2>
                 <button @click="studentEditModal = false" class="text-gray-400 hover:text-red-600 text-3xl"><i class="fa-solid fa-xmark"></i></button>
@@ -163,9 +229,9 @@
         </div>
     </div>
 
-    <!-- Archive Confirmation Modal (Increased z-index to 9999) -->
-    <div x-show="archiveModal" x-transition:opacity class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
-        <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]" @click.away="archiveModal = false">
+    <!-- Archive Confirmation Modal (Smaller box, pushed down on mobile) -->
+    <div x-show="archiveModal" x-transition:opacity class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
+        <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] mt-24 mx-auto mb-10 md:m-auto max-h-[70vh] flex-shrink-0" @click.away="archiveModal = false">
             <div class="text-center">
                 <i class="fa-solid fa-box-archive text-6xl text-[#ffb72b] mb-6"></i>
                 <h2 class="text-3xl font-black mb-4 uppercase">Archive Account?</h2>
