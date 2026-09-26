@@ -4,7 +4,8 @@
 
 @section('content')
 <!-- Top-level div holds the Alpine state for the Edit & Archive Modals -->
-<div class="flex-1 flex flex-col bg-white min-h-screen relative" x-data="{ 
+<div class="flex-1 flex flex-col bg-white min-h-screen relative" 
+x-data="{ 
     archiveModal: false, archiveUrl: '', 
     editModal: false, editId: '', editFirstName: '', editLastName: '', editAdvisory: '',
     
@@ -12,12 +13,12 @@
     editAssignments: [],
     subjectMap: {
         'NKP': [],
-        '1': ['ALL (Class Adviser)', 'GMRC', 'Language', 'Makabansa', 'Mathematics', 'Reading and Literacy'],
-        '2': ['ALL (Class Adviser)', 'English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
-        '3': ['ALL (Class Adviser)', 'English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
-        '4': ['ALL (Class Adviser)', 'Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE'],
-        '5': ['ALL (Class Adviser)', 'Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE'],
-        '6': ['ALL (Class Adviser)', 'Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE']
+        '1': ['GMRC', 'Language', 'Makabansa', 'Mathematics', 'Reading and Literacy'],
+        '2': ['English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
+        '3': ['English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
+        '4': ['Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE'],
+        '5': ['Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE'],
+        '6': ['Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE']
     },
     
     openEditModal(id, fname, lname, advisory, assignmentsJson) {
@@ -28,19 +29,16 @@
         
         let parsed = JSON.parse(assignmentsJson);
         
-        // Map existing backend data into the dynamic array
         this.editAssignments = parsed.map(a => {
             let grade = (['Nursery', 'Kinder', 'Prep', 'NKP', '1,2,3'].includes(a.grade)) ? 'NKP' : a.grade;
             let sectionId = (grade === 'NKP') ? 'NKP' : a.section_id;
             return {
                 section_id: sectionId,
                 grade: grade,
-                subject: a.subject || '',
-                availableSubjects: this.subjectMap[grade] || []
+                subject: a.subject || ''
             };
         });
 
-        // Ensure there's always at least one empty row if no data exists
         if(this.editAssignments.length === 0) {
             this.addAssignmentRow();
         }
@@ -49,7 +47,7 @@
     },
     
     addAssignmentRow() {
-        this.editAssignments.push({ section_id: '', grade: '', subject: '', availableSubjects: [] });
+        this.editAssignments.push({ section_id: '', grade: '', subject: '' });
     },
     
     removeAssignmentRow(index) {
@@ -62,9 +60,24 @@
         
         this.editAssignments[index].grade = grade;
         this.editAssignments[index].subject = ''; 
-        this.editAssignments[index].availableSubjects = this.subjectMap[grade] || [];
+    },
+
+    // NEW: Prevents duplicate subjects for the same section
+    getAvailableSubjects(currentIndex) {
+        let current = this.editAssignments[currentIndex];
+        if (!current.grade || current.grade === 'NKP') return [];
+
+        let allSubjects = this.subjectMap[current.grade] || [];
+        
+        // Find subjects already chosen in OTHER rows for the SAME section
+        let takenSubjects = this.editAssignments
+            .filter((a, idx) => idx !== currentIndex && a.section_id === current.section_id && a.subject !== '')
+            .map(a => a.subject);
+
+        // Return only the subjects that are not taken yet
+        return allSubjects.filter(subject => !takenSubjects.includes(subject));
     }
-}">
+}"
     
     <main class="flex-1 p-8">
         <div class="max-w-6xl mx-auto">
@@ -275,7 +288,7 @@
                                         <label class="block font-bold uppercase text-gray-600 text-xs mb-1 tracking-widest">Subject <span class="text-red-600">*</span></label>
                                         <select :name="'assignments[' + index + '][subject]'" x-model="assignment.subject" :required="assignment.grade !== 'NKP' && assignment.grade !== ''" class="w-full border-2 border-black rounded-xl px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 appearance-none bg-white">
                                             <option value="" disabled>Select Subject</option>
-                                            <template x-for="subj in assignment.availableSubjects" :key="subj">
+                                            <template x-for="subj in getAvailableSubjects(index)" :key="subj">
                                                 <option :value="subj" x-text="subj" :selected="subj === assignment.subject"></option>
                                             </template>
                                         </select>
