@@ -234,12 +234,19 @@
                                     <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm {{ $message->sender_id === auth()->user()->user_id ? 'bg-[#6d0101] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none' }}">
                                         {{ $message->content }}
                                     </span>
-                                    <div class="text-[10px] text-gray-400 mt-1">{{ $message->created_at->format('g:i A') }}</div>
+                                    <div class="text-[10px] text-gray-400 mt-1">
+                                        {{ $message->created_at->format('g:i A') }}
+                                        
+                                        <!-- THE NEW SEEN FEATURE -->
+                                        @if($message->sender_id === auth()->user()->user_id && $message->is_read)
+                                            <span class="font-bold ml-1 text-gray-500">· Seen</span>
+                                        @endif
+                                    </div>
                                 </div>
                             @endif
                         @endforeach
                     @else
-                        <!-- Added ID here -->
+                        <!-- Added ID here (EMPTY STATE IS SAFE HERE) -->
                         <div id="empty-chat-state" class="h-full flex flex-col items-center justify-center text-gray-400">
                             <p class="text-sm">No messages yet. Send a message to start the conversation.</p>
                         </div>
@@ -502,15 +509,25 @@
                 // SMART TYPING INDICATOR LOGIC
                 // ==========================================
                 const lowercaseText = text.toLowerCase();
-                const aiKeywords = ['tuition', 'fee', 'password', 'schedule', 'term', 'when', 'how much'];
+                
+                // Words that the AI knows how to answer (Triggers the 3 dots)
+                const aiKeywords = ['tuition', 'fee', 'password', 'schedule', 'term', 'when', 'how much', 'date', 'event', 'start', 'end'];
+                
+                // Words that are clearly complex human concerns (Blocks the 3 dots)
+                const complexKeywords = ['concern', 'grade', 'bully', 'problem', 'help', 'anak', 'absent', 'sick'];
                 
                 const triggersAI = aiKeywords.some(keyword => lowercaseText.includes(keyword));
+                const isComplex = complexKeywords.some(keyword => lowercaseText.includes(keyword));
                 const isParent = '{{ strtolower(auth()->user()->role) }}' === 'parent';
+                const isDirectMessage = '{{ is_null($selectedUser->custom_name ?? null) ? "true" : "false" }}' === 'true';
 
-                if (triggersAI && isParent) {
-                    this.isTyping = true;
+                // Only show the AI typing dots if it's a simple question AND it doesn't contain complex keywords
+                if (triggersAI && !isComplex && isParent && isDirectMessage) {
+                    this.isTyping = true;  // Shows the 3 AI dots
+                    this.isSending = false;
                 } else {
-                    this.isSending = true;
+                    this.isTyping = false; // Hides the AI dots
+                    this.isSending = true; // Just shows the normal "Sending..." button text
                 }
                 
                 this.$nextTick(() => { 

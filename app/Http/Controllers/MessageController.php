@@ -259,9 +259,11 @@ class MessageController extends Controller
                 $lastDayOfSchool = $t3e;
             }
 
+            $currentDateString = \Carbon\Carbon::now('Asia/Manila')->format('F j, Y');
             $receiverRole = $receiver ? ucfirst($receiver->role) : 'Staff';
         $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc.
         IMPORTANT: You are currently responding on behalf of a {$receiverRole} account.
+        TODAY'S CURRENT DATE IS: {$currentDateString}. You MUST use this date as your reference point whenever a user asks about 'today', 'this week', 'this month', or 'next month'.
         
         Guidelines:
         - ALWAYS start your response with a warm, friendly, and welcoming greeting in the appropriate language (e.g., 'Hello there! 👋', 'Magandang araw po!').
