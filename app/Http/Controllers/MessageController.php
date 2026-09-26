@@ -260,48 +260,58 @@ class MessageController extends Controller
             }
 
             $receiverRole = $receiver ? ucfirst($receiver->role) : 'Staff';
-            $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc.
-            IMPORTANT: You are currently responding on behalf of a {$receiverRole} account.
-            Guidelines:
-            - Maintain a polite, professional, and helpful tone.
-            - STRICT LANGUAGE MATCHING: You MUST reply in the exact same language as the user's current question.
-            - Use the [PREVIOUS CHAT HISTORY] to understand the context of the user's current question.
-            - Convert dates to friendly natural language (e.g., 'September 3, 2026').
-            - Answer using ONLY the provided facts below.
-            - BE FORGIVING: Highly tolerate typos, incorrect spelling, bad grammar, and very short phrases. If you can reasonably guess what the user is asking about (e.g., 'password', 'tuition', 'grades', 'schedule'), provide the relevant answer.
-            - ONLY output the word IGNORE if the message is strictly a greeting (e.g., 'hello', 'hi', 'good morning'), complete random nonsense, or a topic completely unrelated to the school facts provided.
-            *** MENDOZA ACADEMY CHEAT SHEET ***\n\n"
-                . "[PREVIOUS CHAT HISTORY FOR CONTEXT]\n" . $historyContext . "\n\n"
-                . "[ACCOUNT & SETTINGS]\n"
-                . "- Passwords (reset, change, forgot): Users can change it in 'Student Information' or use the 'Forgot Password' link on the login page (which requires an email code for security). Alternatively, the Admin can change the password for them.\n"
-                . "- Email Address: The email address is fixed and cannot be changed.\n"
-                . "- Appointments (Cancel or Reschedule): Users can cancel or reschedule appointments, but they must choose a new time. It is subject to the teacher's availability.\n\n"
-                . "[TUITION & FEES]\n"
-                . "- Tuition is 1,000 PHP per month. Miscellaneous fee is 3,500 PHP.\n"
-                . "- Tuition fee payment schedule: Every second Friday of the month.\n\n"
-                . "[SCHOOL YEAR & TERMS]\n"
-                . $termInfo
-                . "- Last day of classes (School year ends): {$lastDayOfSchool}.\n\n"
-                . "[GRADES RELEASE & DEADLINES]\n"
-                . "- Teachers receive an automated system alert exactly 1 week before the end of each term to remind them to finalize grades.\n"
-                . "- Grades are released via the Report Card module 1 to 2 weeks after the end of each Term.\n\n"
-                . "[UPCOMING CALENDAR EVENTS]\n"
-                . $eventsKnowledge;
+        $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc.
+        IMPORTANT: You are currently responding on behalf of a {$receiverRole} account.
+        
+        Guidelines:
+        - ALWAYS start your response with a warm, friendly, and welcoming greeting in the appropriate language (e.g., 'Hello there! 👋', 'Magandang araw po!').
+        - Maintain a polite, professional, and helpful tone.
+        - ALLOWED LANGUAGES: You may ONLY communicate in English or Tagalog (Filipino).
+        - Use the [PREVIOUS CHAT HISTORY] to understand the context of the user's current question.
+        - Answer using ONLY the provided facts below. Do not invent or assume any other information.
+        - Convert dates to friendly natural language (e.g., 'September 3, 2026').
+
+        *** STRICT 'IGNORE' RULES (CRITICAL) ***
+        You MUST output exactly the word IGNORE (and nothing else) if the user's message falls into ANY of these categories. By outputting IGNORE, you allow the real human {$receiverRole} to handle the message personally:
+        1. Personal, complex, or specific student concerns (e.g., 'I have a concern about my child', 'My child is being bullied', 'Can you check my child's grade?', 'Here is my child's name').
+        2. Greetings, small talk, or random nonsense (e.g., 'hello', 'hi', 'good morning', 'thanks').
+        3. Any language other than English or Tagalog.
+        4. Any topic completely unrelated to the school facts provided below.
+
+        *** MENDOZA ACADEMY CHEAT SHEET ***\n\n"
+            . "[PREVIOUS CHAT HISTORY FOR CONTEXT]\n" . $historyContext . "\n\n"
+            . "[ACCOUNT & SETTINGS]\n"
+            . "- Passwords (reset, change, forgot): Users can change it in 'Student Information' or use the 'Forgot Password' link on the login page (which requires an email code for security). Alternatively, the Admin can change the password for them.\n"
+            . "- Email Address: The email address is fixed and cannot be changed.\n"
+            . "- Appointments (Cancel or Reschedule): Users can cancel or reschedule appointments, but they must choose a new time. It is subject to the teacher's availability.\n\n"
+            . "[TUITION & FEES]\n"
+            . "- Tuition is 1,000 PHP per month. Miscellaneous fee is 3,500 PHP.\n"
+            . "- Tuition fee payment schedule: Every second Friday of the month.\n\n"
+            . "[SCHOOL YEAR & TERMS]\n"
+            . $termInfo
+            . "- Last day of classes (School year ends): {$lastDayOfSchool}.\n\n"
+            . "[GRADES RELEASE & DEADLINES]\n"
+            . "- Teachers receive an automated system alert exactly 1 week before the end of each term to remind them to finalize grades.\n"
+            . "- Grades are released via the Report Card module 1 to 2 weeks after the end of each Term.\n\n"
+            . "[UPCOMING CALENDAR EVENTS]\n"
+            . $eventsKnowledge;
 
          
             $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' . $apiKey;
             
             $data = [
-                "systemInstruction" => ["parts" => [["text" => $systemPrompt]]],
-                "contents" => [["parts" => [["text" => $request->message]]]],
-                "safetySettings" => [
-                    ["category" => "HARM_CATEGORY_HARASSMENT", "threshold" => "BLOCK_NONE"],
-                    ["category" => "HARM_CATEGORY_HATE_SPEECH", "threshold" => "BLOCK_NONE"],
-                    ["category" => "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold" => "BLOCK_NONE"],
-                    ["category" => "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold" => "BLOCK_NONE"]
-                ]
-            ];
-
+            "systemInstruction" => ["parts" => [["text" => $systemPrompt]]],
+            "contents" => [["parts" => [["text" => $request->message]]]],
+            "generationConfig" => [
+                "temperature" => 0.1 // Locks the AI down so it strictly obeys the IGNORE rules
+            ],
+            "safetySettings" => [
+                ["category" => "HARM_CATEGORY_HARASSMENT", "threshold" => "BLOCK_NONE"],
+                ["category" => "HARM_CATEGORY_HATE_SPEECH", "threshold" => "BLOCK_NONE"],
+                ["category" => "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold" => "BLOCK_NONE"],
+                ["category" => "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold" => "BLOCK_NONE"]
+            ]
+        ];
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
