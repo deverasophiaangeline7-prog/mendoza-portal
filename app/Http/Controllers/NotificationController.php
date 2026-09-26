@@ -42,17 +42,20 @@ class NotificationController extends Controller
         $user = auth()->user();
         if (!$user) return response()->json([]);
 
-        $filteredNotifications = $user->customNotifications->filter(function($notification) use ($user) {
-            $role = strtolower(trim($user->role));
-            $type = strtolower(trim($notification->type));
+        $filteredNotifications = $user->customNotifications
+            ->unique('notification_id') 
+            ->sortByDesc('created_at') 
+            ->filter(function($notification) use ($user) {
+                $role = strtolower(trim($user->role));
+                $type = strtolower(trim($notification->type));
 
-            if ($role === 'teacher') {
-                return in_array($type, ['announcement', 'event', 'school event', 'calendar', 'deadline_alert', 'appointment']); 
-            }
-            return true; // Parents see everything
-        })->values(); // Ensure it returns as a clean array
+                if ($role === 'teacher') {
+                    return in_array($type, ['announcement', 'event', 'school event', 'calendar', 'deadline_alert', 'appointment']); 
+                }
+                return true; 
+            })->values(); 
 
-        // Format the dates so JavaScript can easily display "2 minutes ago"
+       
         $formatted = $filteredNotifications->map(function($notif) {
             return [
                 'notification_id' => $notif->notification_id,

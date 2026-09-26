@@ -45,38 +45,75 @@
             </h2>
         </div>
 
+        <!-- NEW UPGRADED CAROUSEL -->
         <div class="relative w-full h-80 bg-amber-700 rounded-3xl p-6 shadow-lg border-2 border-black mb-12"
-     x-data="{
-         hasImage: {{ (isset($announcementImages) && $announcementImages->count() > 0) ? 'true' : 'false' }},
-         imageUrl: '{{ (isset($announcementImages) && $announcementImages->count() > 0) ? asset('storage/' . $announcementImages->first()->image_path) : '' }}',
-         init() {
-             // Fetch the latest image from the server every 5 seconds
-             setInterval(() => {
-                 fetch('{{ route('banner.fetch') }}')
-                     .then(response => response.json())
-                     .then(data => {
-                         this.hasImage = data.has_image;
-                         if(data.has_image) {
-                             this.imageUrl = data.url;
-                         }
-                     });
-             }, 5000); 
-         }
-     }">
-    <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-amber-600 relative overflow-hidden flex items-center justify-center">
-        
-        <template x-if="hasImage">
-            <div class="absolute inset-0 transition-opacity duration-500">
-                <img :src="imageUrl" class="w-full h-full object-cover">
+             x-data="{
+                 images: [
+                     @if(isset($announcementImages) &&$announcementImages->count() > 0)
+                         @foreach($announcementImages as$img)
+                             { url: '{{ asset('storage/' . $img->image_path) }}', caption: '{{ addslashes($img->caption) }}' },
+                         @endforeach
+                     @endif
+                 ],
+                 currentIndex: 0,
+                 get hasImage() { return this.images.length > 0; },
+                 init() {
+                     setInterval(() => {
+                         fetch('{{ route('banner.fetch') }}')
+                             .then(response => response.json())
+                             .then(data => {
+                                 if(data.has_image) {
+                                     this.images = data.images;
+                                     if (this.currentIndex >= this.images.length) this.currentIndex = 0;
+                                 } else {
+                                     this.images = [];
+                                 }
+                             });
+                     }, 5000); 
+                 },
+                 next() {
+                     if(this.images.length > 1) {
+                         this.currentIndex = (this.currentIndex + 1) % this.images.length;
+                     }
+                 },
+                 prev() {
+                     if(this.images.length > 1) {
+                         this.currentIndex = (this.currentIndex - 1 + this.images.length) % this.images.length;
+                     }
+                 }
+             }">
+            <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-amber-600 relative overflow-hidden flex items-center justify-center">
+                
+                <template x-if="hasImage">
+                    <div class="absolute inset-0 transition-opacity duration-500">
+                        <img :src="images[currentIndex].url" class="w-full h-full object-cover">
+                        
+                        <!-- Caption Pill -->
+                        <template x-if="images[currentIndex].caption">
+                            <div class="absolute bottom-6 left-6 bg-[#5A524D] text-white px-5 py-2.5 rounded-xl font-bold tracking-wide shadow-md" 
+                                 x-text="images[currentIndex].caption"></div>
+                        </template>
+
+                        <!-- Navigation Arrows -->
+                        <template x-if="images.length > 1">
+                            <div>
+                                <button @click="prev()" class="absolute left-6 top-1/2 -translate-y-1/2 bg-[#F3E6D5]/90 hover:bg-white text-black w-10 h-12 flex items-center justify-center rounded-2xl font-black text-xl shadow-md transition-all">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <button @click="next()" class="absolute right-6 top-1/2 -translate-y-1/2 bg-[#F3E6D5]/90 hover:bg-white text-black w-10 h-12 flex items-center justify-center rounded-2xl font-black text-xl shadow-md transition-all">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                
+                <template x-if="!hasImage">
+                    <div class="text-center text-gray-400 italic font-bold">No Active Announcements</div>
+                </template>
+                
             </div>
-        </template>
-        
-        <template x-if="!hasImage">
-            <div class="text-center text-gray-400 italic font-bold">No Active Announcements</div>
-        </template>
-        
-    </div>
-</div>
+        </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             <div>
@@ -97,7 +134,6 @@
                     </div>
 
                     <div class="bg-white rounded-2xl p-4 border-2 border-black">
-                        <!-- Upgraded to native Tailwind Grid so the numbers align perfectly -->
                         <div class="grid grid-cols-7 gap-2 mb-4">
                             @foreach(['SUN','MON','TUE','WED','THU','FRI','SAT'] as $day)
                                 <span class="text-[#b91c1c] text-center font-black text-sm">{{ $day }}</span>

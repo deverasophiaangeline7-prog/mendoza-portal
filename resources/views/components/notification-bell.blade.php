@@ -1,24 +1,26 @@
 @if(strtolower(trim(auth()->user()->role)) !== 'admin')
 
     @php
-        // We keep the initial load data so it doesn't flash empty when the page first loads
         $user = auth()->user();
-        $initialNotifications = $user->customNotifications->filter(function($notification) use ($user) {
-            $role = strtolower(trim($user->role));
-            $type = strtolower(trim($notification->type));
-            if ($role === 'teacher') {
-                return in_array($type, ['announcement', 'event', 'school event', 'calendar', 'deadline_alert', 'appointment']); 
-            }
-            return true;
-        })->values()->map(function($notif) {
-            return [
-                'notification_id' => $notif->notification_id,
-                'type' => strtolower(trim($notif->type)),
-                'title' => $notif->title,
-                'message' => $notif->message,
-                'time_ago' => $notif->created_at->diffForHumans()
-            ];
-        });
+        $initialNotifications = $user->customNotifications
+            ->unique('notification_id') // This removes the repeating duplicates
+            ->sortByDesc('created_at')  // This pushes the most recent alerts to the top
+            ->filter(function($notification) use ($user) {
+                $role = strtolower(trim($user->role));
+                $type = strtolower(trim($notification->type));
+                if ($role === 'teacher') {
+                    return in_array($type, ['announcement', 'event', 'school event', 'calendar', 'deadline_alert', 'appointment']); 
+                }
+                return true;
+            })->values()->map(function($notif) {
+                return [
+                    'notification_id' => $notif->notification_id,
+                    'type' => strtolower(trim($notif->type)),
+                    'title' => $notif->title,
+                    'message' => $notif->message,
+                    'time_ago' => $notif->created_at->diffForHumans() 
+                ];
+            });
     @endphp
 
     <div class="relative inline-block z-[999]" 
