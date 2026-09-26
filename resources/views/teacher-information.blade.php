@@ -1,181 +1,127 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mendoza Academy - Teacher Information</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        [x-cloak] { display: none !important; }
-        .hero-gradient { background: linear-gradient(to right, #d32f2f, #8b0000); }
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
-    </style>
-</head>
+@extends('layouts.navigation')
 
-<body class="bg-gray-100 h-screen overflow-hidden flex flex-col" x-data="{ passwordModal: false }">
+@section('title', 'Teacher Profile')
 
-    <header class="hero-gradient text-white py-3 px-6 shadow-md flex justify-between items-center relative z-50 flex-shrink-0">
-        <div class="flex items-center space-x-3">
-            <img src="{{ asset('images/MAILogo.png') }}" class="h-10 w-10 bg-white p-1 rounded shadow" alt="Logo">
-            <h1 class="text-2xl font-bold uppercase tracking-tight italic">Mendoza Academy, Inc.</h1>
-        </div>
+@section('content')
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+</style>
+
+<div class="flex-1 flex flex-col h-full overflow-hidden relative" x-data="{ passwordModal: false, photoModal: false }">
+    
+    <main class="flex-1 bg-white p-10 relative overflow-y-hidden custom-scrollbar">
         
-        <div class="flex items-center space-x-6 text-2xl">
-            <x-top-icon-button><i class="fa-solid fa-envelope"></i></x-top-icon-button>
-            <x-top-icon-button><i class="fa-solid fa-bell"></i></x-top-icon-button>
+        <div class="max-w-4xl mx-auto w-full mt-4">
             
-            <div class="relative" x-data="{ open: false }">
-                <button @click="open = !open" @click.away="open = false" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
-                    <i class="fa-solid fa-circle-user text-[#ffb31a] text-4xl shadow-sm"></i>
-                </button>
-                <div x-show="open" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-2xl py-1 z-50 border border-gray-200 overflow-hidden" style="display: none;" x-cloak>
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8 mb-12 pl-4">
+                
+                <div class="flex flex-col md:flex-row items-center gap-8">
                     
-                    <button @click="passwordModal = true; open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-bold cursor-pointer">
-                        <i class="fa-solid fa-key mr-3 text-yellow-500"></i>Change Password
-                    </button>
-                    <hr class="border-gray-100">
-
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold cursor-pointer">
-                            <i class="fa-solid fa-right-from-bracket mr-3"></i>Logout
+                    {{-- Profile Picture Container with Edit Button --}}
+                    <div class="relative flex-shrink-0 mb-4 md:mb-0">
+                        <div class="w-44 h-44 bg-amber-700 border-[4px] border-black rounded-[2rem] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center rotate-[-2deg]">
+                        @if(auth()->user()->profile_photo_path)
+                            <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}" 
+                                 class="w-full h-full object-cover">
+                        @else
+                            <i class="fa-solid fa-user-tie text-7xl text-black"></i>
+                        @endif
+                        </div>
+                        <button @click="photoModal = true" class="absolute -bottom-2 -right-2 bg-white text-black border-[3px] border-black rounded-full w-12 h-12 flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all z-10 text-xl">
+                            <i class="fa-solid fa-camera"></i>
                         </button>
-                    </form>
-                    <hr class="border-gray-100">
-                    <button @click="open = false" class="flex w-full items-center px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer">
-                        <i class="fa-solid fa-xmark mr-3"></i>Cancel
-                    </button>
+                    </div>
+
+                    <div class="text-center md:text-left">
+                        <h2 class="text-6xl font-black uppercase italic tracking-tighter leading-none text-black">
+                            {{ auth()->user()->name }}
+                        </h2>
+                        <div class="font-bold text-gray-400 mt-4 italic uppercase tracking-widest text-2xl">
+                            FACULTY MEMBER
+                        </div>
+                    </div>
+                </div>
+
+                <button @click="passwordModal = true" class="bg-[#111] text-white font-black uppercase tracking-widest px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-800 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2 flex-shrink-0">
+                    <i class="fa-solid fa-key text-yellow-400"></i> Change Password
+                </button>
+
+            </div>
+
+            <div class="bg-white border-[5px] border-black p-10 rounded-[3rem] shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] mb-10">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-12 min-w-0">
+                    
+                    <div class="space-y-10 min-w-0">
+                        <div>
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Teacher ID / Username</label>
+                            <p class="text-3xl font-black uppercase italic break-all">
+                                {{ auth()->user()->username ?? auth()->user()->lrn ?? 'N/A' }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Email Address</label>
+                            <p class="text-3xl font-black uppercase italic break-all">
+                                {{ auth()->user()->email ?? 'NOT ASSIGNED' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-10 min-w-0">
+                        <div>
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Account Status</label>
+                            <p class="text-3xl font-black uppercase italic break-all text-green-600">
+                                {{ auth()->user()->status ?? 'ACTIVE' }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Account Role</label>
+                            <p class="text-3xl font-black uppercase italic break-all">
+                                {{ auth()->user()->role ?? 'TEACHER' }}
+                            </p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
-    </header>
+    </main>
 
-    <div class="flex flex-1 overflow-hidden">
-        
-        <nav class="w-64 bg-[#b91c1c] text-white pt-4 flex-shrink-0 shadow-2xl z-40">
-            <ul class="space-y-1">
-                <x-sidebar-link href="{{ route('dashboard') }}" icon="fa-solid fa-chart-line" :active="request()->routeIs('dashboard')">
-                    Dashboard
-                </x-sidebar-link>
-
-                @if(auth()->user()->role === 'parent')
-                    <x-sidebar-link href="{{ route('student.view') }}" icon="fa-solid fa-user-graduate" :active="request()->routeIs('student.view')">
-                        Student Information
-                    </x-sidebar-link>
-                @endif
-
-                @if(auth()->user()->role === 'teacher')
-                    <x-sidebar-link href="{{ route('teacher.information') }}" icon="fa-solid fa-address-card" :active="request()->routeIs('teacher.information')">
-                        Teacher Information
-                    </x-sidebar-link>
-
-                    <x-sidebar-link href="{{ route('students.index') }}" icon="fa-solid fa-chalkboard-user" :active="request()->routeIs('students.*')">
-                        Advisory Class
-                    </x-sidebar-link>
-                @endif
-
-                @php
-                    $calendarRoute = match(auth()->user()->role) {
-                        'admin' => route('admin.student.participation'),
-                        'parent' => route('student.calendar'),
-                        default => route('student.calendar.index'),
-                    };
-                @endphp
-                <x-sidebar-link href="{{ $calendarRoute }}" 
-                    icon="fa-solid fa-calendar-days" 
-                    :active="request()->routeIs('admin.student.participation') || request()->routeIs('student.calendar*')">
-                    Student Calendar
-                </x-sidebar-link>
-
-                <x-sidebar-link 
-                    href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}" 
-                    icon="fa-solid fa-star" 
-                    :active="request()->routeIs('reportcard.*') || request()->routeIs('parent.reportcard')">
-                    Report Card
-                </x-sidebar-link>
-                
-                <x-sidebar-link 
-                    href="{{ auth()->user()->role === 'parent' ? route('parent.attendance') : route('attendance.index') }}" 
-                    icon="fa-solid fa-calendar-check" 
-                    :active="request()->routeIs('attendance.*') || request()->routeIs('parent.attendance')">
-                    Attendance
-                </x-sidebar-link>
-
-                @if(auth()->user()->role === 'admin')
-                    <x-sidebar-link href="{{ route('account.management') }}" icon="fa-solid fa-users-gear" :active="request()->routeIs('account.management')">
-                        Account Management
-                    </x-sidebar-link>
-                @endif
-            </ul>
-        </nav>
-
-        <main class="flex-1 bg-white p-10 relative overflow-y-auto custom-scrollbar">
+    {{-- PHOTO UPDATE MODAL --}}
+    <div x-show="photoModal" 
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
+        <div @click.away="photoModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
             
-            <div class="max-w-4xl mx-auto w-full mt-4">
-                
-                <div class="flex flex-col md:flex-row items-center justify-between gap-8 mb-12 pl-4">
-                    
-                    <div class="flex flex-col md:flex-row items-center gap-8">
-                        <div class="w-44 h-44 bg-[#b91c1c] border-[4px] border-black rounded-[2rem] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center flex-shrink-0 rotate-[-2deg]">
-                            @if(auth()->user()->profile_photo_path)
-                                <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}" class="w-full h-full object-cover">
-                            @else
-                                <i class="fa-solid fa-chalkboard-user text-7xl text-white"></i>
-                            @endif
-                        </div>
-
-                        <div class="text-center md:text-left">
-                            <h2 class="text-6xl font-black uppercase italic tracking-tighter leading-none text-black">
-                                {{ auth()->user()->name }}
-                            </h2>
-                            <div class="font-bold text-gray-400 mt-4 italic uppercase tracking-widest text-2xl">
-                                FACULTY MEMBER
-                            </div>
-                        </div>
-                    </div>
-
-                    <button @click="passwordModal = true" class="bg-[#111] text-white font-black uppercase tracking-widest px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-800 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2 flex-shrink-0">
-                        <i class="fa-solid fa-key text-yellow-400"></i> Change Password
-                    </button>
-
-                </div>
-
-                <div class="bg-white border-[5px] border-black p-10 rounded-[3rem] shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] mb-10">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-12">
-                        
-                        <div class="space-y-10">
-                            <div>
-                                <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Teacher ID / Username</label>
-                                <p class="text-3xl font-black uppercase italic">{{ auth()->user()->username ?? auth()->user()->lrn ?? 'N/A' }}</p>
-                            </div>
-
-                            <div>
-                                <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Email Address</label>
-                                <p class="text-3xl font-black uppercase italic">{{ auth()->user()->email ?? 'NOT ASSIGNED' }}</p>
-                            </div>
-                        </div>
-
-                        <div class="space-y-10">
-                            <div>
-                                <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Account Status</label>
-                                <p class="text-3xl font-black uppercase italic text-green-600">{{ auth()->user()->status ?? 'ACTIVE' }}</p>
-                            </div>
-
-                            <div>
-                                <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Account Role</label>
-                                <p class="text-3xl font-black uppercase italic">{{ auth()->user()->role ?? 'TEACHER' }}</p>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
+            <div class="flex justify-between items-start mb-6">
+                <h2 class="text-3xl font-black uppercase text-black italic">Update Photo</h2>
+                <button @click="photoModal = false" class="text-gray-400 hover:text-red-600 text-3xl transition-colors"><i class="fa-solid fa-xmark"></i></button>
             </div>
-        </main>
+            
+            <form action="{{ route('profile.photo.update') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                
+                <div class="space-y-5 mb-8">
+                    <div>
+                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Select New Image</label>
+                        <input type="file" name="profile_photo" accept="image/jpeg,image/png,image/jpg" required class="w-full border-2 border-black rounded-xl p-2 font-bold focus:outline-none focus:ring-4 focus:ring-red-400 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-2 file:border-black file:text-sm file:font-black file:bg-[#ffb31a] file:text-black hover:file:bg-[#e68a2d] file:transition-colors cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <button type="button" @click="photoModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4 transition-colors">Cancel</button>
+                    
+                    <button type="submit" class="bg-[#34C759] text-white font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-green-600 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all flex items-center">
+                        <i class="fa-solid fa-upload mr-2"></i> Upload
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
+    {{-- PASSWORD UPDATE MODAL (With Eye Toggles & Corrected Route) --}}
     <div x-show="passwordModal" 
          x-data="{ currentPassword: '', newPassword: '', confirmPassword: '' }"
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
@@ -186,7 +132,8 @@
             
             <h2 class="text-3xl font-black mb-6 uppercase tracking-tight text-center text-black italic">Change Password</h2>
             
-            <form action="{{ route('password.update') }}" method="POST" 
+            <!-- FIXED ROUTE: user.password.update -->
+            <form action="{{ route('user.password.update') }}" method="POST" 
                   @submit.prevent="if(newPassword === confirmPassword && currentPassword !== newPassword) $el.submit()">
                 @csrf
                 @method('PUT')
@@ -254,5 +201,5 @@
         </div>
     </div>
 
-</body>
-</html>
+</div>
+@endsection

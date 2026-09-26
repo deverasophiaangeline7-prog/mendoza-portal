@@ -114,8 +114,10 @@
         </form>
         @endif
 
-        <div class="border-[3px] border-black rounded-xl overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white">
-            <table class="w-full text-left border-collapse">
+        <!-- Changed overflow-hidden to overflow-x-auto to enable mobile scrolling -->
+        <div class="border-[3px] border-black rounded-xl overflow-x-auto shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white">
+            <!-- Added min-w-[600px] so the table doesn't squash too small before scrolling -->
+            <table class="w-full min-w-[600px] text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-100 border-b-[3px] border-black text-black">
                         <th class="p-4 border-r-[3px] border-black w-24 text-center font-black text-2xl">NO.</th>

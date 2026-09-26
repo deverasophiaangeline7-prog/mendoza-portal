@@ -58,7 +58,18 @@
                     
                     <div x-show="isManaging" x-cloak class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 animate-fade-in w-full sm:w-auto">
                         <span class="font-black uppercase text-sm whitespace-nowrap">Select Day:</span>
-                        <input type="date" x-model="selectedDate" class="w-full sm:w-auto border-[3px] border-black p-2 rounded-xl font-black bg-white">
+                        <input type="date" 
+                                 x-model="selectedDate" 
+                                    @change="
+                                        if(selectedDate) {
+                         const day = new Date(selectedDate).getUTCDay();
+               if(day === 0 || day === 6) {
+                   triggerToast('Weekends are not allowed! Please select a weekday.', 'error');
+                   selectedDate = '';
+               }
+           }
+       "
+       class="w-full sm:w-auto border-[3px] border-black p-2 rounded-xl font-black bg-white">
                         
                         <button @click="addDateToTable()" class="w-full sm:w-auto bg-blue-600 text-white px-6 sm:px-8 py-2 rounded-xl border-[3px] border-black font-black hover:bg-blue-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                             + ADD DATE
@@ -171,6 +182,18 @@ document.addEventListener('alpine:init', () => {
         serverAttendance: @json($attendanceMap ?? []),
         
         addDateToTable() {
+            if (!this.selectedDate) {
+                this.triggerToast('Please select a date first!', 'error');
+                return;
+            }
+
+            const day = new Date(this.selectedDate).getUTCDay();
+            if (day === 0 || day === 6) {
+                this.triggerToast('Cannot add weekends to the attendance sheet!', 'error');
+                this.selectedDate = '';
+                return;
+            }
+
             if (!this.addedDates.includes(this.selectedDate)) {
                 this.addedDates.push(this.selectedDate);
                 this.addedDates.sort(); 

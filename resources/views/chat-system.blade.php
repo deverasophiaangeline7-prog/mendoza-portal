@@ -234,13 +234,17 @@
                                     <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm {{ $message->sender_id === auth()->user()->user_id ? 'bg-[#6d0101] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none' }}">
                                         {{ $message->content }}
                                     </span>
-                                    <div class="text-[10px] text-gray-400 mt-1">
+                                    
+                                    <!-- Added 'js-sent-msg-seen-container' class -->
+                                    <div class="text-[10px] text-gray-400 mt-1 {{ $message->sender_id === auth()->user()->user_id ? 'js-sent-msg-seen-container' : '' }}">
                                         {{ $message->created_at->format('g:i A') }}
                                         
-                                        <!-- THE NEW SEEN FEATURE -->
-                                        @if($message->sender_id === auth()->user()->user_id && $message->is_read)
-                                            <span class="font-bold ml-1 text-gray-500">· Seen</span>
-                                        @endif
+                                        <!-- Added 'js-realtime-seen-text' span wrapper -->
+                                        <span class="js-realtime-seen-text">
+                                            @if($message->sender_id === auth()->user()->user_id && $message->is_read)
+                                                <span class="font-bold ml-1 text-gray-500">· Seen</span>
+                                            @endif
+                                        </span>
                                     </div>
                                 </div>
                             @endif
@@ -460,6 +464,26 @@
                 if (container) container.scrollTop = container.scrollHeight;
 
                 if (window.Echo && this.myId && this.selectedUserId) {
+
+                    // --- REAL-TIME SEEN LOGIC ---
+                    // 1. Tell the other person I have opened this chat
+                    window.Echo.private(`chat.${this.selectedUserId}`)
+                        .whisper('read', { senderId: this.myId });
+
+                    // 2. Listen for when THEY open my chat
+                    window.Echo.private(`chat.${this.myId}`)
+                        .listenForWhisper('read', (e) => {
+                            if (e.senderId == this.selectedUserId) {
+                                const containers = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
+                                containers.forEach(statusSpan => {
+                                    if (statusSpan.innerHTML.trim() === '') {
+                                        statusSpan.innerHTML = '<span class="font-bold ml-1 text-gray-500">· Seen</span>';
+                                    }
+                                });
+                            }
+                        });
+
+                    // --- TYPING INDICATOR LOGIC ---
                     window.Echo.private(`chat.${this.myId}`)
                         .listenForWhisper('typing', (e) => {
                             if (e.senderId == this.selectedUserId) {
@@ -501,7 +525,9 @@
                         <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
                             ${text}
                         </span>
-                        <div class="text-[10px] text-gray-400 mt-1">Just now</div>
+                        <div class="text-[10px] text-gray-400 mt-1 js-sent-msg-seen-container">
+                            Just now <span class="js-realtime-seen-text"></span>
+                        </div>
                     </div>
                 `);
 

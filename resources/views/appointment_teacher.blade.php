@@ -894,6 +894,13 @@
         const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
         const duration = endMins - startMins;
 
+        // Restriction Check: Must be between 8:00 AM (480 mins) and 5:00 PM (1020 mins)
+        if (startMins < 480 || endMins > 1020) {
+            event.preventDefault();
+            showValidationPopUp('Appointments can only be scheduled between 8:00 AM and 5:00 PM.');
+            return false;
+        }
+
         if (duration <= 0) {
             event.preventDefault();
             showValidationPopUp('Invalid time selected. The end time must be later than the start time.');

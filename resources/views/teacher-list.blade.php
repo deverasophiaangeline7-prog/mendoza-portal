@@ -195,9 +195,10 @@
         </div>
     </main>
 
-    <!-- TEACHER EDIT MODAL -->
-    <div x-show="editModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
-        <div @click.away="editModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-2xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] max-h-[90vh] flex flex-col">
+    <!-- TEACHER EDIT MODAL (Fixed Mobile Centering) -->
+    <div x-show="editModal" class="fixed inset-0 z-[100] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
+        <!-- Replaced items-center with m-auto to fix top cutoff -->
+        <div @click.away="editModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-2xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] m-auto max-h-[90vh] flex flex-col flex-shrink-0">
             <div class="flex justify-between items-start mb-6 shrink-0">
                 <h2 class="text-3xl font-black uppercase text-black">Edit Teacher</h2>
                 <button type="button" @click="editModal = false" class="text-gray-400 hover:text-red-600 text-3xl"><i class="fa-solid fa-xmark"></i></button>
@@ -302,9 +303,9 @@
         </div>
     </div>
 
-    <!-- Archive Confirmation Modal -->
-    <div x-show="archiveModal" x-transition:opacity class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
-        <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]" @click.away="archiveModal = false">
+    <!-- Archive Confirmation Modal (Fixed Mobile Centering) -->
+    <div x-show="archiveModal" x-transition:opacity class="fixed inset-0 z-[100] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
+        <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] m-auto flex-shrink-0" @click.away="archiveModal = false">
             <div class="text-center">
                 <i class="fa-solid fa-box-archive text-6xl text-[#ffb72b] mb-6"></i>
                 <h2 class="text-3xl font-black mb-4 uppercase">Archive Account?</h2>

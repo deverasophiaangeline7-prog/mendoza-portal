@@ -96,7 +96,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/appointments/teacher-schedule', [AppointmentController::class, 'getAvailability'])->name('appointments.getAvailability');
     Route::post('/appointments/update-availability', [AppointmentController::class, 'updateAvailability'])->name('appointments.updateAvailability');
 
-    Route::get('/teacher/profile', [TeacherController::class, 'view'])->name('teacher.view');
+    
 });
 
 // ==========================================

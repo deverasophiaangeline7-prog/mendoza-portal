@@ -21,6 +21,9 @@
     openModal: false, 
     selectedEventId: null, 
     selectedEventTitle: '',
+    deleteModal: false, 
+    deleteUrl: '',
+    deleteParticipantName: '',
     showErrorToast: {{ $errors->any() ? 'true' : 'false' }},
     showSuccessToast: {{ session('success') ? 'true' : 'false' }}
 }" x-init="if(showErrorToast || showSuccessToast) setTimeout(() => { showErrorToast = false; showSuccessToast = false; }, 5000)">
@@ -58,12 +61,11 @@
                                         <span class="text-gray-800">{{ $participant->student->last_name }}, {{ $participant->student->first_name }}</span>
                                         
                                         @if(auth()->user()->role !== 'admin')
-                                        <form action="{{ route('calendar.deleteParticipant', $participant->id) }}" method="POST" onsubmit="return confirm('Remove student from this role?')">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="text-red-300 hover:text-red-600 transition-colors opacity-0 group-hover/item:opacity-100">
-                                                <i class="fa-solid fa-xmark text-xs"></i>
-                                            </button>
-                                        </form>
+                                        <button type="button" 
+                                                @click="deleteModal = true; deleteUrl = '{{ route('calendar.deleteParticipant', $participant->id) }}'; deleteParticipantName = '{{ addslashes($participant->student->last_name . ', ' . $participant->student->first_name) }}'"
+                                                class="text-red-300 hover:text-red-600 transition-colors opacity-0 group-hover/item:opacity-100">
+                                            <i class="fa-solid fa-xmark text-xs"></i>
+                                        </button>
                                         @endif
                                     </li>
                                 @endforeach
@@ -93,11 +95,11 @@
     <!-- ASSIGN PARTICIPANTS MODAL -->
     @if(auth()->user()->role !== 'admin')
     <div x-show="openModal" 
-         class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]" 
+         class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" 
          x-cloak x-transition
          x-init="$watch('openModal', value => { if(value) { initTomSelect(); } })">
         
-        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-4 border-black relative" @click.away="openModal = false">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-4 border-black relative m-auto flex-shrink-0" @click.away="openModal = false">
             <h3 class="text-2xl font-black mb-1 text-red-880 uppercase italic">Assign Participants</h3>
             <p class="text-gray-500 font-bold uppercase text-[10px] mb-6" x-text="selectedEventTitle"></p>
 
@@ -127,10 +129,33 @@
                 </div>
 
                 <div class="flex space-x-3 pt-4">
-                    <button type="button" @click="openModal = false" class="flex-1 px-4 py-3 bg-gray-100 border-2 border-black font-black rounded-xl uppercase text-xs">Cancel</button>
-                    <button type="submit" class="flex-1 px-4 py-3 bg-green-400 text-black font-black border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] uppercase text-xs">Confirm</button>
+                    <button type="button" @click="openModal = false" class="flex-1 px-4 py-3 bg-gray-100 border-2 border-black font-black rounded-xl uppercase text-xs hover:bg-gray-200 transition-colors">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-3 bg-green-400 text-black font-black border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] uppercase text-xs active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">Confirm</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- REMOVE PARTICIPANT MODAL -->
+    <div x-show="deleteModal" class="fixed inset-0 z-[100] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak x-transition>
+        <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] m-auto flex-shrink-0" @click.away="deleteModal = false">
+            <div class="text-center">
+                <div class="bg-red-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <i class="fa-solid fa-user-xmark text-4xl text-red-600"></i>
+                </div>
+                <h2 class="text-3xl font-black mb-2 uppercase text-black">Remove Student?</h2>
+                <p class="text-lg font-bold text-gray-600 mb-8 leading-tight">
+                    Are you sure you want to remove <br><span class="font-black text-black underline" x-text="deleteParticipantName"></span><br> from this role?
+                </p>
+                <div class="flex flex-col gap-3">
+                    <form :action="deleteUrl" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="w-full bg-red-500 text-white font-black py-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-600 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all uppercase text-xl tracking-wider">Yes, Remove</button>
+                    </form>
+                    <button @click="deleteModal = false" type="button" class="w-full bg-gray-100 text-gray-700 font-black py-4 rounded-xl border-4 border-black hover:bg-gray-200 transition-all uppercase text-lg tracking-wider">Cancel</button>
+                </div>
+            </div>
         </div>
     </div>
 

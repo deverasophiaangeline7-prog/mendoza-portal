@@ -317,16 +317,16 @@
         </div>
     </div>
 
-    <!-- START: Term Schedule Modal -->
+<!-- START: Term Schedule Modal -->
     <div x-show="termScheduleModal" 
          x-transition:opacity
-         class="fixed inset-0 z-[100] flex items-start justify-center p-4 md:p-8 bg-black/80 backdrop-blur-sm overflow-y-auto" 
+         class="fixed inset-0 z-[100] flex p-4 md:p-8 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
         
-        <!-- Adjusted margins to prevent top cut-off on desktop -->
-        <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[4px] border-black rounded-[2rem] p-5 md:p-8 max-w-4xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-16 md:mt-20 mb-8 md:mb-20 flex-shrink-0">
+        <!-- Replaced top/bottom margins with m-auto and added max-h-[90vh] overflow-y-auto -->
+        <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[4px] border-black rounded-[2rem] p-5 md:p-8 max-w-4xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative m-auto flex-shrink-0 max-h-[90vh] overflow-y-auto scrollbar-hide">
             
-            <button @click="termScheduleModal = false" class="absolute top-3 md:top-4 right-5 md:right-6 text-4xl md:text-5xl font-black text-black hover:text-gray-700 transition-colors leading-none">&times;</button>
+            <button @click="termScheduleModal = false" class="absolute top-3 md:top-4 right-5 md:right-6 text-4xl md:text-5xl font-black text-black hover:text-gray-700 transition-colors leading-none z-10">&times;</button>
 
             <div class="flex items-center justify-between mb-6 md:mb-8 border-b-[4px] border-black pb-4 pr-6 md:pr-8 mt-4 md:mt-0">
                 <div>

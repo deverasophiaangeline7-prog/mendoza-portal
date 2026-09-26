@@ -1,4 +1,4 @@
-@extends('navigation')
+@extends('layouts.navigation')
 
 @section('title', 'Archives - Mendoza Academy')
 
@@ -23,39 +23,39 @@
 
         <!-- Archives List -->
         <div class="bg-white rounded-3xl shadow-xl p-8 max-w-4xl">
-            @if($archivedImages->isEmpty())
-                <div class="text-center py-10">
-                    <p class="text-gray-400 italic">The archive is currently empty.</p>
-                </div>
-            @else
-                <div class="space-y-6">
-                    @foreach($archivedImages as $image)
-                        <div class="flex items-center justify-between group">
-                            <div class="flex items-center space-x-6">
-                                <div class="relative w-16 h-16 rounded-xl overflow-hidden shadow-md border-2 border-white">
-                                    <img src="{{ asset('storage/' . $image->image_path) }}" class="w-full h-full object-cover">
-                                    <div class="absolute inset-0 bg-blue-500 opacity-10"></div>
-                                </div>
-
-                                <div>
-                                    <h3 class="text-xl font-bold text-gray-800 tracking-wide">
-                                        {{ basename($image->image_path) }}
-                                    </h3>
-                                    <p class="text-xs text-gray-400 uppercase font-bold">Archived on {{ $image->updated_at->format('M d, Y') }}</p>
-                                </div>
+            <div class="space-y-6">
+                @forelse($archivedImages ?? [] as $image)
+                    <div class="flex items-center justify-between group">
+                        <div class="flex items-center space-x-6">
+                            <div class="relative w-16 h-16 rounded-xl overflow-hidden shadow-md border-2 border-white">
+                                <img src="{{ asset('storage/' . ($image->image_path ?? '')) }}" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-blue-500 opacity-10"></div>
                             </div>
 
-                            <form action="{{ route('announcement-images.restore', $image->image_id) }}" method="POST">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" class="opacity-0 group-hover:opacity-100 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-green-200">
-                                    Restore Image
-                                </button>
-                            </form>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 tracking-wide">
+                                    {{ basename($image->image_path ?? '') }}
+                                </h3>
+                                <p class="text-xs text-gray-400 uppercase font-bold">
+                                    Archived on {{ \Carbon\Carbon::parse($image->updated_at)->format('M d, Y') }}
+                                </p>
+                            </div>
                         </div>
-                    @endforeach
-                </div>
-            @endif
+
+                        <form action="{{ route('announcement-images.restore', $image->image_id ?? $image->id) }}" method="POST">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="opacity-0 group-hover:opacity-100 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-green-200">
+                                Restore Image
+                            </button>
+                        </form>
+                    </div>
+                @empty
+                    <div class="text-center py-10">
+                        <p class="text-gray-400 italic">The archive is currently empty.</p>
+                    </div>
+                @endforelse
+            </div>
         </div>
 
     </div>

@@ -49,9 +49,9 @@
         
     </div>
 
-    {{-- ADD SECTION MODAL --}}
-    <div x-show="addSectionModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" x-cloak>
-        <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative">
+    {{-- ADD SECTION MODAL (Fixed Mobile Centering) --}}
+    <div x-show="addSectionModal" class="fixed inset-0 z-50 flex p-4 bg-black/50 overflow-y-auto" x-cloak>
+        <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative m-auto flex-shrink-0 max-h-[90vh] overflow-y-auto">
             <button @click="addSectionModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
             <h3 class="text-2xl font-black mb-4">Add Section</h3>
             <form action="{{ route('sections.store') }}" method="POST">
@@ -75,7 +75,7 @@
                     <label class="block font-bold mb-1">Section Name</label>
                     <input type="text" name="section_name" required class="w-full border rounded-lg p-2 font-bold" oninput="this.value = this.value.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())">
                 </div>
-                <div class="flex justify-end gap-2">
+                <div class="flex justify-end gap-2 mt-4 shrink-0">
                     <button type="button" @click="addSectionModal = false" class="px-4 py-2 bg-gray-200 rounded-lg font-bold">Cancel</button>
                     <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg font-bold">Save</button>
                 </div>
@@ -83,9 +83,9 @@
         </div>
     </div>
 
-    {{-- DELETE SECTION MODAL --}}
-    <div x-show="deleteSectionModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" x-cloak>
-        <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative">
+    {{-- DELETE SECTION MODAL (Fixed Mobile Centering) --}}
+    <div x-show="deleteSectionModal" class="fixed inset-0 z-50 flex p-4 bg-black/50 overflow-y-auto" x-cloak>
+        <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative m-auto flex-shrink-0 max-h-[90vh] overflow-y-auto">
             <button @click="deleteSectionModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
             <h3 class="text-2xl font-black mb-4">Delete Section</h3>
             <form action="{{ route('sections.destroy') }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this section?');">
@@ -107,7 +107,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="flex justify-end gap-2">
+                <div class="flex justify-end gap-2 mt-4 shrink-0">
                     <button type="button" @click="deleteSectionModal = false" class="px-4 py-2 bg-gray-200 rounded-lg font-bold">Cancel</button>
                     <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold">Delete</button>
                 </div>
