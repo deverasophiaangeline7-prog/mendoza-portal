@@ -181,13 +181,16 @@ x-data="{
 
                                 <div class="flex gap-2 items-center shrink-0">
                                     <button type="button" 
-                                            @click="openEditModal(
+                                            @click='openEditModal(
                                                 {{ json_encode($teacherUser->user_id) }}, 
-                                                {{ json_encode($teacherUser->teacher?->first_name ?? '') }}, 
-                                                {{ json_encode($teacherUser->teacher?->last_name ?? '') }},
+                                                {{ json_encode($teacherUser->teacher?->first_name ?? "") }}, 
+                                                {{ json_encode($teacherUser->teacher?->last_name ?? "") }},
                                                 {{ json_encode($rawAdvisory) }},
                                                 {{ json_encode($tempAssignments) }}
-                                            )"
+                                            )'
+                                            class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
+                                            Edit
+                                    </button>
                                             class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
                                             Edit
                                     </button>
