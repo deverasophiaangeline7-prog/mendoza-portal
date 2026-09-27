@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Student;
 use App\Models\Section;
 use App\Models\Notification;
+use App\Models\AuditLog;
 
 class AppointmentController extends Controller
 {
@@ -322,6 +323,13 @@ class AppointmentController extends Controller
                 ['status' => $schedule['status']]
             );
         }
+
+        // Log the action in the audit log
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Update Teacher Schedule',
+            'description' => auth()->user()->username . ' updated the schedule availability for Teacher ID: ' . $request->teacher_id
+        ]);
 
         return response()->json(['success' => true]);
     }

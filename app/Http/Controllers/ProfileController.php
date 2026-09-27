@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\AuditLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -60,7 +61,14 @@ class ProfileController extends Controller
             'message' => 'Your account password was successfully updated.',
         ]);
 
-        // 4. Send them back to the dashboard with a success message
+        // 4. Log the action in the audit log
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Change Password',
+            'description' => $user->username . ' updated their account password.'
+        ]);
+
+        // 5. Send them back to the dashboard with a success message
         return back()->with('success', 'Your password has been successfully updated!');
     }
 
@@ -87,6 +95,13 @@ class ProfileController extends Controller
             // Update the database
             $user->profile_photo_path = $path;
             $user->save();
+
+            // Log the action in the audit log
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'Change Profile Picture',
+                'description' => $user->username . ' uploaded a new profile photo.'
+            ]);
         }
 
         return redirect()->back()->with('success', 'Profile photo updated successfully!');

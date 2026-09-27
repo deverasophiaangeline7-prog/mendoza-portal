@@ -15,22 +15,17 @@
 </style>
 
 @php
-    // Filter out individual NKP sections so they don't clutter the dropdowns
     $filteredSections = $sections->reject(function($sec) {
-        return in_array(strtoupper(trim($sec->grade_level)), [
-            'NURSERY', 'KINDER', 'KINDERGARTEN', 'PREPARATORY', 'PREP', 'NKP'
-        ]);
+        return in_array(strtoupper(trim($sec->grade_level)), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREPARATORY', 'PREP', 'NKP']);
     });
 
-    // Map the filtered sections (Grades 1-6) for the Alpine.js Dynamic Builder
-    $alpineSections = $filteredSections->map(function($sec) {
-        $gradeNum = '1'; // Default fallback
-        if (preg_match('/\d+/', $sec->grade_level, $matches)) {
+    $alpineSections =$filteredSections->map(function($sec) {$gradeNum = '1';
+        if (preg_match('/\d+/', $sec->grade_level,$matches)) {
             $gradeNum = (string)$matches[0];
         }
         return [
             'id' => $sec->section_id,
-            'name' => strtoupper($sec->grade_level . ' - ' . $sec->section_name),
+            'name' => strtoupper($sec->grade_level . ' - ' .$sec->section_name),
             'grade' => $gradeNum
         ];
     })->values();
@@ -81,14 +76,7 @@
                         <div class="flex flex-col md:flex-row md:items-start">
                             <label class="w-full md:w-32 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0 md:mt-1">Profile Photo:</label>
                             <div class="flex flex-col w-full">
-                                <input type="file" name="profile_photo" accept=".png, .jpg, .jpeg" class="form-input-pill bg-white py-1 transition-colors @error('profile_photo') border-red-600 ring-1 ring-red-600 @enderror" :class="fileError ? 'border-red-600 ring-1 ring-red-600' : ''" @change="
-                                        const file = $event.target.files[0];
-                                        if (file) {
-                                            const type = file.type;
-                                            fileError = !['image/png', 'image/jpg', 'image/jpeg'].includes(type);
-                                            if(fileError) $event.target.value = ''; 
-                                        }
-                                    ">
+                                <input type="file" name="profile_photo" accept=".png, .jpg, .jpeg" class="form-input-pill bg-white py-1 transition-colors @error('profile_photo') border-red-600 ring-1 ring-red-600 @enderror" :class="fileError ? 'border-red-600 ring-1 ring-red-600' : ''" @change="const file = $event.target.files[0]; if (file) { const type = file.type; fileError = !['image/png', 'image/jpg', 'image/jpeg'].includes(type); if(fileError)$event.target.value = ''; }">
                                 <p class="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-wider">Max size: 2MB (.png, .jpg, .jpeg only)</p>
                                 <template x-if="fileError"><span class="text-red-600 text-sm font-bold italic mt-1">The profile photo field must be an image.</span></template>
                             </div>
@@ -118,10 +106,8 @@
                             <select name="advisory" x-model="selectedHomeroom" class="form-input-pill bg-white cursor-pointer focus:outline-none" required>
                                 <option value="" disabled selected>Select Advisory Section</option>
                                 <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
-                                @foreach($filteredSections as $section)
-                                    <option value="{{ $section->section_id }}">
-                                        {{ strtoupper($section->grade_level . ' - ' . $section->section_name) }}
-                                    </option>
+                                @foreach($filteredSections as$section)
+                                    <option value="{{ $section->section_id }}">{{ strtoupper($section->grade_level . ' - ' .$section->section_name) }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -136,19 +122,42 @@
                         @error('username') <span class="text-red-600 text-sm ml-0 md:ml-32 mt-1 font-bold italic">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="space-y-5" x-data="{ pw: '', pw_confirm: '' }">
-                        <div class="flex flex-col md:flex-row md:items-center">
-                            <label class="w-full md:w-32 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0">Password: <span class="text-red-600">*</span></label>
-                            <input type="password" name="password" x-model="pw" class="form-input-pill" required>
+                    <div class="space-y-5">
+                        <div class="flex flex-col">
+                            <div class="flex flex-col md:flex-row md:items-center">
+                                <label class="w-full md:w-32 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0">Password: <span class="text-red-600">*</span></label>
+                                <div class="w-full relative" x-data="{ show: false }">
+                                    <input :type="show ? 'text' : 'password'" name="password" x-model="pw" class="form-input-pill pr-10" required>
+                                    <button type="button" @click="show = !show" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black">
+                                        <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {{-- LIVE STRENGTH INDICATOR --}}
+                            <div x-show="pw !== ''" x-transition class="mt-2 md:ml-32 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-gray-50 p-2 rounded-lg border-2 border-black">
+                                <span class="text-gray-600">Strength:</span>
+                                <div class="flex-1 flex h-2 gap-1">
+                                    <div class="flex-1 rounded-full transition-colors duration-300" :class="strength === 'Weak' ? 'bg-red-500' : (strength === 'Mid' ? 'bg-yellow-400' : 'bg-green-500')"></div>
+                                    <div class="flex-1 rounded-full transition-colors duration-300" :class="(strength === 'Mid' || strength === 'Strong') ? (strength === 'Mid' ? 'bg-yellow-400' : 'bg-green-500') : 'bg-gray-200'"></div>
+                                    <div class="flex-1 rounded-full transition-colors duration-300" :class="strength === 'Strong' ? 'bg-green-500' : 'bg-gray-200'"></div>
+                                </div>
+                                <span :class="{'text-red-600': strength === 'Weak', 'text-yellow-600': strength === 'Mid', 'text-green-600': strength === 'Strong'}" x-text="strength"></span>
+                            </div>
                         </div>
 
                         <div class="flex flex-col">
                             <div class="flex flex-col md:flex-row md:items-center">
                                 <label class="w-full md:w-32 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0">Confirm: <span class="text-red-600">*</span></label>
-                                <input type="password" name="password_confirmation" x-model="pw_confirm" class="form-input-pill" required>
+                                <div class="w-full relative" x-data="{ show: false }">
+                                    <input :type="show ? 'text' : 'password'" name="password_confirmation" x-model="pw_confirm" class="form-input-pill pr-10" required>
+                                    <button type="button" @click="show = !show" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black">
+                                        <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                    </button>
+                                </div>
                             </div>
                             <template x-if="pw_confirm !== '' && pw !== pw_confirm">
-                                <span class="text-red-600 text-sm ml-0 md:ml-32 mt-1 font-bold italic">Passwords do not match!</span>
+                                <span class="text-red-600 text-sm ml-0 md:ml-32 mt-1 font-bold italic"><i class="fa-solid fa-circle-exclamation"></i> Passwords do not match!</span>
                             </template>
                         </div>
                     </div>
@@ -163,8 +172,6 @@
 
                     <template x-for="(assignment, index) in assignments" :key="index">
                         <div class="flex flex-col md:flex-row gap-4 mb-4 items-center bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
-                            
-                            {{-- Target Section Dropdown (NKP is now included) --}}
                             <div class="w-full md:w-1/2">
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Target Section</label>
                                 <select :name="`assignments[${index}][section_id]`" x-model="assignment.section_id" @change="updateSubjects(index)" class="form-input-pill bg-white cursor-pointer" required>
@@ -176,10 +183,8 @@
                                 </select>
                             </div>
 
-                            {{-- Subject Taught Dropdown (MODIFIED: Hides when NKP is selected) --}}
                             <div class="w-full md:w-1/2" x-show="assignment.section_id !== 'NKP'" x-cloak>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Subject Taught</label>
-                                <!-- Notice the :required here! It prevents form submission errors when hidden -->
                                 <select :name="`assignments[${index}][subject]`" x-model="assignment.subject" class="form-input-pill bg-white cursor-pointer" :required="assignment.section_id !== 'NKP'">
                                     <option value="" disabled selected>Select a Subject...</option>
                                     <template x-for="subj in assignment.available_subjects" :key="subj">
@@ -188,14 +193,10 @@
                                 </select>
                             </div>
 
-                            {{-- Red Square Delete Button --}}
-                            <button type="button" @click="removeAssignment(index)" class="mt-4 md:mt-5 bg-[#FF3B30] text-white font-black text-xl h-10 w-10 flex-shrink-0 rounded-lg hover:brightness-90 transition border-2 border-black shadow-[2px_2px_0px_rgba(0,0,0,1)] active:scale-95 flex items-center justify-center leading-none">
-                                &times;
-                            </button>
+                            <button type="button" @click="removeAssignment(index)" class="mt-4 md:mt-5 bg-[#FF3B30] text-white font-black text-xl h-10 w-10 flex-shrink-0 rounded-lg hover:brightness-90 transition border-2 border-black shadow-[2px_2px_0px_rgba(0,0,0,1)] active:scale-95 flex items-center justify-center leading-none">&times;</button>
                         </div>
                     </template>
 
-                    {{-- Add Assignment Button --}}
                     <button type="button" @click="addAssignment()" class="bg-[#e68a2d] text-black px-5 py-2 mt-2 rounded-lg font-black text-sm uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all active:scale-95 flex items-center gap-2">
                         + Add Class Assignment
                     </button>
@@ -203,8 +204,13 @@
 
                 {{-- SUBMIT BUTTONS --}}
                 <div class="col-span-1 md:col-span-2 flex flex-col md:flex-row justify-end gap-4 md:gap-6 pt-6">
-                    <a href="{{ route('account.management') }}" class="w-full md:w-auto justify-center bg-[#FF3B30] text-white px-10 py-3 rounded-xl font-bold text-xl shadow-md border border-black/10 hover:brightness-90 transition flex items-center">Cancel</a>
-                    <button type="submit" class="w-full md:w-auto justify-center bg-[#34C759] text-white px-10 py-3 rounded-xl font-bold text-xl shadow-md border border-black/10 hover:brightness-90 transition flex items-center">Create Account</button>
+                    <a href="{{ route('account.management') }}" class="w-full md:w-auto justify-center bg-[#FF3B30] text-white px-10 py-3 rounded-xl font-bold text-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] border-2 border-black hover:brightness-90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center">Cancel</a>
+                    <button type="submit" 
+                            :disabled="pw === '' || pw !== pw_confirm || strength !== 'Strong'"
+                            :class="(pw === '' || pw !== pw_confirm || strength !== 'Strong') ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
+                            class="w-full md:w-auto justify-center bg-[#34C759] text-white px-10 py-3 rounded-xl font-bold text-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] border-2 border-black transition-all flex items-center">
+                        Create Account
+                    </button>
                 </div>
             </div>
         </form>
@@ -214,6 +220,19 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('teacherForm', () => ({
+        pw: '',
+        pw_confirm: '',
+        get strength() {
+            let p = this.pw;
+            if(!p) return '';
+            if(p.length < 8) return 'Weak';
+            let l = /[a-zA-Z]/.test(p);
+            let n = /\d/.test(p);
+            let s = /[^a-zA-Z0-9]/.test(p);
+            if(l && n && s) return 'Strong';
+            if((l&&n)||(l&&s)||(n&&s)) return 'Mid';
+            return 'Weak';
+        },
         selectedHomeroom: '',
         sectionsList: @json($alpineSections),
         assignments: [],
@@ -229,11 +248,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         addAssignment() {
-            this.assignments.push({ 
-                section_id: '', 
-                subject: '', 
-                available_subjects: [] 
-            });
+            this.assignments.push({ section_id: '', subject: '', available_subjects: [] });
         },
 
         removeAssignment(index) {
@@ -242,17 +257,12 @@ document.addEventListener('alpine:init', () => {
 
         updateSubjects(index) {
             let selectedSectionId = this.assignments[index].section_id;
-            
-            // Explicitly handle the grouped NKP option
             if (selectedSectionId === 'NKP') {
                 this.assignments[index].available_subjects = this.subjectMap['NKP'];
                 this.assignments[index].subject = '';
                 return;
             }
-
-            // Handle Grades 1 through 6
             let sectionData = this.sectionsList.find(s => s.id == selectedSectionId);
-            
             if (sectionData && this.subjectMap[sectionData.grade]) {
                 this.assignments[index].available_subjects = this.subjectMap[sectionData.grade];
                 this.assignments[index].subject = '';

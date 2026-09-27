@@ -184,6 +184,12 @@ class StudentController extends Controller
             'grade_level' => $request->grade_level,
         ]);
 
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Add Student',
+            'description' => auth()->user()->username . ' registered a new student: ' . strtoupper($request->first_name . ' ' . $request->last_name)
+        ]);
+
         return redirect()->back()->with('success', 'Student registered successfully!');
     }
 

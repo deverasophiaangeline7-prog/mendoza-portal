@@ -121,9 +121,22 @@
         </div>
     </div>
 
-    {{-- PASSWORD UPDATE MODAL (With Eye Toggles & Horizontal Buttons) --}}
+    {{-- PASSWORD UPDATE MODAL (With Strength Indicator) --}}
     <div x-show="passwordModal" 
-         x-data="{ currentPassword: '', newPassword: '', confirmPassword: '' }"
+         x-data="{ 
+             currentPassword: '', 
+             newPassword: '', 
+             confirmPassword: '',
+             strength() {
+                 let p = this.newPassword;
+                 if(!p) return '';
+                 if(p.length < 8) return 'Weak';
+                 let l = /[a-zA-Z]/.test(p), n = /\d/.test(p), s = /[^a-zA-Z0-9]/.test(p);
+                 if(l && n && s) return 'Strong';
+                 if((l&&n)||(l&&s)||(n&&s)) return 'Mid';
+                 return 'Weak';
+             }
+         }"
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
         
         <div @click.away="passwordModal = false; currentPassword = ''; newPassword = ''; confirmPassword = ''" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
@@ -133,7 +146,7 @@
             <h2 class="text-3xl font-black mb-6 uppercase tracking-tight text-center text-black italic">Change Password</h2>
             
             <form action="{{ route('user.password.update') }}" method="POST" 
-                  @submit.prevent="if(newPassword === confirmPassword && currentPassword !== newPassword) $el.submit()">
+                  @submit.prevent="if(newPassword === confirmPassword && currentPassword !== newPassword && strength() === 'Strong') $el.submit()">
                 @csrf
                 @method('PUT')
                 
@@ -159,6 +172,17 @@
                             </button>
                         </div>
                         
+                        {{-- LIVE STRENGTH INDICATOR --}}
+                        <div x-show="newPassword !== ''" x-transition class="mt-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-gray-50 p-2 rounded-lg border-2 border-black">
+                            <span class="text-gray-600">Strength:</span>
+                            <div class="flex-1 flex h-2 gap-1">
+                                <div class="flex-1 rounded-full transition-colors duration-300" :class="strength() === 'Weak' ? 'bg-red-500' : (strength() === 'Mid' ? 'bg-yellow-400' : 'bg-green-500')"></div>
+                                <div class="flex-1 rounded-full transition-colors duration-300" :class="(strength() === 'Mid' || strength() === 'Strong') ? (strength() === 'Mid' ? 'bg-yellow-400' : 'bg-green-500') : 'bg-gray-200'"></div>
+                                <div class="flex-1 rounded-full transition-colors duration-300" :class="strength() === 'Strong' ? 'bg-green-500' : 'bg-gray-200'"></div>
+                            </div>
+                            <span :class="{'text-red-600': strength() === 'Weak', 'text-yellow-600': strength() === 'Mid', 'text-green-600': strength() === 'Strong'}" x-text="strength()"></span>
+                        </div>
+
                         <p x-show="currentPassword !== '' && newPassword !== '' && currentPassword === newPassword" 
                            x-transition 
                            class="text-red-600 font-bold text-sm mt-2 flex items-center gap-1">
@@ -189,8 +213,8 @@
                     <button type="button" @click="passwordModal = false; currentPassword = ''; newPassword = ''; confirmPassword = ''" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4 transition-colors">Cancel</button>
                     
                     <button type="submit" 
-                            :disabled="(confirmPassword !== '' && newPassword !== confirmPassword) || (currentPassword !== '' && newPassword !== '' && currentPassword === newPassword)"
-                            :class="((confirmPassword !== '' && newPassword !== confirmPassword) || (currentPassword !== '' && newPassword !== '' && currentPassword === newPassword)) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-600 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none'"
+                            :disabled="(confirmPassword !== '' && newPassword !== confirmPassword) || (currentPassword !== '' && newPassword !== '' && currentPassword === newPassword) || newPassword === '' || strength() !== 'Strong'"
+                            :class="((confirmPassword !== '' && newPassword !== confirmPassword) || (currentPassword !== '' && newPassword !== '' && currentPassword === newPassword) || newPassword === '' || strength() !== 'Strong') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-600 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none'"
                             class="bg-[#34C759] text-white font-black uppercase tracking-wider px-6 py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center">
                         <i class="fa-solid fa-check mr-2"></i> Update
                     </button>

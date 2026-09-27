@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rules\Password;
 
 class TeacherAccountController extends Controller
 {
@@ -36,7 +37,7 @@ class TeacherAccountController extends Controller
     {
         $request->validate([
             'username'         => 'required|unique:users,username',
-            'password'         => 'required|confirmed',
+            'password'         => ['required', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
             'last_name'        => 'required',
             'first_name'       => 'required',
             'advisory'         => 'required',

@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -76,7 +77,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'role' => 'required|in:admin,teacher,parent',
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
             'email' => 'nullable|email|unique:users,email',
             'lrn' => 'nullable|string|unique:users,lrn',
         ]);
@@ -342,7 +343,7 @@ class UserController extends Controller
         // 1. Validate the incoming request
         $request->validate([
             'login_id' => ['required', 'string'],
-            'password' => ['required', 'string', 'confirmed'],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
         ]);
 
         // 2. Find the user by their LRN or Email (stored in the username column)

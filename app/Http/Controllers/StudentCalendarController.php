@@ -6,6 +6,7 @@ use App\Models\SchoolCalendar;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\EventParticipant;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 
 class StudentCalendarController extends Controller
@@ -108,6 +109,13 @@ class StudentCalendarController extends Controller
                 }
             }
         }
+
+        // 4. Log the action in the audit log
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Assign Event Roles',
+            'description' => auth()->user()->username . ' assigned ' . count($request->student_ids) . ' student(s) to the event: ' . ($event->event_title ?? 'School Event')
+        ]);
 
         return back()->with('success', 'Student assignments updated!');
     }

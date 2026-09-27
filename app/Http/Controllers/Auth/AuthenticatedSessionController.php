@@ -33,6 +33,14 @@ class AuthenticatedSessionController extends Controller
 
         // If someone used the Admin form but is NOT an admin, block them
         if ($loginType === 'admin' && $role !== 'admin') {
+            
+            // 🚨 LOG: Unauthorized access to Admin portal
+            \App\Models\AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'Unauthorized Login Attempt',
+                'description' => auth()->user()->username . ' attempted to access the Admin login portal without permission.'
+            ]);
+
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -44,6 +52,14 @@ class AuthenticatedSessionController extends Controller
 
         // If someone used the Parent/Teacher form but IS an admin, block them too
         if ($loginType !== 'admin' && $role === 'admin') {
+            
+            // 🚨 LOG: Admin using the wrong portal
+            \App\Models\AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'Invalid Portal Use',
+                'description' => auth()->user()->username . ' (Admin) attempted to log in through the Parent/Teacher portal.'
+            ]);
+
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -52,6 +68,13 @@ class AuthenticatedSessionController extends Controller
                 'login_id' => 'Please use the Admin Login form.',
             ]);
         }
+
+        // ✅ LOG: Successful Login
+        \App\Models\AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'User Login',
+            'description' => auth()->user()->username . ' successfully logged into the system.'
+        ]);
 
         return match($role) {
             'admin'   => redirect()->route('dashboard'),

@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Models\AuditLog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\Password;
 
 class ParentAccountController extends Controller
 {
@@ -38,7 +39,7 @@ class ParentAccountController extends Controller
     {
         $request->validate([
             'username'    => 'required|unique:users,username',
-            'password'    => 'required|min:6|confirmed',
+            'password'    => ['required', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
             'lrn'         => 'required|numeric|digits:12|unique:students,lrn',
             'first_name'  => 'required',
             'last_name'   => 'required',
