@@ -50,12 +50,15 @@
             <div class="flex items-center space-x-4 sm:space-x-6 text-2xl">
                 
                 <a href="{{ route('messages.index') }}" class="relative transition inline-flex items-center p-2 rounded-lg {{ request()->routeIs('messages*') ? 'text-orange-400' : 'text-white hover:text-orange-400' }}">
-                    <i class="fa-solid fa-envelope text-xl"></i>
+    
+                     <!-- Changed to Facebook Messenger icon -->
+                      <i class="fa-solid fa-comment-dots text-xl"></i>
+    
                     @if(isset($unreadTotal) && $unreadTotal > 0)
-                        <span class="absolute -top-1 -right-1 bg-yellow-400 text-red-600 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold shadow-sm">
-                            {{ $unreadTotal }}
-                        </span>
-                    @endif
+                          <span class="absolute -top-1 -right-1 bg-yellow-400 text-red-600 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold shadow-sm">
+                                {{ $unreadTotal }}
+                         </span>
+                     @endif
                 </a>
                 
                 @include('components.notification-bell')

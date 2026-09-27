@@ -310,15 +310,17 @@ class MessageController extends Controller
                 - ALLOWED LANGUAGES: You may ONLY communicate in English or Tagalog (Filipino).
                 - Answer using ONLY the provided facts below. Do not invent or assume any other information.
                 - Convert dates to friendly natural language (e.g., 'September 3, 2026').
-                - BE FORGIVING: Highly tolerate typos, incorrect spelling (e.g., 'ngayung', 'sked'), bad grammar, and very short phrases. Automatically translate Tagalog questions in your head to match the English cheat sheet facts below.
+                - BE FORGIVING: Highly tolerate typos, incorrect spelling (e.g., 'ngayung', 'sked'), bad grammar, and translate Tagalog questions automatically.
+                - TIMELINE LOGIC: Even if a term or event has already passed, you MUST answer the question accurately (e.g., 'Term 1 already ended on July 31'). DO NOT ignore questions about past events.
 
                 *** STRICT 'IGNORE' RULES (CRITICAL) ***
                 You MUST output exactly the word IGNORE (and nothing else) if the user's message falls into ANY of these categories. By outputting IGNORE, you allow the real human teacher to handle the message personally:
-                1. Personal, complex, or specific student concerns (e.g., 'I have a concern about my child', 'My child is being bullied', 'Can you check my child's grade?', 'Here is my child's name').
-                2. Greetings, small talk, or random nonsense (e.g., 'hello', 'hi', 'good morning', 'thanks').
+                1. Personal, complex, or specific student concerns (e.g., 'I have a concern about my child', 'Can you check my child's grade?').
+                2. Greetings, small talk, or random nonsense without a specific question.
                 3. Any language other than English or Tagalog.
-                4. Any topic completely unrelated to the school facts provided below. (CRITICAL EXCEPTION: If the user asks about a valid school topic like 'events', 'calendar', or 'schedule', but there is no current data for it in your cheat sheet, DO NOT output IGNORE. Instead, politely reply that there are no scheduled events or information at this time.)
+                4. Any topic completely unrelated to the school facts provided below.
                 5. Passwords or account settings (ONLY the Admin handles this, so ignore it here).
+                (CRITICAL EXCEPTION: DO NOT output IGNORE if the user asks about tuition, fees, term dates, calendars, or events. You must answer these).
 
                 *** TEACHER CHEAT SHEET ***
                 [PREVIOUS CHAT HISTORY FOR CONTEXT]
@@ -343,18 +345,19 @@ class MessageController extends Controller
             $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' . $apiKey;
             
             $data = [
-            "systemInstruction" => ["parts" => [["text" => $systemPrompt]]],
-            "contents" => [["parts" => [["text" => $request->message]]]],
-            "generationConfig" => [
-                "temperature" => 0.1 // Locks the AI down so it strictly obeys the IGNORE rules
-            ],
-            "safetySettings" => [
-                ["category" => "HARM_CATEGORY_HARASSMENT", "threshold" => "BLOCK_NONE"],
-                ["category" => "HARM_CATEGORY_HATE_SPEECH", "threshold" => "BLOCK_NONE"],
-                ["category" => "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold" => "BLOCK_NONE"],
-                ["category" => "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold" => "BLOCK_NONE"]
-            ]
-        ];
+                "systemInstruction" => ["parts" => [["text" => $systemPrompt]]],
+                "contents" => [["parts" => [["text" => $request->message]]]],
+                "generationConfig" => [
+                    "temperature" => 0.1 // Locks the AI down so it strictly obeys the IGNORE rules
+                ],
+                "safetySettings" => [
+                    ["category" => "HARM_CATEGORY_HARASSMENT", "threshold" => "BLOCK_NONE"],
+                    ["category" => "HARM_CATEGORY_HATE_SPEECH", "threshold" => "BLOCK_NONE"],
+                    ["category" => "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold" => "BLOCK_NONE"],
+                    ["category" => "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold" => "BLOCK_NONE"]
+                ]
+            ];
+
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
@@ -362,17 +365,27 @@ class MessageController extends Controller
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30); // INCREASED TO 30 SECONDS to prevent silent timeout drops
+            
             $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
             
-            $responseData = json_decode($response);
             $aiText = "IGNORE";
             
-            if (isset($responseData->candidates[0]->content->parts[0]->text)) {
-                $aiText = trim($responseData->candidates[0]->content->parts[0]->text);
-            } elseif (isset($responseData->error)) {
-                $aiText = "API ERROR: " . $responseData->error->message;
+            // NEW: Catch specific API throttling and timeout errors so they print to the screen!
+            if ($response === false) {
+                $aiText = "API ERROR: Request timed out. Google's servers took too long to respond.";
+            } elseif ($httpCode === 429) {
+                $aiText = "API ERROR: Google API Rate Limit Reached. You are sending messages too fast! Please wait a minute.";
+            } else {
+                $responseData = json_decode($response);
+                
+                if (isset($responseData->candidates[0]->content->parts[0]->text)) {
+                    $aiText = trim($responseData->candidates[0]->content->parts[0]->text);
+                } elseif (isset($responseData->error)) {
+                    $aiText = "API ERROR: " . $responseData->error->message;
+                }
             }
 
             if (strpos($aiText, 'IGNORE') !== false) {

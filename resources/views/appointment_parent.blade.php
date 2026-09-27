@@ -396,11 +396,13 @@
                     <div class="time-group">
                         <div class="form-group" style="flex: 1;">
                             <label>Start Time</label>
-                            <input type="time" id="start_time" name="start_time" class="form-control" required>
+                            <!-- UPDATED: step="1800" added -->
+                            <input type="time" id="start_time" name="start_time" class="form-control" step="1800" required>
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label>End Time</label>
-                            <input type="time" id="end_time" name="end_time" class="form-control" required>
+                            <!-- UPDATED: step="1800" added -->
+                            <input type="time" id="end_time" name="end_time" class="form-control" step="1800" required>
                         </div>
                     </div>
                     <button type="submit" class="btn-submit">Submit Request</button>
@@ -647,11 +649,13 @@
             <div class="time-group" style="text-align: left;">
                 <div style="flex: 1;">
                     <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Start Time</label>
-                    <input type="time" name="suggested_start_time" class="form-control" required>
+                    <!-- UPDATED: step="1800" added -->
+                    <input type="time" name="suggested_start_time" class="form-control" step="1800" required>
                 </div>
                 <div style="flex: 1;">
                     <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">End Time</label>
-                    <input type="time" name="suggested_end_time" class="form-control" required>
+                    <!-- UPDATED: step="1800" added -->
+                    <input type="time" name="suggested_end_time" class="form-control" step="1800" required>
                 </div>
             </div>
             

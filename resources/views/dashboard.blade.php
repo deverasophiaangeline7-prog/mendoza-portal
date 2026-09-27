@@ -102,7 +102,26 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                 <div>
-                    <h3 class="text-4xl font-black text-center mb-6 tracking-tighter uppercase">SCHOOL CALENDAR</h3>
+                    @php
+    // Try to fetch the active school year from the database
+    $activeSyRecord = \App\Models\SchoolYear::where('status', 'active')->first();
+    
+    if ($activeSyRecord && $activeSyRecord->school_year) {
+        $syText = $activeSyRecord->school_year;
+    } else {
+        // Dynamic fallback: Calculates the year based on the current month
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+        $syStart = $currentMonth >= 6 ? $currentYear : $currentYear - 1;
+        $syEnd = $syStart + 1;
+        
+        $syText = $syStart . '-' . $syEnd;
+    }
+@endphp
+
+<h3 class="text-3xl md:text-4xl font-black text-center mb-6 tracking-tighter uppercase">
+    SCHOOL CALENDAR FOR S.Y. {{ $syText }}
+</h3>
                     <div class="bg-[#b26905] rounded-[40px] p-6 border-[3px] border-black shadow-lg">
                         <div class="flex justify-between items-center mb-4 px-2">
                             <button @click="prevMonth()" class="text-white text-3xl hover:scale-125 transition">
