@@ -336,7 +336,7 @@ class UserController extends Controller
 
     /**
      * Admin Force Password Reset 
-     * Allows Admin to reset any user's password using their LRN or Email
+     * Allows Admin to reset any user's password using their Username, LRN, or Email
      */
     public function resetUserPassword(Request $request)
     {
@@ -346,15 +346,21 @@ class UserController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
         ]);
 
-        // 2. Find the user by their LRN or Email (stored in the username column)
-        $user = User::where('username', $request->login_id)->first();
+        // 2. Find the user by Username, Email, or LRN (including LRNs in the students table)
+        $user = User::where('username', $request->login_id)
+                    ->orWhere('email', $request->login_id)
+                    ->orWhere('lrn', $request->login_id)
+                    ->orWhereHas('student', function ($query) use ($request) {
+                        $query->where('lrn', $request->login_id);
+                    })
+                    ->first();
 
-        // 3. If they typed an LRN/Email that doesn't exist, throw an error
+        // 3. If they typed an ID that doesn't exist, throw an error
         if (!$user) {
-            return back()->with('error', 'User not found in the system. Please check the LRN or Email.');
+            return back()->with('error', 'User not found in the system. Please check the LRN, Email, or Username.');
         }
 
-        // 4. THE NEW FIX: Check if the new password perfectly matches their current password!
+        // 4. Check if the new password perfectly matches their current password
         if (Hash::check($request->password, $user->password)) {
             return back()->with('error', 'The new password cannot be the exact same as their current password!');
         }
@@ -374,11 +380,11 @@ class UserController extends Controller
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Admin Password Reset',
-            'description' => Auth::user()->username . ' forcibly reset the password for user: ' . $user->username
+            'description' => Auth::user()->username . ' forcibly reset the password for user: ' . ($user->username ?? $user->email)
         ]);
 
-        // 8. Redirect back with your green success toast!
-        return back()->with('success', 'Password successfully reset for ' . $user->username);
+        // 8. Redirect back with your green success toast
+        return back()->with('success', 'Password successfully reset for ' . ($user->username ?? $user->email));
     }
 
     public function updateTerms(Request $request)
