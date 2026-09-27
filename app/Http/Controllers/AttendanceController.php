@@ -132,9 +132,6 @@ class AttendanceController extends Controller
 
    public function store(Request $request)
     {
-        $todayManila = \Carbon\Carbon::now('Asia/Manila')->toDateString();
-        
-        // 1. Relaxed validation
         $request->validate([
             'attendance' => 'required|array',
             'attendance.*.student_id' => 'required',
@@ -152,10 +149,10 @@ class AttendanceController extends Controller
         $sectionName = $sampleStudent->section->section_name ?? 'Unknown Section';
         $gradeLevel = $sampleStudent->grade_level ?? '';
         $attendanceDate = $firstRecord['date'];
-
+        
         foreach ($records as $record) {
             
-            // 2. Map status safely
+            // 1. Map status safely
             $rawStatus = strtolower(trim((string)$record['status']));
             $textStatus = match($rawStatus) {
                 '1', 'present' => 'Present',
@@ -165,21 +162,36 @@ class AttendanceController extends Controller
                 default        => 'Present' 
             };
 
-            // 3. Save to the database
-            $attendance = Attendance::updateOrCreate(
-                [
+            // 2. Format date perfectly for MySQL
+            $dbDate = \Carbon\Carbon::parse($record['date'])->format('Y-m-d');
+
+            // 3. STRICT MANUAL DATABASE CHECK (Replaces updateOrCreate)
+            $existingAttendance = \App\Models\Attendance::where('student_id', $record['student_id'])
+                                                        ->whereDate('attendance_date', $dbDate)
+                                                        ->first();
+
+            $statusChanged = false;
+            $isNew = false;
+
+            if ($existingAttendance) {
+                // Strictly compare the old text to the new text
+                if (strtolower($existingAttendance->status) !== strtolower($textStatus)) {
+                    $existingAttendance->update(['status' => $textStatus]);
+                    $statusChanged = true;
+                }
+            } else {
+                // Create brand new record
+                \App\Models\Attendance::create([
                     'student_id'      => $record['student_id'],
-                    'attendance_date' => $record['date']
-                ],
-                [
-                    'status' => $textStatus
-                ]
-            );
+                    'attendance_date' => $dbDate,
+                    'status'          => $textStatus
+                ]);
+                $isNew = true;
+            }
 
             // 4. THE MAGIC FIX: BULLETPROOF NOTIFICATION LOGIC
-            // We ONLY trigger a notification if the status actually changed 
-            // AND we specifically block "Present" to prevent mass notification spam.
-            if (($attendance->wasRecentlyCreated || $attendance->wasChanged('status')) && $textStatus !== 'Present') {
+            // Only trigger if the status GENUINELY changed or is NEW, AND is not 'Present'
+            if (($isNew || $statusChanged) && $textStatus !== 'Present') {
                 
                 $student = Student::find($record['student_id']);
                 
@@ -188,10 +200,7 @@ class AttendanceController extends Controller
                     
                     if ($parent) {
                         $typeLabel = strtoupper($textStatus);
-                        
-                        $formattedDate = \Carbon\Carbon::parse($record['date'])
-                                            ->timezone('Asia/Manila')
-                                            ->format('F j');
+                        $formattedDate = \Carbon\Carbon::parse($dbDate)->timezone('Asia/Manila')->format('F j');
                         
                         $parent->notifyUser(
                             'Attendance Alert', 
