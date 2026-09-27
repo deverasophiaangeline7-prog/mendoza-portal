@@ -112,7 +112,7 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                 <div>
-                   @php
+                  @php
     $activeSyRecord = \App\Models\SchoolYear::where('status', 'active')->first();
     
     if ($activeSyRecord && $activeSyRecord->school_year) {
@@ -124,6 +124,11 @@
         $syEnd = $syStart + 1;
         $syText = $syStart . ' - ' . $syEnd;
     }
+    
+    // Extract the start and end years to lock the calendar boundaries
+    preg_match_all('/\d{4}/', $syText, $matches);
+    $syStartYear = $matches[0][0] ?? now()->year;
+    $syEndYear = $matches[0][1] ?? (now()->year + 1);
 @endphp
 
 <h3 class="text-3xl md:text-4xl font-black text-center mb-6 tracking-tighter uppercase">
@@ -132,16 +137,22 @@
 </h3>
                     <div class="bg-[#b26905] rounded-[40px] p-6 border-[3px] border-black shadow-lg">
                         <div class="flex justify-between items-center mb-4 px-2">
-                            <button @click="prevMonth()" class="text-white text-3xl hover:scale-125 transition">
+                            <button @click="prevMonth()" 
+                                    x-show="currentYear > {{ $syStartYear }} || (currentYear == {{ $syStartYear }} && currentMonth > 0)"
+                                    class="text-white text-3xl hover:scale-125 transition">
                                 <i class="fa-solid fa-chevron-left"></i>
                             </button>
+                            
                             <div class="text-center">
                                 <span class="text-white text-5xl font-black italic tracking-tighter block uppercase leading-none" 
                                     style="text-shadow: 3px 3px 0px #800000;" 
                                     x-text="monthNames[currentMonth]"></span>
                                 <span class="text-white text-2xl font-black tracking-tighter" x-text="currentYear"></span>
                             </div>
-                            <button @click="nextMonth()" class="text-white text-3xl hover:scale-125 transition">
+                            
+                            <button @click="nextMonth()" 
+                                    x-show="currentYear < {{ $syEndYear }} || (currentYear == {{ $syEndYear }} && currentMonth < 11)"
+                                    class="text-white text-3xl hover:scale-125 transition">
                                 <i class="fa-solid fa-chevron-right"></i>
                             </button>
                         </div>

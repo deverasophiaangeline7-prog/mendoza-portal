@@ -244,47 +244,59 @@ class AppointmentController extends Controller
         return back()->with('success', 'Appointment request approved.');
     }
 
-    public function decline(Request $request, Appointment $appointment)
+    public function reschedule(Request $request, Appointment $appointment)
     {
         $request->validate([
             'reason' => 'required|string|max:255',
-            'suggested_date' => 'nullable|date',
-            'suggested_start_time' => 'nullable|date_format:H:i',
-            'suggested_end_time' => 'nullable|date_format:H:i|after:suggested_start_time',
+            'suggested_date' => 'required|date',
+            'suggested_start_time' => 'required|date_format:H:i',
+            'suggested_end_time' => 'required|date_format:H:i|after:suggested_start_time',
         ]);
 
         $originalCreatorId = $appointment->created_by;
 
-        if ($request->suggested_date && $request->suggested_start_time && $request->suggested_end_time) {
-            $appointment->update([
-                'status' => 'reschedule',
-                'reschedule_reason' => $request->reason,
-                'appointment_date' => $request->suggested_date,
-                'start_time' => $request->suggested_start_time,
-                'end_time' => $request->suggested_end_time,
-                'created_by' => auth()->id(), 
-            ]);
-
-            $message = auth()->user()->name . ' requested to reschedule. Reason: ' . $request->reason;
-            $successResponse = 'Appointment rescheduled and sent back to requests.';
-        } else {
-            $appointment->update([
-                'status' => 'declined',
-                'reschedule_reason' => $request->reason
-            ]);
-            $message = 'Your appointment request for "' . $appointment->discussion_topic . '" was declined by ' . auth()->user()->name . '. Reason: ' . $request->reason;
-            $successResponse = 'Appointment request declined successfully.';
-        }
+        $appointment->update([
+            'status' => 'reschedule',
+            'reschedule_reason' => $request->reason,
+            'appointment_date' => $request->suggested_date,
+            'start_time' => $request->suggested_start_time,
+            'end_time' => $request->suggested_end_time,
+            'created_by' => auth()->id(), 
+        ]);
 
         Notification::create([
             'user_id' => $originalCreatorId,
-            'title' => 'Appointment Declined/Rescheduled',
-            'message' => $message,
+            'title' => 'Appointment Rescheduled',
+            'message' => auth()->user()->name . ' requested to reschedule. Reason: ' . $request->reason,
             'type' => 'appointment',
             'is_read' => 0,
         ]);
 
-        return back()->with('success', $successResponse);
+        return back()->with('success', 'Appointment rescheduled and sent back to requests.');
+    }
+
+    public function decline(Request $request, Appointment $appointment)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:255',
+        ]);
+
+        $originalCreatorId = $appointment->created_by;
+
+        $appointment->update([
+            'status' => 'declined',
+            'reschedule_reason' => $request->reason
+        ]);
+
+        Notification::create([
+            'user_id' => $originalCreatorId,
+            'title' => 'Appointment Declined',
+            'message' => 'Your appointment request for "' . $appointment->discussion_topic . '" was declined by ' . auth()->user()->name . '. Reason: ' . $request->reason,
+            'type' => 'appointment',
+            'is_read' => 0,
+        ]);
+
+        return back()->with('success', 'Appointment request declined successfully.');
     }
 
     public function getAvailability(Request $request)

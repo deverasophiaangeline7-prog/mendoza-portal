@@ -3,8 +3,8 @@
     @php
         $user = auth()->user();
         $initialNotifications = $user->customNotifications
-            ->unique('notification_id') // This removes the repeating duplicates
-            ->sortByDesc('created_at')  // This pushes the most recent alerts to the top
+            ->unique('notification_id') 
+            ->sortByDesc('created_at')  
             ->filter(function($notification) use ($user) {
                 $role = strtolower(trim($user->role));
                 $type = strtolower(trim($notification->type));
@@ -18,7 +18,7 @@
                     'type' => strtolower(trim($notif->type)),
                     'title' => $notif->title,
                     'message' => $notif->message,
-                  'time_ago' => $notif->created_at ? $notif->created_at->setTimezone('Asia/Manila')->diffForHumans() : 'Just now'
+                    'time_ago' => $notif->created_at ? $notif->created_at->setTimezone('Asia/Manila')->diffForHumans() : 'Just now'
                 ];
             });
     @endphp
@@ -32,11 +32,23 @@
                      fetch('{{ route('notifications.fetch') }}?t=' + Date.now())
                          .then(res => res.json())
                          .then(data => { 
-                             // Normalizes data so Alpine updates the list and badge smoothly without refreshing
                              this.notifications = Array.isArray(data) ? data : Object.values(data); 
                          })
                          .catch(err => console.error('Error fetching notifications:', err));
-                 }, 5000); // 5 seconds
+                 }, 5000); 
+             },
+             deleteNotification(id) {
+                 // Immediately remove from UI so it feels instant
+                 this.notifications = this.notifications.filter(n => n.notification_id !== id);
+                 
+                 // Send delete request to backend silently
+                 fetch('/notifications/' + id + '/delete', {
+                     method: 'DELETE',
+                     headers: {
+                         'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
+                         'Content-Type': 'application/json'
+                     }
+                 }).catch(err => console.error('Error deleting notification:', err));
              }
          }" 
          @click.away="notifOpen = false">
@@ -67,19 +79,28 @@
             <div class="max-h-64 overflow-y-auto">
                 
                 <template x-for="notif in notifications" :key="notif.notification_id">
-                    <!-- Dynamic URL generation -->
-                    <a :href="'/notifications/' + notif.notification_id + '/read'" 
-                       class="block p-4 border-b border-gray-200 hover:bg-gray-50 transition cursor-pointer no-underline">
+                    <div class="relative border-b border-gray-200 hover:bg-gray-50 transition group">
                         
-                        <div>
-                            <p class="text-[10px] font-black text-orange-600 uppercase">
-                                <i class="fa-solid mr-1" :class="notif.type === 'deadline_alert' ? 'fa-clock text-red-600' : 'fa-circle-info'"></i>
-                                <span x-text="notif.title"></span>
-                            </p>
-                            <p class="text-sm font-bold text-black leading-tight mt-1" x-text="notif.message"></p>
-                            <p class="text-[10px] text-gray-400 mt-2" x-text="notif.time_ago"></p>
-                        </div>
-                    </a>
+                        <!-- Notification Link -->
+                        <a :href="'/notifications/' + notif.notification_id + '/read'" class="block p-4 pr-12 cursor-pointer no-underline">
+                            <div>
+                                <p class="text-[10px] font-black text-orange-600 uppercase">
+                                    <i class="fa-solid mr-1" :class="notif.type === 'deadline_alert' ? 'fa-clock text-red-600' : 'fa-circle-info'"></i>
+                                    <span x-text="notif.title"></span>
+                                </p>
+                                <p class="text-sm font-bold text-black leading-tight mt-1" x-text="notif.message"></p>
+                                <p class="text-[10px] text-gray-400 mt-2" x-text="notif.time_ago"></p>
+                            </div>
+                        </a>
+
+                        <!-- Delete Button (Stops click from triggering the link or closing the dropdown) -->
+                        <button @click.stop="deleteNotification(notif.notification_id)" 
+                                class="absolute top-4 right-4 text-gray-300 hover:text-red-600 transition" 
+                                title="Delete Notification">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                        
+                    </div>
                 </template>
 
                 <template x-if="Object.keys(notifications).length === 0">

@@ -58,6 +58,7 @@ Route::middleware(['auth'])->group(function () {
     // Notifications Route (Moved here so teachers & parents both have access)
     Route::get('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::get('/fetch-notifications', [App\Http\Controllers\NotificationController::class, 'fetchNotifications'])->name('notifications.fetch');
+    Route::delete('/notifications/{id}/delete', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     // General Views
     Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
     Route::get('/calendar', [SchoolCalendarController::class, 'index'])->name('calendar.index');

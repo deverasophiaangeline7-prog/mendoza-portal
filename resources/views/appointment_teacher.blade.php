@@ -425,6 +425,7 @@
     }
 
     .btn-approve { background-color: var(--ma-green); color: white; border: none; }
+    .btn-reschedule { background-color: var(--ma-orange); color: black; border: 2px solid #000; }
     .btn-decline { background-color: var(--ma-red); color: white; border: none; }
 
     .nested-modal {
@@ -632,7 +633,6 @@
                                     </span>
                                 </td>
                                 <td style="text-align: center;">
-                                    <!-- Using route('appointments.destroy') assuming this is your cancel route -->
                                     <button type="button" class="btn-cancel-icon" title="Cancel Appointment" onclick="openCancelModal('{{ route('appointments.destroy', $request->id) }}')">
                                         <i class="fa-solid fa-xmark"></i>
                                     </button>
@@ -859,7 +859,8 @@
                                     @csrf @method('PATCH')
                                     <button type="submit" class="btn-flat btn-approve">Approve</button>
                                 </form>
-                                <button type="button" class="btn-flat btn-decline" onclick="openDeclineModal({{ $request->id }})">Decline</button>
+                                <button type="button" class="btn-flat btn-reschedule" onclick="openRescheduleModal({{ $request->id }})">Reschedule</button>
+                                <button type="button" class="btn-flat btn-decline" onclick="openTrueDeclineModal({{ $request->id }})">Decline</button>
                             </div>
                         </td>
                     </tr>
@@ -874,12 +875,12 @@
     </div>
 </div>
 
-<!-- DECLINE / SUGGEST NEW SCHEDULE MODAL -->
-<div id="declineModal" class="nested-modal modal-hidden">
+<!-- RESCHEDULE MODAL -->
+<div id="rescheduleModal" class="nested-modal modal-hidden">
     <div class="nested-modal-content">
-        <h3 style="color: var(--ma-red); font-weight: bold; text-transform: uppercase;">State your reason for rescheduling</h3>
+        <h3 style="color: var(--ma-orange); font-weight: bold; text-transform: uppercase;">State your reason for rescheduling</h3>
         
-        <form id="declineForm" method="POST" action="">
+        <form id="rescheduleForm" method="POST" action="">
             @csrf @method('PATCH')
             
             <div style="text-align: left; margin-bottom: 15px;">
@@ -908,8 +909,29 @@
             </div>
             
             <div class="nested-modal-actions">
-                <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('declineModal')">Cancel</button>
-                <button type="submit" class="btn-flat btn-decline">Reschedule</button>
+                <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('rescheduleModal')">Cancel</button>
+                <button type="submit" class="btn-flat btn-reschedule">Reschedule</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- TRUE DECLINE MODAL -->
+<div id="trueDeclineModal" class="nested-modal modal-hidden">
+    <div class="nested-modal-content">
+        <h3 style="color: var(--ma-red); font-weight: bold; text-transform: uppercase;">State your reason for declining</h3>
+        
+        <form id="trueDeclineForm" method="POST" action="">
+            @csrf @method('PATCH')
+            
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Reason</label>
+                <input type="text" name="reason" class="form-control" placeholder="e.g. Schedule conflict, out of office" required>
+            </div>
+            
+            <div class="nested-modal-actions">
+                <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('trueDeclineModal')">Cancel</button>
+                <button type="submit" class="btn-flat btn-decline">Decline Request</button>
             </div>
         </form>
     </div>
@@ -929,7 +951,6 @@
         openModal('validationModalOverlay');
     }
 
-    // Opens the specific cancel modal and sets the dynamic route
     function openCancelModal(actionUrl) {
         document.getElementById('cancelForm').action = actionUrl;
         openModal('cancelModalOverlay');
@@ -1024,21 +1045,29 @@
         return true;
     }
 
-    function openDeclineModal(appointmentId) {
-        const form = document.getElementById('declineForm');
-        form.action = `/appointments/${appointmentId}/decline`;
-        openModal('declineModal');
+    function openRescheduleModal(appointmentId) {
+        const form = document.getElementById('rescheduleForm');
+        form.action = `/appointments/${appointmentId}/reschedule`; 
+        openModal('rescheduleModal');
+    }
+
+    function openTrueDeclineModal(appointmentId) {
+        const form = document.getElementById('trueDeclineForm');
+        form.action = `/appointments/${appointmentId}/decline`; 
+        openModal('trueDeclineModal');
     }
 
     window.onclick = function(event) {
         const overlay = document.getElementById('requestsModalOverlay');
         const valOverlay = document.getElementById('validationModalOverlay');
-        const decOverlay = document.getElementById('declineModal');
+        const resOverlay = document.getElementById('rescheduleModal');
+        const decOverlay = document.getElementById('trueDeclineModal');
         const cancelOverlay = document.getElementById('cancelModalOverlay');
         
         if (event.target === overlay) closeModal('requestsModalOverlay');
         if (event.target === valOverlay) closeModal('validationModalOverlay');
-        if (event.target === decOverlay) closeModal('declineModal');
+        if (event.target === resOverlay) closeModal('rescheduleModal');
+        if (event.target === decOverlay) closeModal('trueDeclineModal');
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
 </script>

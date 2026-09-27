@@ -74,7 +74,7 @@
                     </button>
 
                     <div x-show="dropdownOpen" style="display: none;" class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                        <button @click="dropdownOpen = false; newMsgModal = true" title="New Message" class="w-full text-left block px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-100 border-b border-gray-100 transition-colors">
+                        <button @click="dropdownOpen = false; newMsgModal = true" class="w-full text-left block px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-100 border-b border-gray-100 transition-colors">
                             <i class="fa-solid fa-pen-to-square mr-2 text-[#6d0101]"></i> New Message
                         </button>
                         @if(auth()->user()->role !== 'parent')
@@ -110,7 +110,7 @@
                                     @endif
                                 </span>
                             </div>
-                            <p class="text-xs truncate mt-0.5 {{ $hasUnread ? 'text-gray-900 font-semibold' : 'text-gray-500' }}">
+                            <p id="sidebar-text-{{ $user->user_id }}" class="text-xs truncate mt-0.5 {{ $hasUnread ? 'text-gray-900 font-semibold' : 'text-gray-500' }}">
                                 {{ $latestMsg ? $latestMsg->content : 'No messages yet...' }}
                             </p>
                         </div>
@@ -600,6 +600,18 @@
                             }
                         });
 
+                        const sidebarText = document.getElementById(`sidebar-text-${this.selectedUserId}`);
+                        const sidebarItem = document.getElementById(`sidebar-item-${this.selectedUserId}`);
+                        if (sidebarText && newMessagesData.length > 0) {
+                            sidebarText.innerText = newMessagesData[newMessagesData.length - 1].content;
+                            sidebarText.classList.remove('text-gray-500');
+                            sidebarText.classList.add('text-gray-900', 'font-semibold');
+                        }
+                        if (sidebarItem && needsMarkRead && !this.isGroupChat) {
+                             sidebarItem.classList.add('bg-blue-50/70');
+                             sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
+                        }
+
                         this.$nextTick(() => { 
                             const container = document.getElementById('message-container');
                             if(container) container.scrollTop = container.scrollHeight; 
@@ -666,28 +678,41 @@
                     </div>
                 `);
 
+                const sidebarText = document.getElementById(`sidebar-text-${this.selectedUserId}`);
+                if (sidebarText) {
+                    sidebarText.innerText = "You: " + text;
+                    sidebarText.classList.remove('font-semibold', 'text-gray-900');
+                    sidebarText.classList.add('text-gray-500');
+                }
+
                 // Immediately scroll down
                 this.$nextTick(() => { 
                     const container = document.getElementById('message-container');
                     if(container) container.scrollTop = container.scrollHeight; 
                 });
 
-                // --- SMART Front-end AI Dots (Provided Logic) ---
+                // --- SMART Front-end AI Dots ---
                 const lowercaseText = text.toLowerCase();
                 const aiKeywords = ['tuition', 'fee', 'password', 'schedule', 'term', 'when', 'how much', 'date', 'event', 'start', 'end'];
                 const complexKeywords = ['concern', 'grade', 'bully', 'problem', 'help', 'anak', 'absent', 'sick'];
                 
                 const triggersAI = aiKeywords.some(keyword => lowercaseText.includes(keyword));
                 const isComplex = complexKeywords.some(keyword => lowercaseText.includes(keyword));
-                const isParent = '{{ strtolower(auth()->user()->role) }}' === 'parent';
                 
-                // Only pretend AI is typing (three dots) if it's a direct, simple school question from a parent.
-                if (triggersAI && !isComplex && isParent && !this.isGroupChat) {
-                    this.otherUserIsTyping = true;  // Manually toggle the three-dots AI bubble on Dynamically
-                    this.isSending = false;
+                const senderRole = '{{ strtolower(auth()->user()->role) }}';
+                const receiverRole = '{{ strtolower($selectedUser->role ?? '') }}';
+                const aiShouldRespond = (receiverRole === 'admin') || (senderRole === 'parent' && receiverRole === 'teacher');
+                
+                // Only show dots if it's the right role, NOT a group chat, HAS keywords, and is NOT complex.
+                if (aiShouldRespond && !this.isGroupChat && triggersAI && !isComplex) {
+                    this.otherUserIsTyping = true;  
+                    this.isSending = true; // Lock the send button
+                    
+                    // CRITICAL: Force browser to draw dots before freezing for the API call
+                    await this.$nextTick(); 
                 } else {
                     this.otherUserIsTyping = false;
-                    this.isSending = true; // Lock button Dynamically
+                    this.isSending = true; // Lock the send button
                 }
 
                 try {
