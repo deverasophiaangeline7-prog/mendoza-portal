@@ -106,7 +106,7 @@
                             <select name="advisory" x-model="selectedHomeroom" class="form-input-pill bg-white cursor-pointer focus:outline-none" required>
                                 <option value="" disabled selected>Select Advisory Section</option>
                                 <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
-                                @foreach($filteredSections as$section)
+                                @foreach($filteredSections as $section)
                                     <option value="{{ $section->section_id }}">{{ strtoupper($section->grade_level . ' - ' .$section->section_name) }}</option>
                                 @endforeach
                             </select>
