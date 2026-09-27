@@ -363,14 +363,21 @@ class UserController extends Controller
         $user->password = Hash::make($request->password);
         $user->save();
 
-        // 6. Log the action
+        // 6. Trigger the security notification for the user
+        $user->customNotifications()->create([
+            'type' => 'security',
+            'title' => 'Password Reset by Admin',
+            'message' => 'Your account password was reset by an administrator.',
+        ]);
+
+        // 7. Log the action
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Admin Password Reset',
             'description' => Auth::user()->username . ' forcibly reset the password for user: ' . $user->username
         ]);
 
-        // 7. Redirect back with your green success toast!
+        // 8. Redirect back with your green success toast!
         return back()->with('success', 'Password successfully reset for ' . $user->username);
     }
 
