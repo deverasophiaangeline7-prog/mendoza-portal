@@ -128,7 +128,7 @@
                 <button @click="passwordModal = false; currentPassword = ''; newPassword = ''; confirmPassword = ''" class="text-gray-400 hover:text-red-600 text-3xl transition-colors"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
-            <form action="{{ route('password.update') }}" method="POST" 
+            <form action="{{ route('user.password.update') }}" method="POST" 
                   @submit.prevent="if(newPassword === confirmPassword && currentPassword !== newPassword) $el.submit()">
                 @csrf
                 @method('PUT')
