@@ -336,7 +336,7 @@ class UserController extends Controller
 
     /**
      * Admin Force Password Reset 
-     * Allows Admin to reset any user's password using their Username, LRN, or Email
+     * Allows Admin to reset any user's password using their Username, Email, or Student LRN
      */
     public function resetUserPassword(Request $request)
     {
@@ -346,10 +346,9 @@ class UserController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
         ]);
 
-        // 2. Find the user by Username, Email, or LRN (including LRNs in the students table)
+        // 2. Find the user by Username, Email, or LRN (inside the students table)
         $user = User::where('username', $request->login_id)
                     ->orWhere('email', $request->login_id)
-                    ->orWhere('lrn', $request->login_id)
                     ->orWhereHas('student', function ($query) use ($request) {
                         $query->where('lrn', $request->login_id);
                     })
