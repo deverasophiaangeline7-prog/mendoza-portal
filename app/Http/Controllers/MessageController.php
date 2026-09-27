@@ -201,8 +201,14 @@ class MessageController extends Controller
 
         $aiResponded = false; // Add flag to track AI response
 
-        // STRICT SENDER CHECK: Sender is Parent AND Receiver is NOT a Group Chat
-        if ($apiKey && strtolower(Auth::user()->role) === 'parent' && $receiver && is_null($receiver->custom_name)) {
+        $senderRole = strtolower(Auth::user()->role);
+        $receiverRole = $receiver ? strtolower($receiver->role) : '';
+
+        // AI triggers if ANYONE messages the Admin, OR if a PARENT messages a TEACHER
+        $aiShouldRespond = ($receiverRole === 'admin') || ($senderRole === 'parent' && $receiverRole === 'teacher');
+
+        // STRICT CHECK: Run AI only if conditions are met AND it is NOT a Group Chat
+        if ($apiKey && $aiShouldRespond && $receiver && is_null($receiver->custom_name)) {
             
             $upcomingEvents = SchoolCalendar::orderBy('start_date', 'asc')->limit(10)->get();
             $eventsKnowledge = "";
