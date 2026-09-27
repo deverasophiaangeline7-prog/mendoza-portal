@@ -123,10 +123,9 @@
         
         <div @click.away="passwordModal = false; currentPassword = ''; newPassword = ''; confirmPassword = ''" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
             
-            <div class="flex justify-between items-start mb-6">
-                <h2 class="text-3xl font-black uppercase text-black italic">Change Password</h2>
-                <button @click="passwordModal = false; currentPassword = ''; newPassword = ''; confirmPassword = ''" class="text-gray-400 hover:text-red-600 text-3xl transition-colors"><i class="fa-solid fa-xmark"></i></button>
-            </div>
+            <button @click="passwordModal = false; currentPassword = ''; newPassword = ''; confirmPassword = ''" class="absolute top-4 right-6 text-3xl font-black text-gray-400 hover:text-red-600 transition-colors">&times;</button>
+            
+            <h2 class="text-3xl font-black mb-6 uppercase tracking-tight text-center text-black italic">Change Password</h2>
             
             <form action="{{ route('user.password.update') }}" method="POST" 
                   @submit.prevent="if(newPassword === confirmPassword && currentPassword !== newPassword) $el.submit()">
@@ -134,17 +133,25 @@
                 @method('PUT')
                 
                 <div class="space-y-5 mb-8">
-                    <div>
+                    <div x-data="{ show: false }">
                         <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Current Password</label>
-                        <input type="password" name="current_password" x-model="currentPassword" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-red-400">
+                        <div class="relative flex items-center">
+                            <input :type="show ? 'text' : 'password'" name="current_password" x-model="currentPassword" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-red-400 pr-10">
+                            <button type="button" @click="show = !show" class="absolute right-3 text-gray-400 hover:text-black">
+                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
                     </div>
                     
-                    <div>
+                    <div x-data="{ show: false }">
                         <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">New Password</label>
-                        <div class="relative">
-                            <input type="password" name="password" x-model="newPassword" required 
-                                   class="w-full border-2 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-colors"
+                        <div class="relative flex items-center">
+                            <input :type="show ? 'text' : 'password'" name="password" x-model="newPassword" required 
+                                   class="w-full border-2 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-colors pr-10"
                                    :class="(currentPassword !== '' && newPassword !== '' && currentPassword === newPassword) ? 'border-red-500 focus:ring-red-500 bg-red-50' : 'border-black focus:ring-red-400 bg-white'">
+                            <button type="button" @click="show = !show" class="absolute right-3 text-gray-400 hover:text-black">
+                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
                         </div>
                         
                         <p x-show="currentPassword !== '' && newPassword !== '' && currentPassword === newPassword" 
@@ -154,12 +161,15 @@
                         </p>
                     </div>
 
-                    <div>
+                    <div x-data="{ show: false }">
                         <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Confirm New Password</label>
-                        <div class="relative">
-                            <input type="password" name="password_confirmation" x-model="confirmPassword" required 
-                                   class="w-full border-2 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-colors"
+                        <div class="relative flex items-center">
+                            <input :type="show ? 'text' : 'password'" name="password_confirmation" x-model="confirmPassword" required 
+                                   class="w-full border-2 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-colors pr-10"
                                    :class="(confirmPassword !== '' && newPassword !== confirmPassword) ? 'border-red-500 focus:ring-red-500 bg-red-50' : 'border-black focus:ring-red-400 bg-white'">
+                            <button type="button" @click="show = !show" class="absolute right-3 text-gray-400 hover:text-black">
+                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
                         </div>
                         
                         <p x-show="confirmPassword !== '' && newPassword !== confirmPassword" 
@@ -170,14 +180,15 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end space-x-4">
-                    <button type="button" @click="passwordModal = false; currentPassword = ''; newPassword = ''; confirmPassword = ''" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4 transition-colors">Cancel</button>
-                    
+                <div class="flex flex-col gap-3">
                     <button type="submit" 
                             :disabled="(confirmPassword !== '' && newPassword !== confirmPassword) || (currentPassword !== '' && newPassword !== '' && currentPassword === newPassword)"
                             :class="((confirmPassword !== '' && newPassword !== confirmPassword) || (currentPassword !== '' && newPassword !== '' && currentPassword === newPassword)) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-600 active:translate-y-1 active:shadow-none'"
-                            class="bg-[#34C759] text-white font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center">
-                        <i class="fa-solid fa-check mr-2"></i> Update
+                            class="bg-[#34C759] text-white font-black uppercase tracking-wider px-6 py-4 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-check mr-2"></i> Update Password
+                    </button>
+                    <button type="button" @click="passwordModal = false; currentPassword = ''; newPassword = ''; confirmPassword = ''" class="w-full bg-gray-100 text-black font-black py-4 rounded-xl border-[3px] border-black hover:bg-gray-200 transition-all text-lg uppercase">
+                        Cancel
                     </button>
                 </div>
             </form>

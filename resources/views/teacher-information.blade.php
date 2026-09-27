@@ -121,7 +121,7 @@
         </div>
     </div>
 
-    {{-- PASSWORD UPDATE MODAL (With Eye Toggles & Corrected Route) --}}
+    {{-- PASSWORD UPDATE MODAL (Updated to match Parent layout) --}}
     <div x-show="passwordModal" 
          x-data="{ currentPassword: '', newPassword: '', confirmPassword: '' }"
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
@@ -132,7 +132,6 @@
             
             <h2 class="text-3xl font-black mb-6 uppercase tracking-tight text-center text-black italic">Change Password</h2>
             
-            <!-- FIXED ROUTE: user.password.update -->
             <form action="{{ route('user.password.update') }}" method="POST" 
                   @submit.prevent="if(newPassword === confirmPassword && currentPassword !== newPassword) $el.submit()">
                 @csrf
