@@ -63,7 +63,17 @@
             </div>
 
             <div class="relative w-full h-80 bg-amber-700 rounded-3xl p-6 shadow-lg border-2 border-black mb-12" 
-                 x-data="{ activeSlide: 0, slidesCount: {{ $announcementImages->count() }} }">
+                 x-data="{ 
+                     activeSlide: 0, 
+                     slidesCount: {{ $announcementImages->count() }},
+                     init() {
+                         setInterval(() => {
+                             if (this.slidesCount > 1) {
+                                 this.activeSlide = this.activeSlide === this.slidesCount - 1 ? 0 : this.activeSlide + 1;
+                             }
+                         }, 8000);
+                     }
+                 }">
                 
                 <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-amber-600 relative overflow-hidden flex items-center justify-center">
                     @if($announcementImages->count() > 0)

@@ -50,7 +50,7 @@
             </h2>
         </div>
 
-        <!-- NEW UPGRADED CAROUSEL -->
+       <!-- NEW UPGRADED CAROUSEL -->
         <div class="relative w-full h-80 bg-amber-700 rounded-3xl p-6 shadow-lg border-2 border-black mb-12"
              x-data="{
                  images: [
@@ -63,6 +63,7 @@
                  currentIndex: 0,
                  get hasImage() { return this.images.length > 0; },
                  init() {
+                     // Fetch updates from the database every 5 seconds
                      setInterval(() => {
                          fetch('{{ route('banner.fetch') }}')
                              .then(response => response.json())
@@ -75,6 +76,13 @@
                                  }
                              });
                      }, 5000); 
+
+                     // NEW: Auto-scroll to the next image every 8 seconds
+                     setInterval(() => {
+                         if (this.images.length > 1) {
+                             this.next();
+                         }
+                     }, 8000);
                  },
                  next() {
                      if(this.images.length > 1) {

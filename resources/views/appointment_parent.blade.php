@@ -101,6 +101,28 @@
         cursor: pointer;
     }
 
+    /* Small Circular Cancel Button */
+    .btn-cancel-icon {
+        background-color: var(--ma-red);
+        color: white;
+        border: 2px solid #000;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition: transform 0.2s;
+    }
+
+    .btn-cancel-icon:hover {
+        transform: scale(1.1);
+    }
+
     .status-box-container {
         display: flex;
         border: 2px solid #000;
@@ -401,11 +423,11 @@
                     <div class="time-group">
                         <div class="form-group" style="flex: 1;">
                             <label>Start Time</label>
-                            <input type="time" id="start_time" name="start_time" class="form-control" step="1800" required>
+                            <input type="time" id="start_time" name="start_time" class="form-control" required>
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label>End Time</label>
-                            <input type="time" id="end_time" name="end_time" class="form-control" step="1800" required>
+                            <input type="time" id="end_time" name="end_time" class="form-control" required>
                         </div>
                     </div>
                     <button type="submit" class="btn-submit">Submit Request</button>
@@ -495,6 +517,7 @@
                                         <th>Topic</th>
                                         <th>Date and Time</th>
                                         <th>Status</th>
+                                        <th style="width: 45px;"></th> <!-- Cancel column -->
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -508,8 +531,14 @@
                                         </td>
                                         <td style="text-align: center;">
                                             <span class="pill-orange" style="display: inline-block;">
-                                                {{ $request->status === 'reschedule' ? 'Reschedule' : ucfirst($request->status) }}
+                                                {{ $request->status === 'reschedule' ? 'Reschedule' : ucfirst($request->status ?? 'Pending') }}
                                             </span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <!-- Using route('appointments.destroy') assuming this is your cancel route -->
+                                            <button type="button" class="btn-cancel-icon" title="Cancel Appointment" onclick="openCancelModal('{{ route('appointments.destroy', $request->id) }}')">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
                                         </td>
                                     </tr>
                                     @endforeach
@@ -654,6 +683,26 @@
     </div>
 </div>
 
+<!-- CANCEL APPOINTMENT MODAL -->
+<div id="cancelModalOverlay" class="modal-overlay modal-hidden">
+    <div class="validation-modal">
+        <h3 style="color: var(--ma-red); margin-top: 0; font-weight: 900; font-size: 22px;">
+            <i class="fa-solid fa-circle-exclamation"></i> Cancel Appointment
+        </h3>
+        <p style="font-weight: bold; font-size: 15px; margin: 20px 0; color: #333;">
+            Are you sure you want to cancel this appointment request?
+        </p>
+        <form id="cancelForm" method="POST" action="">
+            @csrf
+            @method('DELETE')
+            <div class="nested-modal-actions">
+                <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('cancelModalOverlay')">No, Keep it</button>
+                <button type="submit" class="btn-flat btn-decline">Yes, Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- VALIDATION POPUP MODAL -->
 <div id="validationModalOverlay" class="modal-overlay modal-hidden">
     <div class="validation-modal">
@@ -688,11 +737,11 @@
             <div class="time-group" style="text-align: left;">
                 <div style="flex: 1;">
                     <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Start Time</label>
-                    <input type="time" name="suggested_start_time" class="form-control" step="1800" required>
+                    <input type="time" name="suggested_start_time" class="form-control" required>
                 </div>
                 <div style="flex: 1;">
                     <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">End Time</label>
-                    <input type="time" name="suggested_end_time" class="form-control" step="1800" required>
+                    <input type="time" name="suggested_end_time" class="form-control" required>
                 </div>
             </div>
             
@@ -716,6 +765,12 @@
     function showValidationPopUp(message) {
         document.getElementById('valModalMessage').innerText = message;
         openModal('validationModalOverlay');
+    }
+
+    // Opens the specific cancel modal and sets the dynamic route
+    function openCancelModal(actionUrl) {
+        document.getElementById('cancelForm').action = actionUrl;
+        openModal('cancelModalOverlay');
     }
 
     function validateAppointmentForm(event) {
@@ -814,10 +869,15 @@
     }
 
     window.onclick = function(event) {
+        const overlay = document.getElementById('requestsModalOverlay');
         const valOverlay = document.getElementById('validationModalOverlay');
         const decOverlay = document.getElementById('declineModal');
+        const cancelOverlay = document.getElementById('cancelModalOverlay');
+        
+        if (event.target === overlay) closeModal('requestsModalOverlay');
         if (event.target === valOverlay) closeModal('validationModalOverlay');
         if (event.target === decOverlay) closeModal('declineModal');
+        if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
 </script>
 @endsection

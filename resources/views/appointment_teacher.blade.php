@@ -98,6 +98,28 @@
         cursor: pointer;
     }
 
+    /* Small Circular Cancel Button */
+    .btn-cancel-icon {
+        background-color: var(--ma-red);
+        color: white;
+        border: 2px solid #000;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition: transform 0.2s;
+    }
+
+    .btn-cancel-icon:hover {
+        transform: scale(1.1);
+    }
+
     /* Responsive Table Wrapper */
     .table-responsive {
         width: 100%;
@@ -589,6 +611,7 @@
                             <th>Topic</th>
                             <th>Date & Time</th>
                             <th>Status</th>
+                            <th style="width: 45px;"></th> <!-- Cancel column -->
                         </tr>
                     </thead>
                     <tbody>
@@ -608,10 +631,16 @@
                                         {{ $request->status === 'reschedule' ? 'Reschedule' : ucfirst($request->status ?? 'Pending') }}
                                     </span>
                                 </td>
+                                <td style="text-align: center;">
+                                    <!-- Using route('appointments.destroy') assuming this is your cancel route -->
+                                    <button type="button" class="btn-cancel-icon" title="Cancel Appointment" onclick="openCancelModal('{{ route('appointments.destroy', $request->id) }}')">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" style="text-align: center;">No sent requests.</td>
+                                <td colspan="5" style="text-align: center;">No sent requests.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -765,6 +794,26 @@
     </div>
 </div>
 
+<!-- CANCEL APPOINTMENT MODAL -->
+<div id="cancelModalOverlay" class="modal-overlay modal-hidden">
+    <div class="validation-modal">
+        <h3 style="color: var(--ma-red); margin-top: 0; font-weight: 900; font-size: 22px;">
+            <i class="fa-solid fa-circle-exclamation"></i> Cancel Appointment
+        </h3>
+        <p style="font-weight: bold; font-size: 15px; margin: 20px 0; color: #333;">
+            Are you sure you want to cancel this appointment request?
+        </p>
+        <form id="cancelForm" method="POST" action="">
+            @csrf
+            @method('DELETE')
+            <div class="nested-modal-actions">
+                <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('cancelModalOverlay')">No, Keep it</button>
+                <button type="submit" class="btn-flat btn-decline">Yes, Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- VALIDATION POPUP MODAL -->
 <div id="validationModalOverlay" class="modal-overlay modal-hidden">
     <div class="validation-modal">
@@ -880,6 +929,12 @@
         openModal('validationModalOverlay');
     }
 
+    // Opens the specific cancel modal and sets the dynamic route
+    function openCancelModal(actionUrl) {
+        document.getElementById('cancelForm').action = actionUrl;
+        openModal('cancelModalOverlay');
+    }
+
     function validateAppointmentForm(event) {
         const dateInput = document.getElementById('appointment_date').value;
         const startTimeInput = document.getElementById('start_time').value;
@@ -917,7 +972,6 @@
         const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
         const duration = endMins - startMins;
 
-        // Restriction Check: Must be between 8:00 AM (480 mins) and 5:00 PM (1020 mins)
         if (startMins < 480 || endMins > 1020) {
             event.preventDefault();
             showValidationPopUp('Appointments can only be scheduled between 8:00 AM and 5:00 PM.');
@@ -980,10 +1034,12 @@
         const overlay = document.getElementById('requestsModalOverlay');
         const valOverlay = document.getElementById('validationModalOverlay');
         const decOverlay = document.getElementById('declineModal');
+        const cancelOverlay = document.getElementById('cancelModalOverlay');
         
         if (event.target === overlay) closeModal('requestsModalOverlay');
         if (event.target === valOverlay) closeModal('validationModalOverlay');
         if (event.target === decOverlay) closeModal('declineModal');
+        if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
 </script>
 @endsection

@@ -33,7 +33,7 @@
             <div class="flex items-center">
                 
                 <!-- Hamburger Menu Button (Mobile Only) -->
-                <button @click="sidebarOpen = true" class="md:hidden text-white focus:outline-none hover:scale-110 transition-transform mr-4">
+                <button @click="sidebarOpen = true" title="Menu" class="md:hidden text-white focus:outline-none hover:scale-110 transition-transform mr-4">
                     <i class="fa-solid fa-bars text-2xl"></i>
                 </button>
 
