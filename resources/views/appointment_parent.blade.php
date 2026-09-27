@@ -403,24 +403,13 @@
 
 <div class="dashboard-container">
     <div class="main-content">
+        
         <div class="left-column">
             
-            <div class="appointment-form-card">
-                <h3>Appoint with a parent</h3>
+            <div class="ma-card">
+                <h3>Appoint with your adviser</h3>
                 <form id="appointmentForm" action="{{ route('appointments.store') }}" method="POST" onsubmit="return validateAppointmentForm(event)">
                     @csrf
-                    <div class="form-group">
-                        <label>Name</label>
-                        <select name="parent_id" class="form-control" required>
-                            <option value="">Select Parent</option>
-                            @foreach($parents as $parent)
-                                <option value="{{ $parent->user_id }}">
-                                    {{ strtoupper(optional($parent->student)->first_name . ' ' . optional($parent->student)->last_name ?: $parent->username) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
                     <div class="form-group">
                         <label>Discussion Topic</label>
                         <input type="text" name="discussion_topic" class="form-control" required>
@@ -528,14 +517,6 @@
                     <h2 class="month-title">{{ $currentDate->format('F Y') }}</h2>
                     <a href="{{ request()->url() }}?date={{ $nextWeekDate }}" class="nav-arrow">&raquo;</a>
                 </div>
-
-                <div class="requests-trigger" onclick="openModal('requestsModalOverlay')">
-                    <div class="icon-container">
-                        <i class="fa-solid fa-user-group"></i>
-                        <span class="request-badge">{{ $incomingRequests->count() }}</span>
-                    </div>
-                    <span class="request-label">Requests</span>
-                </div>
             </div>
 
             <!-- Wrapped Table in table-responsive -->
@@ -558,9 +539,8 @@
                                 <td class="time-col">{{ $time }}</td>
                                 @foreach($weekDays as $day)
                                     @php
-                                        $slot = $schedules->first(function ($schedule) use ($day, $time) {
-                                            $schedTime = isset($schedule->time) ? $schedule->time : ($schedule->time_slot ?? '');
-                                            return $schedule->date === $day->format('Y-m-d') && $schedTime === $time;
+                                        $slot = $adviserSchedule->first(function ($schedule) use ($day, $time) {
+                                            return $schedule->date === $day->format('Y-m-d') && $schedule->time_slot === $time;
                                         });
                                         
                                         $cellClass = 'cell-white';
