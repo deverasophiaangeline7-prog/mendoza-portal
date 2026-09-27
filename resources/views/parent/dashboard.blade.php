@@ -3,13 +3,26 @@
 @section('title', 'Parent Dashboard')
 
 @section('content')
+
+@php
+    // Safely prepare the images for the carousel so Blade doesn't crash inside the HTML attribute
+    $carouselImages = [];
+    if (isset($announcementImages) && is_iterable($announcementImages)) {
+        foreach($announcementImages as $img) {$carouselImages[] = [
+                'url' => asset('storage/' . ($img->image_path ?? '')),
+                'caption' => $img->caption ?? ''
+            ];
+        }
+    }
+@endphp
+
 <!-- We wrap the main content in a single div so all elements share the Alpine data -->
 <div class="flex-1 flex flex-col min-h-screen" x-data="{ 
     currentMonth: {{ now()->month - 1 }}, 
     currentYear: {{ now()->year }}, 
     selectedDate: {{ now()->day }},
     monthNames: ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'],
-    events: {{ json_encode($eventsData ?? new \stdClass()) }},
+    events: {!! json_encode($eventsData ?? new \stdClass()) !!},
     
     get daysInMonth() { return new Date(this.currentYear, this.currentMonth + 1, 0).getDate(); },
     get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); },
@@ -36,9 +49,9 @@
             <h2 class="text-xl md:text-3xl font-extrabold tracking-tight uppercase">
                 Welcome, Parent of 
                 @if(auth()->check() && auth()->user()->student)
-                   {{ auth()->user()->student->first_name }} {{ auth()->user()->student->middle_name }} {{ auth()->user()->student->last_name }}!
+                   {{ auth()->user()->student->first_name ?? '' }} {{ auth()->user()->student->middle_name ?? '' }} {{ auth()->user()->student->last_name ?? '' }}!
                 @elseif(auth()->check() && auth()->user()->parent)
-                    {{ auth()->user()->parent->first_name }} {{ auth()->user()->parent->last_name }}!
+                    {{ auth()->user()->parent->first_name ?? '' }} {{ auth()->user()->parent->last_name ?? '' }}!
                 @else
                     Student!
                 @endif
@@ -47,22 +60,13 @@
 
         <!-- NEW UPGRADED CAROUSEL -->
         <div class="relative w-full h-80 bg-amber-700 rounded-3xl p-6 shadow-lg border-2 border-black mb-12"
-             x-data="{
-                 images: [
-                     @if(isset($announcementImages) &&$announcementImages->count() > 0)
-                         @foreach($announcementImages as$img)
-                             { 
-                                 url: {!! json_encode(asset('storage/' . $img->image_path)) !!}, 
-                                 caption: {!! json_encode($img->caption ?? '') !!} 
-                             },
-                         @endforeach
-                     @endif
-                 ],
+             x-data='{
+                 images: {!! json_encode($carouselImages) !!},
                  currentIndex: 0,
-                 get hasImage() { return this.images.length > 0; },
+                 get hasImage() { return this.images && this.images.length > 0; },
                  init() {
                      setInterval(() => {
-                         fetch('{{ route('banner.fetch') }}')
+                         fetch("{{ route('banner.fetch') }}")
                              .then(response => response.json())
                              .then(data => {
                                  if(data.has_image) {
@@ -84,7 +88,7 @@
                          this.currentIndex = (this.currentIndex - 1 + this.images.length) % this.images.length;
                      }
                  }
-             }">
+             }'>
             <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-amber-600 relative overflow-hidden flex items-center justify-center">
                 
                 <template x-if="hasImage">
