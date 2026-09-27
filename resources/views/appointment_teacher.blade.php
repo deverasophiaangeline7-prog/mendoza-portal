@@ -1,6 +1,6 @@
 @extends('layouts.navigation')
 
-@section('title', 'Appointment Scheduling (Parent)')
+@section('title', 'Appointment Scheduling')
 
 @section('content')
 <style>
@@ -18,8 +18,6 @@
         width: 100%;
         min-height: calc(100vh - 80px);
         box-sizing: border-box;
-        overflow-y: auto; 
-        overflow-x: hidden;
     }
 
     .main-content {
@@ -31,7 +29,6 @@
         box-sizing: border-box;
         width: 100%;
         max-width: 100%;
-        min-width: 0;
     }
 
     .left-column { 
@@ -39,25 +36,25 @@
         display: flex; 
         flex-direction: column; 
         gap: 20px; 
-        min-width: 0;
+        min-width: 0; 
     }
     
     .right-column { 
         flex: 1.2; 
         position: relative; 
-        min-width: 0;
+        min-width: 0; 
     }
 
-    .ma-card {
+    .appointment-form-card {
         border: 2px solid #000;
-        border-radius: 25px; 
+        border-radius: 25px;
         padding: 20px;
         background: #fff;
         width: 100%;
         box-sizing: border-box;
     }
 
-    .ma-card h3 {
+    .appointment-form-card h3 {
         text-align: center;
         margin-top: 0;
         font-size: 20px;
@@ -79,7 +76,7 @@
         width: 100%;
         padding: 8px 15px;
         border: 2px solid #000;
-        border-radius: 25px; 
+        border-radius: 25px;
         background-color: var(--ma-bg-grey);
         font-weight: bold;
         font-size: 14px;
@@ -101,79 +98,7 @@
         cursor: pointer;
     }
 
-    .status-box-container {
-        display: flex;
-        border: 2px solid #000;
-        border-radius: 4px; 
-        background: #fff;
-        align-items: stretch;
-    }
-
-    .status-label-block {
-        background-color: var(--ma-bg-grey);
-        padding: 12px 15px;
-        font-weight: 900;
-        font-size: 15px;
-        border-right: 2px solid #000;
-        display: flex;
-        align-items: center;
-    }
-
-    .status-data-block {
-        padding: 12px 15px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        font-weight: 900;
-        font-size: 15px;
-    }
-
-    .pill-orange {
-        background-color: var(--ma-orange);
-        color: black;
-        border: 2px solid #000;
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-weight: 900;
-        font-size: 14px;
-    }
-
-    .incoming-data-row {
-        display: flex;
-        gap: 5px; 
-        margin-bottom: 15px;
-    }
-
-    .incoming-data-row div {
-        flex: 1;
-        background-color: var(--ma-bg-grey);
-        padding: 10px;
-        text-align: center;
-        font-weight: bold;
-        font-size: 14px;
-        border-radius: 4px;
-    }
-
-    .action-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-    }
-
-    .btn-flat {
-        padding: 8px 18px;
-        border: 2px solid #000;
-        border-radius: 20px;
-        font-weight: 900;
-        font-size: 14px;
-        cursor: pointer;
-        color: black;
-    }
-
-    .btn-approve { background-color: var(--ma-green); }
-    .btn-decline { background-color: var(--ma-red); color: white; }
-
-    /* Responsive Table Wrapper & Pending Table Styles added to Parent View */
+    /* Responsive Table Wrapper */
     .table-responsive {
         width: 100%;
         overflow-x: auto;
@@ -186,7 +111,6 @@
         border-collapse: collapse;
         border: 2px solid #000;
         min-width: 400px; 
-        margin-bottom: 5px;
     }
 
     .pending-table th {
@@ -195,7 +119,7 @@
         padding: 10px;
         border: 2px solid #000;
         font-weight: 900;
-        font-size: 14px;
+        font-size: 15px;
     }
 
     .pending-table td {
@@ -203,8 +127,17 @@
         border: 2px solid #000;
         font-weight: bold;
         background-color: white;
-        font-size: 13px;
-        text-align: center;
+        font-size: 14px;
+    }
+
+    .pill-orange {
+        background-color: var(--ma-orange);
+        color: black;
+        border: 2px solid #000;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: 900;
+        font-size: 14px;
     }
 
     .calendar-title {
@@ -233,7 +166,7 @@
 
     .month-title {
         color: var(--ma-orange);
-        text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
         font-weight: 900;
         font-size: 32px;
         margin: 0;
@@ -250,7 +183,50 @@
         transition: transform 0.2s;
     }
 
-    .nav-arrow:hover { transform: scale(1.2); color: var(--ma-red); }
+    .nav-arrow:hover {
+        transform: scale(1.2); 
+        color: var(--ma-red); 
+    }
+
+    .requests-trigger {
+        position: absolute;
+        right: 0;
+        top: -15px;
+        text-align: center;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .icon-container {
+        position: relative;
+        font-size: 32px;
+        color: #000;
+    }
+
+    .request-badge {
+        position: absolute;
+        top: -8px;
+        right: -15px;
+        background-color: #ffcc00;
+        color: #000;
+        border: 2px solid #000;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        font-size: 14px;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .request-label {
+        font-weight: 900;
+        font-size: 14px;
+        margin-top: 5px;
+    }
 
     .schedule-grid {
         width: 100%;
@@ -259,10 +235,17 @@
         border: 2px solid #000;
     }
 
-    .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 10px 5px; height: 40px; }
+    .schedule-grid th, .schedule-grid td {
+        border: 2px solid #000;
+        padding: 10px 5px;
+        height: 40px;
+    }
+
     .schedule-grid th { background-color: var(--ma-bg-grey); font-weight: 900; }
+    
     .day-header { font-size: 11px; text-transform: uppercase; color: #555; }
     .date-header { font-size: 16px; }
+
     .time-col { background-color: var(--ma-bg-grey); width: 60px; font-weight: 900; font-size: 14px; }
     
     .cell-red { background-color: var(--ma-red); }
@@ -270,8 +253,17 @@
     .cell-grey { background-color: var(--ma-dark-grey) !important; }
     .cell-white { background-color: #ffffff; }
 
-    .cell-half-top { background: linear-gradient(180deg, var(--ma-green) 0 50%, #ffffff 50% 100%); }
-    .cell-half-bottom { background: linear-gradient(180deg, #ffffff 0 50%, var(--ma-green) 50% 100%); }
+    .cell-half-top {
+        background: linear-gradient(180deg, var(--ma-green) 0 50%, #ffffff 50% 100%);
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+    }
+    
+    .cell-half-bottom {
+        background: linear-gradient(180deg, #ffffff 0 50%, var(--ma-green) 50% 100%);
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+    }
 
     .legend {
         display: flex;
@@ -282,25 +274,52 @@
         font-size: 14px;
         flex-wrap: wrap; 
     }
+    
     .legend-item span {
-        display: inline-block; width: 16px; height: 16px;
-        border-radius: 50%; border: 2px solid #000; margin-right: 5px; vertical-align: middle;
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid #000;
+        margin-right: 5px;
+        vertical-align: middle;
     }
-    .disclaimer { color: var(--ma-red); text-align: center; font-size: 13px; font-weight: 900; margin-top: 5px; }
+
+    .disclaimer {
+        color: var(--ma-red);
+        text-align: center;
+        font-size: 13px;
+        font-weight: 900;
+        margin-top: 5px;
+    }
 
     .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
     }
     
     .modal-hidden { display: none !important; }
-    
-    .nested-modal-content, .validation-modal {
-        background: white; border: 4px solid #000; padding: 30px; width: 90%; max-width: 600px; text-align: center; box-shadow: 10px 10px 0px var(--ma-orange); border-radius: 15px;
+
+    .requests-modal, .validation-modal {
+        background: white;
+        border: 4px solid #000;
+        border-radius: 25px;
+        width: 90%;
+        max-width: 900px;
+        padding: 20px;
+        position: relative;
+        max-height: 90vh;
+        overflow-y: auto;
     }
 
     .validation-modal {
         max-width: 450px;
+        text-align: center;
     }
 
     .validation-modal h3 {
@@ -310,8 +329,111 @@
         font-size: 22px;
     }
 
-    .nested-modal-content h3 { margin-top: 0; font-size: 20px; font-weight: 900;}
-    .nested-modal-actions { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+    .modal-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .close-btn {
+        position: absolute;
+        right: 0;
+        top: 0;
+        background: var(--ma-red);
+        color: white;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 2px #000;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 2px solid #000;
+    }
+
+    .modal-table th {
+        background-color: var(--ma-orange);
+        color: #000;
+        border: 2px solid #000;
+        padding: 15px;
+        font-size: 16px;
+    }
+
+    .modal-table td {
+        border: 2px solid #000;
+        padding: 15px;
+        font-weight: bold;
+        vertical-align: middle;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .btn-flat {
+        padding: 8px 18px;
+        border: 2px solid #000;
+        border-radius: 20px;
+        color: black;
+        font-weight: 900;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .btn-approve { background-color: var(--ma-green); color: white; border: none; }
+    .btn-decline { background-color: var(--ma-red); color: white; border: none; }
+
+    .nested-modal {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1010;
+    }
+
+    .nested-modal-content {
+        background: white;
+        border: 4px solid #000;
+        border-radius: 25px;
+        padding: 30px;
+        width: 90%;
+        max-width: 600px;
+        text-align: center;
+        box-shadow: 10px 10px 0px var(--ma-orange);
+    }
+
+    .nested-modal-content h3 { margin-top: 0; font-size: 20px; }
+
+    .nested-modal-actions {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+    }
 
     /* RESPONSIVE CSS FIXES */
     @media (max-width: 992px) {
@@ -350,6 +472,19 @@
             font-size: 26px; 
         }
 
+        .requests-trigger {
+            position: relative; 
+            top: 0;
+            right: 0;
+            margin-top: 10px;
+        }
+
+        .modal-table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
         .nested-modal-content {
             padding: 20px 15px;
         }
@@ -361,10 +496,6 @@
 
         .nested-modal-actions button {
             width: 100%;
-        }
-
-        .incoming-data-row {
-            flex-direction: column;
         }
     }
 </style>
@@ -401,142 +532,91 @@
 
 <div class="dashboard-container">
     <div class="main-content">
-        
         <div class="left-column">
             
-            <div class="ma-card">
-                <h3>Appoint with your adviser</h3>
+            <div class="appointment-form-card">
+                <h3>Appoint with a parent</h3>
                 <form id="appointmentForm" action="{{ route('appointments.store') }}" method="POST" onsubmit="return validateAppointmentForm(event)">
                     @csrf
+                    <div class="form-group">
+                        <label>Name</label>
+                        <select name="parent_id" class="form-control" required>
+                            <option value="">Select Parent</option>
+                            @foreach($parents as $parent)
+                                <option value="{{ $parent->user_id }}">
+                                    {{ strtoupper(optional($parent->student)->first_name . ' ' . optional($parent->student)->last_name ?: $parent->username) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label>Discussion Topic</label>
                         <input type="text" name="discussion_topic" class="form-control" required>
                     </div>
+
                     <div class="form-group">
                         <label>Appointment Date</label>
                         <input type="date" id="appointment_date" name="appointment_date" class="form-control" required
                                min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
                                max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
                     </div>
+
                     <div class="time-group">
                         <div class="form-group" style="flex: 1;">
                             <label>Start Time</label>
-                            <input type="time" id="start_time" name="start_time" class="form-control" step="1800" required>
+                            <input type="time" id="start_time" name="start_time" class="form-control" required>
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label>End Time</label>
-                            <input type="time" id="end_time" name="end_time" class="form-control" step="1800" required>
+                            <input type="time" id="end_time" name="end_time" class="form-control" required>
                         </div>
                     </div>
+
                     <button type="submit" class="btn-submit">Submit Request</button>
                 </form>
             </div>
 
-            @php
-                $activeRequest = $incomingRequests->first() ?? $mySentRequests->first();
-                $activeRequestStatus = $activeRequest?->status ?? 'none';
-                $statusLabel = ucfirst($activeRequestStatus);
-                if ($activeRequestStatus === 'none') {
-                    $statusLabel = 'No Requests';
-                }
-            @endphp
-
-            <div class="status-box-container">
-                <div class="status-label-block">Request Status:</div>
-                <div class="status-data-block">
-                    <span>{{ $statusLabel }}</span>
-                    @if($activeRequestStatus !== 'none')
-                        <span class="pill-orange">{{ $activeRequestStatus === 'reschedule' ? 'Reschedule' : 'Active' }}</span>
-                    @endif
-                </div>
+            <div style="text-align: left; font-weight: 900; font-size: 18px; margin-top: 20px; margin-bottom: 10px; margin-left: 5px;">
+                My Sent Requests
             </div>
-
-            <div class="ma-card">
-                <h3>My Requests</h3>
-
-                @if($incomingRequests->isEmpty() && $mySentRequests->isEmpty())
-                    <div class="incoming-data-row">
-                        <div style="text-align: center; width: 100%;">No appointment requests yet.</div>
-                    </div>
-                @else
-                    
-                    @if($incomingRequests->isNotEmpty())
-                        <div style="text-align: left; font-weight: 900; font-size: 14px; margin-bottom: 10px; color: var(--ma-red); margin-left: 5px;">
-                            Action Required (From Teacher)
-                        </div>
-                        <div class="table-responsive">
-                            <table class="pending-table">
-                                <thead>
-                                    <tr>
-                                        <th>Topic</th>
-                                        <th>Date and Time</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($incomingRequests as $request)
-                                    <tr>
-                                        <td>{{ $request->discussion_topic }}</td>
-                                        <td>
-                                            {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
-                                            {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
-                                            {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
-                                        </td>
-                                        <td>
-                                            <div class="action-buttons">
-                                                <form action="{{ route('appointments.approve', $request->id) }}" method="POST" style="display:inline;">
-                                                    @csrf @method('PATCH')
-                                                    <button type="submit" class="btn-flat btn-approve">Approve</button>
-                                                </form>
-                                                <button type="button" class="btn-flat btn-decline" onclick="openDeclineModal({{ $request->id }})">Decline</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-
-                    @if($incomingRequests->isNotEmpty() && $mySentRequests->isNotEmpty())
-                        <hr style="border: 1px dashed #ccc; margin-bottom: 20px; margin-top: 10px;">
-                    @endif
-
-                    @if($mySentRequests->isNotEmpty())
-                        <div style="text-align: left; font-weight: 900; font-size: 14px; margin-bottom: 10px; margin-left: 5px;">
-                            Appointment Description
-                        </div>
-                        <div class="table-responsive">
-                            <table class="pending-table">
-                                <thead>
-                                    <tr>
-                                        <th>Topic</th>
-                                        <th>Date and Time</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($mySentRequests as $request)
-                                    <tr>
-                                        <td>{{ $request->discussion_topic }}</td>
-                                        <td>
-                                            {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
-                                            {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
-                                            {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
-                                        </td>
-                                        <td>
-                                            <span class="pill-orange" style="display: inline-block;">{{ $request->status === 'reschedule' ? 'Reschedule' : ucfirst($request->status) }}</span>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-
-                @endif
+            <!-- Wrapped Table in table-responsive -->
+            <div class="table-responsive">
+                <table class="pending-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Topic</th>
+                            <th>Date & Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($mySentRequests as $request)
+                            <tr>
+                                <td>
+                                    {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
+                                </td>
+                                <td>{{ $request->discussion_topic }}</td>
+                                <td>
+                                    {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }},
+                                    {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
+                                    {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="pill-orange" style="display: inline-block;">
+                                        {{ $request->status === 'reschedule' ? 'Reschedule' : ucfirst($request->status ?? 'Pending') }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" style="text-align: center;">No sent requests.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-
         </div>
 
         <div class="right-column">
@@ -559,16 +639,25 @@
                 for ($i = 0; $i < 5; $i++) {
                     $weekDays[] = $startOfWeek->copy()->addDays($i);
                 }
+
                 $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
             @endphp
 
-            <h2 class="calendar-title">{{ $adviserName ? 'Adviser ' . strtoupper($adviserName) . ' Schedule' : 'Adviser Schedule' }}</h2>
+            <h2 class="calendar-title">My Schedule</h2>
             
             <div class="calendar-header-wrapper">
                 <div class="calendar-navigation">
                     <a href="{{ request()->url() }}?date={{ $prevWeekDate }}" class="nav-arrow">&laquo;</a>
                     <h2 class="month-title">{{ $currentDate->format('F Y') }}</h2>
                     <a href="{{ request()->url() }}?date={{ $nextWeekDate }}" class="nav-arrow">&raquo;</a>
+                </div>
+
+                <div class="requests-trigger" onclick="openModal('requestsModalOverlay')">
+                    <div class="icon-container">
+                        <i class="fa-solid fa-user-group"></i>
+                        <span class="request-badge">{{ $incomingRequests->count() }}</span>
+                    </div>
+                    <span class="request-label">Requests</span>
                 </div>
             </div>
 
@@ -592,9 +681,11 @@
                                 <td class="time-col">{{ $time }}</td>
                                 @foreach($weekDays as $day)
                                     @php
-                                        $slot = $adviserSchedule->first(function ($schedule) use ($day, $time) {
-                                            return $schedule->date === $day->format('Y-m-d') && $schedule->time_slot === $time;
+                                        $slot = $schedules->first(function ($schedule) use ($day, $time) {
+                                            $schedTime = isset($schedule->time) ? $schedule->time : ($schedule->time_slot ?? '');
+                                            return $schedule->date === $day->format('Y-m-d') && $schedTime === $time;
                                         });
+                                        
                                         $cellClass = 'cell-white';
                                         $statusValue = 'available';
 
@@ -613,9 +704,9 @@
                                                 $statusValue = 'booked';
                                             }
                                         }
-                                        
-                                        $cellStartTime = \Carbon\Carbon::parse($day->format('Y-m-d') . ' ' . $time);
-                                        $cellEndTime = $cellStartTime->copy()->addHour();
+
+                                        $cellStartTime = \Carbon\Carbon::parse($day->format('Y-m-d') . ' ' . $time); 
+                                        $cellEndTime = $cellStartTime->copy()->addHour(); 
 
                                         $meetingTooltip = '';
                                         $meeting = $bookedAppointments->first(function ($appointment) use ($cellStartTime, $cellEndTime) {
@@ -631,10 +722,12 @@
                                             
                                             $appStart = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->start_time);
                                             $appEnd = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->end_time);
+
                                             $overlapStart = $appStart->max($cellStartTime);
                                             $overlapEnd = $appEnd->min($cellEndTime);
+                                            
                                             $durationInCell = $overlapStart->diffInMinutes($overlapEnd);
-
+                                            
                                             if ($durationInCell >= 60) {
                                                 $cellClass = 'cell-green';
                                             } elseif ($durationInCell <= 30) {
@@ -665,7 +758,9 @@
                 <div class="legend-item"><span class="cell-red"></span>Class Hours</div>
                 <div class="legend-item"><span class="cell-grey"></span>On Leave</div>
             </div>
-            <p class="disclaimer">Schedules booked on "On Leave" will be pending for reschedule.</p>
+            <p class="disclaimer">
+                Schedules booked on "On Leave" will be pending for reschedule.
+            </p>
         </div>
     </div>
 </div>
@@ -679,10 +774,61 @@
     </div>
 </div>
 
+<!-- INCOMING REQUESTS MODAL -->
+<div id="requestsModalOverlay" class="modal-overlay modal-hidden">
+    <div class="requests-modal">
+        <div class="modal-header">
+            <h2><i class="fa-solid fa-user-plus"></i> Incoming Requests</h2>
+            <button class="close-btn" onclick="closeModal('requestsModalOverlay')">&times;</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Topic</th>
+                        <th>Date and Time</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($incomingRequests as $request)
+                    <tr>
+                        <td>
+                            {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
+                        </td>
+                        <td>{{ $request->discussion_topic }}</td>
+                        <td>
+                            {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
+                            {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
+                            {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <form action="{{ route('appointments.approve', $request->id) }}" method="POST" style="display:inline;">
+                                    @csrf @method('PATCH')
+                                    <button type="submit" class="btn-flat btn-approve">Approve</button>
+                                </form>
+                                <button type="button" class="btn-flat btn-decline" onclick="openDeclineModal({{ $request->id }})">Decline</button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" style="text-align: center;">No incoming appointment requests.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <!-- DECLINE / SUGGEST NEW SCHEDULE MODAL -->
-<div id="declineModal" class="modal-overlay modal-hidden">
+<div id="declineModal" class="nested-modal modal-hidden">
     <div class="nested-modal-content">
-        <h3 style="color: var(--ma-red); text-transform: uppercase;">State your reason for rescheduling</h3>
+        <h3 style="color: var(--ma-red); font-weight: bold; text-transform: uppercase;">State your reason for rescheduling</h3>
         
         <form id="declineForm" method="POST" action="">
             @csrf @method('PATCH')
@@ -697,18 +843,18 @@
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Date</label>
                 <input type="date" name="suggested_date" class="form-control" required
-                       min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
-                       max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
+                        min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                        max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
             </div>
             
             <div class="time-group" style="text-align: left;">
                 <div style="flex: 1;">
                     <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Start Time</label>
-                    <input type="time" name="suggested_start_time" class="form-control" step="1800" required>
+                    <input type="time" name="suggested_start_time" class="form-control" required>
                 </div>
                 <div style="flex: 1;">
                     <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">End Time</label>
-                    <input type="time" name="suggested_end_time" class="form-control" step="1800" required>
+                    <input type="time" name="suggested_end_time" class="form-control" required>
                 </div>
             </div>
             
@@ -771,6 +917,7 @@
         const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
         const duration = endMins - startMins;
 
+        // Restriction Check: Must be between 8:00 AM (480 mins) and 5:00 PM (1020 mins)
         if (startMins < 480 || endMins > 1020) {
             event.preventDefault();
             showValidationPopUp('Appointments can only be scheduled between 8:00 AM and 5:00 PM.');
@@ -830,8 +977,11 @@
     }
 
     window.onclick = function(event) {
+        const overlay = document.getElementById('requestsModalOverlay');
         const valOverlay = document.getElementById('validationModalOverlay');
         const decOverlay = document.getElementById('declineModal');
+        
+        if (event.target === overlay) closeModal('requestsModalOverlay');
         if (event.target === valOverlay) closeModal('validationModalOverlay');
         if (event.target === decOverlay) closeModal('declineModal');
     }

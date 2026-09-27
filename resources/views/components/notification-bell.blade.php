@@ -42,7 +42,7 @@
          @click.away="notifOpen = false">
         
         <!-- BELL BUTTON -->
-        <button @click="notifOpen = !notifOpen" class="relative focus:outline-none p-2 hover:scale-110 transition-transform">
+        <button @click="notifOpen = !notifOpen" title="Notifications" class="relative focus:outline-none p-2 hover:scale-110 transition-transform">
             <i class="fa-solid fa-bell text-2xl text-white"></i>
             
             <!-- RED BADGE -->

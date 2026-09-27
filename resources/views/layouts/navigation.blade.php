@@ -47,25 +47,28 @@
                 </a>
             </div>
 
-            <div class="flex items-center space-x-4 sm:space-x-6 text-2xl">
-                
-                <a href="{{ route('messages.index') }}" class="relative transition inline-flex items-center p-2 rounded-lg {{ request()->routeIs('messages*') ? 'text-orange-400' : 'text-white hover:text-orange-400' }}">
+ <!-- Tightened the spacing classes on this parent div from space-x-6 to space-x-4 -->
+<div class="flex items-center space-x-2 sm:space-x-4 text-2xl">
     
-                     <!-- Changed to Facebook Messenger icon -->
-                      <i class="fa-solid fa-comment-dots text-xl"></i>
-    
-                    @if(isset($unreadTotal) && $unreadTotal > 0)
-                          <span class="absolute -top-1 -right-1 bg-yellow-400 text-red-600 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold shadow-sm">
-                                {{ $unreadTotal }}
-                         </span>
-                     @endif
-                </a>
+    <!-- Added -mr-2 to gently nudge the chat icon closer to the bell -->
+    <a href="{{ route('messages.index') }} "title="Messages" class="relative transition inline-flex items-center p-2 -mr-2 rounded-lg {{ request()->routeIs('messages*') ? 'text-orange-400' : 'text-white hover:text-orange-400' }}">
+        
+        <!-- Changed text-xl to text-2xl to match the bell size perfectly -->
+        <i class="fa-solid fa-comment-dots text-2xl"></i>
+        
+        @if(isset($unreadTotal) && $unreadTotal > 0)
+            <span class="absolute -top-1 -right-1 bg-yellow-400 text-red-600 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold shadow-sm">
+                {{ $unreadTotal }}
+            </span>
+        @endif
+    </a>
                 
                 @include('components.notification-bell')
 
+                <!-- USER PROFILE ICON -->
+                <!-- Add title="Profile" to the button -->
                 <div class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" @click.away="open = false"
-                            class="hover:scale-110 transition-transform focus:outline-none flex items-center">
+                    <button @click="open = !open" @click.away="open = false" title="Profile" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
                         <i class="fa-solid fa-circle-user text-orange-400 text-3xl sm:text-4xl"></i>
                     </button>
 
