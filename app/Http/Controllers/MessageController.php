@@ -38,10 +38,11 @@ class MessageController extends Controller
 
         $selectedUser = User::where('user_id', $id)->firstOrFail();
 
-        // Only mark read for 1-on-1 chats to avoid marking a group chat as read for everyone
+        // On initial page load, mark strictly 1-on-1 chats sent FROM them TO me as read (DB update)
         if (is_null($selectedUser->custom_name)) {
             Message::where('sender_id', $id)
                    ->where('receiver_id', $authId)
+                   ->where('is_read', false) // Only update if necessary
                    ->update(['is_read' => true]);
         }
 
@@ -49,7 +50,7 @@ class MessageController extends Controller
         if (!is_null($selectedUser->custom_name)) {
             // Fetch ALL messages sent to this group
             $messages = Message::where('receiver_id', $id)
-                               ->orderBy('created_at', 'asc')->get();
+                                ->orderBy('created_at', 'asc')->get();
         } else {
             // Fetch strict 1-on-1 chat
             $messages = Message::where(function($query) use ($id, $authId) {
@@ -192,15 +193,15 @@ class MessageController extends Controller
         ]);
 
         // ==========================================
-        // 2. AI INTERCEPTOR LOGIC
+        // 2. AI INTERCEPTOR LOGIC (Kept as provided)
         // ==========================================
         $apiKey = env('GEMINI_API_KEY');
         
-        // FIX: Find the receiver FIRST before checking it in the if-statement
         $receiver = User::find($request->receiver_id);
 
-        // STRICT SENDER CHECK: Bulletproofed with strtolower()
-        // STRICT CHECK: Sender is Parent AND Receiver is NOT a Group Chat
+        $aiResponded = false; // Add flag to track AI response
+
+        // STRICT SENDER CHECK: Sender is Parent AND Receiver is NOT a Group Chat
         if ($apiKey && strtolower(Auth::user()->role) === 'parent' && $receiver && is_null($receiver->custom_name)) {
             
             $upcomingEvents = SchoolCalendar::orderBy('start_date', 'asc')->limit(10)->get();
@@ -338,6 +339,8 @@ class MessageController extends Controller
             if (strpos($aiText, 'IGNORE') !== false) {
                 // Do absolutely nothing
             } else {
+                $aiResponded = true; // Mark that AI responded
+
                 Message::create([
                     'sender_id' => $request->receiver_id,
                     'receiver_id' => Auth::id(),          
@@ -347,8 +350,13 @@ class MessageController extends Controller
             }
         }
 
+        // PATCHED: Correctly handle JSON responses for dynamic send flow
         if ($request->wantsJson()) {
-            return response()->json(['success' => true]);
+            return response()->json([
+                'success' => true,
+                'current_msg' => $currentMessage, // Send back created message data
+                'ai_responded' => $aiResponded,   // Tell frontend if AI answered
+            ]);
         }
         
         return redirect()->route('messages.show', ['id' => $request->receiver_id]);
@@ -425,7 +433,73 @@ class MessageController extends Controller
 
     }
 
-} 
+    // 👇 ========================================== 👇
+    // PATCHED METHODS FOR DYNAMIC SYNC & DB SEEN STATUS
+    // 👇 ========================================== 👇
 
-    
-  
+    /**
+     * AJAX Endpoint: Dynamically update DB 'is_read' status for a specific conversation.
+     * Tells the DB that the logged-in user has seen messages sent FROM the other person.
+     */
+    public function markMessagesRead($conversationId)
+    {
+        $authId = Auth::id();
+        
+        // Find strictly 1-on-1 messages sent FROM the other person TO me that are still unread.
+        $messagesToUpdate = Message::where('sender_id', $conversationId)
+                                    ->where('receiver_id', $authId)
+                                    ->where('is_read', false);
+
+        if ($messagesToUpdate->count() > 0) {
+            $messagesToUpdate->update(['is_read' => true]);
+            return response()->json(['success' => true]);
+        }
+
+        // NOTE: Group chat dynamic seen is complex (needs per-user tracking table), so we stick to whispers UI-only seen there.
+
+        return response()->json(['success' => false, 'message' => 'No messages to update.']);
+    }
+
+    /**
+     * AJAX Endpoint: Poll for any new unread messages since the page loaded.
+     */
+    public function pollForMessages($conversationId)
+    {
+        $authId = Auth::id();
+        
+        // Find the other person (strict 1-on-1)
+        $receiver = User::find($conversationId);
+        if (!$receiver) return response()->json([]);
+
+        // Are we polling a strict 1-on-1 conversation?
+        $isGroup = !is_null($receiver->custom_name);
+
+        if ($isGroup) {
+            // Fetch messages sent TO this group since initial load
+            // (Need to pass 'timestamp' or 'last_id' in a real production system, but this handles basic sync)
+            $newMessages = Message::where('receiver_id', $conversationId)
+                                    ->where('sender_id', '!=', $authId) // Don't pull my own sent messages
+                                    ->where('created_at', '>', now()->subSeconds(30)) // Safety net: messages within last 30s
+                                    ->orderBy('created_at', 'asc')->get();
+        } else {
+            // Fetch strict 1-on-1 messages sent FROM them TO me, specifically unread.
+            $newMessages = Message::where('sender_id', $conversationId)
+                                    ->where('receiver_id', $authId)
+                                    ->where('is_read', false) // Only poll unread messages
+                                    ->orderBy('created_at', 'asc')->get();
+        }
+
+        // Map the results for frontend rendering
+        $formattedMessages = $newMessages->map(function($msg) use ($isGroup) {
+            return [
+                'id' => $msg->id,
+                'content' => $msg->content,
+                'sender_id' => $msg->sender_id,
+                // Pass formatted time using Manila timezone
+                'time_formatted' => $msg->created_at->setTimezone('Asia/Manila')->format('g:i A'),
+            ];
+        });
+
+        return response()->json($formattedMessages);
+    }
+}

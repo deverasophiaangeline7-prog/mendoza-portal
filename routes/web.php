@@ -68,16 +68,25 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/parent/attendance', [ParentAttendanceController::class, 'index'])->name('parent.attendance');
     Route::get('/fetch-attendance', [App\Http\Controllers\ParentAttendanceController::class, 'fetchAttendance'])->name('attendance.fetch');
 
-    // Chat Routes
+    // ==========================================
+    // Messaging / Chat Routes (Patched for Dynamic Sync & Seen)
+    // ==========================================
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
     // NOTE: group route must come BEFORE the {id} route so Laravel doesn't confuse 'group' for an ID!
     Route::post('/messages/group', [MessageController::class, 'storeGroup'])->name('messages.group.store'); 
     Route::post('/messages/group/{id}/archive', [MessageController::class, 'archiveGroup'])->name('messages.group.archive');
     Route::post('/messages/group/{id}/restore', [MessageController::class, 'restoreGroup'])->name('messages.group.restore'); // <-- NEW ARCHIVE ROUTE
     Route::delete('/messages/group/{id}/delete', [MessageController::class, 'deleteGroup'])->name('messages.group.delete');
+    
     Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
 
+    // 👇 ADDED FOR DYNAMIC SYNC & DB SEEN STATUS 👇
+    // 1. Poll endpoint to fetch new unread messages since last load.
+    Route::get('/messages/{conversation_id}/poll', [MessageController::class, 'pollForMessages'])->name('messages.poll');
+    // 2. Seen endpoint to dynamically mark unread messages from other user as read (DB update).
+    Route::post('/messages/{conversation_id}/mark-as-read', [MessageController::class, 'markMessagesRead'])->name('messages.markAsRead');
+    
     // Report Card Views
     Route::get('/report-card', [ReportCardController::class, 'index'])->name('reportcard.index');
     Route::get('/report-card/list/{section_id}', [ReportCardController::class, 'show'])->name('reportcard.show');
@@ -195,7 +204,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('/calendar/{schoolCalendar}/edit', [SchoolCalendarController::class, 'edit'])->name('calendar.edit');
     Route::put('/calendar/{schoolCalendar}', [SchoolCalendarController::class, 'update'])->name('calendar.update');
     Route::delete('/calendar/delete/{id}', [SchoolCalendarController::class, 'destroy'])->name('calendar.delete');
-   
+    
 
     // Sections & Students
     Route::get('/students/section/{id}', [App\Http\Controllers\Admin\StudentController::class, 'showSection'])->name('students.showSection');
@@ -233,7 +242,5 @@ Route::middleware(['auth', 'role:admin,teacher'])->group(function () {
 Route::middleware(['auth', 'role:parent'])->group(function () {
     Route::get('/student-view', [ParentAccountController::class, 'showStudentProfile'])->name('student.view');
 });
-
-
 
 require __DIR__.'/auth.php';

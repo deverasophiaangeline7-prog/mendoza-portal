@@ -43,16 +43,24 @@ class ProfileController extends Controller
     {
         // 1. Validate the form inputs
         $request->validate([
-            'current_password' => ['required', 'current_password'], // Checks if the old password matches the database
-            'password' => ['required', 'min:8', 'confirmed'],       // 'confirmed' checks the password_confirmation field automatically
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'min:8', 'confirmed'],
         ]);
 
         // 2. Encrypt and save the new password
-        $request->user()->update([
+        $user = $request->user();
+        $user->update([
             'password' => Hash::make($request->password),
         ]);
 
-        // 3. Send them back to the dashboard with a success message
+        // 3. Trigger the notification
+        $user->customNotifications()->create([
+            'type' => 'security',
+            'title' => 'Password Changed',
+            'message' => 'Your account password was successfully updated.',
+        ]);
+
+        // 4. Send them back to the dashboard with a success message
         return back()->with('success', 'Your password has been successfully updated!');
     }
 

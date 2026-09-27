@@ -258,7 +258,7 @@
                 </div>
                 
                 <!-- Live Typing Bubble -->
-                <div class="text-left mt-4 flex-shrink-0" x-show="isTyping" x-cloak>
+                <div class="text-left mt-4 flex-shrink-0" x-show="otherUserIsTyping" x-cloak>
                     <div class="typing-indicator shadow-sm">
                         <span></span><span></span><span></span>
                     </div>
@@ -284,7 +284,7 @@
                                class="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:border-[#6d0101] focus:ring-1 focus:ring-[#6d0101] transition-all disabled:opacity-50" 
                                placeholder="Type your message here..." 
                                required>
-                        <button type="submit" :disabled="isTyping || isSending" x-text="isSending ? 'Sending...' : 'Send'" class="bg-[#6d0101] text-white px-6 py-2 rounded-full hover:bg-red-900 transition disabled:opacity-50">
+                        <button type="submit" :disabled="thisUserIsTyping || isSending" x-text="isSending ? 'Sending...' : 'Send'" class="bg-[#6d0101] text-white px-6 py-2 rounded-full hover:bg-red-900 transition disabled:opacity-50">
                             Send
                         </button>
                     </form>
@@ -382,7 +382,7 @@
                         @if(isset($contacts) && count($contacts) > 0)
                             @foreach ($contacts as $contact)
                                 <label class="flex items-center p-3 hover:bg-red-50 cursor-pointer transition-colors bg-white"
-                                       x-show="groupSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(groupSearch.toLowerCase())">
+                                        x-show="groupSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(groupSearch.toLowerCase())">
                                     
                                     <input type="checkbox" name="members[]" value="{{ $contact->user_id }}" x-model="selectedMembers" class="rounded text-[#6d0101] border-gray-300 focus:ring-[#6d0101] w-4 h-4 mr-3">
                                     
@@ -419,7 +419,7 @@
 
     <!-- Custom Delete Confirmation Modal (Now safely outside!) -->
     <div x-show="deleteModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-transition.opacity>
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col p-6 text-center" @click.away="deleteModal = false">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-sm overflow-hidden flex flex-col p-6 text-center" @click.away="deleteModal = false">
             <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-xl">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
@@ -442,6 +442,7 @@
 
 </div>
 
+<!-- CRITICAL: Refreshed Script for Perfect Real-Time Sync & Seen -->
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('chatSystem', () => ({
@@ -451,60 +452,66 @@
             createGroupModal: false,
             deleteModal: false,
             messageInput: '',
-            thisUserIsTyping: false, // RENAMED: was isTyping, now this is the sender side
-            otherUserIsTyping: false, // RENAMED: was isTyping, this is for tracking other user
+            thisUserIsTyping: false, 
+            otherUserIsTyping: false, 
             isSending: false,
             myId: '{{ auth()->user()->user_id }}',
             selectedUserId: '{{ isset($selectedUser) ?$selectedUser->user_id : "" }}',
             selectedUserName: '{{ isset($selectedUser) ? (isset($selectedUser->custom_name) ? $selectedUser->custom_name :$selectedUser->name) : "" }}',
+            isGroupChat: '{{ is_null($selectedUser->custom_name ?? null) ? "false" : "true" }}' === 'true',
             
             otherUserTypingTimer: null,
+            pollingInterval: null, // Timer reference for the polling loop
 
             init() {
                 const container = document.getElementById('message-container');
+                // 1. Instant scroll to bottom on load
                 if (container) container.scrollTop = container.scrollHeight;
 
-                if (window.Echo && this.myId && this.selectedUserId) {
-
+                if (this.selectedUserId && this.myId) {
                     // ==========================================
-                    // 1. REAL-TIME SEEN LOGIC
+                    // 1. CORE SYNC & SEEN WIRING (HYBRID LOOP)
                     // ==========================================
                     
-                    // --- SEND WHISPER ---
-                    // Tell the person I am messaging that I have opened this chat (I've "Seen" their messages)
-                    // The backend Controller logic will have already marked their unread messages as 'read' in the database on page reload.
-                    // This whisper tells their open client to update the UI *instantly* without reload.
-                    window.Echo.private(`chat.${this.selectedUserId}`)
-                        .whisper('read', { senderId: this.myId });
+                    // --- DB SEEN INITIALIZER ---
+                    // On initial load, tell the DB I've seen their messages in this 1-on-1 chat.
+                    this.dynamicallyMarkRead();
 
-                    // --- RECEIVE WHISPER ---
-                    // Listen for when THEY open my chat. This updates my screen to show "· Seen" for the messages I sent them.
-                    window.Echo.private(`chat.${this.myId}`)
-                        .listenForWhisper('read', (e) => {
-                            // Ensure strict: check selectedUserId exists AND matches whisper sender
-                            if (this.selectedUserId && e.senderId == this.selectedUserId) {
-                                // Find all MY currently visible unread sent message status containers
-                                const unreadStatusContainers = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
-                                unreadStatusContainers.forEach(statusSpan => {
-                                    // Prevents duplicates if Seen text is already present
+                    // --- WebSocket Seen Whisper (UI-only Seen Text) ---
+                    if (window.Echo) {
+                        // Tell them I opened this chat (adds dynamic seen text to their open screen instantly)
+                        window.Echo.private(`chat.${this.selectedUserId}`).whisper('read', { senderId: this.myId });
+
+                        // Listen for when THEY open my chat. Dynamically add dynamic 'Seen' text to MY open screen.
+                        window.Echo.private(`chat.${this.myId}`).listenForWhisper('read', (e) => {
+                            if (e.senderId == this.selectedUserId) {
+                                // Find ALL my currently unread status containers on screen and mark seen.
+                                const unreadStatusSpans = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
+                                unreadStatusSpans.forEach(statusSpan => {
                                     if (statusSpan.innerHTML.trim() === '') {
                                         statusSpan.innerHTML = '<span class="font-bold ml-1 text-gray-500">· Seen</span>';
                                     }
                                 });
                             }
                         });
+                    }
 
+                    // --- THE POLLING LOOP (Heartbeat of Sync) ---
+                    // Run this loop every 4 seconds while this conversation is open.
+                    this.pollingInterval = setInterval(() => {
+                        this.pollNewMessages();
+                    }, 4000); 
 
+                }
+
+                if (window.Echo && this.myId) {
                     // ==========================================
                     // 2. TYPING INDICATOR LOGIC (RECEIVE ONLY)
                     // ==========================================
-                    // Listen for their typing whispers.
                     window.Echo.private(`chat.${this.myId}`)
                         .listenForWhisper('typing', (e) => {
                             if (e.senderId == this.selectedUserId) {
-                                this.otherUserIsTyping = true; // Show the 3 AI dots bubble
-                                if (container) container.scrollTop = container.scrollHeight;
-
+                                this.otherUserIsTyping = true;
                                 clearTimeout(this.otherUserTypingTimer);
                                 this.otherUserTypingTimer = setTimeout(() => {
                                     this.otherUserIsTyping = false;
@@ -515,33 +522,116 @@
             },
 
             // ==========================================
-            // 3. TYPING INDICATOR LOGIC (SEND WHISPER)
+            // 3. CORE SYNCING METHODS
             // ==========================================
-            // Renamed from sendTyping() for consistency. This is used by the @input on the input field.
-            sendTypingWhisper() {
-                if (window.Echo && this.selectedUserId) {
-                    window.Echo.private(`chat.${this.selectedUserId}`)
-                        .whisper('typing', {
-                            senderId: this.myId
+
+            /**
+             * Polling Loop Logic: Fetches new unread messages Dynamically.
+             */
+            async pollNewMessages() {
+                if (!this.selectedUserId) return;
+                
+                try {
+                    // Call the new backend poll endpoint
+                    const response = await fetch(`/messages/${this.selectedUserId}/poll`);
+                    if (!response.ok) return;
+                    
+                    const newMessagesData = await response.json();
+                    
+                    if (newMessagesData.length > 0) {
+                        const chatMessagesWrapper = document.getElementById('chat-messages');
+                        
+                        // Clear empty state if it's there
+                        const emptyState = document.getElementById('empty-chat-state');
+                        if (emptyState) emptyState.remove();
+
+                        // Track if we need to mark these new dynamic messages as read in DB
+                        let needsMarkRead = false;
+
+                        newMessagesData.forEach(msg => {
+                            // Perfect duplicate protection using Message ID (added during rendering)
+                            const existingMsgBubble = document.getElementById(`msg-bubble-${msg.id}`);
+                            if (!existingMsgBubble) {
+                                // 1-on-1 chats: other person sent it, and it's unread.
+                                // Group chats: someone else sent it.
+                                
+                                needsMarkRead = true; // DB seen needed
+
+                                // Render the new bubble dynamically. 
+                                // Patched: Bubble receives specific ID `msg-bubble-${msg.id}`
+                                chatMessagesWrapper.insertAdjacentHTML('beforeend', `
+                                    <div id="msg-bubble-${msg.id}" class="mb-4 w-full text-left js-dynamically-fetched-bubble">
+                                        <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-gray-100 text-gray-800 rounded-bl-none">
+                                            ${msg.content}
+                                        </span>
+                                        <div class="text-[10px] text-gray-400 mt-1">
+                                            ${msg.time_formatted}
+                                        </div>
+                                    </div>
+                                `);
+                            }
                         });
+
+                        // Immediately scroll down to new dynamic dynamic messages
+                        this.$nextTick(() => { 
+                            const container = document.getElementById('message-container');
+                            if(container) container.scrollTop = container.scrollHeight; 
+                        });
+
+                        // If we dynamically fetched new unread dynamic 1-on-1 messages, immediately synchronize the DB state.
+                        if (needsMarkRead && !this.isGroupChat) {
+                            this.dynamicallyMarkRead();
+                        }
+                    }
+                    
+                } catch (err) {
+                    // Silently fail, loop will retry.
+                    console.error("Polling error:", err);
                 }
             },
+
+            /**
+             * DB Seen Logic: Explicitly updates the 'is_read' status via AJAX.
+             */
+            async dynamicallyMarkRead() {
+                // DB synchronization is strictly for 1-on-1 direct messages to keep seen status accurate.
+                if (!this.selectedUserId || this.isGroupChat) return;
+                
+                try {
+                    // Call new markAsRead endpoint
+                    await fetch(`/messages/${this.selectedUserId}/mark-as-read`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    });
+                    
+                    // NOTE: There's no need to update dynamic seen text here. whispers handle dynamic UI seen text dynamicly.
+                    // This method strictly synchronizes the backend database so 'seen' is correct on page reloads.
+                    
+                } catch (err) {
+                    console.error("Failed to dynamically mark DB seen:", err);
+                }
+            },
+
+            // ==========================================
+            // 4. MESSAGE SENDING (Optimistic & Dynamic)
+            // ==========================================
 
             async sendMessage(receiverId) {
                 if (!this.messageInput.trim()) return;
                 
                 const text = this.messageInput;
                 this.messageInput = ''; 
-                
-                const emptyState = document.getElementById('empty-chat-state');
-                if (emptyState) {
-                    emptyState.remove();
-                }
-                
+                this.thisUserIsTyping = true; // Sender-side 'Sending...' lock
+
                 const chatMessages = document.getElementById('chat-messages');
+                
                 // Optimistically insert your new bubble to the DOM instantly
+                // augmented optimism bubble HTML to support perfect 'Seen' status dynamic tracing
                 chatMessages.insertAdjacentHTML('beforeend', `
-                    <div class="text-right mb-4 w-full">
+                    <div class="text-right mb-4 w-full js-optimistic-my-bubble">
                         <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
                             ${text}
                         </span>
@@ -551,10 +641,13 @@
                     </div>
                 `);
 
-                // ==========================================
-                // 4. SMART FRONTEND AI INDICATOR PROTECTOR
-                // ==========================================
-                // We keep this "faking AI typing" logic only for specific keyword combinations.
+                // Immediately scroll down
+                this.$nextTick(() => { 
+                    const container = document.getElementById('message-container');
+                    if(container) container.scrollTop = container.scrollHeight; 
+                });
+
+                // --- SMART Front-end AI Dots (Provided Logic) ---
                 const lowercaseText = text.toLowerCase();
                 const aiKeywords = ['tuition', 'fee', 'password', 'schedule', 'term', 'when', 'how much', 'date', 'event', 'start', 'end'];
                 const complexKeywords = ['concern', 'grade', 'bully', 'problem', 'help', 'anak', 'absent', 'sick'];
@@ -562,31 +655,23 @@
                 const triggersAI = aiKeywords.some(keyword => lowercaseText.includes(keyword));
                 const isComplex = complexKeywords.some(keyword => lowercaseText.includes(keyword));
                 const isParent = '{{ strtolower(auth()->user()->role) }}' === 'parent';
-                const isDirectMessage = '{{ is_null($selectedUser->custom_name ?? null) ? "true" : "false" }}' === 'true';
-
-                // We only pretend AI is typing (three dots) if it's a direct, simple school question from a parent.
-                if (triggersAI && !isComplex && isParent && isDirectMessage) {
-                    this.otherUserIsTyping = true;  // Manually toggle the three-dots bubble on
+                
+                // Only pretend AI is typing (three dots) if it's a direct, simple school question from a parent.
+                if (triggersAI && !isComplex && isParent && !this.isGroupChat) {
+                    this.otherUserIsTyping = true;  // Manually toggle the three-dots AI bubble on Dynamically
                     this.isSending = false;
                 } else {
-                    this.otherUserIsTyping = false; // Stay silent
-                    this.isSending = true; // Normal "Sending..." button text
+                    this.otherUserIsTyping = false;
+                    this.isSending = true; // Lock button Dynamically
                 }
-                
-                // Immediately scroll down to keep new optimistic bubble in view
-                this.$nextTick(() => { 
-                    const container = document.getElementById('message-container');
-                    if(container) container.scrollTop = container.scrollHeight; 
-                });
 
                 try {
-                    // Send message to backend (for real logic, AI response saving, or silent ignore)
                     const response = await fetch('{{ route('messages.store') }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json'
+                            'Accept': 'application/json' // Crucial: Expect JSON back
                         },
                         body: JSON.stringify({
                             receiver_id: receiverId,
@@ -595,21 +680,47 @@
                     });
 
                     if (response.ok) {
-                        // After successful save, reload page to capture final database state (e.g., AI response bubble)
-                        // Page reload naturally destroys the temporary fake AI dots.
-                        window.location.reload(); 
-                    } else {
-                        // Handle server error, e.g., POST request failed.
-                        this.otherUserIsTyping = false;
+                        const jsonRes = await response.json();
+                        
+                        // RESTORE NORMAL CONVERSATION FLOW - NO RELOAD!
+                        
+                        // We successfully sent. Unlock everything dynamic Dynamically.
                         this.isSending = false;
+                        this.thisUserIsTyping = false; 
+
+                        if (jsonRes.ai_responded) {
+                            // If AI intercepted and responded, it already saved the message.
+                            // The polling loop heartbeat (every 4s) will naturally pick up that AI bubble dynamicly.
+                        } else {
+                            this.otherUserIsTyping = false; // Hide manual AI dots if AI was silent
+                        }
+
+                    } else {
+                        // Error fallback
+                        console.error("Message failed to dynamicly send", response);
+                        this.isSending = false;
+                        this.thisUserIsTyping = false;
+                        this.otherUserIsTyping = false;
                     }
                 } catch (err) {
-                    // Handle fetch/network error.
-                    this.otherUserIsTyping = false;
+                    // Error fallback
+                    console.error("Message failed to dynamicly send", err);
                     this.isSending = false;
-                    console.error("Message failed to send", err);
+                    this.thisUserIsTyping = false;
+                    this.otherUserIsTyping = false;
                 }
-            }
+            },
+
+            // Whisper Typing Dots (Client -> Client whisper)
+            sendTypingWhisper() {
+                if (window.Echo && this.selectedUserId) {
+                    window.Echo.private(`chat.${this.selectedUserId}`)
+                        .whisper('typing', {
+                            senderId: this.myId
+                        });
+                }
+            },
+
         }));
     });
 </script>
