@@ -17,11 +17,11 @@
 @endphp
 
 <!-- We wrap the main content in a single div so all elements share the Alpine data -->
-<div class="flex-1 flex flex-col min-h-screen" x-data="{ 
+<div class="flex-1 flex flex-col min-h-screen" x-data='{ 
     currentMonth: {{ now()->month - 1 }}, 
     currentYear: {{ now()->year }}, 
     selectedDate: {{ now()->day }},
-    monthNames: ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'],
+    monthNames: ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"],
     events: {!! json_encode($eventsData ?? new \stdClass()) !!},
     
     get daysInMonth() { return new Date(this.currentYear, this.currentMonth + 1, 0).getDate(); },
@@ -29,12 +29,12 @@
     get blanks() { return Array.from({ length: this.startDay }); },
     get days() { return Array.from({ length: this.daysInMonth }, (_, i) => i + 1); },
     getDateKey(day) {
-        return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
     },
 
     init() {
             setInterval(() => {
-                fetch('/fetch-events?t=' + Date.now())
+                fetch("/fetch-events?t=" + Date.now())
                     .then(response => response.json())
                     .then(data => {
                         this.events = { ...data }; 
@@ -42,7 +42,7 @@
                     .catch(error => console.error(error));
             }, 1000);
         }
-}">
+}'>
 
     <main class="flex-1 p-4 md:p-8 bg-white overflow-y-auto">
         <div class="flex justify-between items-center mb-6">
