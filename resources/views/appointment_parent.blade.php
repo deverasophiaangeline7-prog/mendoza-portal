@@ -123,6 +123,33 @@
         transform: scale(1.1);
     }
 
+    .status-box-container {
+        display: flex;
+        border: 2px solid #000;
+        border-radius: 4px; 
+        background: #fff;
+        align-items: stretch;
+    }
+
+    .status-label-block {
+        background-color: var(--ma-bg-grey);
+        padding: 12px 15px;
+        font-weight: 900;
+        font-size: 15px;
+        border-right: 2px solid #000;
+        display: flex;
+        align-items: center;
+    }
+
+    .status-data-block {
+        padding: 12px 15px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        font-weight: 900;
+        font-size: 15px;
+    }
+
     .pill-orange {
         background-color: var(--ma-orange);
         color: black;
@@ -493,7 +520,7 @@
                 $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
             @endphp
 
-            <h2 class="calendar-title">My Schedule</h2>
+            <h2 class="calendar-title">{{ $adviserName ? 'Adviser ' . strtoupper($adviserName) . ' Schedule' : 'Adviser Schedule' }}</h2>
             
             <div class="calendar-header-wrapper">
                 <div class="calendar-navigation">
@@ -644,59 +671,8 @@
     </div>
 </div>
 
-<!-- INCOMING REQUESTS MODAL -->
-<div id="requestsModalOverlay" class="modal-overlay modal-hidden">
-    <div class="requests-modal">
-        <div class="modal-header">
-            <h2><i class="fa-solid fa-user-plus"></i> Incoming Requests</h2>
-            <button class="close-btn" onclick="closeModal('requestsModalOverlay')">&times;</button>
-        </div>
-
-        <div class="table-responsive">
-            <table class="modal-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Topic</th>
-                        <th>Date and Time</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($incomingRequests as $request)
-                    <tr>
-                        <td>
-                            {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
-                        </td>
-                        <td>{{ $request->discussion_topic }}</td>
-                        <td>
-                            {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
-                            {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
-                            {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <form action="{{ route('appointments.approve', $request->id) }}" method="POST" style="display:inline;">
-                                    @csrf @method('PATCH')
-                                    <button type="submit" class="btn-flat btn-approve">Approve</button>
-                                </form>
-                                <button type="button" class="btn-flat btn-decline" onclick="openDeclineModal({{ $request->id }})">Decline</button>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="4" style="text-align: center;">No incoming appointment requests.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
 <!-- DECLINE / SUGGEST NEW SCHEDULE MODAL -->
-<div id="declineModal" class="nested-modal modal-hidden">
+<div id="declineModal" class="modal-overlay modal-hidden">
     <div class="nested-modal-content">
         <h3 style="color: var(--ma-red); text-transform: uppercase;">State your reason for rescheduling</h3>
         

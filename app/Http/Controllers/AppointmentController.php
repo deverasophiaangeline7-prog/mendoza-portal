@@ -92,10 +92,8 @@ class AppointmentController extends Controller
                     ->get();
                 $adviserName = $adviserTeacher->name ?? ($adviserTeacher->first_name . ' ' . $adviserTeacher->last_name);
             }
-
-            return view('appointment_parent', compact('incomingRequests', 'mySentRequests', 'adviserSchedule', 'student', 'adviserName', 'bookedAppointments'));
-            
-        } elseif ($user->role === 'admin') {
+                
+                } elseif ($user->role === 'admin') {
             
             $advisersList = [];
 
