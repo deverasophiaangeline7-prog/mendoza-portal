@@ -12,48 +12,48 @@ use App\Models\AuditLog;
 class SchoolCalendarController extends Controller
 {
     public function index()
-{
-    $user = auth()->user();
-    $dbEvents = \App\Models\SchoolCalendar::all();
-    $eventsData = [];
+    {
+        $user = auth()->user();
+        $dbEvents = \App\Models\SchoolCalendar::all();
+        $eventsData = [];
 
-   foreach ($dbEvents as $event) {
-    $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
-    $eventsData[$event->start_date] = [
-        'name'       => $event->event_title,
-        'start_time' => $timeParts[0] ?? '',
-        'end_time'   => $timeParts[1] ?? '',
-        'time'       => $event->time, 
-        'ps'         => $event->description,
-    ];
-}
-
-    $announcementImages = \App\Models\AnnouncementImage::where('status', 'active')->get();
-
-    // --- ROLE-BASED TRAFFIC CONTROL ---
-    if ($user->role === 'admin') {
-        return view('dashboard', compact('eventsData', 'announcementImages', 'user'));
-    } 
-    
-    if ($user->role === 'teacher') {
-        return view('teacher.dashboard', compact('eventsData', 'announcementImages', 'user'));
-    }
-
-    if ($user->role === 'parent') {
-        // Since you are using user_id for parents, we find the student linked to this ID
-        $student = \App\Models\Student::where('user_id', $user->user_id)->first();
-
-        // If no student is found, you might want to handle that error
-        if (!$student) {
-            return "Error: No student record linked to this parent account.";
+        foreach ($dbEvents as $event) {
+            $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
+            $eventsData[$event->start_date] = [
+                'name'       => $event->event_title,
+                'start_time' => $timeParts[0] ?? '',
+                'end_time'   => $timeParts[1] ?? '',
+                'time'       => $event->time, 
+                'ps'         => $event->description,
+            ];
         }
 
-        // We pass the $student variable so the parent dashboard can show their name/grade
-        return view('parent.dashboard', compact('eventsData', 'announcementImages', 'user', 'student'));
-    }
+        $announcementImages = \App\Models\AnnouncementImage::where('status', 'active')->get();
 
-    return redirect('/');
-}
+        // --- ROLE-BASED TRAFFIC CONTROL ---
+        if ($user->role === 'admin') {
+            return view('dashboard', compact('eventsData', 'announcementImages', 'user'));
+        } 
+        
+        if ($user->role === 'teacher') {
+            return view('teacher.dashboard', compact('eventsData', 'announcementImages', 'user'));
+        }
+
+        if ($user->role === 'parent') {
+            // Since you are using user_id for parents, we find the student linked to this ID
+            $student = \App\Models\Student::where('user_id', $user->user_id)->first();
+
+            // If no student is found, you might want to handle that error
+            if (!$student) {
+                return "Error: No student record linked to this parent account.";
+            }
+
+            // We pass the $student variable so the parent dashboard can show their name/grade
+            return view('parent.dashboard', compact('eventsData', 'announcementImages', 'user', 'student'));
+        }
+
+        return redirect('/');
+    }
 
     public function store(Request $request)
     {
@@ -70,7 +70,6 @@ class SchoolCalendarController extends Controller
         );
 
         // --- NEW AUDIT LOG LOGIC ---
-        // We check if Laravel created a brand new row, or just updated an old one
         $actionType = $event->wasRecentlyCreated ? 'Create Event' : 'Update Event';
         $logDescription = $event->wasRecentlyCreated 
             ? Auth::user()->username . ' created a new calendar event: ' . $request->event_title 
@@ -83,13 +82,19 @@ class SchoolCalendarController extends Controller
         ]);
         // ---------------------------
 
-        // 2. TRIGGER NOTIFICATIONS
+        // 2. TRIGGER NOTIFICATIONS (DYNAMIC)
         $usersToNotify = User::whereIn('role', ['parent', 'teacher'])->get();
+        
+        // Dynamically set title and message based on whether it was created or updated
+        $notifTitle = $event->wasRecentlyCreated ? 'New School Event' : 'Updated School Event';
+        $notifMessage = $event->wasRecentlyCreated 
+            ? "A calendar event has been set: " . $request->event_title 
+            : "A calendar event has been updated: " . $request->event_title;
 
         foreach ($usersToNotify as $user) {
             $user->notifyUser(
-                'New School Event', 
-                "A calendar event has been set: " . $request->event_title, 
+                $notifTitle, 
+                $notifMessage, 
                 'announcement'
             );
         }
@@ -97,6 +102,7 @@ class SchoolCalendarController extends Controller
         // 3. RETURN RESPONSE
         return response()->json(['message' => 'Event saved and tracked!']);
     }
+
     public function edit(SchoolCalendar $schoolCalendar)
     {
         return view('calendar.edit', compact('schoolCalendar'));
@@ -115,6 +121,16 @@ class SchoolCalendarController extends Controller
             'start_date'  => $request->start_date,
             'time'        => $request->start_time . ' - ' . $request->end_time,
         ]);
+
+        // Added notification logic here as well just in case you edit from a separate page!
+        $usersToNotify = User::whereIn('role', ['parent', 'teacher'])->get();
+        foreach ($usersToNotify as $user) {
+            $user->notifyUser(
+                'Updated School Event', 
+                "A calendar event has been updated: " . $request->event_title, 
+                'announcement'
+            );
+        }
 
         return redirect()->route('dashboard')->with('success', 'Event updated!');
     }
@@ -145,15 +161,15 @@ class SchoolCalendarController extends Controller
         $eventsData = [];
 
         foreach ($dbEvents as $event) {
-        $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
-        $eventsData[$event->start_date] = [
-            'name'       => $event->event_title,
-            'start_time' => $timeParts[0] ?? '',
-            'end_time'   => $timeParts[1] ?? '',
-            'time'       => $event->time, // <-- ADDED THIS LINE
-            'ps'         => $event->description,
-        ];
-    }
+            $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
+            $eventsData[$event->start_date] = [
+                'name'       => $event->event_title,
+                'start_time' => $timeParts[0] ?? '',
+                'end_time'   => $timeParts[1] ?? '',
+                'time'       => $event->time, 
+                'ps'         => $event->description,
+            ];
+        }
 
         return response()->json($eventsData);
     }
