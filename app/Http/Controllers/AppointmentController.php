@@ -333,4 +333,16 @@ class AppointmentController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    /**
+     * Remove the specified appointment from storage.
+     */
+    public function destroy($id)
+    {
+        $appointment = \App\Models\Appointment::findOrFail($id);
+        
+        $appointment->delete();
+
+        return redirect()->back()->with('success', 'Appointment request cancelled successfully.');
+    }
 }

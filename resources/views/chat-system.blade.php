@@ -59,12 +59,12 @@
             <div class="flex items-center flex-1 mr-2 relative">
                 <span x-show="!searchOpen" class="text-gray-800">Chats</span>
                 <div x-show="searchOpen" class="w-full flex items-center" style="display: none;">
-                    <input type="text" x-model="searchQuery" placeholder="Search user name..." title="Search" class="w-full text-sm border border-gray-300 rounded-full px-3 py-1.5 focus:outline-none focus:border-[#6d0101] focus:ring-1 focus:ring-[#6d0101] bg-white">
+                    <input type="text" x-model="searchQuery" placeholder="Search user name..." class="w-full text-sm border border-gray-300 rounded-full px-3 py-1.5 focus:outline-none focus:border-[#6d0101] focus:ring-1 focus:ring-[#6d0101] bg-white">
                 </div>
             </div>
 
             <div class="flex items-center gap-2 flex-shrink-0">
-                <button @click="searchOpen = !searchOpen" class="text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full w-8 h-8 flex items-center justify-center transition">
+                <button @click="searchOpen = !searchOpen" title="Search" class="text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full w-8 h-8 flex items-center justify-center transition">
                     <i class="fa-solid text-sm" :class="searchOpen ? 'fa-xmark' : 'fa-magnifying-glass'"></i>
                 </button>
                 
@@ -303,7 +303,7 @@
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col" @click.away="newMsgModal = false">
             <div class="p-4 border-b bg-[#6d0101] text-white flex justify-between items-center">
                 <h3 class="font-bold text-lg">New Message</h3>
-                <button @click="newMsgModal = false" class="hover:text-gray-300 transition text-xl">
+                <button @click="newMsgModal = false" title="New Message" class="hover:text-gray-300 transition text-xl">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -313,7 +313,7 @@
                 <!-- Search Bar -->
                 <div class="relative mb-4">
                     <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
-                    <input type="text" x-model="userSearch" placeholder="Search by name or role..." title="Search" class="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#6d0101] transition-colors">
+                    <input type="text" x-model="userSearch" placeholder="Search by name or role..." class="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#6d0101] transition-colors">
                 </div>
 
                 <!-- Scrollable Contact List -->
@@ -372,7 +372,7 @@
                     <!-- Search Contacts -->
                     <div class="relative mb-3">
                         <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
-                        <input type="text" x-model="groupSearch" placeholder="Search members to add..." title="Search" class="w-full pl-11 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#6d0101] transition-colors text-sm">
+                        <input type="text" x-model="groupSearch" placeholder="Search members to add..." class="w-full pl-11 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#6d0101] transition-colors text-sm">
                     </div>
 
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Select Members</label>
