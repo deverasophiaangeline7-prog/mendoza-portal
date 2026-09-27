@@ -37,14 +37,16 @@ class NotificationController extends Controller
         };
     }
 
-    public function fetchNotifications()
+   public function fetchNotifications()
     {
         $user = auth()->user();
         if (!$user) return response()->json([]);
 
-        $filteredNotifications = $user->customNotifications
+        // Fetch ALL notifications directly from the Model to include read history
+        $filteredNotifications = Notification::where('user_id', $user->user_id ?? $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
             ->unique('notification_id') 
-            ->sortByDesc('created_at') 
             ->filter(function($notification) use ($user) {
                 $role = strtolower(trim($user->role));
                 $type = strtolower(trim($notification->type));
@@ -62,6 +64,7 @@ class NotificationController extends Controller
                 'type' => strtolower(trim($notif->type)),
                 'title' => $notif->title,
                 'message' => $notif->message,
+                'is_read' => (bool) $notif->is_read, // Send is_read state back to Alpine
                 'time_ago' => $notif->created_at ? $notif->created_at->setTimezone('Asia/Manila')->diffForHumans() : 'Just now'
             ];
         });

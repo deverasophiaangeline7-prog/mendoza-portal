@@ -69,12 +69,12 @@
                 </button>
                 
                 <div x-data="{ dropdownOpen: false }" class="relative">
-                    <button @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="text-white bg-[#6d0101] hover:bg-red-900 rounded-full w-8 h-8 flex items-center justify-center transition">
+                    <button title="New Message" @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="text-white bg-[#6d0101] hover:bg-red-900 rounded-full w-8 h-8 flex items-center justify-center transition">
                         <i class="fa-solid fa-plus text-sm"></i>
                     </button>
 
                     <div x-show="dropdownOpen" style="display: none;" class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                        <button @click="dropdownOpen = false; newMsgModal = true" class="w-full text-left block px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-100 border-b border-gray-100 transition-colors">
+                        <button  @click="dropdownOpen = false; newMsgModal = true" class="w-full text-left block px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-100 border-b border-gray-100 transition-colors">
                             <i class="fa-solid fa-pen-to-square mr-2 text-[#6d0101]"></i> New Message
                         </button>
                         @if(auth()->user()->role !== 'parent')
@@ -303,7 +303,7 @@
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col" @click.away="newMsgModal = false">
             <div class="p-4 border-b bg-[#6d0101] text-white flex justify-between items-center">
                 <h3 class="font-bold text-lg">New Message</h3>
-                <button @click="newMsgModal = false" title="New Message" class="hover:text-gray-300 transition text-xl">
+                <button @click="newMsgModal = false" class="hover:text-gray-300 transition text-xl">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>

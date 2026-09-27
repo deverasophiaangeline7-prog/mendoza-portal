@@ -424,9 +424,9 @@
         cursor: pointer;
     }
 
-    .btn-approve { background-color: var(--ma-green); color: white; border: none; }
-    .btn-reschedule { background-color: var(--ma-orange); color: black; border: 2px solid #000; }
-    .btn-decline { background-color: var(--ma-red); color: white; border: none; }
+    .btn-approve { background-color: var(--ma-green); color: black; border: none; }
+    .btn-reschedule { background-color: var(--ma-orange); color: black; border: none; }
+    .btn-decline { background-color: var(--ma-red); color: black; border: none; }
 
     .nested-modal {
         position: fixed;
@@ -1047,12 +1047,14 @@
 
     function openRescheduleModal(appointmentId) {
         const form = document.getElementById('rescheduleForm');
+        // Point to the exact reschedule route
         form.action = `/appointments/${appointmentId}/reschedule`; 
         openModal('rescheduleModal');
     }
 
     function openTrueDeclineModal(appointmentId) {
         const form = document.getElementById('trueDeclineForm');
+        // Point to the exact decline route
         form.action = `/appointments/${appointmentId}/decline`; 
         openModal('trueDeclineModal');
     }

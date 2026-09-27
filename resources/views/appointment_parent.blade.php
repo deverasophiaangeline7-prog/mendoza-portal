@@ -123,33 +123,6 @@
         transform: scale(1.1);
     }
 
-    .status-box-container {
-        display: flex;
-        border: 2px solid #000;
-        border-radius: 4px; 
-        background: #fff;
-        align-items: stretch;
-    }
-
-    .status-label-block {
-        background-color: var(--ma-bg-grey);
-        padding: 12px 15px;
-        font-weight: 900;
-        font-size: 15px;
-        border-right: 2px solid #000;
-        display: flex;
-        align-items: center;
-    }
-
-    .status-data-block {
-        padding: 12px 15px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        font-weight: 900;
-        font-size: 15px;
-    }
-
     .pill-orange {
         background-color: var(--ma-orange);
         color: black;
@@ -403,23 +376,36 @@
 
 <div class="dashboard-container">
     <div class="main-content">
-        
         <div class="left-column">
             
-            <div class="ma-card">
-                <h3>Appoint with your adviser</h3>
+            <div class="appointment-form-card">
+                <h3>Appoint with a parent</h3>
                 <form id="appointmentForm" action="{{ route('appointments.store') }}" method="POST" onsubmit="return validateAppointmentForm(event)">
                     @csrf
+                    <div class="form-group">
+                        <label>Name</label>
+                        <select name="parent_id" class="form-control" required>
+                            <option value="">Select Parent</option>
+                            @foreach($parents as $parent)
+                                <option value="{{ $parent->user_id }}">
+                                    {{ strtoupper(optional($parent->student)->first_name . ' ' . optional($parent->student)->last_name ?: $parent->username) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label>Discussion Topic</label>
                         <input type="text" name="discussion_topic" class="form-control" required>
                     </div>
+
                     <div class="form-group">
                         <label>Appointment Date</label>
                         <input type="date" id="appointment_date" name="appointment_date" class="form-control" required
                                min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
                                max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
                     </div>
+
                     <div class="time-group">
                         <div class="form-group" style="flex: 1;">
                             <label>Start Time</label>
@@ -430,126 +416,57 @@
                             <input type="time" id="end_time" name="end_time" class="form-control" required>
                         </div>
                     </div>
+
                     <button type="submit" class="btn-submit">Submit Request</button>
                 </form>
             </div>
 
-            @php
-                $activeRequest = $incomingRequests->first() ?? $mySentRequests->first();
-                $activeRequestStatus = $activeRequest?->status ?? 'none';
-                $statusLabel = ucfirst($activeRequestStatus);
-                if ($activeRequestStatus === 'none') {
-                    $statusLabel = 'No Requests';
-                }
-            @endphp
-
-            <div class="status-box-container">
-                <div class="status-label-block">Request Status:</div>
-                <div class="status-data-block">
-                    <span>{{ $statusLabel }}</span>
-                    @if($activeRequestStatus !== 'none')
-                        <span class="pill-orange">{{ $activeRequestStatus === 'reschedule' ? 'Reschedule' : 'Active' }}</span>
-                    @endif
-                </div>
+            <div style="text-align: left; font-weight: 900; font-size: 18px; margin-top: 20px; margin-bottom: 10px; margin-left: 5px;">
+                My Sent Requests
             </div>
-
-            <div class="ma-card">
-                <h3>My Requests</h3>
-
-                @if($incomingRequests->isEmpty() && $mySentRequests->isEmpty())
-                    <div style="text-align: center; font-weight: bold; font-size: 14px; margin-top: 15px;">
-                        No appointment requests yet.
-                    </div>
-                @else
-                    
-                    {{-- INCOMING REQUESTS (FROM TEACHER) --}}
-                    @if($incomingRequests->isNotEmpty())
-                        <div style="text-align: left; font-weight: 900; font-size: 14px; margin-bottom: 10px; color: var(--ma-red); margin-left: 5px;">
-                            Action Required (From Teacher)
-                        </div>
-                        <div class="table-responsive" style="margin-bottom: 20px;">
-                            <table class="pending-table">
-                                <thead>
-                                    <tr>
-                                        <th>Topic</th>
-                                        <th>Date and Time</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($incomingRequests as $request)
-                                    <tr>
-                                        <td>{{ $request->discussion_topic }}</td>
-                                        <td>
-                                            {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
-                                            {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
-                                            {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
-                                        </td>
-                                        <td style="text-align: center;">
-                                            <div class="action-buttons">
-                                                <form action="{{ route('appointments.approve', $request->id) }}" method="POST" style="display:inline;">
-                                                    @csrf @method('PATCH')
-                                                    <button type="submit" class="btn-flat btn-approve">Approve</button>
-                                                </form>
-                                                <button type="button" class="btn-flat btn-decline" onclick="openDeclineModal({{ $request->id }})">Decline</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-
-                    @if($incomingRequests->isNotEmpty() && $mySentRequests->isNotEmpty())
-                        <hr style="border: 1px dashed #ccc; margin-bottom: 20px; margin-top: 10px;">
-                    @endif
-
-                    {{-- SENT REQUESTS (TO TEACHER) --}}
-                    @if($mySentRequests->isNotEmpty())
-                        <div style="text-align: left; font-weight: 900; font-size: 14px; margin-bottom: 10px; margin-left: 5px;">
-                            Appointment Description
-                        </div>
-                        <div class="table-responsive">
-                            <table class="pending-table">
-                                <thead>
-                                    <tr>
-                                        <th>Topic</th>
-                                        <th>Date and Time</th>
-                                        <th>Status</th>
-                                        <th style="width: 45px;"></th> <!-- Cancel column -->
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($mySentRequests as $request)
-                                    <tr>
-                                        <td>{{ $request->discussion_topic }}</td>
-                                        <td>
-                                            {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
-                                            {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
-                                            {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
-                                        </td>
-                                        <td style="text-align: center;">
-                                            <span class="pill-orange" style="display: inline-block;">
-                                                {{ $request->status === 'reschedule' ? 'Reschedule' : ucfirst($request->status ?? 'Pending') }}
-                                            </span>
-                                        </td>
-                                        <td style="text-align: center;">
-                                            <!-- Using route('appointments.destroy') assuming this is your cancel route -->
-                                            <button type="button" class="btn-cancel-icon" title="Cancel Appointment" onclick="openCancelModal('{{ route('appointments.destroy', $request->id) }}')">
-                                                <i class="fa-solid fa-xmark"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-
-                @endif
+            <!-- Wrapped Table in table-responsive -->
+            <div class="table-responsive">
+                <table class="pending-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Topic</th>
+                            <th>Date & Time</th>
+                            <th>Status</th>
+                            <th style="width: 45px;"></th> <!-- Cancel column -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($mySentRequests as $request)
+                            <tr>
+                                <td>
+                                    {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
+                                </td>
+                                <td>{{ $request->discussion_topic }}</td>
+                                <td>
+                                    {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }},
+                                    {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
+                                    {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="pill-orange" style="display: inline-block;">
+                                        {{ $request->status === 'reschedule' ? 'Reschedule' : ucfirst($request->status ?? 'Pending') }}
+                                    </span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <button type="button" class="btn-cancel-icon" title="Cancel Appointment" onclick="openCancelModal('{{ route('appointments.destroy', $request->id) }}')">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" style="text-align: center;">No sent requests.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-
         </div>
 
         <div class="right-column">
@@ -572,16 +489,25 @@
                 for ($i = 0; $i < 5; $i++) {
                     $weekDays[] = $startOfWeek->copy()->addDays($i);
                 }
+
                 $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
             @endphp
 
-            <h2 class="calendar-title">{{ $adviserName ? 'Adviser ' . strtoupper($adviserName) . ' Schedule' : 'Adviser Schedule' }}</h2>
+            <h2 class="calendar-title">My Schedule</h2>
             
             <div class="calendar-header-wrapper">
                 <div class="calendar-navigation">
                     <a href="{{ request()->url() }}?date={{ $prevWeekDate }}" class="nav-arrow">&laquo;</a>
                     <h2 class="month-title">{{ $currentDate->format('F Y') }}</h2>
                     <a href="{{ request()->url() }}?date={{ $nextWeekDate }}" class="nav-arrow">&raquo;</a>
+                </div>
+
+                <div class="requests-trigger" onclick="openModal('requestsModalOverlay')">
+                    <div class="icon-container">
+                        <i class="fa-solid fa-user-group"></i>
+                        <span class="request-badge">{{ $incomingRequests->count() }}</span>
+                    </div>
+                    <span class="request-label">Requests</span>
                 </div>
             </div>
 
@@ -605,9 +531,11 @@
                                 <td class="time-col">{{ $time }}</td>
                                 @foreach($weekDays as $day)
                                     @php
-                                        $slot = $adviserSchedule->first(function ($schedule) use ($day, $time) {
-                                            return $schedule->date === $day->format('Y-m-d') && $schedule->time_slot === $time;
+                                        $slot = $schedules->first(function ($schedule) use ($day, $time) {
+                                            $schedTime = isset($schedule->time) ? $schedule->time : ($schedule->time_slot ?? '');
+                                            return $schedule->date === $day->format('Y-m-d') && $schedTime === $time;
                                         });
+                                        
                                         $cellClass = 'cell-white';
                                         $statusValue = 'available';
 
@@ -626,9 +554,9 @@
                                                 $statusValue = 'booked';
                                             }
                                         }
-                                        
-                                        $cellStartTime = \Carbon\Carbon::parse($day->format('Y-m-d') . ' ' . $time);
-                                        $cellEndTime = $cellStartTime->copy()->addHour();
+
+                                        $cellStartTime = \Carbon\Carbon::parse($day->format('Y-m-d') . ' ' . $time); 
+                                        $cellEndTime = $cellStartTime->copy()->addHour(); 
 
                                         $meetingTooltip = '';
                                         $meeting = $bookedAppointments->first(function ($appointment) use ($cellStartTime, $cellEndTime) {
@@ -644,10 +572,12 @@
                                             
                                             $appStart = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->start_time);
                                             $appEnd = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->end_time);
+
                                             $overlapStart = $appStart->max($cellStartTime);
                                             $overlapEnd = $appEnd->min($cellEndTime);
+                                            
                                             $durationInCell = $overlapStart->diffInMinutes($overlapEnd);
-
+                                            
                                             if ($durationInCell >= 60) {
                                                 $cellClass = 'cell-green';
                                             } elseif ($durationInCell <= 30) {
@@ -678,7 +608,9 @@
                 <div class="legend-item"><span class="cell-red"></span>Class Hours</div>
                 <div class="legend-item"><span class="cell-grey"></span>On Leave</div>
             </div>
-            <p class="disclaimer">Schedules booked on "On Leave" will be pending for reschedule.</p>
+            <p class="disclaimer">
+                Schedules booked on "On Leave" will be pending for reschedule.
+            </p>
         </div>
     </div>
 </div>
@@ -712,8 +644,59 @@
     </div>
 </div>
 
+<!-- INCOMING REQUESTS MODAL -->
+<div id="requestsModalOverlay" class="modal-overlay modal-hidden">
+    <div class="requests-modal">
+        <div class="modal-header">
+            <h2><i class="fa-solid fa-user-plus"></i> Incoming Requests</h2>
+            <button class="close-btn" onclick="closeModal('requestsModalOverlay')">&times;</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Topic</th>
+                        <th>Date and Time</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($incomingRequests as $request)
+                    <tr>
+                        <td>
+                            {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
+                        </td>
+                        <td>{{ $request->discussion_topic }}</td>
+                        <td>
+                            {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
+                            {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
+                            {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <form action="{{ route('appointments.approve', $request->id) }}" method="POST" style="display:inline;">
+                                    @csrf @method('PATCH')
+                                    <button type="submit" class="btn-flat btn-approve">Approve</button>
+                                </form>
+                                <button type="button" class="btn-flat btn-decline" onclick="openDeclineModal({{ $request->id }})">Decline</button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" style="text-align: center;">No incoming appointment requests.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <!-- DECLINE / SUGGEST NEW SCHEDULE MODAL -->
-<div id="declineModal" class="modal-overlay modal-hidden">
+<div id="declineModal" class="nested-modal modal-hidden">
     <div class="nested-modal-content">
         <h3 style="color: var(--ma-red); text-transform: uppercase;">State your reason for rescheduling</h3>
         

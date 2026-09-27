@@ -136,9 +136,10 @@
     <span class="block text-xl md:text-2xl mt-1">SY {{ $syText }}</span>
 </h3>
                     <div class="bg-[#b26905] rounded-[40px] p-6 border-[3px] border-black shadow-lg">
-                        <div class="flex justify-between items-center mb-4 px-2">
+                       <div class="flex justify-between items-center mb-4 px-2">
+                            <!-- Left Arrow -->
                             <button @click="prevMonth()" 
-                                    x-show="currentYear > {{ $syStartYear }} || (currentYear == {{ $syStartYear }} && currentMonth > 0)"
+                                    :class="{ 'invisible': currentYear == {{ $syStartYear }} && currentMonth == 0 }"
                                     class="text-white text-3xl hover:scale-125 transition">
                                 <i class="fa-solid fa-chevron-left"></i>
                             </button>
@@ -150,8 +151,9 @@
                                 <span class="text-white text-2xl font-black tracking-tighter" x-text="currentYear"></span>
                             </div>
                             
+                            <!-- Right Arrow -->
                             <button @click="nextMonth()" 
-                                    x-show="currentYear < {{ $syEndYear }} || (currentYear == {{ $syEndYear }} && currentMonth < 11)"
+                                    :class="{ 'invisible': currentYear == {{ $syEndYear }} && currentMonth == 11 }"
                                     class="text-white text-3xl hover:scale-125 transition">
                                 <i class="fa-solid fa-chevron-right"></i>
                             </button>

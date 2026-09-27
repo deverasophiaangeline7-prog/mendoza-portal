@@ -156,8 +156,9 @@
 
                 <div class="bg-[#b26905] rounded-[40px] p-6 border-[3px] border-black shadow-lg">
                     <div class="flex justify-between items-center mb-4 px-2">
+                        <!-- Left Arrow -->
                         <button @click="currentMonth === 0 ? (currentMonth = 11, currentYear--) : currentMonth--" 
-                                x-show="currentYear > {{ $syStartYear }} || (currentYear == {{ $syStartYear }} && currentMonth > 0)"
+                                :class="{ 'invisible': currentYear == {{ $syStartYear }} && currentMonth == 0 }"
                                 class="text-white text-3xl hover:scale-125 transition">
                             <i class="fa-solid fa-chevron-left"></i>
                         </button>
@@ -167,13 +168,13 @@
                             <span class="text-white text-2xl font-black tracking-tighter" x-text="currentYear"></span>
                         </div>
                         
+                        <!-- Right Arrow -->
                         <button @click="currentMonth === 11 ? (currentMonth = 0, currentYear++) : currentMonth++" 
-                                x-show="currentYear < {{ $syEndYear }} || (currentYear == {{ $syEndYear }} && currentMonth < 11)"
+                                :class="{ 'invisible': currentYear == {{ $syEndYear }} && currentMonth == 11 }"
                                 class="text-white text-3xl hover:scale-125 transition">
                             <i class="fa-solid fa-chevron-right"></i>
                         </button>
                     </div>
-                    
                     <div class="bg-white rounded-2xl p-4 border-2 border-black">
                         <div class="grid grid-cols-7 gap-2 mb-4">
                             @foreach(['SUN','MON','TUE','WED','THU','FRI','SAT'] as $day)
