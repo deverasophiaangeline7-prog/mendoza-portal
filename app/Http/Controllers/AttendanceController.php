@@ -130,9 +130,11 @@ class AttendanceController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+   public function store(Request $request)
     {
-        // 1. Relaxed validation so it doesn't reject "excused" or other formats
+        $todayManila = \Carbon\Carbon::now('Asia/Manila')->toDateString();
+        
+        // 1. Relaxed validation
         $request->validate([
             'attendance' => 'required|array',
             'attendance.*.student_id' => 'required',
@@ -153,14 +155,14 @@ class AttendanceController extends Controller
 
         foreach ($records as $record) {
             
-            // 2. Bulletproof mapping: Handles BOTH numbers ('4') and text ('excused') safely
+            // 2. Map status safely
             $rawStatus = strtolower(trim((string)$record['status']));
             $textStatus = match($rawStatus) {
                 '1', 'present' => 'Present',
                 '2', 'absent'  => 'Absent',
                 '3', 'late'    => 'Late',
                 '4', 'excused' => 'Excused',
-                default        => 'Present' // Fallback
+                default        => 'Present' 
             };
 
             // 3. Save to the database
@@ -174,30 +176,31 @@ class AttendanceController extends Controller
                 ]
             );
 
-        // 4. ONLY notify if the record is brand new OR the status actually changed
-if ($attendance->wasRecentlyCreated || $attendance->wasChanged('status')) {
-    
-    $student = Student::find($record['student_id']);
-    
-    if ($student && $student->user_id) {
-        $parent = User::find($student->user_id);
-        
-        if ($parent) {
-            $typeLabel = strtoupper($textStatus);
-            
-            // Format the date using Philippine Time
-            $formattedDate = \Carbon\Carbon::parse($record['date'])
-                                ->timezone('Asia/Manila')
-                                ->format('F j');
-            
-            $parent->notifyUser(
-                'Attendance Alert', 
-                "Notice: {$student->first_name} was marked {$typeLabel} for {$formattedDate}.", 
-                'attendance'
-            );
-        }
-    }
-}
+            // 4. THE MAGIC FIX: BULLETPROOF NOTIFICATION LOGIC
+            // We ONLY trigger a notification if the status actually changed 
+            // AND we specifically block "Present" to prevent mass notification spam.
+            if (($attendance->wasRecentlyCreated || $attendance->wasChanged('status')) && $textStatus !== 'Present') {
+                
+                $student = Student::find($record['student_id']);
+                
+                if ($student && $student->user_id) {
+                    $parent = User::find($student->user_id);
+                    
+                    if ($parent) {
+                        $typeLabel = strtoupper($textStatus);
+                        
+                        $formattedDate = \Carbon\Carbon::parse($record['date'])
+                                            ->timezone('Asia/Manila')
+                                            ->format('F j');
+                        
+                        $parent->notifyUser(
+                            'Attendance Alert', 
+                            "Notice: {$student->first_name} was marked {$typeLabel} for {$formattedDate}.", 
+                            'attendance'
+                        );
+                    }
+                }
+            }
         }
 
         \App\Models\AuditLog::create([
