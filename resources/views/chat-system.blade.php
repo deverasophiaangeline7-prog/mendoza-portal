@@ -528,37 +528,43 @@
             /**
              * Polling Loop Logic: Fetches new unread messages Dynamically.
              */
+            /**
+             * Polling Loop Logic: Fetches new unread messages AND checks "Seen" status.
+             */
             async pollNewMessages() {
                 if (!this.selectedUserId) return;
                 
                 try {
-                    // Call the new backend poll endpoint
+                    // Call the backend poll endpoint
                     const response = await fetch(`/messages/${this.selectedUserId}/poll`);
                     if (!response.ok) return;
                     
-                    const newMessagesData = await response.json();
+                    const data = await response.json();
+                    const newMessagesData = data.messages || [];
                     
+                    // 👇 NEW: Update the DOM if the other person read our messages
+                    if (data.last_sent_read) {
+                        const unreadStatusSpans = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
+                        unreadStatusSpans.forEach(statusSpan => {
+                            if (statusSpan.innerHTML.trim() === '') {
+                                statusSpan.innerHTML = '<span class="font-bold ml-1 text-gray-500">· Seen</span>';
+                            }
+                        });
+                    }
+
                     if (newMessagesData.length > 0) {
                         const chatMessagesWrapper = document.getElementById('chat-messages');
                         
-                        // Clear empty state if it's there
                         const emptyState = document.getElementById('empty-chat-state');
                         if (emptyState) emptyState.remove();
 
-                        // Track if we need to mark these new dynamic messages as read in DB
                         let needsMarkRead = false;
 
                         newMessagesData.forEach(msg => {
-                            // Perfect duplicate protection using Message ID (added during rendering)
                             const existingMsgBubble = document.getElementById(`msg-bubble-${msg.id}`);
                             if (!existingMsgBubble) {
-                                // 1-on-1 chats: other person sent it, and it's unread.
-                                // Group chats: someone else sent it.
-                                
                                 needsMarkRead = true; // DB seen needed
 
-                                // Render the new bubble dynamically. 
-                                // Patched: Bubble receives specific ID `msg-bubble-${msg.id}`
                                 chatMessagesWrapper.insertAdjacentHTML('beforeend', `
                                     <div id="msg-bubble-${msg.id}" class="mb-4 w-full text-left js-dynamically-fetched-bubble">
                                         <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-gray-100 text-gray-800 rounded-bl-none">
@@ -572,20 +578,17 @@
                             }
                         });
 
-                        // Immediately scroll down to new dynamic dynamic messages
                         this.$nextTick(() => { 
                             const container = document.getElementById('message-container');
                             if(container) container.scrollTop = container.scrollHeight; 
                         });
 
-                        // If we dynamically fetched new unread dynamic 1-on-1 messages, immediately synchronize the DB state.
                         if (needsMarkRead && !this.isGroupChat) {
                             this.dynamicallyMarkRead();
                         }
                     }
                     
                 } catch (err) {
-                    // Silently fail, loop will retry.
                     console.error("Polling error:", err);
                 }
             },

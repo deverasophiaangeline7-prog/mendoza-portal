@@ -50,7 +50,7 @@ class NotificationController extends Controller
                 $type = strtolower(trim($notification->type));
 
                 if ($role === 'teacher') {
-                    return in_array($type, ['announcement', 'event', 'school event', 'calendar', 'deadline_alert', 'appointment']); 
+                    return in_array($type, ['announcement', 'event', 'school event', 'calendar', 'deadline_alert', 'appointment', 'security']); 
                 }
                 return true; 
             })->values(); 

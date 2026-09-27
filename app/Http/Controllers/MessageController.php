@@ -469,23 +469,22 @@ class MessageController extends Controller
         
         // Find the other person (strict 1-on-1)
         $receiver = User::find($conversationId);
-        if (!$receiver) return response()->json([]);
+        if (!$receiver) return response()->json(['messages' => [], 'last_sent_read' => false]);
 
         // Are we polling a strict 1-on-1 conversation?
         $isGroup = !is_null($receiver->custom_name);
 
         if ($isGroup) {
             // Fetch messages sent TO this group since initial load
-            // (Need to pass 'timestamp' or 'last_id' in a real production system, but this handles basic sync)
             $newMessages = Message::where('receiver_id', $conversationId)
                                     ->where('sender_id', '!=', $authId) // Don't pull my own sent messages
-                                    ->where('created_at', '>', now()->subSeconds(30)) // Safety net: messages within last 30s
+                                    ->where('created_at', '>', now()->subSeconds(30)) 
                                     ->orderBy('created_at', 'asc')->get();
         } else {
             // Fetch strict 1-on-1 messages sent FROM them TO me, specifically unread.
             $newMessages = Message::where('sender_id', $conversationId)
                                     ->where('receiver_id', $authId)
-                                    ->where('is_read', false) // Only poll unread messages
+                                    ->where('is_read', false) 
                                     ->orderBy('created_at', 'asc')->get();
         }
 
@@ -495,11 +494,27 @@ class MessageController extends Controller
                 'id' => $msg->id,
                 'content' => $msg->content,
                 'sender_id' => $msg->sender_id,
-                // Pass formatted time using Manila timezone
                 'time_formatted' => $msg->created_at->setTimezone('Asia/Manila')->format('g:i A'),
             ];
         });
 
-        return response()->json($formattedMessages);
+        // 👇 NEW: Check if the last message I sent has been read by them!
+        $lastSentMessageRead = false;
+        if (!$isGroup) {
+            $lastMsg = Message::where('sender_id', $authId)
+                              ->where('receiver_id', $conversationId)
+                              ->orderBy('id', 'desc')
+                              ->first();
+            
+            if ($lastMsg && $lastMsg->is_read) {
+                $lastSentMessageRead = true;
+            }
+        }
+
+        // Return structured JSON with both the messages AND the seen status
+        return response()->json([
+            'messages' => $formattedMessages,
+            'last_sent_read' => $lastSentMessageRead
+        ]);
     }
 }
