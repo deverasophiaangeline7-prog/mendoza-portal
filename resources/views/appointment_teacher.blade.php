@@ -615,7 +615,7 @@
                                 <th>Date & Time</th>
                                 <th>Status</th>
                                 <th style="width: 45px;"></th> <!-- Cancel column -->
-                            </tr>
+                                </tr>
                         </thead>
                         <tbody>
                             @forelse($mySentRequests as $request)
@@ -968,14 +968,16 @@
         // Grab the discussion topic to validate symbols
         const topicInput = document.querySelector('input[name="discussion_topic"]').value;
 
-        if (!dateInput || !startTimeInput || !endTimeInput) return true;
+        // Only allow letters, numbers, spaces, periods, commas, hyphens, and apostrophes
+        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
 
-        // Block dangerous characters like < and >
-        if (/[<>]/.test(topicInput)) {
+        if (invalidTopicRegex.test(topicInput)) {
             event.preventDefault();
-            showValidationPopUp('Symbols like < and > are not allowed in the discussion topic.');
+            showValidationPopUp('The discussion topic can only contain letters, numbers, spaces, periods, commas, hyphens, and apostrophes.');
             return false;
         }
+
+        if (!dateInput || !startTimeInput || !endTimeInput) return true;
 
         const today = "{{ \Carbon\Carbon::now()->format('Y-m-d') }}";
         const maxDate = "{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}";
