@@ -623,7 +623,14 @@ class ReportCardController extends Controller
                 'activeYear' => $schoolYear
             ]);
         } else {
+            // Try to get the number from the grade level first
             preg_match('/\d+/', $gradeLevel, $matches);
+
+            // Fallback: Try extracting it from the section name (e.g., "2 - HOPE")
+            if (empty($matches)) {
+                preg_match('/\d+/', $displaySection, $matches);
+            }
+
             $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
 
             if ($gradeNum == 1) {
