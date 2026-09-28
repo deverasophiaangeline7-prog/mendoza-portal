@@ -424,9 +424,9 @@
         cursor: pointer;
     }
 
-    .btn-approve { background-color: var(--ma-green); color: black; border: none; }
-    .btn-reschedule { background-color: var(--ma-orange); color: black; border: none; }
-    .btn-decline { background-color: var(--ma-red); color: black; border: none; }
+    .btn-approve { background-color: var(--ma-green); color: black; border: 2px solid #000; }
+    .btn-reschedule { background-color: var(--ma-orange); color: black; border: 2px solid #000; }
+    .btn-decline { background-color: var(--ma-red); color: black; border: 2px solid #000; }
 
     .nested-modal {
         position: fixed;

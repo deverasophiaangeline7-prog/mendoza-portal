@@ -151,8 +151,8 @@
     }
 
     .btn-approve { background-color: var(--ma-green); color: black; border: 2px solid #000; }
-    .btn-reschedule { background-color: var(--ma-orange); color: black; border: none; }
-    .btn-decline { background-color: var(--ma-red); color: white; border: none; }
+    .btn-reschedule { background-color: var(--ma-orange); color: black; border: 2px solid #000; }
+    .btn-decline { background-color: var(--ma-red); color: black; border: 2px solid #000; }
 
     /* Responsive Table Wrapper */
     .table-responsive {
@@ -673,7 +673,7 @@
 </div>
 
 <!-- RESCHEDULE MODAL -->
-<div id="rescheduleModal" class="nested-modal modal-hidden">
+<div id="rescheduleModal" class="modal-overlay modal-hidden">
     <div class="nested-modal-content">
         <h3 style="color: var(--ma-orange); font-weight: bold; text-transform: uppercase;">State your reason for rescheduling</h3>
         
@@ -714,7 +714,7 @@
 </div>
 
 <!-- TRUE DECLINE MODAL -->
-<div id="trueDeclineModal" class="nested-modal modal-hidden">
+<div id="trueDeclineModal" class="modal-overlay modal-hidden">
     <div class="nested-modal-content">
         <h3 style="color: var(--ma-red); font-weight: bold; text-transform: uppercase;">State your reason for declining</h3>
         
