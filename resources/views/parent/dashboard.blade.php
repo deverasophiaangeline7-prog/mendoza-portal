@@ -17,7 +17,7 @@
 @endphp
 
 <!-- We wrap the main content in a single div so all elements share the Alpine data -->
-<div class="flex-1 flex flex-col min-h-screen" x-data='{ 
+<<div class="flex-1 flex flex-col min-h-screen" x-data='{ 
     currentMonth: {{ now()->month - 1 }}, 
     currentYear: {{ now()->year }}, 
     selectedDate: {{ now()->day }},
@@ -28,20 +28,30 @@
     get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); },
     get blanks() { return Array.from({ length: this.startDay }); },
     get days() { return Array.from({ length: this.daysInMonth }, (_, i) => i + 1); },
+    
     getDateKey(day) {
         return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
     },
-
+    // NEW: Added Time Formatter
+    formatTime(time) {
+        if (!time) return "";
+        let parts = time.split(":");
+        let hours = parseInt(parts[0]);
+        let minutes = parts[1];
+        let ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12 || 12; 
+        return `${hours}:${minutes} ${ampm}`;
+    },
     init() {
-            setInterval(() => {
-                fetch("/fetch-events?t=" + Date.now())
-                    .then(response => response.json())
-                    .then(data => {
-                        this.events = { ...data }; 
-                    })
-                    .catch(error => console.error(error));
-            }, 1000);
-        }
+        setInterval(() => {
+            fetch("/fetch-events?t=" + Date.now())
+                .then(response => response.json())
+                .then(data => {
+                    this.events = { ...data }; 
+                })
+                .catch(error => console.error(error));
+        }, 1000);
+    }
 }'>
 
     <main class="flex-1 p-4 md:p-8 bg-white overflow-y-auto">

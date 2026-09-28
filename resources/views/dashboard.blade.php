@@ -7,6 +7,7 @@
     <!-- We wrapped EVERYTHING in this x-data block so the button and modal can see each other -->
     <div x-data="{ 
         openModal: false, 
+        deleteModalOpen: false,
         showNotification: false,
         notificationMessage: '',
         triggerNotification(msg) { this.notificationMessage = msg; this.showNotification = true; setTimeout(() => this.showNotification = false, 3000); },
@@ -203,13 +204,9 @@
                                 isEditing = true; 
                             " class="text-green-500 font-black text-lg hover:scale-110 transition">+ Edit</button>
                             
-                            <button @click="
-                                if(confirm('Delete this event?')) {
-                                    let key = getDateKey(selectedDate);
-                                    fetch('/calendar/delete/' + key, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } })
-                                    .then(res => res.ok && delete events[key]);
-                                }
-                            " class="text-red-600 font-black text-lg hover:scale-110 transition">- Delete</button>
+                            <button @click="deleteModalOpen = true" class="text-red-600 font-black text-lg hover:scale-110 transition">
+                                - Delete
+                            </button>
                         </div>
 
                         <div class="space-y-6">
@@ -336,4 +333,38 @@
         
     </div> <!-- Closes the wrapper div we added at the top -->
 
+    <!-- CUSTOM DELETE CONFIRMATION MODAL -->
+        <div x-show="deleteModalOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[150]" x-cloak>
+            <div @click.away="deleteModalOpen = false" class="bg-white p-8 rounded-3xl shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm border-[4px] border-red-700 text-center relative" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-90" x-transition:enter-end="opacity-100 scale-100">
+                
+                <div class="w-16 h-16 rounded-full bg-red-100 border-[3px] border-red-700 flex items-center justify-center mx-auto mb-4 text-3xl text-red-700 shadow-[4px_4px_0px_0px_rgba(185,28,28,1)]">
+                    <i class="fa-solid fa-trash"></i>
+                </div>
+                
+                <h3 class="text-2xl font-black mb-2 text-red-800 uppercase italic">Delete Event?</h3>
+                <p class="font-bold text-gray-600 mb-8 uppercase text-xs">
+                    Are you sure you want to delete <span class="text-red-600 font-black" x-text="events[getDateKey(selectedDate)]?.name"></span>? This action cannot be undone.
+                </p>
+                
+                <div class="flex space-x-3">
+                    <button type="button" @click="deleteModalOpen = false" class="flex-1 px-4 py-3 bg-gray-200 border-[3px] border-black text-black font-black uppercase rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-300 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
+                        Cancel
+                    </button>
+                    
+                    <button type="button" @click="
+                        let key = getDateKey(selectedDate);
+                        fetch('/calendar/delete/' + key, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } })
+                        .then(res => {
+                            if(res.ok) {
+                                delete events[key];
+                                deleteModalOpen = false;
+                                triggerNotification('Event deleted successfully!');
+                            }
+                        });
+                    " class="flex-1 px-4 py-3 bg-red-600 border-[3px] border-black text-white font-black uppercase rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-700 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
 @endsection

@@ -10,11 +10,36 @@
     selectedDate: {{ now()->day }},
     monthNames: ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'],
     events: {{ json_encode($eventsData ?? new \stdClass()) }}, 
-    passwordModal: {{ $errors->has('current_password') || $errors->has('password') ? 'true' : 'false' }},
+    passwordModal: {{ $errors->has('current_password') \vert{}\vert{}$errors->has('password') ? 'true' : 'false' }},
     get daysInMonth() { return new Date(this.currentYear, this.currentMonth + 1, 0).getDate(); },
     get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); },
     get blanks() { return Array.from({ length: this.startDay }); },
-    get days() { return Array.from({ length: this.daysInMonth }, (_, i) => i + 1); }
+    get days() { return Array.from({ length: this.daysInMonth }, (_, i) => i + 1); },
+    
+    // NEW: Added Helper Functions & Real-Time Sync
+    getDateKey(day) {
+        return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    },
+    formatTime(time) {
+        if (!time) return '';
+        let parts = time.split(':');
+        let hours = parseInt(parts[0]);
+        let minutes = parts[1];
+        let ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12; 
+        return `${hours}:${minutes} ${ampm}`;
+    },
+    init() {
+        // This makes the real-time sync work for the calendar!
+        setInterval(() => {
+            fetch('/fetch-events?t=' + Date.now())
+                .then(response => response.json())
+                .then(data => {
+                    this.events = { ...data }; 
+                })
+                .catch(error => console.error(error));
+        }, 1000);
+    }
 }">
 
     <main class="flex-1 p-4 md:p-8 bg-white overflow-y-auto">
@@ -208,18 +233,17 @@
                     
                     <template x-if="events && events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0')]">
                         <div class="space-y-6">
-                            <p class="font-black text-lg text-gray-800 uppercase">Name of the event:</p>
-                            <h4 class="text-red-600 text-4xl font-black uppercase leading-tight" 
-                                x-text="events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0')].name"></h4>
-                            
                             <p class="font-black text-lg text-gray-800 uppercase">Time:</p>
-                            <p class="text-red-600 text-2xl font-black italic" 
-                                x-text="events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0')].time"></p>
-                            
+                            <p class="text-red-600 text-2xl font-black italic">
+                                <span x-text="formatTime(events[getDateKey(selectedDate)]?.start_time)"></span>
+                                <span class="text-black not-italic mx-2">-</span>
+                                <span x-text="formatTime(events[getDateKey(selectedDate)]?.end_time)"></span>
+                            </p>
+
                             <div class="mt-4 border-t pt-4 border-dashed border-black">
                                 <p class="font-black text-gray-800 uppercase text-sm">Description:</p>
                                 <p class="font-normal italic text-red-600" 
-                                   x-text="events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0')].ps"></p>
+                                x-text="events[getDateKey(selectedDate)]?.ps || 'No description'"></p>
                             </div>
                         </div>
                     </template>
