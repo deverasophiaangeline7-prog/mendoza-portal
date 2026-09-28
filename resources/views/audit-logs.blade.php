@@ -150,40 +150,49 @@
             });
         }
     });
+</script> <!-- 👈 YOU WERE MISSING THIS CLOSING TAG! -->
 
-    // REAL-TIME AUDIT LOGS SYNC
+<!-- Add Pusher & Echo exclusively for the Audit Logs page -->
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
+
+<script>
+    // 1. Establish the Antenna
+    window.Pusher = Pusher;
+    
+    window.Echo = new Echo({
+        broadcaster: 'pusher',
+        key: '{{ config("broadcasting.connections.pusher.key") }}',
+        cluster: '{{ config("broadcasting.connections.pusher.options.cluster", "ap1") }}',
+        forceTLS: true
+    });
+
+    // 2. Listen for the specific 'NewAuditLog' broadcast
     if (window.Echo) {
         window.Echo.channel('audit-logs')
             .listen('NewAuditLog', (e) => {
                 const tableBody = document.getElementById('table-body');
                 const log = e.log;
                 
-                // 1. Format the Date and Time dynamically
                 const dateObj = new Date(log.created_at);
                 const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-                const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }).replace('AM', 'AM').replace('PM', 'PM'); // Normalizes AM/PM
+                const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }).replace('AM', 'AM').replace('PM', 'PM');
                 
-                // 2. Resolve the display name (mimicking your backend logic)
                 let displayName = 'SYSTEM';
                 if (log.user) {
                     displayName = log.user.name || log.user.username;
                 }
 
-                // 3. Format the description
                 let desc = log.description;
                 if (log.user && log.user.username) {
                     const regex = new RegExp(log.user.username, "gi");
                     desc = desc.replace(regex, displayName);
                 }
 
-                // 4. Remove the "No records found" row if it's currently showing
                 const emptyRow = tableBody.querySelector('td[colspan="4"]');
                 if (emptyRow) emptyRow.parentElement.remove();
 
-                // 5. Build the new HTML row
                 const tr = document.createElement('tr');
-                
-                // Add a temporary blue highlight effect so the admin notices it pop in
                 tr.className = 'bg-blue-100 transition-colors duration-1000'; 
                 
                 tr.innerHTML = `
@@ -204,10 +213,8 @@
                     </td>
                 `;
                 
-                // 6. Insert at the top of the table
                 tableBody.insertBefore(tr, tableBody.firstChild);
                 
-                // 7. Fade out the blue highlight after 2 seconds
                 setTimeout(() => {
                     tr.classList.remove('bg-blue-100');
                 }, 2000);
