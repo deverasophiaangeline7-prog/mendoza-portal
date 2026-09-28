@@ -652,8 +652,9 @@ class ReportCardController extends Controller
                 'coreValues' => ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'],
                 'savedGrades' => $existingGrades,
                 'savedBehaviors' => $existingBehaviors,
-                'canManage' => $canManage,
-                'activeYear' => $schoolYear
+                'canManage' => false,
+                'activeYear' => $schoolYear,
+                'activeTerm' => 3 // Force Term 3 open for viewing the completed archive
             ]);
         }
     }
