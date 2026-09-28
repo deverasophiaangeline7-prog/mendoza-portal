@@ -159,6 +159,12 @@ class UserController extends Controller
                 })->count();
 
                 if ($expectedSubjects > 0 && $completedSubjects < $expectedSubjects) {
+                    dd([
+                        'Student LRN/ID' => $student->student_id ?? $student->id,
+                        'Expected Subjects (From subject_assignments)' => $expectedSubjects,
+                        'Completed Subjects (From grades table)' => $completedSubjects,
+                        'Actual Grades in DB' => $student->grades->toArray()
+                    ]);
                     $incompleteElementaryCount++;
                 }
             }
