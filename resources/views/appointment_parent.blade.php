@@ -796,6 +796,12 @@
             return false;
         }
 
+        if (startMins < 780 && endMins > 720) {
+            event.preventDefault();
+            showValidationPopUp('Appointments cannot be scheduled during the 12:00 PM - 1:00 PM lunch break.');
+            return false;
+        }
+
         if (duration <= 0) {
             event.preventDefault();
             showValidationPopUp('Invalid time selected. The end time must be later than the start time.');

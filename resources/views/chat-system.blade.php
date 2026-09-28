@@ -110,7 +110,8 @@
                                     @endif
                                 </span>
                             </div>
-                            <p id="sidebar-text-{{ $user->user_id }}" class="text-xs truncate mt-0.5 {{ $hasUnread ? 'text-gray-900 font-semibold' : 'text-gray-500' }}">
+                            <!-- This is the updated, constrained paragraph -->
+                            <p id="sidebar-text-{{ $user->user_id }}" class="text-xs block mt-0.5 {{ $hasUnread ? 'text-gray-900 font-semibold' : 'text-gray-500' }}" style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; max-height: 1.15em; line-height: 1.15em;">
                                 {{ $latestMsg ? $latestMsg->content : 'No messages yet...' }}
                             </p>
                         </div>
