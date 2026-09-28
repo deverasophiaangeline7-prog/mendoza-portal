@@ -413,7 +413,7 @@
                 </form>
             </div>
 
-            <div class="ma-card">
+            <div class="ma-card" id="sync-parent-requests">
                 <h3>My Requests</h3>
 
                 @if($incomingRequests->isEmpty() && $mySentRequests->isEmpty())
@@ -757,8 +757,18 @@
         const dateInput = document.getElementById('appointment_date').value;
         const startTimeInput = document.getElementById('start_time').value;
         const endTimeInput = document.getElementById('end_time').value;
+        
+        // Grab the discussion topic to validate symbols
+        const topicInput = document.querySelector('input[name="discussion_topic"]').value;
 
         if (!dateInput || !startTimeInput || !endTimeInput) return true;
+
+        // Block dangerous characters like < and >
+        if (/[<>]/.test(topicInput)) {
+            event.preventDefault();
+            showValidationPopUp('Symbols like < and > are not allowed in the discussion topic.');
+            return false;
+        }
 
         const today = "{{ \Carbon\Carbon::now()->format('Y-m-d') }}";
         const maxDate = "{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}";
@@ -800,6 +810,16 @@
             event.preventDefault();
             showValidationPopUp('Appointments cannot be scheduled during the 12:00 PM - 1:00 PM lunch break.');
             return false;
+        }
+
+        if (dateInput === today) {
+            const now = new Date();
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            if (startMins <= currentMins) {
+                event.preventDefault();
+                showValidationPopUp('Appointments cannot be booked for a past time today.');
+                return false;
+            }
         }
 
         if (duration <= 0) {
@@ -873,5 +893,26 @@
         if (event.target === decOverlay) closeModal('trueDeclineModal');
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
+
+    // SILENT BACKGROUND SYNC FOR APPOINTMENTS
+    setInterval(() => {
+        const isModalOpen = document.querySelectorAll('.modal-overlay:not(.modal-hidden)').length > 0;
+        
+        if (!isModalOpen) {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    const newParentRequests = doc.getElementById('sync-parent-requests');
+                    const currentParentRequests = document.getElementById('sync-parent-requests');
+                    if (newParentRequests && currentParentRequests) {
+                        currentParentRequests.innerHTML = newParentRequests.innerHTML;
+                    }
+                })
+                .catch(error => console.error('Error syncing appointments:', error));
+        }
+    }, 5000);
 </script>
 @endsection

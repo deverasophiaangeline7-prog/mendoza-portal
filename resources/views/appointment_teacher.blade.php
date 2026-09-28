@@ -600,51 +600,54 @@
                 </form>
             </div>
 
-            <div style="text-align: left; font-weight: 900; font-size: 18px; margin-top: 20px; margin-bottom: 10px; margin-left: 5px;">
-                My Sent Requests
-            </div>
-            <!-- Wrapped Table in table-responsive -->
-            <div class="table-responsive">
-                <table class="pending-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Topic</th>
-                            <th>Date & Time</th>
-                            <th>Status</th>
-                            <th style="width: 45px;"></th> <!-- Cancel column -->
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($mySentRequests as $request)
+            <!-- ADDED ID HERE FOR SYNCING -->
+            <div id="sync-teacher-sent">
+                <div style="text-align: left; font-weight: 900; font-size: 18px; margin-top: 20px; margin-bottom: 10px; margin-left: 5px;">
+                    My Sent Requests
+                </div>
+                <!-- Wrapped Table in table-responsive -->
+                <div class="table-responsive">
+                    <table class="pending-table">
+                        <thead>
                             <tr>
-                                <td>
-                                    {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
-                                </td>
-                                <td>{{ $request->discussion_topic }}</td>
-                                <td>
-                                    {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }},
-                                    {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
-                                    {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
-                                </td>
-                                <td style="text-align: center;">
-                                    <span class="pill-orange" style="display: inline-block;">
-                                        {{ $request->status === 'reschedule' ? 'Reschedule' : ucfirst($request->status ?? 'Pending') }}
-                                    </span>
-                                </td>
-                                <td style="text-align: center;">
-                                    <button type="button" class="btn-cancel-icon" title="Cancel Appointment" onclick="openCancelModal('{{ route('appointments.destroy', $request->id) }}')">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                </td>
+                                <th>Name</th>
+                                <th>Topic</th>
+                                <th>Date & Time</th>
+                                <th>Status</th>
+                                <th style="width: 45px;"></th> <!-- Cancel column -->
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" style="text-align: center;">No sent requests.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse($mySentRequests as $request)
+                                <tr>
+                                    <td>
+                                        {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
+                                    </td>
+                                    <td>{{ $request->discussion_topic }}</td>
+                                    <td>
+                                        {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }},
+                                        {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
+                                        {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <span class="pill-orange" style="display: inline-block;">
+                                            {{ $request->status === 'reschedule' ? 'Reschedule' : ucfirst($request->status ?? 'Pending') }}
+                                        </span>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <button type="button" class="btn-cancel-icon" title="Cancel Appointment" onclick="openCancelModal('{{ route('appointments.destroy', $request->id) }}')">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" style="text-align: center;">No sent requests.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -831,7 +834,8 @@
             <button class="close-btn" onclick="closeModal('requestsModalOverlay')">&times;</button>
         </div>
 
-        <div class="table-responsive">
+        <!-- ADDED ID HERE FOR SYNCING -->
+        <div class="table-responsive" id="sync-teacher-incoming">
             <table class="modal-table">
                 <thead>
                     <tr>
@@ -960,8 +964,18 @@
         const dateInput = document.getElementById('appointment_date').value;
         const startTimeInput = document.getElementById('start_time').value;
         const endTimeInput = document.getElementById('end_time').value;
+        
+        // Grab the discussion topic to validate symbols
+        const topicInput = document.querySelector('input[name="discussion_topic"]').value;
 
         if (!dateInput || !startTimeInput || !endTimeInput) return true;
+
+        // Block dangerous characters like < and >
+        if (/[<>]/.test(topicInput)) {
+            event.preventDefault();
+            showValidationPopUp('Symbols like < and > are not allowed in the discussion topic.');
+            return false;
+        }
 
         const today = "{{ \Carbon\Carbon::now()->format('Y-m-d') }}";
         const maxDate = "{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}";
@@ -999,10 +1013,22 @@
             return false;
         }
 
+        // ADDED CHECK: Prevent Lunch Break Bookings
         if (startMins < 780 && endMins > 720) {
             event.preventDefault();
             showValidationPopUp('Appointments cannot be scheduled during the 12:00 PM - 1:00 PM lunch break.');
             return false;
+        }
+
+        // ADDED CHECK: Prevent past times on the current day
+        if (dateInput === today) {
+            const now = new Date();
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            if (startMins <= currentMins) {
+                event.preventDefault();
+                showValidationPopUp('Appointments cannot be booked for a past time today.');
+                return false;
+            }
         }
 
         if (duration <= 0) {
@@ -1088,5 +1114,41 @@
             window.history.replaceState({}, document.title, window.location.pathname);
         }
     });
+
+    // SILENT BACKGROUND SYNC FOR APPOINTMENTS
+    setInterval(() => {
+        const isModalOpen = document.querySelectorAll('.modal-overlay:not(.modal-hidden)').length > 0;
+        
+        if (!isModalOpen) {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // 1. Sync Teacher Sent Requests
+                    const newTeacherSent = doc.getElementById('sync-teacher-sent');
+                    const currentTeacherSent = document.getElementById('sync-teacher-sent');
+                    if (newTeacherSent && currentTeacherSent) {
+                        currentTeacherSent.innerHTML = newTeacherSent.innerHTML;
+                    }
+
+                    // 2. Sync Teacher Incoming Requests Modal
+                    const newTeacherIncoming = doc.getElementById('sync-teacher-incoming');
+                    const currentTeacherIncoming = document.getElementById('sync-teacher-incoming');
+                    if (newTeacherIncoming && currentTeacherIncoming) {
+                        currentTeacherIncoming.innerHTML = newTeacherIncoming.innerHTML;
+                    }
+
+                    // 3. Sync the Teacher's Request Badge Number
+                    const newBadge = doc.querySelector('.request-badge');
+                    const currentBadge = document.querySelector('.request-badge');
+                    if (newBadge && currentBadge) {
+                        currentBadge.innerText = newBadge.innerText;
+                    }
+                })
+                .catch(error => console.error('Error syncing appointments:', error));
+        }
+    }, 5000);
 </script>
 @endsection
