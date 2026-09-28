@@ -588,10 +588,11 @@ class ReportCardController extends Controller
         if ($history) {
             $gradeLevel = $history->grade_level ? strtoupper(trim($history->grade_level)) : '';
             $displaySection = strtoupper($history->section_name);
-        }else {
+        } else {
             $curr = strtoupper(trim($student->grade_level));
             
-            if ($curr === '1') {
+            // Cleaned up fallback grade calculation
+            if ($curr === '1' || $curr === 'GRADE 1') {
                 $gradeLevel = 'PREPARATORY';
             } elseif (is_numeric($curr)) {
                 $gradeLevel = (string)max(1, (int)$curr - 1);
@@ -601,6 +602,7 @@ class ReportCardController extends Controller
             
             $displaySection = $student->section ? strtoupper($gradeLevel . ' - ' . $student->section->section_name) : 'ARCHIVED';
         }
+        
 
         $nkpLevels = ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY'];
         $hasNkp = in_array($gradeLevel, $nkpLevels) || NkpEvaluation::where('student_id', $student_id)->where('school_year_id', $school_year_id)->exists();
