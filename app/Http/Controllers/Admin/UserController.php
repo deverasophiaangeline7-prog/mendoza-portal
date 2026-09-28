@@ -201,7 +201,6 @@ class UserController extends Controller
                     \App\Models\StudentHistory::create([
                         'student_id' => $student->student_id,
                         'school_year_id' => $currentYear->id,
-                        'grade_level' => strtoupper(trim($student->grade_level)),
                         'section_name' => strtoupper($student->section->grade_level . ' - ' . $student->section->section_name)
                     ]);
                 }
