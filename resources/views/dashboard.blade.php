@@ -330,10 +330,7 @@
             <i class="fa-solid fa-circle-exclamation text-2xl"></i>
             <span x-text="notificationMessage"></span>
         </div>
-        
-    </div> <!-- Closes the wrapper div we added at the top -->
-
-    <!-- CUSTOM DELETE CONFIRMATION MODAL -->
+        <!-- CUSTOM DELETE CONFIRMATION MODAL -->
         <div x-show="deleteModalOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[150]" x-cloak>
             <div @click.away="deleteModalOpen = false" class="bg-white p-8 rounded-3xl shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm border-[4px] border-red-700 text-center relative" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-90" x-transition:enter-end="opacity-100 scale-100">
                 
@@ -367,4 +364,5 @@
                 </div>
             </div>
         </div>
+    </div> <!-- Closes the wrapper div we added at the top -->
 @endsection
