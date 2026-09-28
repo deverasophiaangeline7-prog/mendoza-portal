@@ -123,33 +123,6 @@
         transform: scale(1.1);
     }
 
-    .status-box-container {
-        display: flex;
-        border: 2px solid #000;
-        border-radius: 4px; 
-        background: #fff;
-        align-items: stretch;
-    }
-
-    .status-label-block {
-        background-color: var(--ma-bg-grey);
-        padding: 12px 15px;
-        font-weight: 900;
-        font-size: 15px;
-        border-right: 2px solid #000;
-        display: flex;
-        align-items: center;
-    }
-
-    .status-data-block {
-        padding: 12px 15px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        font-weight: 900;
-        font-size: 15px;
-    }
-
     .pill-orange {
         background-color: var(--ma-orange);
         color: black;
@@ -163,21 +136,23 @@
     .action-buttons {
         display: flex;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
+        flex-wrap: wrap;
     }
 
     .btn-flat {
-        padding: 8px 18px;
+        padding: 6px 14px;
         border: 2px solid #000;
         border-radius: 20px;
         font-weight: 900;
-        font-size: 14px;
+        font-size: 13px;
         cursor: pointer;
         color: black;
     }
 
-    .btn-approve { background-color: var(--ma-green); }
-    .btn-decline { background-color: var(--ma-red); color: white; }
+    .btn-approve { background-color: var(--ma-green); color: black; border: 2px solid #000; }
+    .btn-reschedule { background-color: var(--ma-orange); color: black; border: none; }
+    .btn-decline { background-color: var(--ma-red); color: white; border: none; }
 
     /* Responsive Table Wrapper */
     .table-responsive {
@@ -211,6 +186,7 @@
         background-color: white;
         font-size: 13px;
         text-align: center;
+        vertical-align: middle;
     }
 
     .calendar-title {
@@ -437,52 +413,103 @@
                 </form>
             </div>
 
-            <div style="text-align: left; font-weight: 900; font-size: 18px; margin-top: 20px; margin-bottom: 10px; margin-left: 5px;">
-                My Sent Requests
+            <div class="ma-card">
+                <h3>My Requests</h3>
+
+                @if($incomingRequests->isEmpty() && $mySentRequests->isEmpty())
+                    <div style="text-align: center; font-weight: bold; font-size: 14px; margin-top: 15px;">
+                        No appointment requests yet.
+                    </div>
+                @else
+                    
+                    {{-- INCOMING REQUESTS (FROM TEACHER) --}}
+                    @if($incomingRequests->isNotEmpty())
+                        <div style="text-align: left; font-weight: 900; font-size: 14px; margin-bottom: 10px; color: var(--ma-red); margin-left: 5px;">
+                            Action Required (From Teacher)
+                        </div>
+                        <div class="table-responsive" style="margin-bottom: 20px;">
+                            <table class="pending-table">
+                                <thead>
+                                    <tr>
+                                        <th>Topic</th>
+                                        <th>Date and Time</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($incomingRequests as $request)
+                                    <tr>
+                                        <td>{{ $request->discussion_topic }}</td>
+                                        <td>
+                                            {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
+                                            {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
+                                            {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <div class="action-buttons">
+                                                <form action="{{ route('appointments.approve', $request->id) }}" method="POST" style="display:inline;">
+                                                    @csrf @method('PATCH')
+                                                    <button type="submit" class="btn-flat btn-approve">Approve</button>
+                                                </form>
+                                                <button type="button" class="btn-flat btn-reschedule" onclick="openRescheduleModal({{ $request->id }})">Reschedule</button>
+                                                <button type="button" class="btn-flat btn-decline" onclick="openTrueDeclineModal({{ $request->id }})">Decline</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+
+                    @if($incomingRequests->isNotEmpty() && $mySentRequests->isNotEmpty())
+                        <hr style="border: 1px dashed #ccc; margin-bottom: 20px; margin-top: 10px;">
+                    @endif
+
+                    {{-- SENT REQUESTS (TO TEACHER) --}}
+                    @if($mySentRequests->isNotEmpty())
+                        <div style="text-align: left; font-weight: 900; font-size: 14px; margin-bottom: 10px; margin-left: 5px;">
+                            Appointment Description
+                        </div>
+                        <div class="table-responsive">
+                            <table class="pending-table">
+                                <thead>
+                                    <tr>
+                                        <th>Topic</th>
+                                        <th>Date and Time</th>
+                                        <th>Status</th>
+                                        <th style="width: 45px;"></th> <!-- Cancel column -->
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($mySentRequests as $request)
+                                    <tr>
+                                        <td>{{ $request->discussion_topic }}</td>
+                                        <td>
+                                            {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }}, 
+                                            {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
+                                            {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="pill-orange" style="display: inline-block;">
+                                                {{ $request->status === 'reschedule' ? 'Reschedule' : ucfirst($request->status ?? 'Pending') }}
+                                            </span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <button type="button" class="btn-cancel-icon" title="Cancel Appointment" onclick="openCancelModal('{{ route('appointments.destroy', $request->id) }}')">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+
+                @endif
             </div>
-            <!-- Wrapped Table in table-responsive -->
-            <div class="table-responsive">
-                <table class="pending-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Topic</th>
-                            <th>Date & Time</th>
-                            <th>Status</th>
-                            <th style="width: 45px;"></th> <!-- Cancel column -->
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($mySentRequests as $request)
-                            <tr>
-                                <td>
-                                    {{ strtoupper(optional($request->parent->student)->first_name . ' ' . optional($request->parent->student)->last_name ?: optional($request->parent)->username) }}
-                                </td>
-                                <td>{{ $request->discussion_topic }}</td>
-                                <td>
-                                    {{ \Carbon\Carbon::parse($request->appointment_date)->format('M j') }},
-                                    {{ \Carbon\Carbon::parse($request->start_time)->format('g:iA') }} - 
-                                    {{ \Carbon\Carbon::parse($request->end_time)->format('g:iA') }}
-                                </td>
-                                <td style="text-align: center;">
-                                    <span class="pill-orange" style="display: inline-block;">
-                                        {{ $request->status === 'reschedule' ? 'Reschedule' : ucfirst($request->status ?? 'Pending') }}
-                                    </span>
-                                </td>
-                                <td style="text-align: center;">
-                                    <button type="button" class="btn-cancel-icon" title="Cancel Appointment" onclick="openCancelModal('{{ route('appointments.destroy', $request->id) }}')">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" style="text-align: center;">No sent requests.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+
         </div>
 
         <div class="right-column">
@@ -505,7 +532,6 @@
                 for ($i = 0; $i < 5; $i++) {
                     $weekDays[] = $startOfWeek->copy()->addDays($i);
                 }
-
                 $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
             @endphp
 
@@ -542,7 +568,6 @@
                                         $slot = $adviserSchedule->first(function ($schedule) use ($day, $time) {
                                             return $schedule->date === $day->format('Y-m-d') && $schedule->time_slot === $time;
                                         });
-                                        
                                         $cellClass = 'cell-white';
                                         $statusValue = 'available';
 
@@ -561,9 +586,9 @@
                                                 $statusValue = 'booked';
                                             }
                                         }
-
-                                        $cellStartTime = \Carbon\Carbon::parse($day->format('Y-m-d') . ' ' . $time); 
-                                        $cellEndTime = $cellStartTime->copy()->addHour(); 
+                                        
+                                        $cellStartTime = \Carbon\Carbon::parse($day->format('Y-m-d') . ' ' . $time);
+                                        $cellEndTime = $cellStartTime->copy()->addHour();
 
                                         $meetingTooltip = '';
                                         $meeting = $bookedAppointments->first(function ($appointment) use ($cellStartTime, $cellEndTime) {
@@ -579,12 +604,10 @@
                                             
                                             $appStart = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->start_time);
                                             $appEnd = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->end_time);
-
                                             $overlapStart = $appStart->max($cellStartTime);
                                             $overlapEnd = $appEnd->min($cellEndTime);
-                                            
                                             $durationInCell = $overlapStart->diffInMinutes($overlapEnd);
-                                            
+
                                             if ($durationInCell >= 60) {
                                                 $cellClass = 'cell-green';
                                             } elseif ($durationInCell <= 30) {
@@ -615,9 +638,7 @@
                 <div class="legend-item"><span class="cell-red"></span>Class Hours</div>
                 <div class="legend-item"><span class="cell-grey"></span>On Leave</div>
             </div>
-            <p class="disclaimer">
-                Schedules booked on "On Leave" will be pending for reschedule.
-            </p>
+            <p class="disclaimer">Schedules booked on "On Leave" will be pending for reschedule.</p>
         </div>
     </div>
 </div>
@@ -651,12 +672,12 @@
     </div>
 </div>
 
-<!-- DECLINE / SUGGEST NEW SCHEDULE MODAL -->
-<div id="declineModal" class="modal-overlay modal-hidden">
+<!-- RESCHEDULE MODAL -->
+<div id="rescheduleModal" class="nested-modal modal-hidden">
     <div class="nested-modal-content">
-        <h3 style="color: var(--ma-red); text-transform: uppercase;">State your reason for rescheduling</h3>
+        <h3 style="color: var(--ma-orange); font-weight: bold; text-transform: uppercase;">State your reason for rescheduling</h3>
         
-        <form id="declineForm" method="POST" action="">
+        <form id="rescheduleForm" method="POST" action="">
             @csrf @method('PATCH')
             
             <div style="text-align: left; margin-bottom: 15px;">
@@ -669,8 +690,8 @@
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Date</label>
                 <input type="date" name="suggested_date" class="form-control" required
-                       min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
-                       max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
+                        min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                        max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
             </div>
             
             <div class="time-group" style="text-align: left;">
@@ -685,8 +706,29 @@
             </div>
             
             <div class="nested-modal-actions">
-                <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('declineModal')">Cancel</button>
-                <button type="submit" class="btn-flat btn-decline">Reschedule</button>
+                <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('rescheduleModal')">Cancel</button>
+                <button type="submit" class="btn-flat btn-reschedule">Reschedule</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- TRUE DECLINE MODAL -->
+<div id="trueDeclineModal" class="nested-modal modal-hidden">
+    <div class="nested-modal-content">
+        <h3 style="color: var(--ma-red); font-weight: bold; text-transform: uppercase;">State your reason for declining</h3>
+        
+        <form id="trueDeclineForm" method="POST" action="">
+            @csrf @method('PATCH')
+            
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Reason</label>
+                <input type="text" name="reason" class="form-control" placeholder="e.g. Schedule conflict, out of office" required>
+            </div>
+            
+            <div class="nested-modal-actions">
+                <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('trueDeclineModal')">Cancel</button>
+                <button type="submit" class="btn-flat btn-decline">Decline Request</button>
             </div>
         </form>
     </div>
@@ -706,7 +748,6 @@
         openModal('validationModalOverlay');
     }
 
-    // Opens the specific cancel modal and sets the dynamic route
     function openCancelModal(actionUrl) {
         document.getElementById('cancelForm').action = actionUrl;
         openModal('cancelModalOverlay');
@@ -801,21 +842,29 @@
         return true;
     }
 
-    function openDeclineModal(appointmentId) {
-        const form = document.getElementById('declineForm');
+    function openRescheduleModal(appointmentId) {
+        const form = document.getElementById('rescheduleForm');
+        form.action = `/appointments/${appointmentId}/reschedule`;
+        openModal('rescheduleModal');
+    }
+
+    function openTrueDeclineModal(appointmentId) {
+        const form = document.getElementById('trueDeclineForm');
         form.action = `/appointments/${appointmentId}/decline`;
-        openModal('declineModal');
+        openModal('trueDeclineModal');
     }
 
     window.onclick = function(event) {
         const overlay = document.getElementById('requestsModalOverlay');
         const valOverlay = document.getElementById('validationModalOverlay');
-        const decOverlay = document.getElementById('declineModal');
+        const resOverlay = document.getElementById('rescheduleModal');
+        const decOverlay = document.getElementById('trueDeclineModal');
         const cancelOverlay = document.getElementById('cancelModalOverlay');
         
         if (event.target === overlay) closeModal('requestsModalOverlay');
         if (event.target === valOverlay) closeModal('validationModalOverlay');
-        if (event.target === decOverlay) closeModal('declineModal');
+        if (event.target === resOverlay) closeModal('rescheduleModal');
+        if (event.target === decOverlay) closeModal('trueDeclineModal');
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
 </script>
