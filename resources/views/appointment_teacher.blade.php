@@ -1072,5 +1072,15 @@
         if (event.target === decOverlay) closeModal('trueDeclineModal');
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
+
+    // LISTENS FOR THE ACTION PARAMETER TO OPEN THE MODAL ON PAGE LOAD
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'view_requests') {
+            openModal('requestsModalOverlay');
+            // Clean up the URL so it doesn't reopen on page refresh
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
 </script>
 @endsection

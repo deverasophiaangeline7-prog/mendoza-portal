@@ -21,6 +21,11 @@ class NotificationController extends Controller
             return redirect()->route('messages.show', ['id' => $groupId]);
         }
 
+        // Check if the frontend passed a specific redirect destination (like our modal trigger)
+        if (request()->has('redirect_to')) {
+            return redirect(request()->query('redirect_to'));
+        }
+
         $user = Auth::user();
         $isTeacher = strtolower(trim($user->role)) === 'teacher';
 

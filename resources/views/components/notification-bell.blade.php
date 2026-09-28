@@ -83,7 +83,7 @@
                     <!-- Apply slight transparency if notification is already read -->
                     <div class="relative border-b border-gray-200 transition group" :class="notif.is_read ? 'bg-white opacity-80' : 'bg-gray-50'">
                         
-                        <a :href="'/notifications/' + notif.notification_id + '/read'" class="block p-4 pr-12 cursor-pointer no-underline">
+                        <a :href="notif.type === 'appointment' ? '/notifications/' + notif.notification_id + '/read?redirect_to=' + encodeURIComponent('/appointments?action=view_requests') : '/notifications/' + notif.notification_id + '/read'" class="block p-4 pr-12 cursor-pointer no-underline">
                             <div>
                                 <p class="text-[10px] font-black uppercase" :class="notif.is_read ? 'text-gray-500' : 'text-orange-600'">
                                     <i class="fa-solid mr-1" :class="notif.type === 'deadline_alert' ? 'fa-clock text-red-600' : 'fa-circle-info'"></i>
