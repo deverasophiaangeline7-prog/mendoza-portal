@@ -10,7 +10,7 @@
     selectedDate: {{ now()->day }},
     monthNames: ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'],
     events: {{ json_encode($eventsData ?? new \stdClass()) }}, 
-    passwordModal: {{ $errors->has('current_password') \vert{}\vert{}$errors->has('password') ? 'true' : 'false' }},
+    passwordModal: {{ $errors->has('current_password') || $errors->has('password') ? 'true' : 'false' }},
     get daysInMonth() { return new Date(this.currentYear, this.currentMonth + 1, 0).getDate(); },
     get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); },
     get blanks() { return Array.from({ length: this.startDay }); },
