@@ -99,7 +99,7 @@
     </div>
 </main>
 
-<!-- Live Search Script -->
+<!-- Live Search & Polling Script -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('search-input');
@@ -109,6 +109,7 @@
         
         let debounceTimer;
 
+        // --- 1. LIVE SEARCH LOGIC ---
         if (searchInput) {
             searchInput.addEventListener('input', function() {
                 clearTimeout(debounceTimer);
@@ -123,102 +124,48 @@
                         url.searchParams.delete('search');
                     }
 
-                    // Fetch without XMLHttpRequest header to ensure standard HTML response
-                    fetch(url)
-                    .then(response => {
-                        if (!response.ok) throw new Error('Network response was not ok');
-                        return response.text();
-                    })
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        
-                        const newTableBody = doc.getElementById('table-body');
-                        const newPagination = doc.getElementById('pagination-container');
-                        
-                        if (newTableBody && tableBody) {
-                            tableBody.innerHTML = newTableBody.innerHTML;
-                        }
-                        if (newPagination && paginationContainer) {
-                            paginationContainer.innerHTML = newPagination.innerHTML;
-                        }
-                        
-                        window.history.pushState({}, '', url);
-                    })
-                    .catch(error => console.error('Search error:', error));
+                    // Calls the reusable function below!
+                    fetchAndUpdateTable(url.toString(), true);
                 }, 300); 
             });
         }
-    });
-</script> <!-- 👈 YOU WERE MISSING THIS CLOSING TAG! -->
 
-<!-- Add Pusher & Echo exclusively for the Audit Logs page -->
-<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
+        // --- 2. NEW AUTO-REFRESH (POLLING) LOGIC ---
+        setInterval(() => {
+            // Uses the current URL (keeps search filters intact) and fetches every 5 seconds
+            fetchAndUpdateTable(window.location.href, false);
+        }, 1000);
 
-<script>
-    // 1. Establish the Antenna
-    window.Pusher = Pusher;
-    
-    window.Echo = new Echo({
-        broadcaster: 'pusher',
-        key: '{{ config("broadcasting.connections.pusher.key") }}',
-        cluster: '{{ config("broadcasting.connections.pusher.options.cluster", "ap1") }}',
-        forceTLS: true
-    });
-
-    // 2. Listen for the specific 'NewAuditLog' broadcast
-    if (window.Echo) {
-        window.Echo.channel('audit-logs')
-            .listen('NewAuditLog', (e) => {
-                const tableBody = document.getElementById('table-body');
-                const log = e.log;
+        // --- 3. REUSABLE FETCH FUNCTION ---
+        function fetchAndUpdateTable(fetchUrl, updateUrlBar) {
+            fetch(fetchUrl)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
                 
-                const dateObj = new Date(log.created_at);
-                const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-                const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }).replace('AM', 'AM').replace('PM', 'PM');
+                const newTableBody = doc.getElementById('table-body');
+                const newPagination = doc.getElementById('pagination-container');
                 
-                let displayName = 'SYSTEM';
-                if (log.user) {
-                    displayName = log.user.name || log.user.username;
+                if (newTableBody && tableBody) {
+                    // Only update the DOM if the data actually changed (prevents screen flashing)
+                    if (tableBody.innerHTML !== newTableBody.innerHTML) {
+                        tableBody.innerHTML = newTableBody.innerHTML;
+                    }
                 }
-
-                let desc = log.description;
-                if (log.user && log.user.username) {
-                    const regex = new RegExp(log.user.username, "gi");
-                    desc = desc.replace(regex, displayName);
+                if (newPagination && paginationContainer && updateUrlBar) {
+                    paginationContainer.innerHTML = newPagination.innerHTML;
                 }
-
-                const emptyRow = tableBody.querySelector('td[colspan="4"]');
-                if (emptyRow) emptyRow.parentElement.remove();
-
-                const tr = document.createElement('tr');
-                tr.className = 'bg-blue-100 transition-colors duration-1000'; 
                 
-                tr.innerHTML = `
-                    <td class="p-3 border-r-[3px] border-black font-bold text-xs text-center text-gray-800 whitespace-nowrap">
-                        ${formattedDate} <br>
-                        <span class="text-red-600 font-extrabold">${formattedTime}</span>
-                    </td>
-                    <td class="p-3 border-r-[3px] border-black font-black text-xs uppercase text-blue-600 break-all max-w-[180px]">
-                        ${displayName}
-                    </td>
-                    <td class="p-3 border-r-[3px] border-black font-bold text-center">
-                        <span class="text-[10px] sm:text-xs uppercase tracking-wider font-black text-gray-800 inline-block">
-                            ${log.action}
-                        </span>
-                    </td>
-                    <td class="p-3 font-medium text-gray-800 text-xs sm:text-sm break-words leading-relaxed">
-                        ${desc}
-                    </td>
-                `;
-                
-                tableBody.insertBefore(tr, tableBody.firstChild);
-                
-                setTimeout(() => {
-                    tr.classList.remove('bg-blue-100');
-                }, 2000);
-            });
-    }
+                if (updateUrlBar) {
+                    window.history.pushState({}, '', fetchUrl);
+                }
+            })
+            .catch(error => console.error('Fetch error:', error));
+        }
+    });
 </script>
 @endsection
