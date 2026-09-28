@@ -233,6 +233,10 @@
                     
                     <template x-if="events && events[currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-' + selectedDate.toString().padStart(2, '0')]">
                         <div class="space-y-6">
+                            <!-- I added the two lines below to restore the Event Name -->
+                            <p class="font-black text-lg text-gray-800 uppercase">Name of the event:</p>
+                            <h4 class="text-red-600 text-4xl font-black uppercase leading-tight" x-text="events[getDateKey(selectedDate)]?.name"></h4>
+                            
                             <p class="font-black text-lg text-gray-800 uppercase">Time:</p>
                             <p class="text-red-600 text-2xl font-black italic">
                                 <span x-text="formatTime(events[getDateKey(selectedDate)]?.start_time)"></span>
