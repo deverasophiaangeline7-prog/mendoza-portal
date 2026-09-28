@@ -191,6 +191,12 @@ class AppointmentController extends Controller
             'is_read' => 0,
         ]);
 
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Appointment Requested',
+            'description' => auth()->user()->name . ' requested an appointment regarding "' . $validated['discussion_topic'] . '".'
+        ]);
+
         return redirect()->back()->with('success', 'Appointment request submitted successfully.');
     }
 
@@ -241,6 +247,12 @@ class AppointmentController extends Controller
             'is_read' => 0,
         ]);
 
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Appointment Approved',
+            'description' => auth()->user()->name . ' approved the appointment request for "' . $appointment->discussion_topic . '".'
+        ]);
+
         return back()->with('success', 'Appointment request approved.');
     }
 
@@ -272,6 +284,12 @@ class AppointmentController extends Controller
             'is_read' => 0,
         ]);
 
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Appointment Rescheduled',
+            'description' => auth()->user()->name . ' rescheduled the appointment "' . $appointment->discussion_topic . '". Reason: ' . $request->reason
+        ]);
+
         return back()->with('success', 'Appointment rescheduled and sent back to requests.');
     }
 
@@ -294,6 +312,12 @@ class AppointmentController extends Controller
             'message' => 'Your appointment request for "' . $appointment->discussion_topic . '" was declined by ' . auth()->user()->name . '. Reason: ' . $request->reason,
             'type' => 'appointment',
             'is_read' => 0,
+        ]);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Appointment Declined',
+            'description' => auth()->user()->name . ' declined the appointment "' . $appointment->discussion_topic . '". Reason: ' . $request->reason
         ]);
 
         return back()->with('success', 'Appointment request declined successfully.');
@@ -352,6 +376,12 @@ class AppointmentController extends Controller
     public function destroy($id)
     {
         $appointment = \App\Models\Appointment::findOrFail($id);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Appointment Cancelled',
+            'description' => auth()->user()->name . ' cancelled their appointment request for "' . $appointment->discussion_topic . '".'
+        ]);
         
         $appointment->delete();
 

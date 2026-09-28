@@ -56,7 +56,7 @@
                             if ($log->user && $log->user->teacher) {
                                 $displayName = $log->user->teacher->first_name . ' ' . $log->user->teacher->last_name;
                             } elseif ($log->user) {
-                                $displayName = explode('@', $log->user->username)[0];
+                                $displayName = $log->user->name ?? $log->user->username;
                             }
 
                             // 2. Replace the raw email/username in the description with the display name
@@ -150,5 +150,68 @@
             });
         }
     });
+
+    // REAL-TIME AUDIT LOGS SYNC
+    if (window.Echo) {
+        window.Echo.channel('audit-logs')
+            .listen('NewAuditLog', (e) => {
+                const tableBody = document.getElementById('table-body');
+                const log = e.log;
+                
+                // 1. Format the Date and Time dynamically
+                const dateObj = new Date(log.created_at);
+                const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+                const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }).replace('AM', 'AM').replace('PM', 'PM'); // Normalizes AM/PM
+                
+                // 2. Resolve the display name (mimicking your backend logic)
+                let displayName = 'SYSTEM';
+                if (log.user) {
+                    displayName = log.user.name || log.user.username;
+                }
+
+                // 3. Format the description
+                let desc = log.description;
+                if (log.user && log.user.username) {
+                    const regex = new RegExp(log.user.username, "gi");
+                    desc = desc.replace(regex, displayName);
+                }
+
+                // 4. Remove the "No records found" row if it's currently showing
+                const emptyRow = tableBody.querySelector('td[colspan="4"]');
+                if (emptyRow) emptyRow.parentElement.remove();
+
+                // 5. Build the new HTML row
+                const tr = document.createElement('tr');
+                
+                // Add a temporary blue highlight effect so the admin notices it pop in
+                tr.className = 'bg-blue-100 transition-colors duration-1000'; 
+                
+                tr.innerHTML = `
+                    <td class="p-3 border-r-[3px] border-black font-bold text-xs text-center text-gray-800 whitespace-nowrap">
+                        ${formattedDate} <br>
+                        <span class="text-red-600 font-extrabold">${formattedTime}</span>
+                    </td>
+                    <td class="p-3 border-r-[3px] border-black font-black text-xs uppercase text-blue-600 break-all max-w-[180px]">
+                        ${displayName}
+                    </td>
+                    <td class="p-3 border-r-[3px] border-black font-bold text-center">
+                        <span class="text-[10px] sm:text-xs uppercase tracking-wider font-black text-gray-800 inline-block">
+                            ${log.action}
+                        </span>
+                    </td>
+                    <td class="p-3 font-medium text-gray-800 text-xs sm:text-sm break-words leading-relaxed">
+                        ${desc}
+                    </td>
+                `;
+                
+                // 6. Insert at the top of the table
+                tableBody.insertBefore(tr, tableBody.firstChild);
+                
+                // 7. Fade out the blue highlight after 2 seconds
+                setTimeout(() => {
+                    tr.classList.remove('bg-blue-100');
+                }, 2000);
+            });
+    }
 </script>
 @endsection

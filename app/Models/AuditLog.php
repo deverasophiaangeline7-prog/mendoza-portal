@@ -23,4 +23,15 @@ class AuditLog extends Model
         // Make sure 'user_id' matches the primary key in your User table
         return $this->belongsTo(User::class, 'user_id', 'user_id'); 
     }
+
+    protected static function booted()
+    {
+        static::created(function ($log) {
+            // Load the user relationship so Javascript has the username/name
+            $log->load('user'); 
+            
+            // Fire the real-time event
+            event(new \App\Events\NewAuditLog($log));
+        });
+    }
 }
