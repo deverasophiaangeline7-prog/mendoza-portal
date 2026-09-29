@@ -48,7 +48,7 @@
             <!-- CONTROL PANEL -->
             <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-gray-50 flex flex-col xl:flex-row items-center justify-between gap-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-x-auto">
                 
-                <!-- Left Side: Actions (Forced into one row) -->
+                <!-- Left Side: Actions -->
                 <div class="flex flex-row items-center gap-3 w-max">
                     <button @click="isManaging = !isManaging" 
                         class="font-black px-5 py-2.5 border-[3px] border-black rounded-xl transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] whitespace-nowrap"
@@ -76,7 +76,8 @@
                             + ADD DATE
                         </button>
 
-                        <button @click="deleteDateFromTable()" class="bg-red-600 text-white px-4 sm:px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-red-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
+                        <!-- UPDATED TO TRIGGER CUSTOM MODAL -->
+                        <button @click="confirmDeleteDate()" class="bg-red-600 text-white px-4 sm:px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-red-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
                             - DELETE DATE
                         </button>
                     </div>
@@ -112,7 +113,7 @@
         <!-- PAGINATION CONTROLS -->
         <div class="flex justify-between items-center mb-6 bg-white border-[3px] border-black rounded-[20px] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             @if(isset($currentPage) && isset($totalPages))
-                @if($currentPage <$totalPages)
+                @if($currentPage < $totalPages)
                     <a href="{{ request()->fullUrlWithQuery(['page' => $currentPage + 1]) }}" class="font-black text-black hover:text-blue-600 transition">
                         <i class="fa-solid fa-arrow-left"></i> OLDER DATES
                     </a>
@@ -120,7 +121,7 @@
                     <span class="font-black text-gray-400 cursor-not-allowed"><i class="fa-solid fa-arrow-left"></i> OLDER DATES</span>
                 @endif
 
-                <span class="font-black uppercase text-lg sm:text-xl text-center px-4">Page {{ $currentPage }} of {{$totalPages }}</span>
+                <span class="font-black uppercase text-lg sm:text-xl text-center px-4">Page {{ $currentPage }} of {{ $totalPages }}</span>
 
                 @if($currentPage > 1)
                     <a href="{{ request()->fullUrlWithQuery(['page' => $currentPage - 1]) }}" class="font-black text-black hover:text-blue-600 transition">
@@ -155,7 +156,7 @@
                     @foreach($students as $student)
                     <tr class="border-b-[2px] border-black hover:bg-yellow-50/50">
                         <td class="p-4 sm:p-5 border-r-[3px] border-black font-black text-base sm:text-lg text-black truncate">
-                            {{ strtoupper($student->last_name . ', ' .$student->first_name) }}
+                            {{ strtoupper($student->last_name . ', ' . $student->first_name) }}
                         </td>
                         
                         <template x-for="day in addedDates" :key="day">
@@ -186,6 +187,35 @@
         </div>
     </div>
 
+    <!-- CUSTOM DELETE CONFIRMATION MODAL -->
+    <div x-show="showDeleteModal" x-cloak
+         x-transition:opacity
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        
+        <div @click.away="showDeleteModal = false" 
+             class="bg-white border-[4px] border-black rounded-[2.5rem] p-6 sm:p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] text-center relative">
+            
+            <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-4"></i>
+            <h2 class="text-2xl sm:text-3xl font-black uppercase tracking-tight mb-2">Delete Date?</h2>
+            
+            <p class="text-gray-700 font-bold mb-8 text-base sm:text-lg">
+                Are you sure you want to completely remove <span class="text-black font-black border-b-2 border-black px-1" x-text="dateToDelete"></span>?<br><br>
+                <span class="text-red-600 bg-red-100 px-2 py-1 border-2 border-red-300 rounded-md">This will also delete saved records for this day.</span>
+            </p>
+
+            <div class="flex justify-center gap-4">
+                <button @click="showDeleteModal = false" class="text-black font-black uppercase tracking-widest hover:text-gray-600 transition-colors px-4 py-3">
+                    CANCEL
+                </button>
+                
+                <button @click="executeDeleteDate()" class="bg-red-600 text-white font-black py-3 px-6 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:brightness-95 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2">
+                    YES, DELETE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
     <div x-show="showToast" x-cloak
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0 translate-y-10"
@@ -213,6 +243,10 @@ document.addEventListener('alpine:init', () => {
         addedDates: @json($existingDates ?? []),
         serverAttendance: @json($attendanceMap ?? []),
         
+        // Modal State
+        showDeleteModal: false,
+        dateToDelete: '',
+        
         addDateToTable() {
             if (!this.selectedDate) {
                 this.triggerToast('Please select a date first!', 'error');
@@ -234,7 +268,8 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        async deleteDateFromTable() {
+        // STEP 1: OPEN THE CUSTOM UI MODAL
+        confirmDeleteDate() {
             if (!this.selectedDate) {
                 this.triggerToast('Please select a date to delete!', 'error');
                 return;
@@ -245,12 +280,16 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            if (!confirm(`Are you sure you want to completely remove ${this.selectedDate}? This will also delete saved records for this day.`)) {
-                return;
-            }
+            this.dateToDelete = this.selectedDate;
+            this.showDeleteModal = true;
+        },
+
+        // STEP 2: EXECUTE THE DELETION AFTER "YES" IS CLICKED
+        async executeDeleteDate() {
+            this.showDeleteModal = false;
 
             // Instantly remove it from the frontend array so the column disappears
-            this.addedDates = this.addedDates.filter(d => d !== this.selectedDate);
+            this.addedDates = this.addedDates.filter(d => d !== this.dateToDelete);
 
             // Fetch request to actually delete from database
             try {
@@ -261,7 +300,7 @@ document.addEventListener('alpine:init', () => {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify({
-                        date: this.selectedDate,
+                        date: this.dateToDelete,
                         student_ids: @json($students->pluck('student_id'))
                     })
                 });
@@ -269,13 +308,14 @@ document.addEventListener('alpine:init', () => {
                 if (response.ok) {
                     this.triggerToast('Date permanently deleted!', 'success');
                 } else {
-                    // Only happens if the date was added but not saved yet, which is fine
                     this.triggerToast('Date removed from view (Unsaved).', 'success');
                 }
             } catch (error) {
                 console.error(error);
                 this.triggerToast('Date removed from view.', 'success');
             }
+            
+            this.dateToDelete = '';
         },
 
         getSavedStatus(studentId, date) {
