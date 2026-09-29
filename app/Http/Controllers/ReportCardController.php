@@ -114,6 +114,7 @@ public function show($section_id)
         }
 
         return view('section-report-card', [
+            'students' => $students, 
             'maleStudents' => $maleStudents,
             'femaleStudents' => $femaleStudents,
             'sectionName' => $sectionName,
