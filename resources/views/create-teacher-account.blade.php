@@ -238,12 +238,12 @@ document.addEventListener('alpine:init', () => {
         assignments: [],
         
         subjectMap: {
-            '1': ['ALL (Class Adviser)', 'GMRC', 'Language', 'Makabansa', 'Mathematics', 'Reading and Literacy'],
-            '2': ['ALL (Class Adviser)', 'English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
-            '3': ['ALL (Class Adviser)', 'English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
-            '4': ['ALL (Class Adviser)', 'Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE'],
-            '5': ['ALL (Class Adviser)', 'Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE'],
-            '6': ['ALL (Class Adviser)', 'Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE']
+            '1': ['GMRC', 'Language', 'Makabansa', 'Mathematics', 'Reading and Literacy'],
+            '2': ['English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
+            '3': ['English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
+            '4': ['Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE'],
+            '5': ['Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE'],
+            '6': ['Araling Panlipunan (AP)', 'English', 'Filipino', 'GMRC', 'MAPEH', 'Mathematics', 'Science', 'TLE']
         },
 
         addAssignment() {
