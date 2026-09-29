@@ -272,7 +272,6 @@ x-data="{
                                         <label class="block font-bold uppercase text-gray-600 text-xs mb-1 tracking-widest">Target Grade <span class="text-red-600">*</span></label>
                                         <select :name="'assignments[' + index + '][section_id]'" x-model="assignment.section_id" @change="updateRowSubjects(index, $event.target)" required class="w-full border-2 border-black rounded-xl px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-green-400 appearance-none bg-white">
                                             <option value="" disabled selected>Select Grade</option>
-                                            <option value="NKP" data-grade="NKP">NKP (Nursery, Kinder, Prep)</option>
                                             @foreach($dynamicSections as $sec)
                                                 @if(!in_array(strtoupper($sec->grade_level), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREP', 'PREPARATORY', 'NKP']))
                                                     <option value="{{ $sec->section_id }}" data-grade="{{ $sec->grade_level }}">Grade {{ $sec->grade_level }} - {{ $sec->section_name }}</option>

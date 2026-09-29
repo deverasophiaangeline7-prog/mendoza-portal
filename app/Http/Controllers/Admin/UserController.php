@@ -192,6 +192,7 @@ class UserController extends Controller
             \App\Models\AuditLog::query()->delete(); 
             \App\Models\Attendance::query()->delete(); 
             \App\Models\SchoolCalendar::query()->delete();
+            \App\Models\Notification::query()->delete(); 
             DB::table('subject_assignments')->delete(); 
 
             $students = \App\Models\Student::with('section')->get();
@@ -227,7 +228,7 @@ class UserController extends Controller
             \App\Models\AuditLog::create([
                 'user_id' => Auth::id(),
                 'action' => 'Year Finalized',
-                'description' => Auth::user()->username . " finalized {$currentYear->school_year}. All 3 terms verified, sections and subjects reset."
+                'description' => Auth::user()->username . " finalized {$currentYear->school_year}. All 3 terms verified, sections, subjects, and notifications reset."
             ]);
 
             DB::commit(); 

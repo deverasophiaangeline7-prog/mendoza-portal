@@ -175,9 +175,7 @@
                             <div class="w-full md:w-1/2">
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Target Section</label>
                                 <select :name="`assignments[${index}][section_id]`" x-model="assignment.section_id" @change="assignment.subject = ''" class="form-input-pill bg-white cursor-pointer" required>                                    
-                                    <option value="" disabled selected>Select a Section...</option>
-                                    <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
-                                    <template x-for="sec in sectionsList" :key="sec.id">
+                                    <option value="" disabled selected>Select a Section...</option>                                    <template x-for="sec in sectionsList" :key="sec.id">
                                         <option :value="sec.id" x-text="sec.name"></option>
                                     </template>
                                 </select>

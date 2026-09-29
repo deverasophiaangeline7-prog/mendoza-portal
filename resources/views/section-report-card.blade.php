@@ -117,6 +117,17 @@
             </button>
         </form>
         @endif
+       
+        {{-- SEARCH BAR --}}
+        <div class="mb-6 flex justify-end">
+            <div class="relative w-full md:w-1/3">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-gray-500"></i>
+                </div>
+                <input type="text" id="studentSearch" placeholder="Search by LRN or Name..." 
+                    class="w-full pl-10 pr-4 py-2 border-[3px] border-black rounded-xl font-bold text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none transition-all placeholder-gray-500">
+            </div>
+        </div>
 
         <!-- Changed overflow-hidden to overflow-x-auto to enable mobile scrolling -->
         <div class="border-[3px] border-black rounded-xl overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-white">
@@ -195,4 +206,36 @@
 
     </div>
 </main>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('studentSearch');
+        const tableBody = document.querySelector('tbody');
+        const rows = tableBody.querySelectorAll('tr');
+
+        searchInput.addEventListener('keyup', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+
+            rows.forEach(row => {
+                const firstCell = row.querySelector('td');
+                if (firstCell && firstCell.hasAttribute('colspan')) {
+                    return; 
+                }
+
+                const lrnCell = row.cells[1];
+                const nameCell = row.cells[2];
+
+                if (lrnCell && nameCell) {
+                    const lrn = lrnCell.textContent.toLowerCase();
+                    const name = nameCell.textContent.toLowerCase();
+
+                    if (lrn.includes(searchTerm) || name.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+    });
+</script>
 @endsection
