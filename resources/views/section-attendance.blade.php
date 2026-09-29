@@ -46,46 +46,46 @@
 
         @if($canManage)
             <!-- CONTROL PANEL -->
-            <div class="mb-10 p-4 sm:p-5 border-[3px] border-black rounded-[25px] bg-gray-50 flex flex-col xl:flex-row items-center justify-between gap-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-gray-50 flex flex-col xl:flex-row items-center justify-between gap-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-x-auto">
                 
-                <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 sm:gap-6 w-full xl:w-auto">
+                <!-- Left Side: Actions (Forced into one row) -->
+                <div class="flex flex-row items-center gap-3 w-max">
                     <button @click="isManaging = !isManaging" 
-                        class="w-full sm:w-auto font-black px-6 sm:px-8 py-3 border-[3px] border-black rounded-xl transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
+                        class="font-black px-5 py-2.5 border-[3px] border-black rounded-xl transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] whitespace-nowrap"
                         :class="isManaging ? 'bg-green-400 text-black' : 'bg-gray-200 text-gray-500'">
                         <i class="fa-solid" :class="isManaging ? 'fa-unlock' : 'fa-lock'"></i>
                         <span x-text="isManaging ? ' EDITING MODE' : ' VIEW MODE'"></span>
                     </button>
                     
-                    <div x-show="isManaging" x-cloak class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 animate-fade-in w-full sm:w-auto">
-                        <span class="font-black uppercase text-sm whitespace-nowrap">Select Day:</span>
+                    <div x-show="isManaging" x-cloak class="flex flex-row items-center gap-3 animate-fade-in">
+                        <span class="font-black uppercase text-sm whitespace-nowrap hidden lg:inline">Select Day:</span>
                         <input type="date" 
                                  x-model="selectedDate" 
                                     @change="
                                         if(selectedDate) {
-                         const day = new Date(selectedDate).getUTCDay();
-               if(day === 0 || day === 6) {
-                   triggerToast('Weekends are not allowed! Please select a weekday.', 'error');
-                   selectedDate = '';
-               }
-           }
-       "
-       class="w-full sm:w-auto border-[3px] border-black p-2 rounded-xl font-black bg-white">
+                                            const day = new Date(selectedDate).getUTCDay();
+                                            if(day === 0 || day === 6) {
+                                                triggerToast('Weekends are not allowed! Please select a weekday.', 'error');
+                                                selectedDate = '';
+                                            }
+                                        }
+                                    "
+                               class="border-[3px] border-black p-2 rounded-xl font-black bg-white cursor-pointer w-[140px] sm:w-auto">
                         
-                        <button @click="addDateToTable()" class="w-full sm:w-auto bg-blue-600 text-white px-6 sm:px-8 py-2 rounded-xl border-[3px] border-black font-black hover:bg-blue-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <button @click="addDateToTable()" class="bg-blue-600 text-white px-4 sm:px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-blue-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
                             + ADD DATE
                         </button>
 
-                        <!-- NEW DELETE BUTTON -->
-                        <button @click="deleteDateFromTable()" class="w-full sm:w-auto bg-red-600 text-white px-6 sm:px-8 py-2 rounded-xl border-[3px] border-black font-black hover:bg-red-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <button @click="deleteDateFromTable()" class="bg-red-600 text-white px-4 sm:px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-red-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
                             - DELETE DATE
                         </button>
                     </div>
                 </div>
 
-                <button x-show="isManaging" x-cloak @click="saveAttendance()" class="w-full xl:w-auto bg-[#b26905] text-black px-6 sm:px-8 py-3 rounded-xl border-[3px] border-black font-black hover:bg-amber-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]">
+                <!-- Right Side: Save Button -->
+                <button x-show="isManaging" x-cloak @click="saveAttendance()" class="w-full xl:w-auto bg-[#b26905] text-black px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-amber-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] whitespace-nowrap mt-4 xl:mt-0">
                     <i class="fa-solid fa-floppy-disk mr-2"></i> SAVE ATTENDANCE
                 </button>
-
             </div>
         @elseif(auth()->user()->role === 'admin')
             <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-blue-100 flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-blue-900">
