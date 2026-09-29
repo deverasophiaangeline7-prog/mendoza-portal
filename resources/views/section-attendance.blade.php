@@ -200,7 +200,7 @@
             
             <p class="text-gray-700 font-bold mb-8 text-base sm:text-lg">
                 Are you sure you want to completely remove <span class="text-black font-black border-b-2 border-black px-1" x-text="dateToDelete"></span>?<br><br>
-                <span class="text-red-600 bg-red-100 px-2 py-1 border-2 border-red-300 rounded-md">This will also delete saved records for this day.</span>
+                <span class="text-red-600 font-bold">This will also delete saved records for this day.</span>
             </p>
 
             <div class="flex justify-center gap-4">
