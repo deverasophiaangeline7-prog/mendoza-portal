@@ -30,7 +30,11 @@ class TeacherAccountController extends Controller
         ->orderBy('section_name', 'asc')
         ->get(); 
         
-        return view('create-teacher-account', compact('sections'));
+        $takenSubjectsData = SubjectAssignment::all()->groupBy('section_id')->map(function ($assignments) {
+            return $assignments->pluck('subject_name')->toArray();
+        });
+
+        return view('create-teacher-account', compact('sections', 'takenSubjectsData'));
     }
 
     public function store(Request $request)

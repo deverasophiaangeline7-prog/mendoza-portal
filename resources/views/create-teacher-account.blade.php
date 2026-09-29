@@ -174,7 +174,7 @@
                         <div class="flex flex-col md:flex-row gap-4 mb-4 items-center bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
                             <div class="w-full md:w-1/2">
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Target Section</label>
-                                <select :name="`assignments[${index}][section_id]`" x-model="assignment.section_id" @change="updateSubjects(index)" class="form-input-pill bg-white cursor-pointer" required>
+                                <select :name="`assignments[${index}][section_id]`" x-model="assignment.section_id" @change="assignment.subject = ''" class="form-input-pill bg-white cursor-pointer" required>                                    
                                     <option value="" disabled selected>Select a Section...</option>
                                     <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
                                     <template x-for="sec in sectionsList" :key="sec.id">
@@ -187,7 +187,7 @@
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Subject Taught</label>
                                 <select :name="`assignments[${index}][subject]`" x-model="assignment.subject" class="form-input-pill bg-white cursor-pointer" :required="assignment.section_id !== 'NKP'">
                                     <option value="" disabled selected>Select a Subject...</option>
-                                    <template x-for="subj in assignment.available_subjects" :key="subj">
+                                    <template x-for="subj in getAvailableSubjects(index)" :key="subj">
                                         <option :value="subj" x-text="subj"></option>
                                     </template>
                                 </select>
@@ -248,28 +248,33 @@ document.addEventListener('alpine:init', () => {
         },
 
         addAssignment() {
-            this.assignments.push({ section_id: '', subject: '', available_subjects: [] });
+            this.assignments.push({ section_id: '', subject: '' });
         },
 
         removeAssignment(index) {
             this.assignments.splice(index, 1);
         },
 
-        updateSubjects(index) {
-            let selectedSectionId = this.assignments[index].section_id;
-            if (selectedSectionId === 'NKP') {
-                this.assignments[index].available_subjects = this.subjectMap['NKP'];
-                this.assignments[index].subject = '';
-                return;
-            }
-            let sectionData = this.sectionsList.find(s => s.id == selectedSectionId);
-            if (sectionData && this.subjectMap[sectionData.grade]) {
-                this.assignments[index].available_subjects = this.subjectMap[sectionData.grade];
-                this.assignments[index].subject = '';
-            } else {
-                this.assignments[index].available_subjects = [];
-                this.assignments[index].subject = '';
-            }
+        globalTakenSubjects: @json($takenSubjectsData ?? []),
+
+        getAvailableSubjects(currentIndex) {
+            let current = this.assignments[currentIndex];
+            if (!current.section_id || current.section_id === 'NKP') return [];
+
+            let sectionData = this.sectionsList.find(s => s.id == current.section_id);
+            if (!sectionData) return [];
+
+            let allSubjects = this.subjectMap[sectionData.grade] || [];
+
+            let locallyTaken = this.assignments
+                .filter((a, idx) => idx !== currentIndex && a.section_id === current.section_id && a.subject !== '')
+                .map(a => a.subject);
+
+            let databaseTaken = this.globalTakenSubjects[current.section_id] || [];
+
+            let allTakenSubjects = [...locallyTaken, ...databaseTaken];
+
+            return allSubjects.filter(subject => !allTakenSubjects.includes(subject));
         }
     }));
 });
