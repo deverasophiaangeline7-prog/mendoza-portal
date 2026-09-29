@@ -306,7 +306,7 @@ document.addEventListener('alpine:init', () => {
                 });
 
                 if (response.ok) {
-                    this.triggerToast('Date permanently deleted!', 'success');
+                    this.triggerToast('Date deleted.', 'success');
                 } else {
                     this.triggerToast('Date removed from view (Unsaved).', 'success');
                 }

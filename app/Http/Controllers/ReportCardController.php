@@ -80,16 +80,45 @@ class ReportCardController extends Controller
     return abort(403, 'Unauthorized access.');
 }
 
-    public function show($section_id)
+public function show($section_id)
     {
-        $students = Student::where('section_id', $section_id)->get();
         $section = Section::findOrFail($section_id);
         $sectionName = strtoupper($section->grade_level . ' - ' . $section->section_name);
 
+        $students = Student::where('section_id', $section_id)
+                           ->orderBy('last_name', 'asc')
+                           ->get();
+
+        $maleStudents = $students->where('gender', 'Male')->values();
+        $femaleStudents = $students->where('gender', 'Female')->values();
+
+        // ==========================================
+        // BACK BUTTON LOGIC
+        // ==========================================
+        $user = Auth::user();
+        $showBackButton = true; // Default to true (Admins will always see it)
+
+        if ($user->role === 'teacher') {
+            $adviserSectionIds = Section::where('teacher_id', $user->user_id)
+                ->pluck('section_id')->toArray();
+            
+            $subjectSectionIds = \App\Models\SubjectAssignment::where('teacher_id', $user->user_id)
+                ->pluck('section_id')->toArray();
+            
+            $allAssignedIds = array_unique(array_merge($adviserSectionIds, $subjectSectionIds));
+
+            // If the teacher only has 1 (or 0) sections, hide the back button
+            if (count($allAssignedIds) <= 1) {
+                $showBackButton = false;
+            }
+        }
+
         return view('section-report-card', [
-            'students' => $students,
+            'maleStudents' => $maleStudents,
+            'femaleStudents' => $femaleStudents,
             'sectionName' => $sectionName,
-            'section_id' => $section_id
+            'section_id' => $section_id,
+            'showBackButton' => $showBackButton // Pass it to the Blade file
         ]);
     }
 
