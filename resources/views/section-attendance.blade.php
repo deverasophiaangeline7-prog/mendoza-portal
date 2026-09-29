@@ -152,7 +152,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($students as$student)
+                    @foreach($students as $student)
                     <tr class="border-b-[2px] border-black hover:bg-yellow-50/50">
                         <td class="p-4 sm:p-5 border-r-[3px] border-black font-black text-base sm:text-lg text-black truncate">
                             {{ strtoupper($student->last_name . ', ' .$student->first_name) }}
