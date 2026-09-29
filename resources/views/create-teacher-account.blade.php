@@ -238,7 +238,6 @@ document.addEventListener('alpine:init', () => {
         assignments: [],
         
         subjectMap: {
-            'NKP': ['ALL (Class Adviser)', 'Language', 'Reading and Literacy', 'Mathematics', 'Makabansa', 'GMRC'],
             '1': ['ALL (Class Adviser)', 'GMRC', 'Language', 'Makabansa', 'Mathematics', 'Reading and Literacy'],
             '2': ['ALL (Class Adviser)', 'English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
             '3': ['ALL (Class Adviser)', 'English', 'Filipino', 'GMRC', 'Makabansa', 'Mathematics'],
