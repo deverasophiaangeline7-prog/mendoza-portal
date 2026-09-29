@@ -129,32 +129,32 @@
             @endif
         </div>
 
-        <div class="border-[3px] border-black overflow-x-auto rounded-[30px] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] bg-white">
-            <table class="w-full border-collapse min-w-max">
+        <div class="border-[3px] border-black overflow-hidden rounded-[30px] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] bg-white">
+            <table class="w-full border-collapse table-fixed">
                 <thead>
                     <tr class="bg-gray-100 border-b-[3px] border-black">
-                        <th class="p-4 sm:p-5 border-r-[3px] border-black min-w-[200px] w-1/3 text-left uppercase font-black text-xl sm:text-2xl">Learner Name</th>
+                        <th class="p-4 sm:p-5 border-r-[3px] border-black w-[40%] text-left uppercase font-black text-xl sm:text-2xl truncate">Learner Name</th>
                         
                         <template x-for="day in addedDates" :key="day">
-                            <th class="border-r-[2px] border-black text-center text-base sm:text-lg w-20 sm:w-24 py-4 bg-amber-700 font-black" 
+                            <th class="border-r-[2px] last:border-r-0 border-black text-center text-base sm:text-lg py-4 bg-amber-700 font-black truncate" 
                                 x-text="new Date(day).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })">
                             </th>
                         </template>
                         
                         <template x-if="addedDates.length === 0">
-                            <th class="p-5 text-gray-400 italic font-bold text-lg">No dates added yet...</th>
+                            <th class="p-5 text-gray-400 italic font-bold text-lg text-center">No dates added yet...</th>
                         </template>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($students as $student)
                     <tr class="border-b-[2px] border-black hover:bg-yellow-50/50">
-                        <td class="p-4 sm:p-5 border-r-[3px] border-black font-black text-base sm:text-lg text-black">
+                        <td class="p-4 sm:p-5 border-r-[3px] border-black font-black text-base sm:text-lg text-black truncate">
                             {{ strtoupper($student->last_name . ', ' . $student->first_name) }}
                         </td>
                         
                         <template x-for="day in addedDates" :key="day">
-                            <td class="border-r-[2px] border-black h-12 sm:h-16 attendance-cell"
+                            <td class="border-r-[2px] last:border-r-0 border-black h-12 sm:h-16 attendance-cell"
                                 x-data="{ status: getSavedStatus('{{ $student->student_id }}', day) }"
                                 :data-student="'{{ $student->student_id }}'"
                                 :data-date="day"

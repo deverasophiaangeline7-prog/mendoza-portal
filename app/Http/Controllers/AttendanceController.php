@@ -110,7 +110,7 @@ class AttendanceController extends Controller
             ->pluck('attendance_date');
 
         // 2. Setup 10-day Pagination
-        $perPage = 10;
+        $perPage = 5;
         $currentPage = (int) request()->input('page', 1);
         $totalPages = max(1, (int) ceil($allDates->count() / $perPage));
         
