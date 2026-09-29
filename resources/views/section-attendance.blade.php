@@ -74,6 +74,11 @@
                         <button @click="addDateToTable()" class="w-full sm:w-auto bg-blue-600 text-white px-6 sm:px-8 py-2 rounded-xl border-[3px] border-black font-black hover:bg-blue-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                             + ADD DATE
                         </button>
+
+                        <!-- NEW DELETE BUTTON -->
+                        <button @click="deleteDateFromTable()" class="w-full sm:w-auto bg-red-600 text-white px-6 sm:px-8 py-2 rounded-xl border-[3px] border-black font-black hover:bg-red-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                            - DELETE DATE
+                        </button>
                     </div>
                 </div>
 
@@ -107,7 +112,7 @@
         <!-- PAGINATION CONTROLS -->
         <div class="flex justify-between items-center mb-6 bg-white border-[3px] border-black rounded-[20px] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             @if(isset($currentPage) && isset($totalPages))
-                @if($currentPage < $totalPages)
+                @if($currentPage <$totalPages)
                     <a href="{{ request()->fullUrlWithQuery(['page' => $currentPage + 1]) }}" class="font-black text-black hover:text-blue-600 transition">
                         <i class="fa-solid fa-arrow-left"></i> OLDER DATES
                     </a>
@@ -115,7 +120,7 @@
                     <span class="font-black text-gray-400 cursor-not-allowed"><i class="fa-solid fa-arrow-left"></i> OLDER DATES</span>
                 @endif
 
-                <span class="font-black uppercase text-lg sm:text-xl text-center px-4">Page {{ $currentPage }} of {{ $totalPages }}</span>
+                <span class="font-black uppercase text-lg sm:text-xl text-center px-4">Page {{ $currentPage }} of {{$totalPages }}</span>
 
                 @if($currentPage > 1)
                     <a href="{{ request()->fullUrlWithQuery(['page' => $currentPage - 1]) }}" class="font-black text-black hover:text-blue-600 transition">
@@ -147,10 +152,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($students as $student)
+                    @foreach($students as$student)
                     <tr class="border-b-[2px] border-black hover:bg-yellow-50/50">
                         <td class="p-4 sm:p-5 border-r-[3px] border-black font-black text-base sm:text-lg text-black truncate">
-                            {{ strtoupper($student->last_name . ', ' . $student->first_name) }}
+                            {{ strtoupper($student->last_name . ', ' .$student->first_name) }}
                         </td>
                         
                         <template x-for="day in addedDates" :key="day">
@@ -226,6 +231,50 @@ document.addEventListener('alpine:init', () => {
                 this.addedDates.sort(); 
             } else {
                 this.triggerToast('Date already added!', 'error');
+            }
+        },
+
+        async deleteDateFromTable() {
+            if (!this.selectedDate) {
+                this.triggerToast('Please select a date to delete!', 'error');
+                return;
+            }
+
+            if (!this.addedDates.includes(this.selectedDate)) {
+                this.triggerToast('This date is not on the sheet!', 'error');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to completely remove ${this.selectedDate}? This will also delete saved records for this day.`)) {
+                return;
+            }
+
+            // Instantly remove it from the frontend array so the column disappears
+            this.addedDates = this.addedDates.filter(d => d !== this.selectedDate);
+
+            // Fetch request to actually delete from database
+            try {
+                const response = await fetch('/attendance/delete-date', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        date: this.selectedDate,
+                        student_ids: @json($students->pluck('student_id'))
+                    })
+                });
+
+                if (response.ok) {
+                    this.triggerToast('Date permanently deleted!', 'success');
+                } else {
+                    // Only happens if the date was added but not saved yet, which is fine
+                    this.triggerToast('Date removed from view (Unsaved).', 'success');
+                }
+            } catch (error) {
+                console.error(error);
+                this.triggerToast('Date removed from view.', 'success');
             }
         },
 

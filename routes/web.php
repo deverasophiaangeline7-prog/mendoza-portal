@@ -118,6 +118,7 @@ Route::middleware(['auth', 'teacher'])->group(function () {
     Route::post('/attendance/save', [AttendanceController::class, 'store'])->name('attendance.store');
     Route::post('/attendance/{grade}/publish', [AttendanceController::class, 'publish'])->name('attendance.publish');
     Route::post('/attendance/{grade}/update', [AttendanceController::class, 'update'])->name('attendance.update');
+    Route::post('/attendance/delete-date', [App\Http\Controllers\AttendanceController::class, 'deleteDate']);
     
     Route::get('/teacher-information', function () {
         return view('teacher-information');

@@ -236,4 +236,21 @@ class AttendanceController extends Controller
 
         return response()->json(['message' => 'Saved Successfully!']);
     }
+
+    public function deleteDate(Request $request)
+{
+    $request->validate([
+        'date' => 'required|date',
+        'student_ids' => 'required|array'
+    ]);
+
+    $dbDate = \Carbon\Carbon::parse($request->date)->format('Y-m-d');
+
+    // Permanently delete all attendance records for these students on this specific day
+    \App\Models\Attendance::whereIn('student_id', $request->student_ids)
+        ->whereDate('attendance_date', $dbDate)
+        ->delete();
+
+    return response()->json(['message' => 'Attendance for date deleted successfully']);
+}
 }
