@@ -102,12 +102,26 @@ class AttendanceController extends Controller
 
         $students = Student::where('section_id', $section->section_id)->get();
 
-        $attendances = Attendance::whereIn('student_id', $students->pluck('student_id'))
-            ->whereMonth('attendance_date', now()->month)
-            ->whereYear('attendance_date', now()->year)
-            ->get();
+        // 1. Get ALL unique attendance dates, sorted newest to oldest
+        $allDates = Attendance::whereIn('student_id', $students->pluck('student_id'))
+            ->select('attendance_date')
+            ->distinct()
+            ->orderBy('attendance_date', 'desc')
+            ->pluck('attendance_date');
 
-        $existingDates = $attendances->pluck('attendance_date')->unique()->values()->toArray();
+        // 2. Setup 10-day Pagination
+        $perPage = 10;
+        $currentPage = (int) request()->input('page', 1);
+        $totalPages = max(1, (int) ceil($allDates->count() / $perPage));
+        
+        // 3. Get the dates for the current page, then reverse them so they display left-to-right chronologically
+        $pagedDatesDesc = $allDates->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $existingDates = $pagedDatesDesc->reverse()->values()->toArray();
+
+        // 4. Fetch only the attendance records for these 10 specific dates
+        $attendances = Attendance::whereIn('student_id', $students->pluck('student_id'))
+            ->whereIn('attendance_date', $existingDates)
+            ->get();
 
         $statusMap = ['present' => 1, 'absent' => 2, 'late' => 3, 'excused' => 4];
         $attendanceMap = [];
@@ -126,7 +140,9 @@ class AttendanceController extends Controller
             'students'      => $students,
             'existingDates' => $existingDates,
             'attendanceMap' => $attendanceMap,
-            'canManage'     => $user->role === 'teacher' && $section->teacher_id == $user->user_id
+            'canManage'     => $user->role === 'teacher' && $section->teacher_id == $user->user_id,
+            'currentPage'   => $currentPage,
+            'totalPages'    => $totalPages
         ]);
     }
 
