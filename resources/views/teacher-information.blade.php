@@ -72,7 +72,7 @@
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Advisory Class</label>
                             <p class="text-3xl font-black uppercase italic break-all text-black">
-                                {{ auth()->user()->advisory_class ?? 'NONE' }}
+                                {{ auth()->user()->section ? auth()->user()->section->grade_level . ' - ' . auth()->user()->section->section_name : 'NONE' }}
                             </p>
                         </div>
 

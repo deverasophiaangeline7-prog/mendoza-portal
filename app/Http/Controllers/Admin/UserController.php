@@ -198,6 +198,7 @@ class UserController extends Controller
             $students = \App\Models\Student::with('section')->get();
 
             foreach ($students as $student) {
+                // 1. Save their old section to history
                 if ($student->section) {
                     \App\Models\StudentHistory::create([
                         'student_id' => $student->student_id,
@@ -206,20 +207,25 @@ class UserController extends Controller
                     ]);
                 }
 
-                if (in_array($student->promotion_status, ['promoted', 'pending']) && $student->next_grade_level) {
+                // 2. Handle Grade Level Promotion
+                if ($student->promotion_status === 'promoted' && $student->next_grade_level) {
                     $student->grade_level = $student->next_grade_level;
-                } elseif ($student->grade_level == '6' && in_array($student->promotion_status, ['promoted', 'pending'])) {
+                } elseif ($student->grade_level == '6' && $student->promotion_status === 'promoted') {
                     $student->user->status = 'archived'; 
                     $student->user->save();
                 }
 
-                if ($student->user->status !== 'archived') {
+                // 3. Handle Section Assignment
+                if ($student->user->status === 'archived') {
+                    $student->section_id = null; // Clear section for graduated Grade 6 students
+                } elseif ($student->promotion_status !== 'retained') {
+                    // Only fetch a new section if they were NOT retained
                     $newSection = \App\Models\Section::where('grade_level', $student->grade_level)->first();
                     $student->section_id = $newSection ? $newSection->section_id : null; 
-                } else {
-                    $student->section_id = null; 
                 }
+                // Notice: If their status IS 'retained', we skip that step, so their $student->section_id stays exactly the same!
 
+                // 4. Reset statuses for the fresh school year
                 $student->promotion_status = 'none';
                 $student->next_grade_level = null;
                 $student->save();

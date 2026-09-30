@@ -213,11 +213,14 @@
         const rows = tableBody.querySelectorAll('tr');
 
         searchInput.addEventListener('keyup', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
+            const searchTerm = e.target.value.toLowerCase().trim();
 
             rows.forEach(row => {
                 const firstCell = row.querySelector('td');
+                // This checks for the structural rows (headers and empty text)
                 if (firstCell && firstCell.hasAttribute('colspan')) {
+                    // Hide them if searching, show them if the search box is empty
+                    row.style.display = searchTerm === '' ? '' : 'none';
                     return; 
                 }
 
