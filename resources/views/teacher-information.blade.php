@@ -56,7 +56,7 @@
                     <!-- Left side takes up more space (8 out of 12 columns) -->
                     <div class="md:col-span-8 space-y-10 min-w-0">
                         <div>
-                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Teacher ID / Username</label>
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Email Address</label>
                             <!-- Removed "uppercase" and changed "break-all" to "break-words" to preserve email casing and formatting -->
                             <p class="text-3xl font-black italic break-words">
                                 {{ auth()->user()->username ?? auth()->user()->lrn ?? 'N/A' }}
