@@ -330,8 +330,8 @@ public function show($section_id)
             'subject' => 'required|string',
             'excel_file' => 'required|file|mimes:xlsx,xls,csv|mimetypes:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv'
         ], [
-            'excel_file.mimes' => 'error message: incorrect file type',
-            'excel_file.mimetypes' => 'error message: incorrect file type'
+            'excel_file.mimes' => 'Error Message: Incorrect file type. Import .xlsx only.',
+            'excel_file.mimetypes' => 'Error Message: Incorrect file type. Import .xlsx only.'
         ]);
         
         $teacher = Teacher::where('user_id', Auth::id())->first();

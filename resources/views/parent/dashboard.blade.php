@@ -17,7 +17,7 @@
 @endphp
 
 <!-- We wrap the main content in a single div so all elements share the Alpine data -->
-<<div class="flex-1 flex flex-col min-h-screen" x-data='{ 
+<div class="flex-1 flex flex-col min-h-screen" x-data='{ 
     currentMonth: {{ now()->month - 1 }}, 
     currentYear: {{ now()->year }}, 
     selectedDate: {{ now()->day }},
