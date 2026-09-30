@@ -278,10 +278,10 @@ class ParentAccountController extends Controller
         // 2. Find the student
         $student = Student::findOrFail($id);
 
-        // 3. Reset the promotion fields 
+        // 3. Reset the promotion fields (Using empty strings instead of null to prevent DB errors)
         $student->update([
-            'promotion_status' => null, 
-            'next_grade_level' => null
+            'promotion_status' => '', // If your DB requires a specific word, change this to 'enrolled' or 'none'
+            'next_grade_level' => ''
         ]);
 
         // 4. Log the action

@@ -69,7 +69,7 @@
                                         <button type="button" 
                                                 @click="cancelStudentName = '{{ addslashes($student->first_name) }} {{ addslashes($student->last_name) }}'; cancelUrl = '{{ route('admin.promotion.cancel', $student->student_id ?? $student->id) }}'; cancelModal = true;"
                                                 title="Cancel Pending Promotion" 
-                                                class="bg-[#e68a2d] hover:bg-orange-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
+                                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
                                             <i class="fa-solid fa-clock-rotate-left"></i>
                                         </button>
                                     @endif
@@ -111,7 +111,7 @@
                                         <button type="button" 
                                                 @click="cancelStudentName = '{{ addslashes($student->first_name) }} {{ addslashes($student->last_name) }}'; cancelUrl = '{{ route('admin.promotion.cancel', $student->student_id ?? $student->id) }}'; cancelModal = true;"
                                                 title="Cancel Pending Promotion" 
-                                                class="bg-[#e68a2d] hover:bg-orange-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
+                                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
                                             <i class="fa-solid fa-clock-rotate-left"></i>
                                         </button>
                                     @endif
@@ -288,7 +288,7 @@
             <button @click="cancelModal = false; passwordError = false;" class="absolute top-6 right-6 text-3xl font-black text-gray-400 hover:text-black transition-colors">&times;</button>
             
             <div class="text-center mb-6">
-                <i class="fa-solid fa-triangle-exclamation text-[#e68a2d] text-6xl mb-4"></i>
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-6xl mb-4"></i>
                 <h2 class="text-3xl font-black italic uppercase tracking-tight mb-2">Cancel Promotion</h2>
                 <p class="text-gray-600 font-bold">Cancel promotion for <span class="text-blue-600 uppercase" x-text="cancelStudentName"></span>?</p>
             </div>
@@ -302,7 +302,7 @@
                         <i class="fa-solid fa-shield-halved text-amber-700"></i> Admin Authorization
                     </label>
                     <input type="password" name="admin_password" x-model="adminPassword" required placeholder="Enter Admin Password" 
-                           class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-all @error('admin_password') border-red-500 bg-red-50 focus:ring-red-400 @else focus:ring-[#e68a2d] bg-white @enderror">
+                           class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-all @error('admin_password') border-red-500 bg-red-50 focus:ring-red-400 @else focus:ring-red-400 bg-white @enderror">
                     
                     @error('admin_password')
                         <p class="text-red-500 font-bold text-sm mt-2 flex items-center gap-1"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>
@@ -310,8 +310,8 @@
                 </div>
                 
                 <div class="flex flex-col gap-3 mt-8">
-                    <button type="submit" :disabled="adminPassword === ''" :class="adminPassword === '' ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-600 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'" 
-                            class="w-full bg-[#e68a2d] text-white font-black py-3 px-6 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex justify-center items-center gap-2 uppercase">
+                    <button type="submit" :disabled="adminPassword === ''" :class="adminPassword === '' ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'" 
+                            class="w-full bg-red-600 text-white font-black py-3 px-6 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex justify-center items-center gap-2 uppercase">
                         <i class="fa-solid fa-ban"></i> Confirm Cancel
                     </button>
                     <button type="button" @click="cancelModal = false; passwordError = false;" class="w-full bg-gray-100 text-gray-700 font-black py-3 rounded-xl border-2 border-black hover:bg-gray-200 transition-all uppercase">
