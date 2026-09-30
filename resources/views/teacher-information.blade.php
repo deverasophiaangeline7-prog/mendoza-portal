@@ -63,7 +63,7 @@
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Birthdate</label>
                             <p class="text-3xl font-black uppercase italic break-all">
-                                {{ auth()->user()->teacher && auth()->user()->teacher->birth_date ? \Carbon\Carbon::parse(auth()->user()->teacher->birth_date)->format('d/m/Y') : 'NOT ASSIGNED' }}
+                                {{ auth()->user()->teacher && auth()->user()->teacher->birthdate ? \Carbon\Carbon::parse(auth()->user()->teacher->birthdate)->format('d/m/Y') : 'NOT ASSIGNED' }}
                             </p>
                         </div>
                     </div>
