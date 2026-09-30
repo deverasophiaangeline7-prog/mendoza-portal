@@ -50,28 +50,32 @@
             </div>
 
             <div class="bg-white border-[5px] border-black p-10 rounded-[3rem] shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] mb-10">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-12 min-w-0">
+                <!-- Switched to a 12-column grid to control the exact width of left/right sides -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-x-12 lg:gap-x-20 gap-y-12 min-w-0">
                     
-                    <div class="space-y-10 min-w-0">
+                    <!-- Left side takes up more space (8 out of 12 columns) -->
+                    <div class="md:col-span-8 space-y-10 min-w-0">
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Teacher ID / Username</label>
-                            <p class="text-3xl font-black uppercase italic break-all">
+                            <!-- Removed "uppercase" and changed "break-all" to "break-words" to preserve email casing and formatting -->
+                            <p class="text-3xl font-black italic break-words">
                                 {{ auth()->user()->username ?? auth()->user()->lrn ?? 'N/A' }}
                             </p>
                         </div>
 
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Birthdate</label>
-                            <p class="text-3xl font-black uppercase italic break-all">
+                            <p class="text-3xl font-black uppercase italic break-words">
                                 {{ auth()->user()->teacher && auth()->user()->teacher->birthdate ? \Carbon\Carbon::parse(auth()->user()->teacher->birthdate)->format('d/m/Y') : 'NOT ASSIGNED' }}
                             </p>
                         </div>
                     </div>
 
-                    <div class="space-y-10 min-w-0">
+                    <!-- Right side is pushed to the edge (4 out of 12 columns) -->
+                    <div class="md:col-span-4 space-y-10 min-w-0">
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Advisory Class</label>
-                            <p class="text-3xl font-black uppercase italic break-all text-black">
+                            <p class="text-3xl font-black uppercase italic break-words text-black">
                                 @php
                                     $advisorySection = auth()->user()->sections->first();
                                 @endphp
@@ -81,7 +85,7 @@
 
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Account Role</label>
-                            <p class="text-3xl font-black uppercase italic break-all">
+                            <p class="text-3xl font-black uppercase italic break-words">
                                 {{ auth()->user()->role ?? 'TEACHER' }}
                             </p>
                         </div>
