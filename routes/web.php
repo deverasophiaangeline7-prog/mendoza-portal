@@ -232,7 +232,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::delete('/admin/knowledge-base/{id}', [\App\Http\Controllers\KnowledgeBaseController::class, 'destroy'])->name('knowledge.destroy');
 
     Route::put('/admin/terms/update', [App\Http\Controllers\Admin\UserController::class, 'updateTerms'])->name('admin.terms.update');
-
+    Route::put('/admin/promotion/{id}/cancel', [ParentAccountController::class, 'cancelPromotion'])->name('admin.promotion.cancel');
 });
 
 // Both Admins and Teachers are allowed inside this group

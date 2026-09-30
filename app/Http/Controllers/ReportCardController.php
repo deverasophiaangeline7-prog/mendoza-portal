@@ -475,9 +475,14 @@ public function show($section_id)
                 continue; 
             }
 
-            $term1Val = (string) $targetSheet->getCell('F' . $row)->getCalculatedValue();
-            $term2Val = (string) $targetSheet->getCell('J' . $row)->getCalculatedValue();
-            $term3Val = (string) $targetSheet->getCell('N' . $row)->getCalculatedValue();
+            $cellF = $targetSheet->getCell('F' . $row);
+            $term1Val = (string) ($cellF->isFormula() ? $cellF->getOldCalculatedValue() : $cellF->getValue());
+
+            $cellJ = $targetSheet->getCell('J' . $row);
+            $term2Val = (string) ($cellJ->isFormula() ? $cellJ->getOldCalculatedValue() : $cellJ->getValue());
+
+            $cellN = $targetSheet->getCell('N' . $row);
+            $term3Val = (string) ($cellN->isFormula() ? $cellN->getOldCalculatedValue() : $cellN->getValue());
 
             $term1 = trim($term1Val) !== '' ? trim($term1Val) : null;
             $term2 = trim($term2Val) !== '' ? trim($term2Val) : null;

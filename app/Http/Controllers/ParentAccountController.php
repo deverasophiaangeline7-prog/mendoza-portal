@@ -262,4 +262,36 @@ class ParentAccountController extends Controller
                             
         return view('parent-archived-list', compact('archivedStudents')); 
     }
+
+    /**
+     * Cancel a queued student promotion.
+     */
+    public function cancelPromotion(Request $request, $id)
+    {
+        // 1. Verify the admin password submitted from the modal
+        if (!Hash::check($request->admin_password, auth()->user()->password)) {
+            return back()->withErrors([
+                'admin_password' => 'Incorrect admin password. Please try again.'
+            ]);
+        }
+
+        // 2. Find the student
+        $student = Student::findOrFail($id);
+
+        // 3. Reset the promotion fields 
+        $student->update([
+            'promotion_status' => null, 
+            'next_grade_level' => null
+        ]);
+
+        // 4. Log the action
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Cancel Promotion',
+            'description' => Auth::user()->username . ' cancelled the promotion queue for LRN: ' . $student->lrn
+        ]);
+
+        // 5. Return success
+        return back()->with('success', strtoupper($student->first_name) . ' is no longer queued for promotion.');
+    }
 }
