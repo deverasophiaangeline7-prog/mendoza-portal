@@ -83,7 +83,7 @@
                     </tr>
                     
                     @forelse($males as $index => $student)
-                        <tr class="border-b-[3px] border-black hover:bg-yellow-50 transition">
+                       <tr class="border-b-[3px] border-black transition">
                             
                             <td class="p-4 border-r-[3px] border-black text-center font-bold">
                                 {{ $index + 1 }}
@@ -180,7 +180,7 @@
                     </tr>
                     
                     @forelse($females as $index => $student)
-                        <tr class="border-b-[3px] border-black last:border-b-0 hover:bg-yellow-50 transition">
+                        <tr class="border-b-[3px] border-black last:border-b-0 transition">
                             
                             <td class="p-4 border-r-[3px] border-black text-center font-bold">
                                 {{ $index + 1 }}

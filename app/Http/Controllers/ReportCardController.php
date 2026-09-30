@@ -328,7 +328,10 @@ public function show($section_id)
     {
         $request->validate([
             'subject' => 'required|string',
-            'excel_file' => 'required|mimes:xlsx,xls'
+            'excel_file' => 'required|file|mimes:xlsx,xls,csv|mimetypes:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv'
+        ], [
+            'excel_file.mimes' => 'error message: incorrect file type',
+            'excel_file.mimetypes' => 'error message: incorrect file type'
         ]);
         
         $teacher = Teacher::where('user_id', Auth::id())->first();
@@ -490,6 +493,20 @@ public function show($section_id)
 
             if ($term1 === null && $term2 === null && $term3 === null) {
                 continue;
+            }
+
+            // INPUT VALIDATION: Ensure the active term grade is strictly numeric
+            $activeGradeToCheck = null;
+            if ($activeTerm === 1 && $term1 !== null) $activeGradeToCheck = $term1;
+            elseif ($activeTerm === 2 && $term2 !== null) $activeGradeToCheck = $term2;
+            elseif ($activeTerm === 3 && $term3 !== null) $activeGradeToCheck = $term3;
+
+            if ($activeGradeToCheck !== null && !is_numeric($activeGradeToCheck)) {
+                return redirect()->route('reportcard.show', [
+                    'section_id' => $section_id,
+                    'toast_status' => 'error',
+                    'toast_message' => "Invalid input at Row {$row}: Grades must be numbers only. Letters or symbols are not allowed."
+                ]);
             }
 
             $student = Student::where('lrn', trim($lrn))->where('section_id', $section_id)->first();
