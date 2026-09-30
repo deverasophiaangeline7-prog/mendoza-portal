@@ -70,9 +70,9 @@
 
                     <div class="space-y-10 min-w-0">
                         <div>
-                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Account Status</label>
-                            <p class="text-3xl font-black uppercase italic break-all text-green-600">
-                                {{ auth()->user()->status ?? 'ACTIVE' }}
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Advisory Class</label>
+                            <p class="text-3xl font-black uppercase italic break-all text-black">
+                                {{ auth()->user()->advisory_class ?? 'NONE' }}
                             </p>
                         </div>
 

@@ -14,7 +14,12 @@
          editMiddleName: '', 
          editLastName: '', 
          editSectionId: '',
-         editLrn: '' 
+         editLrn: '',
+         cancelModal: false,
+         cancelStudentName: '',
+         cancelUrl: '',
+         adminPassword: '',
+         passwordError: {{ $errors->has('admin_password') ? 'true' : 'false' }}
      }">
 
     <main class="max-w-6xl mx-auto">
@@ -55,9 +60,20 @@
                         <tr class="border-b-2 border-black hover:bg-gray-50 transition">
                             <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
                             <td class="p-4 border-r-2 border-black font-bold">{{ $student->lrn }}</td>
-                          <td class="p-4 font-bold uppercase">{{ $student->first_name }} {{ $student->middle_name }} {{ $student->last_name }}</td>
+                            <td class="p-4 font-bold uppercase">{{ $student->first_name }} {{ $student->middle_name }} {{ $student->last_name }}</td>
                             <td class="p-4">
                                 <div class="flex justify-center gap-2 items-center">
+                                    
+                                    <!-- CANCEL PROMOTION BUTTON -->
+                                    @if(isset($student->promotion_status) && $student->promotion_status === 'pending')
+                                        <button type="button" 
+                                                @click="cancelStudentName = '{{ addslashes($student->first_name) }} {{ addslashes($student->last_name) }}'; cancelUrl = '{{ route('admin.promotion.cancel', $student->student_id ?? $student->id) }}'; cancelModal = true;"
+                                                title="Cancel Pending Promotion" 
+                                                class="bg-[#e68a2d] hover:bg-orange-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
+                                            <i class="fa-solid fa-clock-rotate-left"></i>
+                                        </button>
+                                    @endif
+
                                     <button type="button" 
                                             @click="studentEditModal = true; 
                                                     editStudentId = '{{ $student->student_id }}'; 
@@ -89,6 +105,17 @@
                            <td class="p-4 font-bold uppercase">{{ $student->first_name }} {{ $student->middle_name }} {{ $student->last_name }}</td>
                             <td class="p-4">
                                 <div class="flex justify-center gap-2 items-center">
+                                    
+                                    <!-- CANCEL PROMOTION BUTTON -->
+                                    @if(isset($student->promotion_status) && $student->promotion_status === 'pending')
+                                        <button type="button" 
+                                                @click="cancelStudentName = '{{ addslashes($student->first_name) }} {{ addslashes($student->last_name) }}'; cancelUrl = '{{ route('admin.promotion.cancel', $student->student_id ?? $student->id) }}'; cancelModal = true;"
+                                                title="Cancel Pending Promotion" 
+                                                class="bg-[#e68a2d] hover:bg-orange-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
+                                            <i class="fa-solid fa-clock-rotate-left"></i>
+                                        </button>
+                                    @endif
+
                                     <button type="button" 
                                             @click="studentEditModal = true; 
                                                     editStudentId = '{{ $student->student_id ?? $student->id }}'; 
@@ -114,7 +141,7 @@
         </div>
     </main>
 
-    <!-- ADD SECTION MODAL (Smaller box, pushed down on mobile) -->
+    <!-- ADD SECTION MODAL -->
     <div x-show="addSectionModal" class="fixed inset-0 z-[9999] flex p-4 bg-black/50 overflow-y-auto" x-cloak>
         <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto">
             <button @click="addSectionModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
@@ -148,7 +175,7 @@
         </div>
     </div>
 
-    <!-- DELETE SECTION MODAL (Smaller box, pushed down on mobile) -->
+    <!-- DELETE SECTION MODAL -->
     <div x-show="deleteSectionModal" class="fixed inset-0 z-[9999] flex p-4 bg-black/50 overflow-y-auto" x-cloak>
         <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto">
             <button @click="deleteSectionModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
@@ -180,7 +207,7 @@
         </div>
     </div>
 
-    <!-- EDIT STUDENT MODAL (Smaller box, pushed down on mobile) -->
+    <!-- EDIT STUDENT MODAL -->
     <div x-show="studentEditModal" class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
         <div @click.away="studentEditModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-lg w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] mt-24 mx-auto mb-10 md:m-auto max-h-[70vh] flex flex-col flex-shrink-0">
             <div class="flex justify-between items-start mb-6 shrink-0">
@@ -229,7 +256,7 @@
         </div>
     </div>
 
-    <!-- Archive Confirmation Modal (Smaller box, pushed down on mobile) -->
+    <!-- ARCHIVE CONFIRMATION MODAL -->
     <div x-show="archiveModal" x-transition:opacity class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
         <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] mt-24 mx-auto mb-10 md:m-auto max-h-[70vh] flex-shrink-0" @click.away="archiveModal = false">
             <div class="text-center">
@@ -251,6 +278,47 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- CANCEL PROMOTION PASSWORD MODAL -->
+    <div x-show="cancelModal || passwordError" x-transition:opacity class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
+        <div @click.away="cancelModal = false; passwordError = false;" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] mt-24 mx-auto mb-10 md:m-auto max-h-[70vh] flex-shrink-0 relative">
+            
+            <button @click="cancelModal = false; passwordError = false;" class="absolute top-6 right-6 text-3xl font-black text-gray-400 hover:text-black transition-colors">&times;</button>
+            
+            <div class="text-center mb-6">
+                <i class="fa-solid fa-triangle-exclamation text-[#e68a2d] text-6xl mb-4"></i>
+                <h2 class="text-3xl font-black italic uppercase tracking-tight mb-2">Cancel Promotion</h2>
+                <p class="text-gray-600 font-bold">Cancel promotion for <span class="text-blue-600 uppercase" x-text="cancelStudentName"></span>?</p>
+            </div>
+            
+            <form :action="cancelUrl" method="POST">
+                @csrf
+                @method('PUT')
+                
+                <div class="mb-6 text-left">
+                    <label class="block font-bold uppercase text-black text-sm mb-2 tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved text-amber-700"></i> Admin Authorization
+                    </label>
+                    <input type="password" name="admin_password" x-model="adminPassword" required placeholder="Enter Admin Password" 
+                           class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-all @error('admin_password') border-red-500 bg-red-50 focus:ring-red-400 @else focus:ring-[#e68a2d] bg-white @enderror">
+                    
+                    @error('admin_password')
+                        <p class="text-red-500 font-bold text-sm mt-2 flex items-center gap-1"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>
+                    @enderror
+                </div>
+                
+                <div class="flex flex-col gap-3 mt-8">
+                    <button type="submit" :disabled="adminPassword === ''" :class="adminPassword === '' ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-600 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'" 
+                            class="w-full bg-[#e68a2d] text-white font-black py-3 px-6 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex justify-center items-center gap-2 uppercase">
+                        <i class="fa-solid fa-ban"></i> Confirm Cancel
+                    </button>
+                    <button type="button" @click="cancelModal = false; passwordError = false;" class="w-full bg-gray-100 text-gray-700 font-black py-3 rounded-xl border-2 border-black hover:bg-gray-200 transition-all uppercase">
+                        Close
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
