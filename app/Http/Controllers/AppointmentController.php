@@ -391,21 +391,30 @@ class AppointmentController extends Controller
                     $slotStartHour = Carbon::parse($schedule['time'])->format('hA');
                     
                     if ($appointmentStartHour === $slotStartHour) {
-                        $appointment->update([
-                            'status' => 'reschedule',
-                            'reschedule_reason' => 'Emergency: Teacher is on leave.',
-                            'created_by' => auth()->id(), 
-                        ]);
+                    $appointment->update([
+                        'status' => 'reschedule',
+                        'reschedule_reason' => 'Teacher is on leave. The teacher will propose a new schedule.',
+                        'created_by' => auth()->id(), 
+                    ]);
 
-                        // Send notification to the parent
-                        Notification::create([
-                            'user_id' => $appointment->parent_id,
-                            'title' => 'Appointment Rescheduled (Emergency Leave)',
-                            'message' => 'Your booked appointment on ' . Carbon::parse($appointment->appointment_date)->format('M d, Y') . ' at ' . Carbon::parse($appointment->start_time)->format('h:i A') . ' has been flagged for reschedule because the teacher is on leave.',
-                            'type' => 'appointment',
-                            'is_read' => 0,
-                        ]);
-                    }
+                    // Send notification to the parent
+                    Notification::create([
+                        'user_id' => $appointment->parent_id,
+                        'title' => 'Teacher is on leave',
+                        'message' => 'Your booked appointment on ' . Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y') . ' at ' . Carbon\Carbon::parse($appointment->start_time)->format('h:i A') . ' requires rescheduling because the teacher is on leave. The teacher will send you a new schedule soon.',
+                        'type' => 'appointment',
+                        'is_read' => 0,
+                    ]);
+
+                    // Send notification to the teacher
+                    Notification::create([
+                        'user_id' => $appointment->teacher_id,
+                        'title' => 'Teacher is on leave',
+                        'message' => 'You were marked on leave for ' . Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y') . '. Your booked appointment at ' . Carbon\Carbon::parse($appointment->start_time)->format('h:i A') . ' has been moved to your requests. Please propose a new schedule to the parent.',
+                        'type' => 'appointment',
+                        'is_read' => 0,
+                    ]);
+                }
                 }
             }
         }
