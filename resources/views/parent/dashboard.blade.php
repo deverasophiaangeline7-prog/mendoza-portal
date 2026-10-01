@@ -155,9 +155,8 @@
                             <h4 class="text-red-600 text-4xl font-black uppercase leading-tight" 
                                 x-text="events[getDateKey(selectedDate)].name"></h4>
                             
-                            <p class="font-black text-lg text-gray-800 uppercase">Time:</p>
                             <p class="text-red-600 text-2xl font-black italic" 
-                                x-text="events[getDateKey(selectedDate)].time || (events[getDateKey(selectedDate)].start_time ? (events[getDateKey(selectedDate)].start_time + ' - ' + events[getDateKey(selectedDate)].end_time) : '')"></p>
+                            x-text="events[getDateKey(selectedDate)].start_time ? (formatTime(events[getDateKey(selectedDate)].start_time) + ' - ' + formatTime(events[getDateKey(selectedDate)].end_time)) : (events[getDateKey(selectedDate)].time ? formatTime(events[getDateKey(selectedDate)].time) : '')"></p>
                             
                             <div class="mt-4 border-t pt-4 border-dashed border-black">
                                 <p class="font-black text-gray-800 uppercase text-sm">Description:</p>
