@@ -207,23 +207,40 @@ class UserController extends Controller
                     ]);
                 }
 
+                // FIX: Normalize strings to lowercase to prevent "Promoted" vs "promoted" bugs
+                $currentGrade = strtoupper(trim($student->grade_level));
+                $dbStatus = strtolower(trim($student->promotion_status)); 
+                
                 // 2. Handle Grade Level Promotion
-                if ($student->promotion_status === 'promoted' && $student->next_grade_level) {
-                    $student->grade_level = $student->next_grade_level;
-                } elseif ($student->grade_level == '6' && $student->promotion_status === 'promoted') {
+                if (($currentGrade === '6' || $currentGrade === 'GRADE 6') && $dbStatus === 'promoted') {
                     $student->user->status = 'archived'; 
                     $student->user->save();
+                } elseif ($dbStatus === 'promoted') {
+                    
+                    // Fallback map in case next_grade_level is null in the database
+                    $promotionMap = [
+                        'NURSERY' => 'KINDERGARTEN', 'KINDERGARTEN' => 'PREPARATORY', 'PREPARATORY' => '1',
+                        '1' => '2', 'GRADE 1' => 'GRADE 2', '2' => '3', 'GRADE 2' => 'GRADE 3',
+                        '3' => '4', 'GRADE 3' => 'GRADE 4', '4' => '5', 'GRADE 4' => 'GRADE 5',
+                        '5' => '6', 'GRADE 5' => 'GRADE 6'
+                    ];
+
+                    if (!empty($student->next_grade_level)) {
+                        $student->grade_level = $student->next_grade_level;
+                    } elseif (array_key_exists($currentGrade, $promotionMap)) {
+                        $student->grade_level = $promotionMap[$currentGrade];
+                    }
                 }
 
                 // 3. Handle Section Assignment
                 if ($student->user->status === 'archived') {
-                    $student->section_id = null; // Clear section for graduated Grade 6 students
-                } elseif ($student->promotion_status !== 'retained') {
-                    // Only fetch a new section if they were NOT retained
-                    $newSection = \App\Models\Section::where('grade_level', $student->grade_level)->first();
+                    $student->section_id = null; 
+                } elseif ($dbStatus !== 'retained') {
+                    $newSection = \App\Models\Section::where('grade_level', $student->grade_level)
+                                        ->orWhere('grade_level', 'GRADE ' . $student->grade_level)
+                                        ->first();
                     $student->section_id = $newSection ? $newSection->section_id : null; 
                 }
-                // Notice: If their status IS 'retained', we skip that step, so their $student->section_id stays exactly the same!
 
                 // 4. Reset statuses for the fresh school year
                 $student->promotion_status = 'none';
