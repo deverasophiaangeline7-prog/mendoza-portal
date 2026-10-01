@@ -207,15 +207,14 @@ class UserController extends Controller
                     ]);
                 }
 
-                // FIX: Normalize strings to lowercase to prevent "Promoted" vs "promoted" bugs
                 $currentGrade = strtoupper(trim($student->grade_level));
                 $dbStatus = strtolower(trim($student->promotion_status)); 
                 
-                // 2. Handle Grade Level Promotion
-                if (($currentGrade === '6' || $currentGrade === 'GRADE 6') && $dbStatus === 'promoted') {
+                // 2. Handle Grade Level Promotion (FIX: Now accepts 'pending' from the Teacher's Advisory Class!)
+                if (($currentGrade === '6' || $currentGrade === 'GRADE 6') && in_array($dbStatus, ['promoted', 'pending'])) {
                     $student->user->status = 'archived'; 
                     $student->user->save();
-                } elseif ($dbStatus === 'promoted') {
+                } elseif (in_array($dbStatus, ['promoted', 'pending'])) {
                     
                     // Fallback map in case next_grade_level is null in the database
                     $promotionMap = [
