@@ -205,7 +205,8 @@ class MessageController extends Controller
         $receiverRole = $receiver ? strtolower($receiver->role) : '';
 
         // AI triggers if ANYONE messages the Admin, OR if a PARENT messages a TEACHER
-        $aiShouldRespond = ($receiverRole === 'admin') || ($senderRole === 'parent' && $receiverRole === 'teacher');
+        $teacherRoles = ['teacher', 'adviser', 'faculty', 'instructor'];
+        $aiShouldRespond = ($receiverRole === 'admin') || ($senderRole === 'parent' && in_array($receiverRole, $teacherRoles));
 
         // STRICT CHECK: Run AI only if conditions are met AND it is NOT a Group Chat
         if ($apiKey && $aiShouldRespond && $receiver && is_null($receiver->custom_name)) {
@@ -267,7 +268,6 @@ class MessageController extends Controller
             }
 
             $currentDateString = \Carbon\Carbon::now('Asia/Manila')->format('F j, Y');
-            $currentReceiverRole = $receiver ? strtolower($receiver->role) : 'staff';
 
             // ==========================================
             // DYNAMIC AI PROMPTS BASED ON RECEIVER ROLE
@@ -388,7 +388,9 @@ class MessageController extends Controller
                 }
             }
 
-            if (strpos($aiText, 'IGNORE') !== false) {
+            $finalAiCheck = trim(strtoupper($aiText));
+
+            if ($finalAiCheck === 'IGNORE') {
                 // Do absolutely nothing
             } else {
                 $aiResponded = true; // Mark that AI responded

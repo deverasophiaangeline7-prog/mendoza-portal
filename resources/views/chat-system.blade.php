@@ -702,7 +702,8 @@
                 
                 const senderRole = '{{ strtolower(auth()->user()->role) }}';
                 const receiverRole = '{{ strtolower($selectedUser->role ?? '') }}';
-                const aiShouldRespond = (receiverRole === 'admin') || (senderRole === 'parent' && receiverRole === 'teacher');
+                const teacherRoles = ['teacher', 'adviser', 'faculty', 'instructor'];
+                const aiShouldRespond = (receiverRole === 'admin') || (senderRole === 'parent' && teacherRoles.includes(receiverRole));
                 
                 // Only show dots if it's the right role, NOT a group chat, HAS keywords, and is NOT complex.
                 if (aiShouldRespond && !this.isGroupChat && triggersAI && !isComplex) {
@@ -763,8 +764,14 @@
                 }
             },
 
-            sendTypingWhisper() { /* (Whisper logic remains identical) */ },
-
+            sendTypingWhisper() {
+                if (window.Echo && this.selectedUserId) {
+                    window.Echo.private(`chat.${this.selectedUserId}`)
+                        .whisper('typing', {
+                            senderId: this.myId
+                        });
+                }
+            },
         }));
     });
 </script>
