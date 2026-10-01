@@ -17,42 +17,7 @@
 @endphp
 
 <!-- We wrap the main content in a single div so all elements share the Alpine data -->
-<div class="flex-1 flex flex-col min-h-screen" x-data='{ 
-    currentMonth: {{ now()->month - 1 }}, 
-    currentYear: {{ now()->year }}, 
-    selectedDate: {{ now()->day }},
-    monthNames: ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"],
-    events: {!! json_encode($eventsData ?? new \stdClass()) !!},
-    
-    get daysInMonth() { return new Date(this.currentYear, this.currentMonth + 1, 0).getDate(); },
-    get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); },
-    get blanks() { return Array.from({ length: this.startDay }); },
-    get days() { return Array.from({ length: this.daysInMonth }, (_, i) => i + 1); },
-    
-    getDateKey(day) {
-        return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
-    },
-    // NEW: Added Time Formatter
-    formatTime(time) {
-        if (!time) return "";
-        let parts = time.split(":");
-        let hours = parseInt(parts[0]);
-        let minutes = parts[1];
-        let ampm = hours >= 12 ? "PM" : "AM";
-        hours = hours % 12 || 12; 
-        return `${hours}:${minutes} ${ampm}`;
-    },
-    init() {
-        setInterval(() => {
-            fetch("/fetch-events?t=" + Date.now())
-                .then(response => response.json())
-                .then(data => {
-                    this.events = { ...data }; 
-                })
-                .catch(error => console.error(error));
-        }, 1000);
-    }
-}'>
+<div class="flex-1 flex flex-col min-h-screen" x-data="parentDashboard()">
 
     <main class="flex-1 p-4 md:p-8 bg-white overflow-y-auto">
         <div class="flex justify-between items-center mb-6">
@@ -61,7 +26,7 @@
                 @if(auth()->check() && auth()->user()->student)
                    {{ auth()->user()->student->first_name ?? '' }} {{ auth()->user()->student->middle_name ?? '' }} {{ auth()->user()->student->last_name ?? '' }}!
                 @elseif(auth()->check() && auth()->user()->parent)
-                    {{ auth()->user()->parent->first_name ?? '' }} {{ auth()->user()->parent->last_name ?? '' }}!
+                     {{ auth()->user()->parent->first_name ?? '' }} {{ auth()->user()->parent->last_name ?? '' }}!
                 @else
                     Student!
                 @endif
@@ -69,44 +34,7 @@
         </div>
 
        <!-- NEW UPGRADED CAROUSEL -->
-        <div class="relative w-full h-80 bg-amber-700 rounded-3xl p-6 shadow-lg border-2 border-black mb-12"
-             x-data='{
-                 images: {!! json_encode($carouselImages) !!},
-                 currentIndex: 0,
-                 get hasImage() { return this.images && this.images.length > 0; },
-                 init() {
-                     // Fetch updates from the database every 5 seconds
-                     setInterval(() => {
-                         fetch("{{ route('banner.fetch') }}")
-                             .then(response => response.json())
-                             .then(data => {
-                                 if(data.has_image) {
-                                     this.images = data.images;
-                                     if (this.currentIndex >= this.images.length) this.currentIndex = 0;
-                                 } else {
-                                     this.images = [];
-                                 }
-                             });
-                     }, 5000); 
-
-                     // NEW: Auto-scroll to the next image every 8 seconds
-                     setInterval(() => {
-                         if (this.images.length > 1) {
-                             this.next();
-                         }
-                     }, 8000);
-                 },
-                 next() {
-                     if(this.images.length > 1) {
-                         this.currentIndex = (this.currentIndex + 1) % this.images.length;
-                     }
-                 },
-                 prev() {
-                     if(this.images.length > 1) {
-                         this.currentIndex = (this.currentIndex - 1 + this.images.length) % this.images.length;
-                     }
-                 }
-             }'>
+        <div class="relative w-full h-80 bg-amber-700 rounded-3xl p-6 shadow-lg border-2 border-black mb-12" x-data="imageCarousel()">
             <div class="bg-blue-100 w-full h-full rounded-2xl border-4 border-amber-600 relative overflow-hidden flex items-center justify-center">
                 
                 <template x-if="hasImage">
@@ -145,20 +73,20 @@
        @php
     $activeSyRecord = \App\Models\SchoolYear::where('status', 'active')->first();
     
-    if ($activeSyRecord && $activeSyRecord->school_year) {
-        $syText = $activeSyRecord->school_year;
+    if ($activeSyRecord &&$activeSyRecord->school_year) {
+        $syText =$activeSyRecord->school_year;
     } else {
         $currentMonth = now()->month;
         $currentYear = now()->year;
-        $syStart = $currentMonth >= 6 ? $currentYear : $currentYear - 1;
-        $syEnd = $syStart + 1;
-        $syText = $syStart . ' - ' . $syEnd;
+        $syStart =$currentMonth >= 6 ? $currentYear :$currentYear - 1;
+        $syEnd =$syStart + 1;
+        $syText = $syStart . ' - ' .$syEnd;
     }
     
     // Extract the start and end years to lock the calendar boundaries
-    preg_match_all('/\d{4}/', $syText, $matches);
-    $syStartYear = $matches[0][0] ?? now()->year;
-    $syEndYear = $matches[0][1] ?? (now()->year + 1);
+    preg_match_all('/\d{4}/', $syText,$matches);
+    $syStartYear =$matches[0][0] ?? now()->year;
+    $syEndYear =$matches[0][1] ?? (now()->year + 1);
 @endphp
 
 <h3 class="text-3xl md:text-4xl font-black text-center mb-6 tracking-tighter uppercase">
@@ -253,4 +181,87 @@
         </div>
     </main>
 </div>
+
+<!-- Move Alpine.js Logic to a clean script block -->
+<script>
+    document.addEventListener('alpine:init', () => {
+        
+        Alpine.data('parentDashboard', () => ({
+            currentMonth: {{ now()->month - 1 }}, 
+            currentYear: {{ now()->year }}, 
+            selectedDate: {{ now()->day }},
+            monthNames: ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"],
+            events: {!! json_encode($eventsData ?? new \stdClass()) !!},
+            
+            get daysInMonth() { return new Date(this.currentYear, this.currentMonth + 1, 0).getDate(); },
+            get startDay() { return new Date(this.currentYear, this.currentMonth, 1).getDay(); },
+            get blanks() { return Array.from({ length: this.startDay }); },
+            get days() { return Array.from({ length: this.daysInMonth }, (_, i) => i + 1); },
+            
+            getDateKey(day) {
+                return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+            },
+            
+            formatTime(time) {
+                if (!time) return "";
+                let parts = time.split(":");
+                let hours = parseInt(parts[0]);
+                let minutes = parts[1];
+                let ampm = hours >= 12 ? "PM" : "AM";
+                hours = hours % 12 || 12; 
+                return `${hours}:${minutes} ${ampm}`;
+            },
+            
+            init() {
+                setInterval(() => {
+                    fetch("/fetch-events?t=" + Date.now())
+                        .then(response => response.json())
+                        .then(data => {
+                            this.events = { ...data }; 
+                        })
+                        .catch(error => console.error(error));
+                }, 1000);
+            }
+        }));
+
+        Alpine.data('imageCarousel', () => ({
+            images: {!! json_encode($carouselImages) !!},
+            currentIndex: 0,
+            get hasImage() { return this.images && this.images.length > 0; },
+            
+            init() {
+                setInterval(() => {
+                    fetch("{{ route('banner.fetch') }}")
+                        .then(response => response.json())
+                        .then(data => {
+                            if(data.has_image) {
+                                this.images = data.images;
+                                if (this.currentIndex >= this.images.length) this.currentIndex = 0;
+                            } else {
+                                this.images = [];
+                            }
+                        });
+                }, 5000); 
+
+                setInterval(() => {
+                    if (this.images.length > 1) {
+                        this.next();
+                    }
+                }, 8000);
+            },
+            
+            next() {
+                if(this.images.length > 1) {
+                    this.currentIndex = (this.currentIndex + 1) % this.images.length;
+                }
+            },
+            
+            prev() {
+                if(this.images.length > 1) {
+                    this.currentIndex = (this.currentIndex - 1 + this.images.length) % this.images.length;
+                }
+            }
+        }));
+    });
+</script>
 @endsection
