@@ -203,32 +203,44 @@ class AppointmentController extends Controller
 
     public function approve(Appointment $appointment)
     {
-        // 1. CHECK FOR DOUBLE BOOKING BEFORE APPROVING
+        $startTime = Carbon::parse($appointment->start_time);
+        $endTime = Carbon::parse($appointment->end_time);
+        $timeSlot = $startTime->format('gA'); // e.g. "8AM", "10AM"
+
+        // 1. CHECK IF TEACHER IS ON LEAVE OR IN CLASS
+        $scheduleConflict = TeacherSchedule::where('teacher_id', $appointment->teacher_id)
+            ->where('date', $appointment->appointment_date)
+            ->where('time_slot', $timeSlot)
+            ->whereIn('status', ['leave', 'on_leave', 'class', 'class_hours'])
+            ->first();
+
+        if ($scheduleConflict) {
+            $reason = in_array($scheduleConflict->status, ['leave', 'on_leave']) ? 'on leave' : 'in class';
+            return back()->with('error', "Cannot approve: The teacher is marked as {$reason} during this time slot.");
+        }
+
+        // 2. CHECK FOR DOUBLE BOOKING BEFORE APPROVING
         $hasConflict = Appointment::where('teacher_id', $appointment->teacher_id)
             ->where('appointment_date', $appointment->appointment_date)
             ->where('status', 'booked') // Only check against already approved/booked slots
-            ->where('id', '!=', $appointment->id) // Exclude the current appointment just in case
+            ->where('id', '!=', $appointment->id) // Exclude current appointment
             ->where(function ($query) use ($appointment) {
-                // Time overlap logic: Existing start is before New end AND Existing end is after New start
                 $query->where('start_time', '<', $appointment->end_time)
                       ->where('end_time', '>', $appointment->start_time);
             })
             ->exists();
 
-        // 2. IF CONFLICT EXISTS, STOP AND RETURN ERROR
+        // 3. IF CONFLICT EXISTS, STOP AND RETURN ERROR
         if ($hasConflict) {
             return back()->with('error', 'Cannot approve: This time slot has already been booked.');
         }
 
-        // 3. IF NO CONFLICT, PROCEED WITH APPROVAL
+        // 4. IF NO CONFLICT, PROCEED WITH APPROVAL
         $appointment->update(['status' => 'booked']);
 
-        $startTime = Carbon::parse($appointment->start_time);
-        $endTime = Carbon::parse($appointment->end_time);
         $durationMinutes = $startTime->diffInMinutes($endTime);
         $status = $durationMinutes < 60 ? 'booked-half' : 'booked';
 
-        $timeSlot = $startTime->format('gA');
         TeacherSchedule::updateOrCreate(
             [
                 'teacher_id' => $appointment->teacher_id,

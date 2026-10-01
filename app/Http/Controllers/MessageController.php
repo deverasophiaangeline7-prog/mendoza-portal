@@ -272,8 +272,9 @@ class MessageController extends Controller
             // ==========================================
             // DYNAMIC AI PROMPTS BASED ON RECEIVER ROLE
             // ==========================================
-            
-            if ($currentReceiverRole === 'admin') {
+
+            if ($receiverRole === 'admin') {
+           
                 // 🛑 ADMIN PROMPT: ONLY handles Passwords and Account Settings
                 $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc.
                 IMPORTANT: You are currently responding on behalf of the Admin account.
@@ -390,7 +391,7 @@ class MessageController extends Controller
 
             $finalAiCheck = trim(strtoupper($aiText));
 
-            if ($finalAiCheck === 'NEVER_IGNORE_DEBUG') {
+            if ($finalAiCheck === 'IGNORE') {
                 // Do absolutely nothing
             } else {
                 $aiResponded = true; // Mark that AI responded
