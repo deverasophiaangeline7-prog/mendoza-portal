@@ -11,6 +11,7 @@ use App\Models\Student;
 use App\Models\Section;
 use App\Models\Notification;
 use App\Models\AuditLog;
+use Carbon\Carbon;
 
 class AppointmentController extends Controller
 {
@@ -222,8 +223,8 @@ class AppointmentController extends Controller
         // 3. IF NO CONFLICT, PROCEED WITH APPROVAL
         $appointment->update(['status' => 'booked']);
 
-        $startTime = \Carbon\Carbon::parse($appointment->start_time);
-        $endTime = \Carbon\Carbon::parse($appointment->end_time);
+        $startTime = Carbon::parse($appointment->start_time);
+        $endTime = Carbon::parse($appointment->end_time);
         $durationMinutes = $startTime->diffInMinutes($endTime);
         $status = $durationMinutes < 60 ? 'booked-half' : 'booked';
 
@@ -351,13 +352,50 @@ class AppointmentController extends Controller
             'schedules.*.date' => 'required|date',
             'schedules.*.time' => 'required|string',
             'schedules.*.status' => 'required|string',
+            'schedules.*.needs_reschedule' => 'boolean|nullable', // Validate the new flag
         ]);
 
         foreach ($request->schedules as $schedule) {
+            // Update the general schedule layout
             TeacherSchedule::updateOrCreate(
                 ['teacher_id' => $request->teacher_id, 'date' => $schedule['date'], 'time_slot' => $schedule['time']],
                 ['status' => $schedule['status']]
             );
+
+            // If a booked slot was overridden by a 'leave' status, flag the appointment for reschedule
+            if (isset($schedule['needs_reschedule']) && $schedule['needs_reschedule'] === true && $schedule['status'] === 'leave') {
+                
+                // Fetch booked appointments on this specific date
+                $affectedAppointments = Appointment::where('teacher_id', $request->teacher_id)
+                    ->where('appointment_date', $schedule['date'])
+                    ->where('status', 'booked')
+                    ->get();
+                    
+                foreach($affectedAppointments as $appointment) {
+                    // Check if the appointment's start time falls within the overridden 1-hour slot (e.g., 8:00 AM matches '8AM')
+                    $appointmentStartHour = Carbon::parse($appointment->start_time)->format('hA'); 
+                    
+                    // Format both to things like "08AM" to ensure a clean match
+                    $slotStartHour = Carbon::parse($schedule['time'])->format('hA');
+                    
+                    if ($appointmentStartHour === $slotStartHour) {
+                        $appointment->update([
+                            'status' => 'reschedule',
+                            'reschedule_reason' => 'Emergency: Teacher is on leave.',
+                            'created_by' => auth()->id(), 
+                        ]);
+
+                        // Send notification to the parent
+                        Notification::create([
+                            'user_id' => $appointment->parent_id,
+                            'title' => 'Appointment Rescheduled (Emergency Leave)',
+                            'message' => 'Your booked appointment on ' . Carbon::parse($appointment->appointment_date)->format('M d, Y') . ' at ' . Carbon::parse($appointment->start_time)->format('h:i A') . ' has been flagged for reschedule because the teacher is on leave.',
+                            'type' => 'appointment',
+                            'is_read' => 0,
+                        ]);
+                    }
+                }
+            }
         }
 
         // Log the action in the audit log

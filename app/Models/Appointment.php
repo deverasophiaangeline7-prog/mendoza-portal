@@ -17,7 +17,8 @@ class Appointment extends Model
         'start_time', 
         'end_time', 
         'status',
-        'created_by' // <--- MUST BE HERE!
+        'created_by', // <--- MUST BE HERE!
+        'reschedule_reason' // <--- Added to allow mass assignment for reschedules
     ];
 
     public function parent()

@@ -15,24 +15,22 @@
     .dashboard-container { display: flex; font-family: 'Arial', sans-serif; width: 100%; height: 100%; overflow: hidden; }
     .main-content { flex: 1; padding: 30px 20px; background-color: #ffffff; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
     
-    /* Adjusted page title for mobile */
     .page-title { font-size: 28px; font-weight: 900; text-align: center; margin-bottom: 30px; text-transform: uppercase; }
     @media (min-width: 768px) {
         .page-title { font-size: 36px; margin-bottom: 40px; }
         .main-content { padding: 30px 50px; }
     }
     
-    /* FIX: Make the grid responsive so it stacks vertically on mobile */
     .adviser-grid { 
         display: grid; 
-        grid-template-columns: 1fr; /* 1 column on mobile to prevent sideways scroll */
+        grid-template-columns: 1fr; 
         gap: 30px; 
         width: 100%; 
         max-width: 1100px; 
     }
     @media (min-width: 768px) {
         .adviser-grid {
-            grid-template-columns: repeat(3, 1fr); /* 3 columns on desktop */
+            grid-template-columns: repeat(3, 1fr);
         }
     }
     
@@ -57,7 +55,6 @@
     
     .adviser-btn span { display: block; color: #fff; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; font-weight: 900; font-size: 22px; }
 
-    /* Modal Overlay & Containers */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 999999; }
     .modal-overlay.hidden, .toast-banner.hidden { display: none !important; }
     
@@ -80,7 +77,6 @@
     
     .close-btn { position: absolute; top: 15px; right: 15px; background: var(--ma-red); color: white; border: 3px solid #fff; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; padding-bottom: 4px; z-index: 10; }
 
-    /* Table adjustments */
     .schedule-grid-container { width: 100%; overflow-x: auto; }
     .schedule-grid { width: 100%; min-width: 600px; border-collapse: collapse; text-align: center; border: 2px solid #000; }
     .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 5px; height: 40px; font-size: 13px; font-weight: 900; }
@@ -118,7 +114,7 @@
     <div class="main-content">
         <h1 class="page-title">Appointment Scheduling</h1>
         <div class="adviser-grid">
-            @foreach($advisersList as $adviser)
+            @foreach($advisersList as$adviser)
                 @php 
                     $assigned = !empty($adviser['user_id']);$teacherId = $assigned ? $adviser['user_id'] : 'null';
                 @endphp
@@ -147,7 +143,10 @@
             }
 
             $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);$prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');$nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');$calendarDays = [];
-            for ($i = 0; $i < 5; $i++) { $calendarDays[] =$startOfWeek->copy()->addDays($i); }$timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
+            
+            for ($i = 0; $i < 5; $i++) {$calendarDays[] = $startOfWeek->copy()->addDays($i); 
+            }
+            $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
         @endphp
 
         <div class="modal-header-top">
@@ -161,7 +160,8 @@
             </div>
             <div class="calendar-navigation">
                 <a href="{{ request()->fullUrlWithQuery(['date' => $prevWeekDate]) }}" class="nav-arrow">&laquo;</a>
-                <h2 class="month-title">{{ $startOfWeek->format('M d') }} - {{$startOfWeek->copy()->addDays(4)->format('M d, Y') }}</h2>
+                <!-- Fixed Date Formatting: Changed 'M d' to 'M j' -->
+                <h2 class="month-title">{{ $startOfWeek->format('M j') }} - {{$startOfWeek->copy()->addDays(4)->format('M j, Y') }}</h2>
                 <a href="{{ request()->fullUrlWithQuery(['date' => $nextWeekDate]) }}" class="nav-arrow">&raquo;</a>
             </div>
             <button class="close-btn" onclick="closeAdminModal()">&times;</button>
@@ -172,16 +172,17 @@
                 <thead>
                     <tr>
                         <th class="time-col"></th>
-                        @foreach($calendarDays as $day)
-                            <th class="day-header" data-date="{{ $day->format('Y-m-d') }}">{{ $day->format('D d') }}</th>
+                        @foreach($calendarDays as$day)
+                            <!-- Fixed Date Formatting: Changed 'D d' to 'D j' -->
+                            <th class="day-header" data-date="{{ $day->format('Y-m-d') }}">{{ $day->format('D j') }}</th>
                         @endforeach
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($timeSlots as $time)
+                    @foreach($timeSlots as$time)
                         <tr>
                             <td class="time-col">{{ $time }}</td>
-                            @foreach($calendarDays as $day)
+                            @foreach($calendarDays as$day)
                                 @php
                                     $cellKey = $day->format('Y-m-d') . '\vert{}' .$time;
                                     $cellStatus = $scheduleRows[$cellKey] ?? 'available';
@@ -309,8 +310,14 @@
             currentIndex = (currentIndex - 1 + statusClasses.length) % statusClasses.length;
         }
         
+        let nextClass = statusClasses[currentIndex];
+
+        if (cell.dataset.originalStatus === 'booked' && nextClass === 'cell-grey') {
+            showToast("Marking this booked slot as leave will reschedule it.", false);
+        }
+
         cell.classList.remove(...statusClasses);
-        cell.classList.add(statusClasses[currentIndex]);
+        cell.classList.add(nextClass);
     }
 
     function selectCell(cell) {
@@ -394,6 +401,14 @@
         const dayCells = document.querySelectorAll(`.schedule-grid td[data-date="${dateStr}"]`);
         let allGrey = Array.from(dayCells).every(cell => cell.classList.contains('cell-grey'));
 
+        // Admin confirmation if they are marking a day with existing bookings as leave
+        let hasBooked = Array.from(dayCells).some(cell => cell.dataset.originalStatus === 'booked');
+        if (!allGrey && hasBooked) {
+            if(!confirm("This day currently has booked appointments. Marking it as leave will flag them for rescheduling. Do you want to continue?")) {
+                return;
+            }
+        }
+
         dayCells.forEach(cell => {
             cell.classList.remove(...statusClasses);
             cell.classList.add(allGrey ? 'cell-white' : 'cell-grey');
@@ -424,18 +439,25 @@
                     const date = cell.getAttribute('data-date');
                     const time = cell.getAttribute('data-time');
                     const match = data.schedules.find(item => item.date === date && item.time === time);
+                    
                     cell.classList.remove('cell-white', 'cell-green', 'cell-red', 'cell-grey');
 
+                    // Set visual class and track the original DB status for reschedule logic
                     if (!match || match.status === 'available') {
                         cell.classList.add('cell-white');
+                        cell.dataset.originalStatus = 'available';
                     } else if (match.status === 'booked') {
                         cell.classList.add('cell-green');
+                        cell.dataset.originalStatus = 'booked';
                     } else if (match.status === 'class' || match.status === 'class_hours') {
                         cell.classList.add('cell-red');
+                        cell.dataset.originalStatus = 'class';
                     } else if (match.status === 'leave' || match.status === 'on_leave') {
                         cell.classList.add('cell-grey');
+                        cell.dataset.originalStatus = 'leave';
                     } else {
                         cell.classList.add('cell-white');
+                        cell.dataset.originalStatus = 'available';
                     }
                 });
             }
@@ -458,10 +480,15 @@
             if (cell.classList.contains('cell-red')) cellStatus = 'class';
             if (cell.classList.contains('cell-grey')) cellStatus = 'leave';
 
+            // Determine if a booked appointment needs to be rescheduled
+            let originalStatus = cell.dataset.originalStatus;
+            let needsReschedule = (originalStatus === 'booked' && cellStatus === 'leave');
+
             scheduleData.push({
                 date: cell.getAttribute('data-date'),
                 time: cell.getAttribute('data-time'),
-                status: cellStatus
+                status: cellStatus,
+                needs_reschedule: needsReschedule
             });
         });
 
@@ -485,6 +512,8 @@
         .then(data => {
             if (data.success) {
                 showToast('Schedule saved successfully!');
+                // Reload schedule to lock in the new original statuses
+                loadTeacherSchedule(currentTeacherId);
             } else {
                 showToast('Save failed: ' + (data.message || 'Unknown error'), true);
             }
