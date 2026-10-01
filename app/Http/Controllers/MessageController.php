@@ -390,7 +390,7 @@ class MessageController extends Controller
 
             $finalAiCheck = trim(strtoupper($aiText));
 
-            if ($finalAiCheck === 'IGNORE') {
+            if ($finalAiCheck === 'NEVER_IGNORE_DEBUG') {
                 // Do absolutely nothing
             } else {
                 $aiResponded = true; // Mark that AI responded

@@ -61,7 +61,8 @@
     .admin-modal { background: white; border: 4px solid #000; border-radius: 25px; width: 95%; max-width: 1400px; padding: 20px 15px; position: relative; }
     @media (min-width: 768px) { .admin-modal { padding: 20px 30px; } }
     
-    .modal-header-top { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 20px; margin-top: 35px; }
+    /* Fixed Alignment: Added padding-right to account for the absolute close button */
+    .modal-header-top { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 20px; margin-top: 35px; padding-right: 50px; }
     @media (min-width: 768px) { .modal-header-top { flex-direction: row; justify-content: space-between; margin-top: 0; } }
 
     .header-controls { display: flex; align-items: center; gap: 15px; justify-content: center; }
@@ -108,13 +109,23 @@
 
     .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 15px; font-weight: 900; }
     .legend-item span { display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #000; vertical-align: middle; margin-right: 5px; }
+
+    /* Custom Confirm Modal Styles */
+    .custom-confirm-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
+    .custom-confirm-overlay.hidden { display: none !important; }
+    .custom-confirm-box { background: #fff; border: 4px solid #000; border-radius: 20px; padding: 30px; width: 90%; max-width: 420px; text-align: center; box-shadow: 6px 6px 0px 0px rgba(0,0,0,1); }
+    .custom-confirm-text { font-size: 16px; font-weight: 900; margin-bottom: 25px; line-height: 1.5; color: #000; }
+    .custom-confirm-actions { display: flex; justify-content: center; gap: 15px; }
+    .btn-cancel { background: #fff; color: #000; border: 2px solid #000; padding: 12px 24px; border-radius: 12px; font-weight: 900; cursor: pointer; transition: 0.1s; box-shadow: 3px 3px 0px 0px #000; font-size: 14px; }
+    .btn-confirm { background: var(--ma-red); color: #fff; border: 2px solid #000; padding: 12px 24px; border-radius: 12px; font-weight: 900; cursor: pointer; transition: 0.1s; box-shadow: 3px 3px 0px 0px #000; font-size: 14px; }
+    .btn-cancel:active, .btn-confirm:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px 0px #000; }
 </style>
 
 <div class="dashboard-container">
     <div class="main-content">
         <h1 class="page-title">Appointment Scheduling</h1>
         <div class="adviser-grid">
-            @foreach($advisersList as $adviser)
+            @foreach($advisersList as$adviser)
                 @php 
                     $assigned = !empty($adviser['user_id']);$teacherId = $assigned ? $adviser['user_id'] : 'null';
                 @endphp
@@ -160,7 +171,6 @@
             </div>
             <div class="calendar-navigation">
                 <a href="{{ request()->fullUrlWithQuery(['date' => $prevWeekDate]) }}" class="nav-arrow">&laquo;</a>
-                <!-- Fixed Date Formatting: Changed 'M d' to 'M j' -->
                 <h2 class="month-title">{{ $startOfWeek->format('M j') }} - {{$startOfWeek->copy()->addDays(4)->format('M j, Y') }}</h2>
                 <a href="{{ request()->fullUrlWithQuery(['date' => $nextWeekDate]) }}" class="nav-arrow">&raquo;</a>
             </div>
@@ -172,17 +182,16 @@
                 <thead>
                     <tr>
                         <th class="time-col"></th>
-                        @foreach($calendarDays as $day)
-                            <!-- Fixed Date Formatting: Changed 'D d' to 'D j' -->
+                        @foreach($calendarDays as$day)
                             <th class="day-header" data-date="{{ $day->format('Y-m-d') }}">{{ $day->format('D j') }}</th>
                         @endforeach
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($timeSlots as $time)
+                    @foreach($timeSlots as$time)
                         <tr>
                             <td class="time-col">{{ $time }}</td>
-                            @foreach($calendarDays as $day)
+                            @foreach($calendarDays as$day)
                                 @php
                                     $cellKey = $day->format('Y-m-d') . '\vert{}' .$time;
                                     $cellStatus = $scheduleRows[$cellKey] ?? 'available';
@@ -208,11 +217,28 @@
     </div>
 </div>
 
+<!-- Custom Confirmation Modal -->
+<div id="customConfirmModal" class="custom-confirm-overlay hidden">
+    <div class="custom-confirm-box">
+        <div class="custom-confirm-text">
+            This day currently has booked appointments. Marking it as leave will flag them for rescheduling. Do you want to continue?
+        </div>
+        <div class="custom-confirm-actions">
+            <button class="btn-cancel" onclick="closeCustomConfirm()">Cancel</button>
+            <button class="btn-confirm" onclick="executePendingLeave()">Continue</button>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const modal = document.getElementById('adminCalendarModal');
         if (modal) {
             document.body.appendChild(modal);
+        }
+        const confirmModal = document.getElementById('customConfirmModal');
+        if (confirmModal) {
+            document.body.appendChild(confirmModal);
         }
     });
 
@@ -220,6 +246,7 @@
     let isManageMode = false;
     let isLeaveMode = false;
     let selectedCell = null;
+    let pendingLeaveAction = null; // Stores the function to run if admin clicks "Continue"
     
     const statusClasses = ['cell-white', 'cell-green', 'cell-red', 'cell-grey'];
 
@@ -397,22 +424,41 @@
         }
     }
 
+    /* CUSTOM MODAL LOGIC */
     function toggleWholeDayLeave(dateStr) {
         const dayCells = document.querySelectorAll(`.schedule-grid td[data-date="${dateStr}"]`);
         let allGrey = Array.from(dayCells).every(cell => cell.classList.contains('cell-grey'));
-
-        // Admin confirmation if they are marking a day with existing bookings as leave
         let hasBooked = Array.from(dayCells).some(cell => cell.dataset.originalStatus === 'booked');
+
+        // Check if we are turning the day into a leave day AND there are booked slots
         if (!allGrey && hasBooked) {
-            if(!confirm("This day currently has booked appointments. Marking it as leave will flag them for rescheduling. Do you want to continue?")) {
-                return;
-            }
+            pendingLeaveAction = () => {
+                dayCells.forEach(cell => {
+                    cell.classList.remove(...statusClasses);
+                    cell.classList.add('cell-grey');
+                });
+            };
+            document.getElementById('customConfirmModal').classList.remove('hidden');
+            return; // Halt execution until modal is handled
         }
 
+        // If no conflict or reverting to available, just run it instantly
         dayCells.forEach(cell => {
             cell.classList.remove(...statusClasses);
             cell.classList.add(allGrey ? 'cell-white' : 'cell-grey');
         });
+    }
+
+    function closeCustomConfirm() {
+        document.getElementById('customConfirmModal').classList.add('hidden');
+        pendingLeaveAction = null;
+    }
+
+    function executePendingLeave() {
+        if (typeof pendingLeaveAction === 'function') {
+            pendingLeaveAction();
+        }
+        closeCustomConfirm();
     }
 
     document.addEventListener('keydown', function(event) {
@@ -442,7 +488,6 @@
                     
                     cell.classList.remove('cell-white', 'cell-green', 'cell-red', 'cell-grey');
 
-                    // Set visual class and track the original DB status for reschedule logic
                     if (!match || match.status === 'available') {
                         cell.classList.add('cell-white');
                         cell.dataset.originalStatus = 'available';
@@ -480,7 +525,6 @@
             if (cell.classList.contains('cell-red')) cellStatus = 'class';
             if (cell.classList.contains('cell-grey')) cellStatus = 'leave';
 
-            // Determine if a booked appointment needs to be rescheduled
             let originalStatus = cell.dataset.originalStatus;
             let needsReschedule = (originalStatus === 'booked' && cellStatus === 'leave');
 
@@ -512,7 +556,6 @@
         .then(data => {
             if (data.success) {
                 showToast('Schedule saved successfully!');
-                // Reload schedule to lock in the new original statuses
                 loadTeacherSchedule(currentTeacherId);
             } else {
                 showToast('Save failed: ' + (data.message || 'Unknown error'), true);
