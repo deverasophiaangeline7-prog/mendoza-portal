@@ -472,6 +472,8 @@ public function show($section_id)
         $processed = 0;
         $highestRow = $targetSheet->getHighestDataRow();
 
+        $skippedStudents = [];
+
         // PROCESS THE TARGET SHEET
         for ($row = 1; $row <= $highestRow; $row++) {
             $lrn = trim((string) $targetSheet->getCell('A' . $row)->getCalculatedValue());
@@ -543,11 +545,8 @@ public function show($section_id)
 
             // 6. LRN VALIDATION
             if (!preg_match('/^\d{12}$/', $lrn)) {
-                return redirect()->route('reportcard.show', [
-                    'section_id' => $section_id,
-                    'toast_status' => 'error',
-                    'toast_message' => "Incorrect lrn input. Please check again!"
-                ]);
+                $skippedStudents[] = $excelName; // Add to skipped list instead of crashing!
+                continue;
             }
 
             // 7. DATABASE VALIDATION
@@ -555,10 +554,12 @@ public function show($section_id)
             $student = Student::where('lrn', $cleanLrnForDb)->first();
 
             if (!$student) {
+                $skippedStudents[] = $excelName;
                 continue; 
             }
 
             if ($student->section_id != $section_id) {
+                $skippedStudents[] = $excelName;
                 continue; 
             }
 
@@ -591,7 +592,15 @@ public function show($section_id)
         $status = 'success';
         $message = "{$request->subject} Term {$activeTerm} grades imported! {$processed} student(s) updated.";
 
-        if ($processed === 0) {
+        // If any students were skipped due to wrong LRNs, add the formal warning
+        if (count($skippedStudents) > 0) {
+            $skippedNames = implode(', ', $skippedStudents);
+            $message .= " However, grades could not be imported for the following student(s) due to an incorrect or unmatched LRN: {$skippedNames}.";
+            $status = 'warning'; // Optional: change to 'success' if your toast doesn't support 'warning'
+        }
+        
+        // Make sure this doesn't overwrite the warning message
+        if ($processed === 0 && count($skippedStudents) === 0) {
             $status = 'error';
             $message = "Import failed. No valid students found in the file.";
         } 
