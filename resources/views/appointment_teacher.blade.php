@@ -600,12 +600,10 @@
                 </form>
             </div>
 
-            <!-- ADDED ID HERE FOR SYNCING -->
             <div id="sync-teacher-sent">
                 <div style="text-align: left; font-weight: 900; font-size: 18px; margin-top: 20px; margin-bottom: 10px; margin-left: 5px;">
                     My Sent Requests
                 </div>
-                <!-- Wrapped Table in table-responsive -->
                 <div class="table-responsive">
                     <table class="pending-table">
                         <thead>
@@ -614,8 +612,8 @@
                                 <th>Topic</th>
                                 <th>Date & Time</th>
                                 <th>Status</th>
-                                <th style="width: 45px;"></th> <!-- Cancel column -->
-                                </tr>
+                                <th style="width: 45px;"></th> 
+                            </tr>
                         </thead>
                         <tbody>
                             @forelse($mySentRequests as $request)
@@ -693,8 +691,8 @@
                 </div>
             </div>
 
-            <!-- Wrapped Table in table-responsive -->
-            <div class="table-responsive">
+            <!-- ADDED SYNC ID HERE FOR REAL-TIME UPDATES -->
+            <div class="table-responsive" id="sync-schedule-grid">
                 <table class="schedule-grid">
                     <thead>
                         <tr>
@@ -834,7 +832,6 @@
             <button class="close-btn" onclick="closeModal('requestsModalOverlay')">&times;</button>
         </div>
 
-        <!-- ADDED ID HERE FOR SYNCING -->
         <div class="table-responsive" id="sync-teacher-incoming">
             <table class="modal-table">
                 <thead>
@@ -1015,14 +1012,12 @@
             return false;
         }
 
-        // ADDED CHECK: Prevent Lunch Break Bookings
         if (startMins < 780 && endMins > 720) {
             event.preventDefault();
             showValidationPopUp('Appointments cannot be scheduled during the 12:00 PM - 1:00 PM lunch break.');
             return false;
         }
 
-        // ADDED CHECK: Prevent past times on the current day
         if (dateInput === today) {
             const now = new Date();
             const currentMins = now.getHours() * 60 + now.getMinutes();
@@ -1081,15 +1076,13 @@
 
     function openRescheduleModal(appointmentId) {
         const form = document.getElementById('rescheduleForm');
-        // Point to the exact reschedule route
-        form.action = `/appointments/${appointmentId}/reschedule`; 
+        form.action = `/appointments/${appointmentId}/reschedule`;
         openModal('rescheduleModal');
     }
 
     function openTrueDeclineModal(appointmentId) {
         const form = document.getElementById('trueDeclineForm');
-        // Point to the exact decline route
-        form.action = `/appointments/${appointmentId}/decline`; 
+        form.action = `/appointments/${appointmentId}/decline`;
         openModal('trueDeclineModal');
     }
 
@@ -1107,16 +1100,6 @@
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
 
-    // LISTENS FOR THE ACTION PARAMETER TO OPEN THE MODAL ON PAGE LOAD
-    document.addEventListener('DOMContentLoaded', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('action') === 'view_requests') {
-            openModal('requestsModalOverlay');
-            // Clean up the URL so it doesn't reopen on page refresh
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    });
-
     // SILENT BACKGROUND SYNC FOR APPOINTMENTS
     setInterval(() => {
         const isModalOpen = document.querySelectorAll('.modal-overlay:not(.modal-hidden)').length > 0;
@@ -1128,6 +1111,12 @@
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     
+                    const newParentRequests = doc.getElementById('sync-parent-requests');
+                    const currentParentRequests = document.getElementById('sync-parent-requests');
+                    if (newParentRequests && currentParentRequests) {
+                        currentParentRequests.innerHTML = newParentRequests.innerHTML;
+                    }
+
                     // 1. Sync Teacher Sent Requests
                     const newTeacherSent = doc.getElementById('sync-teacher-sent');
                     const currentTeacherSent = document.getElementById('sync-teacher-sent');
@@ -1147,6 +1136,13 @@
                     const currentBadge = document.querySelector('.request-badge');
                     if (newBadge && currentBadge) {
                         currentBadge.innerText = newBadge.innerText;
+                    }
+
+                    // 4. Sync Schedule Grid Live Updates
+                    const newScheduleGrid = doc.getElementById('sync-schedule-grid');
+                    const currentScheduleGrid = document.getElementById('sync-schedule-grid');
+                    if (newScheduleGrid && currentScheduleGrid) {
+                        currentScheduleGrid.innerHTML = newScheduleGrid.innerHTML;
                     }
                 })
                 .catch(error => console.error('Error syncing appointments:', error));

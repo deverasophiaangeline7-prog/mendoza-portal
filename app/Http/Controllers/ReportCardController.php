@@ -479,20 +479,28 @@ public function show($section_id)
             $lrn = trim((string) $targetSheet->getCell('A' . $row)->getCalculatedValue());
             $excelName = trim((string) $targetSheet->getCell('B' . $row)->getCalculatedValue());
             
-            // 1. Skip completely empty rows
-            if (empty($lrn) && empty($excelName)) {
+            // 1. Skip completely empty rows or rows that are missing a student name
+            if (empty($lrn) || empty($excelName)) {
                 continue;
             }
 
-            // 2. Skip structural header rows (like MALE/FEMALE dividers)
+            // 2. Skip structural rows (like MALE/FEMALE dividers)
             if (strtoupper($lrn) === 'MALE' || strtoupper($lrn) === 'FEMALE' || strtoupper($excelName) === 'MALE' || strtoupper($excelName) === 'FEMALE') {
                 continue;
             }
 
-            // 3. Skip title rows (If Column A has absolutely no numbers, it's a header, not a student)
+            // 3. Skip text header rows (If the LRN column has no numbers, it's not a student)
             if (!preg_match('/\d/', $lrn)) {
                 continue; 
             }
+
+            // ==========================================
+            // CRITICAL FIX: EXCEL FLOAT FORMATTING
+            // ==========================================
+            // Removes invisible '.0' added by Excel and strips any non-breaking spaces
+            $lrn = preg_replace('/\.0+$/', '', $lrn); 
+            $lrn = preg_replace('/[^\d]/', '', $lrn); 
+            // ==========================================
 
             // --- AT THIS POINT, WE ARE LOOKING AT A REAL STUDENT ROW ---
 

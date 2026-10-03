@@ -546,7 +546,7 @@
             </div>
 
             <!-- Wrapped Table in table-responsive -->
-            <div class="table-responsive">
+            <div class="table-responsive" id="sync-schedule-grid">
                 <table class="schedule-grid">
                     <thead>
                         <tr>
@@ -911,6 +911,13 @@
                     const currentParentRequests = document.getElementById('sync-parent-requests');
                     if (newParentRequests && currentParentRequests) {
                         currentParentRequests.innerHTML = newParentRequests.innerHTML;
+                    }
+
+                    // Sync Schedule Grid Live Updates
+                    const newScheduleGrid = doc.getElementById('sync-schedule-grid');
+                    const currentScheduleGrid = document.getElementById('sync-schedule-grid');
+                    if (newScheduleGrid && currentScheduleGrid) {
+                        currentScheduleGrid.innerHTML = newScheduleGrid.innerHTML;
                     }
                 })
                 .catch(error => console.error('Error syncing appointments:', error));

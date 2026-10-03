@@ -359,7 +359,7 @@ class AppointmentController extends Controller
     public function updateAvailability(Request $request) 
     {
         $request->validate([
-            'teacher_id' => 'required|integer|exists:users,user_id',
+            'teacher_id' => 'required', // Removed strict integer validation to support all ID types
             'schedules' => 'required|array',
             'schedules.*.date' => 'required|date',
             'schedules.*.time' => 'required|string',
@@ -377,38 +377,42 @@ class AppointmentController extends Controller
             // If a booked slot was overridden by a 'leave' status, flag the appointment for reschedule
             if (isset($schedule['needs_reschedule']) && $schedule['needs_reschedule'] === true && $schedule['status'] === 'leave') {
                 
-                // Fetch booked appointments on this specific date
+                // Fetch strictly the booked appointments for this date
                 $affectedAppointments = Appointment::where('teacher_id', $request->teacher_id)
                     ->where('appointment_date', $schedule['date'])
                     ->where('status', 'booked')
                     ->get();
                     
                 foreach($affectedAppointments as $appointment) {
-                    // format('gA') guarantees a clean '8AM' format to match your database string perfectly
                     $appointmentStartHour = Carbon::parse($appointment->start_time)->format('gA'); 
                     $slotStartHour = Carbon::parse($schedule['time'])->format('gA');
                     
                     if ($appointmentStartHour === $slotStartHour) {
+                        
+                        // 1. Force the appointment back to the Teacher's incoming requests
                         $appointment->update([
                             'status' => 'reschedule',
                             'reschedule_reason' => 'Emergency: Teacher was marked on leave by Admin.',
                             'created_by' => $appointment->parent_id, 
                         ]);
 
-                        // Send notification to the parent
+                        $formattedDate = Carbon::parse($appointment->appointment_date)->format('M d, Y');
+                        $formattedTime = Carbon::parse($appointment->start_time)->format('h:i A');
+
+                        // 2. Alert the Parent (Removed (int) cast to prevent silent database drops)
                         Notification::create([
                             'user_id' => $appointment->parent_id,
                             'title' => 'Appointment Rescheduled (Emergency Leave)',
-                            'message' => 'Your booked appointment on ' . Carbon::parse($appointment->appointment_date)->format('M d, Y') . ' at ' . Carbon::parse($appointment->start_time)->format('h:i A') . ' has been flagged for reschedule because the teacher is on leave.',
+                            'message' => "Your booked appointment on {$formattedDate} at {$formattedTime} has been flagged for reschedule because the teacher is on leave.",
                             'type' => 'appointment',
                             'is_read' => 0,
                         ]);
 
-                        // Send notification to the teacher (Using strict validated request ID)
+                        // 3. Alert the Teacher (Removed (int) cast to prevent silent database drops)
                         Notification::create([
                             'user_id' => $request->teacher_id,
-                            'title' => 'Appointment Rescheduled (Admin Marked Leave)',
-                            'message' => 'Your booked appointment on ' . Carbon::parse($appointment->appointment_date)->format('M d, Y') . ' at ' . Carbon::parse($appointment->start_time)->format('h:i A') . ' was flagged for reschedule because an Admin marked you on leave. Please propose a new time.',
+                            'title' => 'Appointment Rescheduled (Emergency Leave)',
+                            'message' => "Admin marked you on leave for {$formattedDate}. Your {$formattedTime} appointment has been moved to your Incoming Requests to be rescheduled.",
                             'type' => 'appointment',
                             'is_read' => 0,
                         ]);
