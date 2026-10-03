@@ -524,17 +524,16 @@ public function show($section_id)
                 return redirect()->route('reportcard.show', [
                     'section_id' => $section_id,
                     'toast_status' => 'error',
-                    'toast_message' => "Invalid input at Row {$row}: Grades must be numbers only. Letters or symbols are not allowed."
+                    'toast_message' => "Incorrect input in grade. Number only. No letters"
                 ]);
             }
 
             // 6. LRN VALIDATION
             if (!preg_match('/^\d{12}$/', $lrn)) {
-                $displayName = !empty($excelName) ? " for '{$excelName}'" : "";
                 return redirect()->route('reportcard.show', [
                     'section_id' => $section_id,
                     'toast_status' => 'error',
-                    'toast_message' => "Invalid input at Row {$row}: The LRN '{$lrn}'{$displayName} is incorrect. It must be exactly 12 digits."
+                    'toast_message' => "Incorrect lrn input. Please check again!"
                 ]);
             }
 
@@ -542,11 +541,10 @@ public function show($section_id)
             $student = Student::where('lrn', trim($lrn))->where('section_id', $section_id)->first();
 
             if (!$student) {
-                $displayName = !empty($excelName) ? " ({$excelName})" : "";
                 return redirect()->route('reportcard.show', [
                     'section_id' => $section_id,
                     'toast_status' => 'error',
-                    'toast_message' => "LRN Mismatch at Row {$row}: The LRN '{$lrn}'{$displayName} does not match any student in this section."
+                    'toast_message' => "Incorrect lrn input. Please check again!"
                 ]);
             }
 
