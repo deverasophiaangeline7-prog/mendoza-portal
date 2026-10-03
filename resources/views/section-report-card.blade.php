@@ -137,7 +137,7 @@
                         <th class="py-3 px-4 border-r-[3px] border-black w-16 text-center font-bold text-sm">No.</th>
                         <th class="py-3 px-4 border-r-[3px] border-black w-32 text-center font-bold text-sm uppercase">LRN</th>
                         <th class="py-3 px-4 font-bold text-sm uppercase">Learner's Name</th>
-                        <th class="py-3 px-4 border-l-[3px] border-black w-32 text-center font-bold text-sm"></th>
+                       <th class="py-3 px-4 border-l-[3px] border-black w-32 text-center font-bold text-sm uppercase">ACTION</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -157,7 +157,7 @@
                         </tr>
                     @else
                         @foreach($males as $student)
-                        <tr class="border-b-[3px] border-black hover:bg-yellow-50 transition-colors text-black bg-white">
+                        <tr class="border-b-[3px] border-black transition-colors text-black bg-white">
                             <td class="py-3 px-4 text-center font-bold text-sm border-r-[3px] border-black text-black">{{ $count++ }}</td>
                             <td class="py-3 px-4 text-center font-bold text-sm border-r-[3px] border-black">{{ $student->lrn }}</td>
                             <td class="py-3 px-4 font-bold text-sm uppercase">{{ $student->last_name }}, {{ $student->first_name }} {{ $student->middle_name }}</td>
@@ -187,7 +187,7 @@
                         </tr>
                     @else
                         @foreach($females as $student)
-                        <tr class="border-b-[3px] border-black last:border-b-0 hover:bg-yellow-50 transition-colors text-black bg-white">
+                        <tr class="border-b-[3px] border-black last:border-b-0 transition-colors text-black bg-white">
                             <td class="py-3 px-4 text-center font-bold text-sm border-r-[3px] border-black text-black">{{ $count++ }}</td>
                             <td class="py-3 px-4 text-center font-bold text-sm border-r-[3px] border-black">{{ $student->lrn }}</td>
                             <td class="py-3 px-4 font-bold text-sm uppercase">{{ $student->last_name }}, {{ $student->first_name }} {{ $student->middle_name }}</td>
