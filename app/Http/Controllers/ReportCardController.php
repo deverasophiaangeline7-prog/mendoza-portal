@@ -567,13 +567,6 @@ public function show($section_id)
 
             // 8. SAVE TO DATABASE
             $updateData = [];
-            if ($activeTerm === 1 && $term1 !== null) {
-                $updateData['term1'] = $term1;
-            } elseif ($activeTerm === 2 && $term2 !== null) {
-                $updateData['term2'] = $term2;
-            } elseif ($activeTerm === 3 && $term3 !== null) {
-                $updateData['term3'] = $term3;
-            }
 
             if (!empty($updateData)) {
                 Grade::updateOrCreate(
