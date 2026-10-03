@@ -509,15 +509,15 @@ public function show($section_id)
 
             // --- AT THIS POINT, WE ARE LOOKING AT A REAL STUDENT ROW ---
 
-            // 4. Extract Grades
+            // 4. Extract Grades (Corrected to match DepEd E-Class Record Columns)
             $cellF = $targetSheet->getCell('F' . $row);
             $term1Val = (string) ($cellF->isFormula() ? $cellF->getOldCalculatedValue() : $cellF->getValue());
 
-            $cellJ = $targetSheet->getCell('J' . $row);
-            $term2Val = (string) ($cellJ->isFormula() ? $cellJ->getOldCalculatedValue() : $cellJ->getValue());
+            $cellG = $targetSheet->getCell('G' . $row); // Term 2 is in G, not J!
+            $term2Val = (string) ($cellG->isFormula() ? $cellG->getOldCalculatedValue() : $cellG->getValue());
 
-            $cellN = $targetSheet->getCell('N' . $row);
-            $term3Val = (string) ($cellN->isFormula() ? $cellN->getOldCalculatedValue() : $cellN->getValue());
+            $cellH = $targetSheet->getCell('H' . $row); // Term 3 is in H, not N!
+            $term3Val = (string) ($cellH->isFormula() ? $cellH->getOldCalculatedValue() : $cellH->getValue());
 
             $term1 = trim($term1Val) !== '' ? trim($term1Val) : null;
             $term2 = trim($term2Val) !== '' ? trim($term2Val) : null;
