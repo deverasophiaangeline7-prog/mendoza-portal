@@ -20,6 +20,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\Validator;
 
 class ReportCardController extends Controller
 {
@@ -326,14 +327,23 @@ public function show($section_id)
 
     public function importBatch(Request $request, $section_id)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'subject' => 'required|string',
             'excel_file' => 'required|file|mimes:xlsx,xls,csv|mimetypes:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv'
         ], [
-            'excel_file.mimes' => 'Error Message: Incorrect file type. Import .xlsx only.',
-            'excel_file.mimetypes' => 'Error Message: Incorrect file type. Import .xlsx only.'
+            'excel_file.mimes' => 'Incorrect file type! Please upload an Excel file only.',
+            'excel_file.mimetypes' => 'Incorrect file type! Please upload an Excel file only.',
+            'excel_file.required' => 'Please upload an Excel file.'
         ]);
-        
+
+        if ($validator->fails()) {
+            return redirect()->route('reportcard.show', [
+                'section_id' => $section_id,
+                'toast_status' => 'error',
+                'toast_message' => $validator->errors()->first()
+            ]);
+        }
+
         $teacher = Teacher::where('user_id', Auth::id())->first();
         
         if ($teacher && !str_contains(strtoupper($teacher->assigned_subject), 'ALL') && !empty($teacher->assigned_subject)) {
@@ -474,7 +484,14 @@ public function show($section_id)
             }
 
             if (!preg_match('/^\d{12}$/', $lrn)) {
-                $errors[] = "Row {$row}: Invalid LRN for '{$excelName}'.";
+                // Ignore structural header rows like MALE / FEMALE
+                if (strtoupper($lrn) !== 'MALE' && strtoupper($lrn) !== 'FEMALE' && strtoupper($excelName) !== 'MALE' && strtoupper($excelName) !== 'FEMALE') {
+                    return redirect()->route('reportcard.show', [
+                        'section_id' => $section_id,
+                        'toast_status' => 'error',
+                        'toast_message' => "Invalid input at Row {$row}: The LRN for '{$excelName}' must be exactly 12 digits."
+                    ]);
+                }
                 continue; 
             }
 
@@ -512,9 +529,12 @@ public function show($section_id)
             $student = Student::where('lrn', trim($lrn))->where('section_id', $section_id)->first();
 
             if (!$student) {
-                // Only log an error if there's actually a name typed in, ignoring blank spaces
-                if (!empty($excelName) && strtoupper($lrn) !== 'MALE' && strtoupper($lrn) !== 'FEMALE') {
-                    $errors[] = "Row {$row}: LRN {$lrn} does not match.";
+                if (!empty($excelName) && strtoupper($lrn) !== 'MALE' && strtoupper($lrn) !== 'FEMALE' && strtoupper($excelName) !== 'MALE' && strtoupper($excelName) !== 'FEMALE') {
+                    return redirect()->route('reportcard.show', [
+                        'section_id' => $section_id,
+                        'toast_status' => 'error',
+                        'toast_message' => "LRN Mismatch at Row {$row}: The LRN {$lrn} does not match any student in this section."
+                    ]);
                 }
                 continue; 
             }

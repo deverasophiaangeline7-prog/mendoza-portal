@@ -61,7 +61,6 @@
     .admin-modal { background: white; border: 4px solid #000; border-radius: 25px; width: 95%; max-width: 1400px; padding: 20px 15px; position: relative; }
     @media (min-width: 768px) { .admin-modal { padding: 20px 30px; } }
     
-    /* Fixed Alignment: Added padding-right to account for the absolute close button */
     .modal-header-top { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 20px; margin-top: 35px; padding-right: 50px; }
     @media (min-width: 768px) { .modal-header-top { flex-direction: row; justify-content: space-between; margin-top: 0; } }
 
@@ -80,8 +79,8 @@
 
     .schedule-grid-container { width: 100%; overflow-x: auto; }
     .schedule-grid { width: 100%; min-width: 600px; border-collapse: collapse; text-align: center; border: 2px solid #000; }
-    .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 5px; height: 40px; font-size: 13px; font-weight: 900; }
-    .schedule-grid th { background-color: var(--ma-bg-grey); }
+    .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 5px; height: 25px; font-size: 13px; font-weight: 900; }
+    .schedule-grid th { background-color: var(--ma-bg-grey); height: 40px; }
     .time-col { background-color: var(--ma-bg-grey); width: 80px; }
     
     .cell-red { background-color: var(--ma-red); }
@@ -110,7 +109,6 @@
     .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 15px; font-weight: 900; }
     .legend-item span { display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #000; vertical-align: middle; margin-right: 5px; }
 
-    /* Custom Confirm Modal Styles */
     .custom-confirm-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
     .custom-confirm-overlay.hidden { display: none !important; }
     .custom-confirm-box { background: #fff; border: 4px solid #000; border-radius: 20px; padding: 30px; width: 90%; max-width: 420px; text-align: center; box-shadow: 6px 6px 0px 0px rgba(0,0,0,1); }
@@ -127,7 +125,8 @@
         <div class="adviser-grid">
             @foreach($advisersList as $adviser)
                 @php 
-                    $assigned = !empty($adviser['user_id']);$teacherId = $assigned ? $adviser['user_id'] : 'null';
+                    $assigned = !empty($adviser['user_id']);
+                    $teacherId = $assigned ? $adviser['user_id'] : 'null';
                 @endphp
                 <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{$teacherId }}')" @endif>
                     <span>{{ $adviser['section'] }}</span>
@@ -149,15 +148,29 @@
             } else {
                 $currentDate = \Carbon\Carbon::now();
                 if ($currentDate->isWeekend()) {
-                    $currentDate =$currentDate->next(\Carbon\Carbon::MONDAY);
+                    $currentDate = $currentDate->next(\Carbon\Carbon::MONDAY);
                 }
             }
 
-            $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);$prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');$nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');$calendarDays = [];
+            $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
+            $prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');
+            $nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');
+            $calendarDays = [];
             
-            for ($i = 0; $i < 5; $i++) {$calendarDays[] = $startOfWeek->copy()->addDays($i); 
+            for ($i = 0; $i < 5; $i++) {
+                $calendarDays[] = $startOfWeek->copy()->addDays($i); 
             }
-            $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
+            
+            $displayHours = [
+                '08:00' => '8AM',
+                '09:00' => '9AM',
+                '10:00' => '10AM',
+                '11:00' => '11AM',
+                '13:00' => '1PM',
+                '14:00' => '2PM',
+                '15:00' => '3PM',
+                '16:00' => '4PM'
+            ];
         @endphp
 
         <div class="modal-header-top">
@@ -188,18 +201,34 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($timeSlots as $time)
+                    @foreach($displayHours as $baseTime => $hourLabel)
+                        <!-- Top Half of the Hour (:00 to :30) -->
                         <tr>
-                            <td class="time-col">{{ $time }}</td>
+                            <td class="time-col" rowspan="2" style="background-color: var(--ma-bg-grey);">{{ $hourLabel }}</td>
                             @foreach($calendarDays as $day)
                                 @php
-                                    $cellKey = $day->format('Y-m-d') . '\vert{}' .$time;
+                                    $cellKey = $day->format('Y-m-d') . '|' . $baseTime;
                                     $cellStatus = $scheduleRows[$cellKey] ?? 'available';
                                     $cellClass = ['available' => 'cell-white', 'booked' => 'cell-green', 'class' => 'cell-red', 'leave' => 'cell-grey'][$cellStatus] ?? 'cell-white';
                                 @endphp
                                 <td class="{{ $cellClass }}" 
                                     data-date="{{ $day->format('Y-m-d') }}" 
-                                    data-time="{{ $time }}">
+                                    data-time="{{ $baseTime }}">
+                                </td>
+                            @endforeach
+                        </tr>
+                        
+                        <!-- Bottom Half of the Hour (:30 to :00) -->
+                        <tr>
+                            @foreach($calendarDays as$day)
+                                @php
+                                    $halfHourTime = \Carbon\Carbon::parse($baseTime)->addMinutes(30)->format('H:i');$cellKey = $day->format('Y-m-d') . '|' .$halfHourTime;
+                                    $cellStatus = $scheduleRows[$cellKey] ?? 'available';
+                                    $cellClass = ['available' => 'cell-white', 'booked' => 'cell-green', 'class' => 'cell-red', 'leave' => 'cell-grey'][$cellStatus] ?? 'cell-white';
+                                @endphp
+                                <td class="{{ $cellClass }}" 
+                                    data-date="{{ $day->format('Y-m-d') }}" 
+                                    data-time="{{ $halfHourTime }}">
                                 </td>
                             @endforeach
                         </tr>
@@ -217,7 +246,6 @@
     </div>
 </div>
 
-<!-- Custom Confirmation Modal -->
 <div id="customConfirmModal" class="custom-confirm-overlay hidden">
     <div class="custom-confirm-box">
         <div class="custom-confirm-text">
@@ -246,7 +274,7 @@
     let isManageMode = false;
     let isLeaveMode = false;
     let selectedCell = null;
-    let pendingLeaveAction = null; // Stores the function to run if admin clicks "Continue"
+    let pendingLeaveAction = null;
     
     const statusClasses = ['cell-white', 'cell-green', 'cell-red', 'cell-grey'];
 
@@ -424,13 +452,11 @@
         }
     }
 
-    /* CUSTOM MODAL LOGIC */
     function toggleWholeDayLeave(dateStr) {
         const dayCells = document.querySelectorAll(`.schedule-grid td[data-date="${dateStr}"]`);
         let allGrey = Array.from(dayCells).every(cell => cell.classList.contains('cell-grey'));
         let hasBooked = Array.from(dayCells).some(cell => cell.dataset.originalStatus === 'booked');
 
-        // Check if we are turning the day into a leave day AND there are booked slots
         if (!allGrey && hasBooked) {
             pendingLeaveAction = () => {
                 dayCells.forEach(cell => {
@@ -439,10 +465,9 @@
                 });
             };
             document.getElementById('customConfirmModal').classList.remove('hidden');
-            return; // Halt execution until modal is handled
+            return; 
         }
 
-        // If no conflict or reverting to available, just run it instantly
         dayCells.forEach(cell => {
             cell.classList.remove(...statusClasses);
             cell.classList.add(allGrey ? 'cell-white' : 'cell-grey');
