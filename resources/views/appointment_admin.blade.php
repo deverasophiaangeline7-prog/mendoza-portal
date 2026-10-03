@@ -79,14 +79,17 @@
 
     .schedule-grid-container { width: 100%; overflow-x: auto; }
     .schedule-grid { width: 100%; min-width: 600px; border-collapse: collapse; text-align: center; border: 2px solid #000; }
-    .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 5px; height: 25px; font-size: 13px; font-weight: 900; }
-    .schedule-grid th { background-color: var(--ma-bg-grey); height: 40px; }
+    .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 5px; height: 40px; font-size: 13px; font-weight: 900; }
+    .schedule-grid th { background-color: var(--ma-bg-grey); }
     .time-col { background-color: var(--ma-bg-grey); width: 80px; }
     
     .cell-red { background-color: var(--ma-red); }
     .cell-green { background-color: var(--ma-green); }
     .cell-white { background-color: #ffffff; }
     .cell-grey { background-color: var(--ma-dark-grey); }
+    
+    /* 30-minute block gradient */
+    .cell-green-half { background: linear-gradient(to bottom, var(--ma-green) 50%, #ffffff 50%); }
 
     .toast-banner {
         position: absolute;
@@ -109,6 +112,7 @@
     .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 15px; font-weight: 900; }
     .legend-item span { display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #000; vertical-align: middle; margin-right: 5px; }
 
+    /* Custom Confirm Modal Styles */
     .custom-confirm-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
     .custom-confirm-overlay.hidden { display: none !important; }
     .custom-confirm-box { background: #fff; border: 4px solid #000; border-radius: 20px; padding: 30px; width: 90%; max-width: 420px; text-align: center; box-shadow: 6px 6px 0px 0px rgba(0,0,0,1); }
@@ -125,8 +129,7 @@
         <div class="adviser-grid">
             @foreach($advisersList as $adviser)
                 @php 
-                    $assigned = !empty($adviser['user_id']);
-                    $teacherId = $assigned ? $adviser['user_id'] : 'null';
+                    $assigned = !empty($adviser['user_id']);$teacherId = $assigned ? $adviser['user_id'] : 'null';
                 @endphp
                 <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{$teacherId }}')" @endif>
                     <span>{{ $adviser['section'] }}</span>
@@ -148,29 +151,15 @@
             } else {
                 $currentDate = \Carbon\Carbon::now();
                 if ($currentDate->isWeekend()) {
-                    $currentDate = $currentDate->next(\Carbon\Carbon::MONDAY);
+                    $currentDate =$currentDate->next(\Carbon\Carbon::MONDAY);
                 }
             }
 
-            $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
-            $prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');
-            $nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');
-            $calendarDays = [];
+            $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);$prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');$nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');$calendarDays = [];
             
-            for ($i = 0; $i < 5; $i++) {
-                $calendarDays[] = $startOfWeek->copy()->addDays($i); 
+            for ($i = 0; $i < 5; $i++) {$calendarDays[] = $startOfWeek->copy()->addDays($i); 
             }
-            
-            $displayHours = [
-                '08:00' => '8AM',
-                '09:00' => '9AM',
-                '10:00' => '10AM',
-                '11:00' => '11AM',
-                '13:00' => '1PM',
-                '14:00' => '2PM',
-                '15:00' => '3PM',
-                '16:00' => '4PM'
-            ];
+            $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
         @endphp
 
         <div class="modal-header-top">
@@ -195,76 +184,24 @@
                 <thead>
                     <tr>
                         <th class="time-col"></th>
-                        @foreach($calendarDays as $day)
+                        @foreach($calendarDays as$day)
                             <th class="day-header" data-date="{{ $day->format('Y-m-d') }}">{{ $day->format('D j') }}</th>
                         @endforeach
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($displayHours as $baseTime => $hourLabel)
-                        <!-- Top Half of the Hour (:00 to :30) -->
+                    @foreach($timeSlots as$time)
                         <tr>
-                            <td class="time-col" rowspan="2" style="background-color: var(--ma-bg-grey);">{{ $hourLabel }}</td>
-                            @foreach($calendarDays as $day)
+                            <td class="time-col">{{ $time }}</td>
+                            @foreach($calendarDays as$day)
                                 @php
-                                    $cellKey = $day->format('Y-m-d') . '|' . $hourLabel;
+                                    $cellKey = $day->format('Y-m-d') . '|' .$time;
                                     $cellStatus = $scheduleRows[$cellKey] ?? 'available';
-                                    
-                                    $cellClass = 'cell-white';
-                                    $originalStatus = 'available';
-
-                                    if ($cellStatus === 'booked') {
-                                        $cellClass = 'cell-green';
-                                        $originalStatus = 'booked';
-                                    } elseif ($cellStatus === 'booked-half') {
-                                        $cellClass = 'cell-green'; // Top half is booked
-                                        $originalStatus = 'booked';
-                                    } elseif (in_array($cellStatus, ['class', 'class_hours'])) {
-                                        $cellClass = 'cell-red';
-                                        $originalStatus = 'class';
-                                    } elseif (in_array($cellStatus, ['leave', 'on_leave'])) {
-                                        $cellClass = 'cell-grey';
-                                        $originalStatus = 'leave';
-                                    }
+                                    $cellClass = ['available' => 'cell-white', 'booked' => 'cell-green', 'booked-half' => 'cell-green-half', 'class' => 'cell-red', 'leave' => 'cell-grey'][$cellStatus] ?? 'cell-white';
                                 @endphp
                                 <td class="{{ $cellClass }}" 
                                     data-date="{{ $day->format('Y-m-d') }}" 
-                                    data-time="{{ $hourLabel }}"
-                                    data-half="top"
-                                    data-original-status="{{ $originalStatus }}">
-                                </td>
-                            @endforeach
-                        </tr>
-                        
-                        <!-- Bottom Half of the Hour (:30 to :00) -->
-                        <tr>
-                            @foreach($calendarDays as $day)
-                                @php
-                                    $cellKey = $day->format('Y-m-d') . '|' . $hourLabel;
-                                    $cellStatus = $scheduleRows[$cellKey] ?? 'available';
-                                    
-                                    $cellClass = 'cell-white';
-                                    $originalStatus = 'available';
-
-                                    if ($cellStatus === 'booked') {
-                                        $cellClass = 'cell-green';
-                                        $originalStatus = 'booked';
-                                    } elseif ($cellStatus === 'booked-half') {
-                                        $cellClass = 'cell-white'; // Bottom half is available
-                                        $originalStatus = 'available';
-                                    } elseif (in_array($cellStatus, ['class', 'class_hours'])) {
-                                        $cellClass = 'cell-red';
-                                        $originalStatus = 'class';
-                                    } elseif (in_array($cellStatus, ['leave', 'on_leave'])) {
-                                        $cellClass = 'cell-grey';
-                                        $originalStatus = 'leave';
-                                    }
-                                @endphp
-                                <td class="{{ $cellClass }}" 
-                                    data-date="{{ $day->format('Y-m-d') }}" 
-                                    data-time="{{ $hourLabel }}"
-                                    data-half="bottom"
-                                    data-original-status="{{ $originalStatus }}">
+                                    data-time="{{ $time }}">
                                 </td>
                             @endforeach
                         </tr>
@@ -282,6 +219,7 @@
     </div>
 </div>
 
+<!-- Custom Confirmation Modal -->
 <div id="customConfirmModal" class="custom-confirm-overlay hidden">
     <div class="custom-confirm-box">
         <div class="custom-confirm-text">
@@ -310,7 +248,7 @@
     let isManageMode = false;
     let isLeaveMode = false;
     let selectedCell = null;
-    let pendingLeaveAction = null;
+    let pendingLeaveAction = null; 
     
     const statusClasses = ['cell-white', 'cell-green', 'cell-red', 'cell-grey'];
 
@@ -392,7 +330,13 @@
     }
 
     function changeCellColor(cell, direction = 'next') {
-        let currentClass = statusClasses.find(cls => cell.classList.contains(cls)) || 'cell-white';
+        let currentClass = statusClasses.find(cls => cell.classList.contains(cls));
+        
+        if (cell.classList.contains('cell-green-half')) {
+            currentClass = 'cell-green';
+        }
+        if (!currentClass) currentClass = 'cell-white';
+
         let currentIndex = statusClasses.indexOf(currentClass);
         
         if (direction === 'next') {
@@ -407,7 +351,7 @@
             showToast("Marking this booked slot as leave will reschedule it.", false);
         }
 
-        cell.classList.remove(...statusClasses);
+        cell.classList.remove('cell-white', 'cell-green', 'cell-green-half', 'cell-red', 'cell-grey');
         cell.classList.add(nextClass);
     }
 
@@ -496,7 +440,7 @@
         if (!allGrey && hasBooked) {
             pendingLeaveAction = () => {
                 dayCells.forEach(cell => {
-                    cell.classList.remove(...statusClasses);
+                    cell.classList.remove('cell-white', 'cell-green', 'cell-green-half', 'cell-red');
                     cell.classList.add('cell-grey');
                 });
             };
@@ -505,7 +449,7 @@
         }
 
         dayCells.forEach(cell => {
-            cell.classList.remove(...statusClasses);
+            cell.classList.remove('cell-white', 'cell-green', 'cell-green-half', 'cell-red', 'cell-grey');
             cell.classList.add(allGrey ? 'cell-white' : 'cell-grey');
         });
     }
@@ -544,11 +488,10 @@
                 const cells = document.querySelectorAll('.schedule-grid td:not(.time-col)');
                 cells.forEach(cell => {
                     const date = cell.getAttribute('data-date');
-                    const time = cell.getAttribute('data-time'); // Uses '8AM' format
-                    const half = cell.getAttribute('data-half'); 
+                    const time = cell.getAttribute('data-time');
                     const match = data.schedules.find(item => item.date === date && item.time === time);
                     
-                    cell.classList.remove('cell-white', 'cell-green', 'cell-red', 'cell-grey');
+                    cell.classList.remove('cell-white', 'cell-green', 'cell-green-half', 'cell-red', 'cell-grey');
 
                     if (!match || match.status === 'available') {
                         cell.classList.add('cell-white');
@@ -557,14 +500,8 @@
                         cell.classList.add('cell-green');
                         cell.dataset.originalStatus = 'booked';
                     } else if (match.status === 'booked-half') {
-                        // Color top half green, bottom half white
-                        if (half === 'top') {
-                            cell.classList.add('cell-green');
-                            cell.dataset.originalStatus = 'booked';
-                        } else {
-                            cell.classList.add('cell-white');
-                            cell.dataset.originalStatus = 'available';
-                        }
+                        cell.classList.add('cell-green-half');
+                        cell.dataset.originalStatus = 'booked'; // Essential for forcing reschedule flags
                     } else if (match.status === 'class' || match.status === 'class_hours') {
                         cell.classList.add('cell-red');
                         cell.dataset.originalStatus = 'class';
@@ -587,69 +524,24 @@
             return;
         }
 
-        let scheduleMap = new Map();
+        let scheduleData = []; 
         const cells = document.querySelectorAll('.schedule-grid td:not(.time-col)');
 
         cells.forEach(cell => {
             let cellStatus = 'available'; 
             if (cell.classList.contains('cell-green')) cellStatus = 'booked';
+            if (cell.classList.contains('cell-green-half')) cellStatus = 'booked-half';
             if (cell.classList.contains('cell-red')) cellStatus = 'class';
             if (cell.classList.contains('cell-grey')) cellStatus = 'leave';
 
-            let date = cell.getAttribute('data-date');
-            let time = cell.getAttribute('data-time');
-            let half = cell.getAttribute('data-half');
             let originalStatus = cell.dataset.originalStatus;
-            
-            let key = date + '|' + time;
+            let needsReschedule = (originalStatus === 'booked' && cellStatus === 'leave');
 
-            if (!scheduleMap.has(key)) {
-                scheduleMap.set(key, { 
-                    date: date, 
-                    time: time, 
-                    status: cellStatus, 
-                    top_status: null,
-                    bottom_status: null,
-                    needs_reschedule: false 
-                });
-            }
-
-            let entry = scheduleMap.get(key);
-            
-            if (half === 'top') entry.top_status = cellStatus;
-            if (half === 'bottom') entry.bottom_status = cellStatus;
-
-            // Trigger reschedule if original was booked but is now leave
-            if (originalStatus === 'booked' && cellStatus === 'leave') {
-                entry.needs_reschedule = true;
-            }
-        });
-
-        // Resolve Final 1-Hour Status
-        let scheduleData = [];
-        scheduleMap.forEach((entry) => {
-            // If the admin marks any part as leave, the whole hour block becomes leave
-            if (entry.top_status === 'leave' || entry.bottom_status === 'leave') {
-                entry.status = 'leave';
-            } 
-            else if (entry.top_status === 'class' || entry.bottom_status === 'class') {
-                entry.status = 'class';
-            }
-            else if (entry.top_status === 'booked' && entry.bottom_status === 'booked') {
-                entry.status = 'booked';
-            }
-            else if (entry.top_status === 'booked' && entry.bottom_status === 'available') {
-                entry.status = 'booked-half';
-            }
-            else {
-                entry.status = 'available';
-            }
-            
             scheduleData.push({
-                date: entry.date,
-                time: entry.time,
-                status: entry.status,
-                needs_reschedule: entry.needs_reschedule
+                date: cell.getAttribute('data-date'),
+                time: cell.getAttribute('data-time'),
+                status: cellStatus,
+                needs_reschedule: needsReschedule
             });
         });
 

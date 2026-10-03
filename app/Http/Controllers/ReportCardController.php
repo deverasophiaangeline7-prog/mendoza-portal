@@ -474,27 +474,29 @@ public function show($section_id)
         $errors = []; 
         $highestRow = $targetSheet->getHighestDataRow();
 
-        // PROCESS THE TARGET SHEET
+// PROCESS THE TARGET SHEET
         for ($row = 1; $row <= $highestRow; $row++) {
             $lrn = trim((string) $targetSheet->getCell('A' . $row)->getCalculatedValue());
             $excelName = trim((string) $targetSheet->getCell('B' . $row)->getCalculatedValue());
             
+            // 1. Skip completely empty rows
             if (empty($lrn) && empty($excelName)) {
                 continue;
             }
 
-            if (!preg_match('/^\d{12}$/', $lrn)) {
-                // Ignore structural header rows like MALE / FEMALE
-                if (strtoupper($lrn) !== 'MALE' && strtoupper($lrn) !== 'FEMALE' && strtoupper($excelName) !== 'MALE' && strtoupper($excelName) !== 'FEMALE') {
-                    return redirect()->route('reportcard.show', [
-                        'section_id' => $section_id,
-                        'toast_status' => 'error',
-                        'toast_message' => "Invalid input at Row {$row}: The LRN for '{$excelName}' must be exactly 12 digits."
-                    ]);
-                }
+            // 2. Skip structural header rows (like MALE/FEMALE dividers)
+            if (strtoupper($lrn) === 'MALE' || strtoupper($lrn) === 'FEMALE' || strtoupper($excelName) === 'MALE' || strtoupper($excelName) === 'FEMALE') {
+                continue;
+            }
+
+            // 3. Skip title rows (If Column A has absolutely no numbers, it's a header, not a student)
+            if (!preg_match('/\d/', $lrn)) {
                 continue; 
             }
 
+            // --- AT THIS POINT, WE ARE LOOKING AT A REAL STUDENT ROW ---
+
+            // 4. Extract Grades
             $cellF = $targetSheet->getCell('F' . $row);
             $term1Val = (string) ($cellF->isFormula() ? $cellF->getOldCalculatedValue() : $cellF->getValue());
 
@@ -509,10 +511,10 @@ public function show($section_id)
             $term3 = trim($term3Val) !== '' ? trim($term3Val) : null;
 
             if ($term1 === null && $term2 === null && $term3 === null) {
-                continue;
+                continue; // Skip if no grades are typed at all
             }
 
-            // INPUT VALIDATION: Ensure the active term grade is strictly numeric
+            // 5. GRADE VALIDATION (Check this BEFORE the LRNs)
             $activeGradeToCheck = null;
             if ($activeTerm === 1 && $term1 !== null) $activeGradeToCheck = $term1;
             elseif ($activeTerm === 2 && $term2 !== null) $activeGradeToCheck = $term2;
@@ -526,22 +528,30 @@ public function show($section_id)
                 ]);
             }
 
+            // 6. LRN VALIDATION
+            if (!preg_match('/^\d{12}$/', $lrn)) {
+                $displayName = !empty($excelName) ? " for '{$excelName}'" : "";
+                return redirect()->route('reportcard.show', [
+                    'section_id' => $section_id,
+                    'toast_status' => 'error',
+                    'toast_message' => "Invalid input at Row {$row}: The LRN '{$lrn}'{$displayName} is incorrect. It must be exactly 12 digits."
+                ]);
+            }
+
+            // 7. DATABASE VALIDATION
             $student = Student::where('lrn', trim($lrn))->where('section_id', $section_id)->first();
 
             if (!$student) {
-                if (!empty($excelName) && strtoupper($lrn) !== 'MALE' && strtoupper($lrn) !== 'FEMALE' && strtoupper($excelName) !== 'MALE' && strtoupper($excelName) !== 'FEMALE') {
-                    return redirect()->route('reportcard.show', [
-                        'section_id' => $section_id,
-                        'toast_status' => 'error',
-                        'toast_message' => "LRN Mismatch at Row {$row}: The LRN {$lrn} does not match any student in this section."
-                    ]);
-                }
-                continue; 
+                $displayName = !empty($excelName) ? " ({$excelName})" : "";
+                return redirect()->route('reportcard.show', [
+                    'section_id' => $section_id,
+                    'toast_status' => 'error',
+                    'toast_message' => "LRN Mismatch at Row {$row}: The LRN '{$lrn}'{$displayName} does not match any student in this section."
+                ]);
             }
 
+            // 8. SAVE TO DATABASE
             $updateData = [];
-
-            // STRICT ACTIVE-TERM-ONLY IMPORT
             if ($activeTerm === 1 && $term1 !== null) {
                 $updateData['term1'] = $term1;
             } elseif ($activeTerm === 2 && $term2 !== null) {

@@ -384,36 +384,24 @@ class AppointmentController extends Controller
                     ->get();
                     
                 foreach($affectedAppointments as $appointment) {
-                    // Check time block overlap (handles both 1-hour and 30-min appointments accurately)
-                    $slotStart = Carbon::parse($schedule['time']);
-                    $slotEnd = $slotStart->copy()->addMinutes(30); 
+                    // Check if the appointment's start time falls within the overridden 1-hour slot (e.g., 8:00 AM matches '8AM')
+                    $appointmentStartHour = Carbon::parse($appointment->start_time)->format('hA'); 
                     
-                    $appStart = Carbon::parse($appointment->start_time);
-                    $appEnd = Carbon::parse($appointment->end_time);
+                    // Format both to things like "08AM" to ensure a clean match
+                    $slotStartHour = Carbon::parse($schedule['time'])->format('hA');
                     
-                    // If the leave slot overlaps with the booked appointment
-                    if ($appStart < $slotEnd && $appEnd > $slotStart) {
+                    if ($appointmentStartHour === $slotStartHour) {
                         $appointment->update([
                             'status' => 'reschedule',
-                            'reschedule_reason' => 'Emergency: Teacher was marked on leave by Admin.',
-                            // Set created_by to parent so this lands in the Teacher's "Incoming Requests" to propose a new time
-                            'created_by' => $appointment->parent_id, 
+                            'reschedule_reason' => 'Emergency: Teacher is on leave.',
+                            'created_by' => auth()->id(), 
                         ]);
 
-                        // 1. Send notification to the parent
+                        // Send notification to the parent
                         Notification::create([
                             'user_id' => $appointment->parent_id,
                             'title' => 'Appointment Rescheduled (Emergency Leave)',
-                            'message' => 'Your booked appointment on ' . Carbon::parse($appointment->appointment_date)->format('M d, Y') . ' at ' . $appStart->format('h:i A') . ' has been flagged for reschedule because the teacher is on leave.',
-                            'type' => 'appointment',
-                            'is_read' => 0,
-                        ]);
-
-                        // 2. Send notification to the teacher
-                        Notification::create([
-                            'user_id' => $appointment->teacher_id,
-                            'title' => 'Appointment Rescheduled (Admin Marked Leave)',
-                            'message' => 'Your booked appointment on ' . Carbon::parse($appointment->appointment_date)->format('M d, Y') . ' at ' . $appStart->format('h:i A') . ' was flagged for reschedule because an Admin marked you on leave. Please propose a new time.',
+                            'message' => 'Your booked appointment on ' . Carbon::parse($appointment->appointment_date)->format('M d, Y') . ' at ' . Carbon::parse($appointment->start_time)->format('h:i A') . ' has been flagged for reschedule because the teacher is on leave.',
                             'type' => 'appointment',
                             'is_read' => 0,
                         ]);
