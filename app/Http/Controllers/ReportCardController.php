@@ -472,7 +472,7 @@ public function show($section_id)
         $processed = 0;
         $highestRow = $targetSheet->getHighestDataRow();
 
-        $skippedStudents = [];
+        
 
         // PROCESS THE TARGET SHEET
         for ($row = 1; $row <= $highestRow; $row++) {
@@ -543,23 +543,20 @@ public function show($section_id)
                 ]);
             }
 
-            // 6. LRN VALIDATION
+            // 6. LRN VALIDATION (Silently skip bad LRNs in Excel)
             if (!preg_match('/^\d{12}$/', $lrn)) {
-                $skippedStudents[] = $excelName; // Add to skipped list instead of crashing!
                 continue;
             }
 
-            // 7. DATABASE VALIDATION
+            // 7. DATABASE VALIDATION (Silently ignore unregistered Excel students)
             $cleanLrnForDb = preg_replace('/[^0-9]/', '', $lrn); 
             $student = Student::where('lrn', $cleanLrnForDb)->first();
 
             if (!$student) {
-                $skippedStudents[] = $excelName;
                 continue; 
             }
 
             if ($student->section_id != $section_id) {
-                $skippedStudents[] = $excelName;
                 continue; 
             }
 
@@ -582,27 +579,38 @@ public function show($section_id)
                     ],
                     $updateData
                 );
+                
+                // Track the LRNs that were successfully updated
+                $updatedLrnList[] = $student->lrn; 
                 $processed++;
             }
         }
 
         // =================================================================
-        // GUARANTEED REDIRECT (URL PARAMETERS)
+        // SYSTEM STUDENT VERIFICATION & REDIRECT
         // =================================================================
         $status = 'success';
         $message = "{$request->subject} Term {$activeTerm} grades imported! {$processed} student(s) updated.";
 
-        // If any students were skipped due to wrong LRNs, add the formal warning
-        if (count($skippedStudents) > 0) {
-            $skippedNames = implode(', ', $skippedStudents);
-            $message .= " However, grades could not be imported for the following student(s) due to an incorrect or unmatched LRN: {$skippedNames}.";
+        // Find system students in this section whose LRNs were NOT updated
+        $missingStudents = Student::where('section_id', $section_id)
+            ->whereNotIn('lrn', $updatedLrnList ?? [])
+            ->get();
+
+        if ($missingStudents->count() > 0) {
+            $skippedNames = [];
+            foreach ($missingStudents as $mStud) {
+                $skippedNames[] = $mStud->last_name . ', ' . $mStud->first_name;
+            }
+            $namesString = implode('; ', $skippedNames);
+            
+            $message .= " However, no grades were imported for the following system student(s): {$namesString}.";
             $status = 'warning'; // Optional: change to 'success' if your toast doesn't support 'warning'
         }
         
-        // Make sure this doesn't overwrite the warning message
-        if ($processed === 0 && count($skippedStudents) === 0) {
+        if ($processed === 0) {
             $status = 'error';
-            $message = "Import failed. No valid students found in the file.";
+            $message = "Import failed. No valid matching grades were found in the file for the students in this section.";
         } 
         
         return redirect()->route('reportcard.show', [
