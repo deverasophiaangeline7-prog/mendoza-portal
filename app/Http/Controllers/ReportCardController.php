@@ -449,7 +449,6 @@ public function show($section_id)
 
         $sectionFound = false;
 
-        // Scan the header rows (1 to 15) and columns (A to K) for the Grade & Section
         for ($r = 1; $r <= 15; $r++) {
             foreach (range('A', 'K') as $col) {
                 $cellValue = strtoupper((string) $targetSheet->getCell($col . $r)->getCalculatedValue());
@@ -471,10 +470,9 @@ public function show($section_id)
         // ==========================================
 
         $processed = 0;
-        $errors = []; 
         $highestRow = $targetSheet->getHighestDataRow();
 
-// PROCESS THE TARGET SHEET
+        // PROCESS THE TARGET SHEET
         for ($row = 1; $row <= $highestRow; $row++) {
             $lrn = trim((string) $targetSheet->getCell('A' . $row)->getCalculatedValue());
             $excelName = trim((string) $targetSheet->getCell('B' . $row)->getCalculatedValue());
@@ -500,34 +498,53 @@ public function show($section_id)
             $cleanedLrn = preg_replace('/\.0+$/', '', $lrn); 
             $cleanedLrn = preg_replace('/[^\d]/', '', $cleanedLrn);
 
-            // 5. THE MAGIC FIX: Skip headers that contain short numbers (e.g., "Grade 2" or "School ID: 123456")
+            // 5. Skip headers that contain short numbers (e.g., "Grade 2" or "School ID: 123456")
             if (strlen($cleanedLrn) < 10) {
                 continue; 
             }
 
-            $lrn = $cleanedLrn; // Apply the safe, cleaned string
+            $lrn = $cleanedLrn; 
 
             // --- AT THIS POINT, WE ARE LOOKING AT A REAL STUDENT ROW ---
 
-            // 4. Extract Grades (Corrected to match DepEd E-Class Record Columns)
+            // 4. Extract Grades
             $cellF = $targetSheet->getCell('F' . $row);
             $term1Val = (string) ($cellF->isFormula() ? $cellF->getOldCalculatedValue() : $cellF->getValue());
 
-            $cellG = $targetSheet->getCell('G' . $row); // Term 2 is in G, not J!
+            $cellG = $targetSheet->getCell('G' . $row);
             $term2Val = (string) ($cellG->isFormula() ? $cellG->getOldCalculatedValue() : $cellG->getValue());
 
-            $cellH = $targetSheet->getCell('H' . $row); // Term 3 is in H, not N!
+            $cellH = $targetSheet->getCell('H' . $row);
             $term3Val = (string) ($cellH->isFormula() ? $cellH->getOldCalculatedValue() : $cellH->getValue());
 
             $term1 = trim($term1Val) !== '' ? trim($term1Val) : null;
             $term2 = trim($term2Val) !== '' ? trim($term2Val) : null;
             $term3 = trim($term3Val) !== '' ? trim($term3Val) : null;
 
+            // ==========================================
+            // 🛑 ON-SCREEN DEBUG TRAP FOR CAPILI
+            // ==========================================
+            if ($lrn === '411645250012') {
+                $studentCheck = Student::where('lrn', $lrn)->first();
+                dd([
+                    '1_Excel_Name' => $excelName,
+                    '2_Cleaned_LRN' => $lrn,
+                    '3_Term_1_Grade' => $term1,
+                    '4_Term_2_Grade' => $term2,
+                    '5_Term_3_Grade' => $term3,
+                    '6_Is_Student_In_DB?' => $studentCheck ? 'YES' : 'NO',
+                    '7_DB_Section_ID' => $studentCheck ? $studentCheck->section_id : 'N/A',
+                    '8_Current_Page_Section_ID' => $section_id,
+                    '9_Active_Term' => $activeTerm
+                ]);
+            }
+            // ==========================================
+
             if ($term1 === null && $term2 === null && $term3 === null) {
                 continue; // Skip if no grades are typed at all
             }
 
-            // 5. GRADE VALIDATION (Check this BEFORE the LRNs)
+            // 5. GRADE VALIDATION 
             $activeGradeToCheck = null;
             if ($activeTerm === 1 && $term1 !== null) $activeGradeToCheck = $term1;
             elseif ($activeTerm === 2 && $term2 !== null) $activeGradeToCheck = $term2;
@@ -551,26 +568,26 @@ public function show($section_id)
             }
 
             // 7. DATABASE VALIDATION
-            $cleanLrnForDb = preg_replace('/[^0-9]/', '', $lrn); // Force strictly numbers only
-            
+            $cleanLrnForDb = preg_replace('/[^0-9]/', '', $lrn); 
             $student = Student::where('lrn', $cleanLrnForDb)->first();
 
             if (!$student) {
-                // The LRN does not exist in the database AT ALL
                 continue; 
             }
 
             if ($student->section_id != $section_id) {
-                // The student exists, but they belong to a different section!
-                return redirect()->route('reportcard.show', [
-                    'section_id' => $section_id,
-                    'toast_status' => 'error',
-                    'toast_message' => "Mismatch: LRN {$cleanLrnForDb} ({$excelName}) is registered to Section ID {$student->section_id}, not {$section_id}."
-                ]);
+                continue; 
             }
 
             // 8. SAVE TO DATABASE
             $updateData = [];
+            if ($activeTerm === 1 && $term1 !== null) {
+                $updateData['term1'] = $term1;
+            } elseif ($activeTerm === 2 && $term2 !== null) {
+                $updateData['term2'] = $term2;
+            } elseif ($activeTerm === 3 && $term3 !== null) {
+                $updateData['term3'] = $term3;
+            }
 
             if (!empty($updateData)) {
                 Grade::updateOrCreate(
@@ -591,7 +608,6 @@ public function show($section_id)
         $status = 'success';
         $message = "{$request->subject} Term {$activeTerm} grades imported! {$processed} student(s) updated.";
 
-        // If nothing processed, then it's a true error
         if ($processed === 0) {
             $status = 'error';
             $message = "Import failed. No valid students found in the file.";
