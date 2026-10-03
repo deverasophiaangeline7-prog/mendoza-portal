@@ -335,7 +335,7 @@
         max-width: 900px;
         padding: 20px;
         position: relative;
-        max-height: 90vh;
+        max-height: 75vh;
         overflow-y: auto;
     }
 

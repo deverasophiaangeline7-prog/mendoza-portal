@@ -552,6 +552,10 @@ public function show($section_id)
 
             // 7. DATABASE VALIDATION
             $student = Student::where('lrn', trim($lrn))->where('section_id', $section_id)->first();
+            // If the student from the Excel file isn't in our system, just skip them and move to the next row!
+            if (!$student) {
+                continue; 
+            }
 
             if (!$student) {
                 return redirect()->route('reportcard.show', [

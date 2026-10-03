@@ -411,7 +411,7 @@ class AppointmentController extends Controller
                         // 3. Alert the Teacher (Removed (int) cast to prevent silent database drops)
                         Notification::create([
                             'user_id' => $request->teacher_id,
-                            'title' => 'Appointment Rescheduled (Emergency Leave)',
+                            'title' => 'Appointment Rescheduled (Teacher On-Leave)',
                             'message' => "Admin marked you on leave for {$formattedDate}. Your {$formattedTime} appointment has been moved to your Incoming Requests to be rescheduled.",
                             'type' => 'appointment',
                             'is_read' => 0,
