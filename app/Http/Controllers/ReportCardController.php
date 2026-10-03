@@ -551,17 +551,21 @@ public function show($section_id)
             }
 
             // 7. DATABASE VALIDATION
-            $student = Student::where('lrn', trim($lrn))->where('section_id', $section_id)->first();
-            // If the student from the Excel file isn't in our system, just skip them and move to the next row!
+            $cleanLrnForDb = preg_replace('/[^0-9]/', '', $lrn); // Force strictly numbers only
+            
+            $student = Student::where('lrn', $cleanLrnForDb)->first();
+
             if (!$student) {
+                // The LRN does not exist in the database AT ALL
                 continue; 
             }
 
-            if (!$student) {
+            if ($student->section_id != $section_id) {
+                // The student exists, but they belong to a different section!
                 return redirect()->route('reportcard.show', [
                     'section_id' => $section_id,
                     'toast_status' => 'error',
-                    'toast_message' => "Incorrect lrn input. Please check again!"
+                    'toast_message' => "Mismatch: LRN {$cleanLrnForDb} ({$excelName}) is registered to Section ID {$student->section_id}, not {$section_id}."
                 ]);
             }
 
