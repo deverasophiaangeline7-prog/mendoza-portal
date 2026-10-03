@@ -402,7 +402,7 @@ class AppointmentController extends Controller
                         // 2. Alert the Parent (Removed (int) cast to prevent silent database drops)
                         Notification::create([
                             'user_id' => $appointment->parent_id,
-                            'title' => 'Appointment Rescheduled (Emergency Leave)',
+                            'title' => 'Appointment Rescheduled (On Leave)',
                             'message' => "Your booked appointment on {$formattedDate} at {$formattedTime} has been flagged for reschedule because the teacher is on leave.",
                             'type' => 'appointment',
                             'is_read' => 0,

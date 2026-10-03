@@ -495,12 +495,18 @@ public function show($section_id)
             }
 
             // ==========================================
-            // CRITICAL FIX: EXCEL FLOAT FORMATTING
+            // 4. EXCEL FLOAT & HEADER CLEANUP
             // ==========================================
-            // Removes invisible '.0' added by Excel and strips any non-breaking spaces
-            $lrn = preg_replace('/\.0+$/', '', $lrn); 
-            $lrn = preg_replace('/[^\d]/', '', $lrn); 
-            // ==========================================
+            $cleanedLrn = preg_replace('/\.0+$/', '', $lrn); 
+            $cleanedLrn = preg_replace('/[^\d]/', '', $cleanedLrn);
+
+            // 5. THE MAGIC FIX: Skip headers that contain short numbers (e.g., "Grade 2" or "School ID: 123456")
+            // Actual LRNs are 12 digits. If the cleaned number is less than 10 digits, it's definitely a header.
+            if (strlen($cleanedLrn) < 10) {
+                continue; 
+            }
+
+            $lrn = $cleanedLrn; // Apply the safe, cleaned string
 
             // --- AT THIS POINT, WE ARE LOOKING AT A REAL STUDENT ROW ---
 
