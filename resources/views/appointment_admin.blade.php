@@ -220,7 +220,7 @@
                         
                         <!-- Bottom Half of the Hour (:30 to :00) -->
                         <tr>
-                            @foreach($calendarDays as$day)
+                            @foreach($calendarDays as $day)
                                 @php
                                     $halfHourTime = \Carbon\Carbon::parse($baseTime)->addMinutes(30)->format('H:i');$cellKey = $day->format('Y-m-d') . '|' .$halfHourTime;
                                     $cellStatus = $scheduleRows[$cellKey] ?? 'available';
