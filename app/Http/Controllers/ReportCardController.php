@@ -508,37 +508,20 @@ public function show($section_id)
             // --- AT THIS POINT, WE ARE LOOKING AT A REAL STUDENT ROW ---
 
             // 4. Extract Grades
-            $cellF = $targetSheet->getCell('F' . $row);
+            // 4. Extract Grades
+            $cellF = $targetSheet->getCell('F' . $row); // Term 1
             $term1Val = (string) ($cellF->isFormula() ? $cellF->getOldCalculatedValue() : $cellF->getValue());
 
-            $cellG = $targetSheet->getCell('G' . $row);
-            $term2Val = (string) ($cellG->isFormula() ? $cellG->getOldCalculatedValue() : $cellG->getValue());
+            $cellJ = $targetSheet->getCell('J' . $row); // Term 2
+            $term2Val = (string) ($cellJ->isFormula() ? $cellJ->getOldCalculatedValue() : $cellJ->getValue());
 
-            $cellH = $targetSheet->getCell('H' . $row);
-            $term3Val = (string) ($cellH->isFormula() ? $cellH->getOldCalculatedValue() : $cellH->getValue());
+            $cellN = $targetSheet->getCell('N' . $row); // Term 3
+            $term3Val = (string) ($cellN->isFormula() ? $cellN->getOldCalculatedValue() : $cellN->getValue());
 
             $term1 = trim($term1Val) !== '' ? trim($term1Val) : null;
             $term2 = trim($term2Val) !== '' ? trim($term2Val) : null;
             $term3 = trim($term3Val) !== '' ? trim($term3Val) : null;
 
-            // ==========================================
-            // 🛑 ON-SCREEN DEBUG TRAP FOR CAPILI
-            // ==========================================
-            if ($lrn === '411645250012') {
-                $studentCheck = Student::where('lrn', $lrn)->first();
-                dd([
-                    '1_Excel_Name' => $excelName,
-                    '2_Cleaned_LRN' => $lrn,
-                    '3_Term_1_Grade' => $term1,
-                    '4_Term_2_Grade' => $term2,
-                    '5_Term_3_Grade' => $term3,
-                    '6_Is_Student_In_DB?' => $studentCheck ? 'YES' : 'NO',
-                    '7_DB_Section_ID' => $studentCheck ? $studentCheck->section_id : 'N/A',
-                    '8_Current_Page_Section_ID' => $section_id,
-                    '9_Active_Term' => $activeTerm
-                ]);
-            }
-            // ==========================================
 
             if ($term1 === null && $term2 === null && $term3 === null) {
                 continue; // Skip if no grades are typed at all
