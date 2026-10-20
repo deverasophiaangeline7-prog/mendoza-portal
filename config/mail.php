@@ -34,6 +34,10 @@ return [
     */
 
     'mailers' => [
+        'gmail-oauth2' => [
+            'transport' => 'gmail-oauth2',
+        ],
+        
         'smtp' => [
             'transport' => 'smtp',
             'host' => env('MAIL_HOST', 'smtp.mailgun.org'),
