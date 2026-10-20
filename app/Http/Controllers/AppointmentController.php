@@ -360,7 +360,7 @@ class AppointmentController extends Controller
     public function updateAvailability(Request $request) 
     {
         $request->validate([
-            'teacher_id' => 'required', // Removed strict integer validation to support all ID types
+            'teacher_id' => 'required', 
             'schedules' => 'required|array',
             'schedules.*.date' => 'required|date',
             'schedules.*.time' => 'required|string',
@@ -369,18 +369,20 @@ class AppointmentController extends Controller
             'schedules.*.is_cancelled' => 'boolean|nullable',
         ]);
 
-        DB::beginTransaction();
+        // Using the global namespace so it works without needing 'use' imports at the top
+        \DB::beginTransaction();
 
         try {
             foreach ($request->schedules as $schedule) {
-                // Update the general schedule layout
+                
+                // 1. Update the general schedule layout
                 TeacherSchedule::updateOrCreate(
                     ['teacher_id' => $request->teacher_id, 'date' => $schedule['date'], 'time_slot' => $schedule['time']],
                     ['status' => $schedule['status']]
                 );
 
-                // --- 1. HANDLE CANCELLATIONS (Admin turned Green to White) ---
-                if (isset($schedule['is_cancelled']) && $schedule['is_cancelled'] === true && $schedule['status'] === 'available') {
+                // --- 2. HANDLE CANCELLATIONS (Admin turned Green to White) ---
+                if (!empty($schedule['is_cancelled']) && $schedule['status'] === 'available') {
                     
                     // Fetch booked appointments for this slot
                     $cancelledAppointments = Appointment::where('teacher_id', $request->teacher_id)
@@ -413,8 +415,8 @@ class AppointmentController extends Controller
                             // Alert the Teacher
                             Notification::create([
                                 'user_id' => $request->teacher_id,
-                                'title' => 'Appointment Cancelled by Admin',
-                                'message' => "The administrator has cancelled your booked appointment on {$formattedDate} at {$formattedTime}.",
+                                'title' => 'Appointment Cancelled',
+                                'message' => "Admin cancelled your booked appointment on {$formattedDate} at {$formattedTime}.",
                                 'type' => 'appointment',
                                 'is_read' => 0,
                             ]);
@@ -422,10 +424,9 @@ class AppointmentController extends Controller
                     }
                 }
 
-                // --- 2. HANDLE RESCHEDULES (Admin turned Green to Grey) ---
-                if (isset($schedule['needs_reschedule']) && $schedule['needs_reschedule'] === true && $schedule['status'] === 'leave') {
+                // --- 3. HANDLE RESCHEDULES (Admin turned Green to Grey) ---
+                if (!empty($schedule['needs_reschedule']) && $schedule['status'] === 'leave') {
                     
-                    // Fetch strictly the booked appointments for this date
                     $affectedAppointments = Appointment::where('teacher_id', $request->teacher_id)
                         ->where('appointment_date', $schedule['date'])
                         ->whereIn('status', ['booked', 'booked-half'])
@@ -437,7 +438,6 @@ class AppointmentController extends Controller
                         
                         if ($appointmentStartHour === $slotStartHour) {
                             
-                            // Force the appointment back to the Teacher's incoming requests
                             $appointment->update([
                                 'status' => 'reschedule',
                                 'reschedule_reason' => 'Emergency: Teacher was marked on leave by Admin.',
@@ -447,7 +447,6 @@ class AppointmentController extends Controller
                             $formattedDate = Carbon::parse($appointment->appointment_date)->format('M d, Y');
                             $formattedTime = Carbon::parse($appointment->start_time)->format('h:i A');
 
-                            // Alert the Parent 
                             Notification::create([
                                 'user_id' => $appointment->parent_id,
                                 'title' => 'Appointment Rescheduled (On Leave)',
@@ -456,11 +455,10 @@ class AppointmentController extends Controller
                                 'is_read' => 0,
                             ]);
 
-                            // Alert the Teacher 
                             Notification::create([
                                 'user_id' => $request->teacher_id,
-                                'title' => 'Appointment Rescheduled (Teacher On-Leave)',
-                                'message' => "Admin marked you on leave for {$formattedDate}. Your {$formattedTime} appointment has been moved to your Incoming Requests to be rescheduled.",
+                                'title' => 'Appointment Rescheduled (On Leave)',
+                                'message' => "Admin marked you on leave for {$formattedDate}. Your {$formattedTime} appointment has been moved to your Incoming Requests.",
                                 'type' => 'appointment',
                                 'is_read' => 0,
                             ]);
@@ -469,19 +467,19 @@ class AppointmentController extends Controller
                 }
             }
 
-            // Log the action in the audit log
+            // Log the action
             AuditLog::create([
                 'user_id' => auth()->id(),
                 'action' => 'Update Teacher Schedule',
                 'description' => auth()->user()->username . ' updated the schedule availability for Teacher ID: ' . $request->teacher_id
             ]);
 
-            DB::commit();
+            \DB::commit();
             return response()->json(['success' => true]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Error saving schedule: ' . $e->getMessage()], 500);
+            \DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 

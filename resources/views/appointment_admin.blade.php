@@ -212,7 +212,6 @@
 
         <div class="legend">
             <div class="legend-item"><span class="cell-white"></span>Available</div>
-            <div class="legend-item"><span class="cell-green"></span>Booked</div>
             <div class="legend-item"><span class="cell-red"></span>Class Hours</div>
             <div class="legend-item"><span class="cell-grey"></span>On Leave</div>
         </div>
@@ -606,7 +605,8 @@
         })
         .catch(error => {
             console.error('Error saving schedule:', error);
-            showToast('Something went wrong. Check browser console.', true);
+            // This will show you exactly what line of PHP failed instead of a generic message
+            showToast('Error: ' + error.message.substring(0, 60), true); 
         });
     }
 </script>
