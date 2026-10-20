@@ -57,8 +57,8 @@
                  if (notif.type === 'appointment') {
                      let title = (notif.title || '').toLowerCase();
                      
-                     // If it's a status update (approved/declined), go to normal module
-                     if (title.includes('approve') || title.includes('decline')) {
+                     // Added 'cancel' so clicking it goes to the standard appointment page
+                     if (title.includes('approve') || title.includes('decline') || title.includes('cancel')) {
                          return baseUrl; 
                      }
                      

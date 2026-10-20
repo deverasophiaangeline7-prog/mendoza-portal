@@ -12,6 +12,7 @@ use App\Models\Section;
 use App\Models\Notification;
 use App\Models\AuditLog;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
 {
@@ -365,70 +366,123 @@ class AppointmentController extends Controller
             'schedules.*.time' => 'required|string',
             'schedules.*.status' => 'required|string',
             'schedules.*.needs_reschedule' => 'boolean|nullable',
+            'schedules.*.is_cancelled' => 'boolean|nullable',
         ]);
 
-        foreach ($request->schedules as $schedule) {
-            // Update the general schedule layout
-            TeacherSchedule::updateOrCreate(
-                ['teacher_id' => $request->teacher_id, 'date' => $schedule['date'], 'time_slot' => $schedule['time']],
-                ['status' => $schedule['status']]
-            );
+        DB::beginTransaction();
 
-            // If a booked slot was overridden by a 'leave' status, flag the appointment for reschedule
-            if (isset($schedule['needs_reschedule']) && $schedule['needs_reschedule'] === true && $schedule['status'] === 'leave') {
-                
-                // Fetch strictly the booked appointments for this date
-                $affectedAppointments = Appointment::where('teacher_id', $request->teacher_id)
-                    ->where('appointment_date', $schedule['date'])
-                    ->where('status', 'booked')
-                    ->get();
+        try {
+            foreach ($request->schedules as $schedule) {
+                // Update the general schedule layout
+                TeacherSchedule::updateOrCreate(
+                    ['teacher_id' => $request->teacher_id, 'date' => $schedule['date'], 'time_slot' => $schedule['time']],
+                    ['status' => $schedule['status']]
+                );
+
+                // --- 1. HANDLE CANCELLATIONS (Admin turned Green to White) ---
+                if (isset($schedule['is_cancelled']) && $schedule['is_cancelled'] === true && $schedule['status'] === 'available') {
                     
-                foreach($affectedAppointments as $appointment) {
-                    $appointmentStartHour = Carbon::parse($appointment->start_time)->format('gA'); 
-                    $slotStartHour = Carbon::parse($schedule['time'])->format('gA');
-                    
-                    if ($appointmentStartHour === $slotStartHour) {
+                    // Fetch booked appointments for this slot
+                    $cancelledAppointments = Appointment::where('teacher_id', $request->teacher_id)
+                        ->where('appointment_date', $schedule['date'])
+                        ->whereIn('status', ['booked', 'booked-half'])
+                        ->get();
                         
-                        // 1. Force the appointment back to the Teacher's incoming requests
-                        $appointment->update([
-                            'status' => 'reschedule',
-                            'reschedule_reason' => 'Emergency: Teacher was marked on leave by Admin.',
-                            'created_by' => $appointment->parent_id, 
-                        ]);
+                    foreach($cancelledAppointments as $appointment) {
+                        $appointmentStartHour = Carbon::parse($appointment->start_time)->format('gA'); 
+                        $slotStartHour = Carbon::parse($schedule['time'])->format('gA');
+                        
+                        if ($appointmentStartHour === $slotStartHour) {
+                            
+                            $appointment->update([
+                                'status' => 'cancelled',
+                            ]);
 
-                        $formattedDate = Carbon::parse($appointment->appointment_date)->format('M d, Y');
-                        $formattedTime = Carbon::parse($appointment->start_time)->format('h:i A');
+                            $formattedDate = Carbon::parse($appointment->appointment_date)->format('M d, Y');
+                            $formattedTime = Carbon::parse($appointment->start_time)->format('h:i A');
 
-                        // 2. Alert the Parent (Removed (int) cast to prevent silent database drops)
-                        Notification::create([
-                            'user_id' => $appointment->parent_id,
-                            'title' => 'Appointment Rescheduled (On Leave)',
-                            'message' => "Your booked appointment on {$formattedDate} at {$formattedTime} has been flagged for reschedule because the teacher is on leave.",
-                            'type' => 'appointment',
-                            'is_read' => 0,
-                        ]);
+                            // Alert the Parent
+                            Notification::create([
+                                'user_id' => $appointment->parent_id,
+                                'title' => 'Appointment Cancelled',
+                                'message' => "Your booked appointment on {$formattedDate} at {$formattedTime} has been cancelled by the administrator.",
+                                'type' => 'appointment',
+                                'is_read' => 0,
+                            ]);
 
-                        // 3. Alert the Teacher (Removed (int) cast to prevent silent database drops)
-                        Notification::create([
-                            'user_id' => $request->teacher_id,
-                            'title' => 'Appointment Rescheduled (Teacher On-Leave)',
-                            'message' => "Admin marked you on leave for {$formattedDate}. Your {$formattedTime} appointment has been moved to your Incoming Requests to be rescheduled.",
-                            'type' => 'appointment',
-                            'is_read' => 0,
-                        ]);
+                            // Alert the Teacher
+                            Notification::create([
+                                'user_id' => $request->teacher_id,
+                                'title' => 'Appointment Cancelled by Admin',
+                                'message' => "The administrator has cancelled your booked appointment on {$formattedDate} at {$formattedTime}.",
+                                'type' => 'appointment',
+                                'is_read' => 0,
+                            ]);
+                        }
+                    }
+                }
+
+                // --- 2. HANDLE RESCHEDULES (Admin turned Green to Grey) ---
+                if (isset($schedule['needs_reschedule']) && $schedule['needs_reschedule'] === true && $schedule['status'] === 'leave') {
+                    
+                    // Fetch strictly the booked appointments for this date
+                    $affectedAppointments = Appointment::where('teacher_id', $request->teacher_id)
+                        ->where('appointment_date', $schedule['date'])
+                        ->whereIn('status', ['booked', 'booked-half'])
+                        ->get();
+                        
+                    foreach($affectedAppointments as $appointment) {
+                        $appointmentStartHour = Carbon::parse($appointment->start_time)->format('gA'); 
+                        $slotStartHour = Carbon::parse($schedule['time'])->format('gA');
+                        
+                        if ($appointmentStartHour === $slotStartHour) {
+                            
+                            // Force the appointment back to the Teacher's incoming requests
+                            $appointment->update([
+                                'status' => 'reschedule',
+                                'reschedule_reason' => 'Emergency: Teacher was marked on leave by Admin.',
+                                'created_by' => $appointment->parent_id, 
+                            ]);
+
+                            $formattedDate = Carbon::parse($appointment->appointment_date)->format('M d, Y');
+                            $formattedTime = Carbon::parse($appointment->start_time)->format('h:i A');
+
+                            // Alert the Parent 
+                            Notification::create([
+                                'user_id' => $appointment->parent_id,
+                                'title' => 'Appointment Rescheduled (On Leave)',
+                                'message' => "Your booked appointment on {$formattedDate} at {$formattedTime} has been flagged for reschedule because the teacher is on leave.",
+                                'type' => 'appointment',
+                                'is_read' => 0,
+                            ]);
+
+                            // Alert the Teacher 
+                            Notification::create([
+                                'user_id' => $request->teacher_id,
+                                'title' => 'Appointment Rescheduled (Teacher On-Leave)',
+                                'message' => "Admin marked you on leave for {$formattedDate}. Your {$formattedTime} appointment has been moved to your Incoming Requests to be rescheduled.",
+                                'type' => 'appointment',
+                                'is_read' => 0,
+                            ]);
+                        }
                     }
                 }
             }
+
+            // Log the action in the audit log
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'Update Teacher Schedule',
+                'description' => auth()->user()->username . ' updated the schedule availability for Teacher ID: ' . $request->teacher_id
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error saving schedule: ' . $e->getMessage()], 500);
         }
-
-        // Log the action in the audit log
-        AuditLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'Update Teacher Schedule',
-            'description' => auth()->user()->username . ' updated the schedule availability for Teacher ID: ' . $request->teacher_id
-        ]);
-
-        return response()->json(['success' => true]);
     }
 
     /**
