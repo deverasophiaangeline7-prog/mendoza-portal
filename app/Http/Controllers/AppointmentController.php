@@ -369,7 +369,6 @@ class AppointmentController extends Controller
             'schedules.*.is_cancelled' => 'boolean|nullable',
         ]);
 
-        // Using the global namespace so it works without needing 'use' imports at the top
         \DB::beginTransaction();
 
         try {
@@ -396,16 +395,16 @@ class AppointmentController extends Controller
                         
                         if ($appointmentStartHour === $slotStartHour) {
                             
-                            $appointment->update([
-                                'status' => 'cancelled',
-                            ]);
-
                             $formattedDate = Carbon::parse($appointment->appointment_date)->format('M d, Y');
                             $formattedTime = Carbon::parse($appointment->start_time)->format('h:i A');
+                            $parentId = $appointment->parent_id; // Save ID before deleting
+
+                            // Delete the appointment instead of updating status to 'cancelled'
+                            $appointment->delete();
 
                             // Alert the Parent
                             Notification::create([
-                                'user_id' => $appointment->parent_id,
+                                'user_id' => $parentId,
                                 'title' => 'Appointment Cancelled',
                                 'message' => "Your booked appointment on {$formattedDate} at {$formattedTime} has been cancelled by the administrator.",
                                 'type' => 'appointment',
