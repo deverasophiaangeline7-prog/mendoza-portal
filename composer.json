@@ -12,6 +12,7 @@
         "laravel/tinker": "^2.8",
         "livewire/livewire": "^4.3",
         "maatwebsite/excel": "3.1.*",
+        "orange-soft/laravel-gmail-mailer": "^1.0",
         "pusher/pusher-php-server": "^7.3"
     },
     "require-dev": {

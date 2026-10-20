@@ -127,7 +127,7 @@
     <div class="main-content">
         <h1 class="page-title">Appointment Scheduling</h1>
         <div class="adviser-grid">
-            @foreach($advisersList as $adviser)
+            @foreach($advisersList as$adviser)
                 @php 
                     $assigned = !empty($adviser['user_id']);$teacherId = $assigned ? $adviser['user_id'] : 'null';
                 @endphp
@@ -184,18 +184,18 @@
                 <thead>
                     <tr>
                         <th class="time-col"></th>
-                        @foreach($calendarDays as $day)
+                        @foreach($calendarDays as$day)
                             <th class="day-header" data-date="{{ $day->format('Y-m-d') }}">{{ $day->format('D j') }}</th>
                         @endforeach
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($timeSlots as $time)
+                    @foreach($timeSlots as$time)
                         <tr>
                             <td class="time-col">{{ $time }}</td>
-                            @foreach($calendarDays as $day)
+                            @foreach($calendarDays as$day)
                                 @php
-                                    $cellKey = $day->format('Y-m-d') . '|' .$time;
+                                    $cellKey = $day->format('Y-m-d') . '\vert{}' .$time;
                                     $cellStatus = $scheduleRows[$cellKey] ?? 'available';
                                     $cellClass = ['available' => 'cell-white', 'booked' => 'cell-green', 'booked-half' => 'cell-green-half', 'class' => 'cell-red', 'leave' => 'cell-grey'][$cellStatus] ?? 'cell-white';
                                 @endphp
@@ -219,7 +219,7 @@
     </div>
 </div>
 
-<!-- Custom Confirmation Modal -->
+<!-- Custom Confirmation Modal for Leaves -->
 <div id="customConfirmModal" class="custom-confirm-overlay hidden">
     <div class="custom-confirm-box">
         <div class="custom-confirm-text">
@@ -228,6 +228,19 @@
         <div class="custom-confirm-actions">
             <button class="btn-cancel" onclick="closeCustomConfirm()">Cancel</button>
             <button class="btn-confirm" onclick="executePendingLeave()">Continue</button>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Confirmation Modal for Existing Bookings -->
+<div id="customCancelModal" class="custom-confirm-overlay hidden">
+    <div class="custom-confirm-box">
+        <div class="custom-confirm-text">
+            This slot is currently booked. Changing it to "Available" will cancel the appointment and notify both the parent and teacher. Do you wish to continue?
+        </div>
+        <div class="custom-confirm-actions">
+            <button class="btn-cancel" onclick="closeCancelConfirm()">Cancel</button>
+            <button class="btn-confirm" onclick="executePendingCancel()">Continue</button>
         </div>
     </div>
 </div>
@@ -242,6 +255,10 @@
         if (confirmModal) {
             document.body.appendChild(confirmModal);
         }
+        const cancelModal = document.getElementById('customCancelModal');
+        if (cancelModal) {
+            document.body.appendChild(cancelModal);
+        }
     });
 
     let currentTeacherId = null;
@@ -249,8 +266,9 @@
     let isLeaveMode = false;
     let selectedCell = null;
     let pendingLeaveAction = null; 
+    let pendingCancelAction = null;
     
-    const statusClasses = ['cell-white', 'cell-green', 'cell-red', 'cell-grey'];
+    const cycleClasses = ['cell-white', 'cell-red', 'cell-grey'];
 
     function openAdminModal(section, name, teacherId) {
         if (!teacherId || teacherId === 'null') {
@@ -330,28 +348,29 @@
     }
 
     function changeCellColor(cell, direction = 'next') {
-        let currentClass = statusClasses.find(cls => cell.classList.contains(cls));
-        
-        if (cell.classList.contains('cell-green-half')) {
-            currentClass = 'cell-green';
+        if (cell.classList.contains('cell-green') || cell.classList.contains('cell-green-half')) {
+            pendingCancelAction = () => {
+                cell.classList.remove('cell-green', 'cell-green-half');
+                cell.classList.add('cell-white');
+            };
+            document.getElementById('customCancelModal').classList.remove('hidden');
+            return;
         }
+
+        let currentClass = cycleClasses.find(cls => cell.classList.contains(cls));
         if (!currentClass) currentClass = 'cell-white';
 
-        let currentIndex = statusClasses.indexOf(currentClass);
+        let currentIndex = cycleClasses.indexOf(currentClass);
         
         if (direction === 'next') {
-            currentIndex = (currentIndex + 1) % statusClasses.length;
+            currentIndex = (currentIndex + 1) % cycleClasses.length;
         } else if (direction === 'prev') {
-            currentIndex = (currentIndex - 1 + statusClasses.length) % statusClasses.length;
+            currentIndex = (currentIndex - 1 + cycleClasses.length) % cycleClasses.length;
         }
         
-        let nextClass = statusClasses[currentIndex];
+        let nextClass = cycleClasses[currentIndex];
 
-        if (cell.dataset.originalStatus === 'booked' && nextClass === 'cell-grey') {
-            showToast("Marking this booked slot as leave will reschedule it.", false);
-        }
-
-        cell.classList.remove('cell-white', 'cell-green', 'cell-green-half', 'cell-red', 'cell-grey');
+        cell.classList.remove('cell-white', 'cell-red', 'cell-grey', 'cell-green', 'cell-green-half');
         cell.classList.add(nextClass);
     }
 
@@ -466,6 +485,18 @@
         closeCustomConfirm();
     }
 
+    function closeCancelConfirm() {
+        document.getElementById('customCancelModal').classList.add('hidden');
+        pendingCancelAction = null;
+    }
+
+    function executePendingCancel() {
+        if (typeof pendingCancelAction === 'function') {
+            pendingCancelAction();
+        }
+        closeCancelConfirm();
+    }
+
     document.addEventListener('keydown', function(event) {
         if (!isManageMode || !selectedCell) return;
         if (event.key === 'ArrowRight') {
@@ -501,7 +532,7 @@
                         cell.dataset.originalStatus = 'booked';
                     } else if (match.status === 'booked-half') {
                         cell.classList.add('cell-green-half');
-                        cell.dataset.originalStatus = 'booked'; // Essential for forcing reschedule flags
+                        cell.dataset.originalStatus = 'booked';
                     } else if (match.status === 'class' || match.status === 'class_hours') {
                         cell.classList.add('cell-red');
                         cell.dataset.originalStatus = 'class';
@@ -535,13 +566,16 @@
             if (cell.classList.contains('cell-grey')) cellStatus = 'leave';
 
             let originalStatus = cell.dataset.originalStatus;
+            
             let needsReschedule = (originalStatus === 'booked' && cellStatus === 'leave');
+            let isCancelled = (originalStatus === 'booked' && cellStatus === 'available');
 
             scheduleData.push({
                 date: cell.getAttribute('data-date'),
                 time: cell.getAttribute('data-time'),
                 status: cellStatus,
-                needs_reschedule: needsReschedule
+                needs_reschedule: needsReschedule,
+                is_cancelled: isCancelled
             });
         });
 
