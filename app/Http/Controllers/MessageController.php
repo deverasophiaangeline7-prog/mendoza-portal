@@ -50,7 +50,8 @@ class MessageController extends Controller
         if (!is_null($selectedUser->custom_name)) {
             // Fetch ALL messages sent to this group
             $messages = Message::where('receiver_id', $id)
-                                ->orderBy('created_at', 'asc')->get();
+                                ->orderBy('created_at', 'asc')
+                                ->orderBy('id', 'asc')->get();
         } else {
             // Fetch strict 1-on-1 chat
             $messages = Message::where(function($query) use ($id, $authId) {
@@ -59,7 +60,8 @@ class MessageController extends Controller
             })->orWhere(function($query) use ($id, $authId) {
                 $query->where('sender_id', $id)
                       ->where('receiver_id', $authId);
-            })->orderBy('created_at', 'asc')->get();
+            })->orderBy('created_at', 'asc')
+                ->orderBy('id', 'asc')->get();
         }
 
         // NEW: Check if the current user has archived this group
@@ -548,13 +550,15 @@ class MessageController extends Controller
             $newMessages = Message::where('receiver_id', $conversationId)
                                     ->where('sender_id', '!=', $authId) // Don't pull my own sent messages
                                     ->where('created_at', '>', now()->subSeconds(30)) 
-                                    ->orderBy('created_at', 'asc')->get();
+                                    ->orderBy('created_at', 'asc')
+                                    ->orderBy('id', 'asc')->get();
         } else {
             // Fetch strict 1-on-1 messages sent FROM them TO me, specifically unread.
             $newMessages = Message::where('sender_id', $conversationId)
                                     ->where('receiver_id', $authId)
                                     ->where('is_read', false) 
-                                    ->orderBy('created_at', 'asc')->get();
+                                    ->orderBy('created_at', 'asc')
+                                    ->orderBy('id', 'asc')->get();
         }
 
         // Map the results for frontend rendering
