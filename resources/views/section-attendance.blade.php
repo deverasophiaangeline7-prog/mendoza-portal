@@ -60,17 +60,17 @@
                     <div x-show="isManaging" x-cloak class="flex flex-row items-center gap-3 animate-fade-in">
                         <span class="font-black uppercase text-sm whitespace-nowrap hidden lg:inline">Select Day:</span>
                         <input type="date" 
-                                 x-model="selectedDate" 
-                                    @change="
-                                        if(selectedDate) {
-                                            const day = new Date(selectedDate).getUTCDay();
-                                            if(day === 0 || day === 6) {
-                                                triggerToast('Weekends are not allowed! Please select a weekday.', 'error');
-                                                selectedDate = '';
-                                            }
-                                        }
-                                    "
-                               class="border-[3px] border-black p-2 rounded-xl font-black bg-white cursor-pointer w-[140px] sm:w-auto">
+         x-model="selectedDate" 
+            @change="
+                if(selectedDate && selectedDate.length === 10) {
+                    const day = new Date(selectedDate).getUTCDay();
+                    if(day === 0 || day === 6) {
+                        triggerToast('Weekends are not allowed! Please select a weekday.', 'error');
+                        selectedDate = '';
+                    }
+                }
+            "
+       class="border-[3px] border-black p-2 rounded-xl font-black bg-white cursor-pointer w-[140px] sm:w-auto">
                         
                         <button @click="addDateToTable()" class="bg-blue-600 text-white px-4 sm:px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-blue-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
                             + ADD DATE
