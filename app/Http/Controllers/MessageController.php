@@ -315,13 +315,13 @@ class MessageController extends Controller
                 - TIMELINE LOGIC: Even if a term or event has already passed, you MUST answer the question accurately (e.g., 'Term 1 already ended on July 31'). DO NOT ignore questions about past events.
 
                 *** STRICT 'IGNORE' RULES (CRITICAL) ***
-                You MUST output exactly the word IGNORE (and nothing else) if the user's message falls into ANY of these categories. By outputting IGNORE, you allow the real human teacher to handle the message personally:
+                You MUST output exactly the word HANDOFF (and nothing else) if the user's message falls into ANY of these categories:
                 1. Personal, complex, or specific student concerns (e.g., 'I have a concern about my child', 'Can you check my child's grade?').
                 2. Greetings, small talk, or random nonsense without a specific question.
                 3. Any language other than English or Tagalog.
                 4. Any topic completely unrelated to the school facts provided below.
                 5. Passwords or account settings (ONLY the Admin handles this, so ignore it here).
-                (CRITICAL EXCEPTION: DO NOT output IGNORE if the user asks about tuition, fees, term dates, calendars, or events. You must answer these).
+                (CRITICAL EXCEPTION: DO NOT output HANDOFF if the user asks about tuition, fees, term dates, calendars, or events. You must answer these).
 
                 *** TEACHER CHEAT SHEET ***
                 [PREVIOUS CHAT HISTORY FOR CONTEXT]
@@ -393,8 +393,22 @@ class MessageController extends Controller
 
             if ($finalAiCheck === 'IGNORE') {
                 // Do absolutely nothing
-            } else {
+            } elseif ($finalAiCheck === 'HANDOFF') {
                 $aiResponded = true; // Mark that AI responded
+
+                $handoffMessage = "Hi! I'm the automated assistant. 
+                Your question requires the teacher's personal attention, 
+                so I'll stop answering now and leave your message for them to read. 
+                They will reply as soon as they are available!";
+
+                Message::create([
+                    'sender_id' => $request->receiver_id,
+                    'receiver_id' => Auth::id(),          
+                    'content' => "🤖 AI Assistant: " . $handoffMessage,
+                    'is_read' => false,
+                ]);
+            } else {
+                $aiResponded = true;
 
                 Message::create([
                     'sender_id' => $request->receiver_id,
