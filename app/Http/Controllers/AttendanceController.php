@@ -207,7 +207,7 @@ class AttendanceController extends Controller
 
             // 4. THE MAGIC FIX: BULLETPROOF NOTIFICATION LOGIC
             // Only trigger if the status GENUINELY changed or is NEW, AND is not 'Present'
-            if (($isNew || $statusChanged) && $textStatus !== 'Present') {
+            if ($isNew || $statusChanged) {
                 
                 $student = Student::find($record['student_id']);
                 
