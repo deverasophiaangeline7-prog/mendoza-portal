@@ -583,6 +583,18 @@ public function show($section_id)
                 // Track the LRNs that were successfully updated
                 $updatedLrnList[] = $student->lrn; 
                 $processed++;
+
+                // ---> THE FIX: NOTIFY THE PARENT ABOUT THE UPLOAD <---
+                if ($student->user_id) {
+                    \App\Models\Notification::create([
+                        'user_id'    => $student->user_id,
+                        'title'      => 'GRADE ALERT',
+                        'message'    => "Notice: {$request->subject} grades (Term {$activeTerm}) have been uploaded for {$student->first_name}.",
+                        'type'       => 'grade_upload',
+                        'is_read'    => 0,
+                        'created_at' => now(),
+                    ]);
+                }
             }
         }
 
