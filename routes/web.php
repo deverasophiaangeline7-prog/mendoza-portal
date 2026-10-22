@@ -154,6 +154,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('/archives/report-cards/view/{student_id}/{school_year_id}', [ReportCardController::class, 'archivedShowStudent'])->name('archives.reportcards.showStudent');
     
     // Accounts Overview
+    Route::get('/admin/create', [App\Http\Controllers\Admin\UserController::class, 'createAdmin'])->name('admin.create');
+    Route::post('/admin/store', [App\Http\Controllers\Admin\UserController::class, 'storeAdmin'])->name('account.admin.store');
     Route::get('/account-management', function () { 
         $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
         $archivedYears = \App\Models\SchoolYear::where('status', 'archived')->orderBy('id', 'desc')->get();
