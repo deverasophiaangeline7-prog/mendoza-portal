@@ -106,7 +106,7 @@ class UserController extends Controller
 
     public function createAdmin()
     {
-        return view('admin.create-admin-account'); // Matches your new blade file name
+        return view('create-admin-account'); // Matches your new blade file name
     }
 
     public function storeAdmin(Request $request)
