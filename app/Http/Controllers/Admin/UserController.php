@@ -45,7 +45,7 @@ class UserController extends Controller
             ];
         }
 
-        if ($role === 'admin') {
+        if ($role === 'admin' || $role === 'superadmin') {
             $users = User::where('status', 'active')->get();
             $activeYear = SchoolYear::where('status', 'active')->first(); 
             
