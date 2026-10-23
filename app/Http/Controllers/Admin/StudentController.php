@@ -35,7 +35,7 @@ class StudentController extends Controller
             'GRADE 6'      => 9,
         ];
 
-        if (auth()->user()->role === 'admin') {
+        if (in_array(auth()->user()->role, ['admin', 'superadmin'])) {
             $sectionsQuery = \App\Models\Section::orderBy('section_name', 'asc')->get();
         } else {
             // For Teachers: Fetch only their assigned sections

@@ -37,7 +37,7 @@ class ReportCardController extends Controller
         END ASC
     ";
 
-    if ($user->role === 'admin') {
+    if (in_array($user->role, ['admin', 'superadmin'])) {
         $sections = Section::orderByRaw($orderLogic)
             ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
             ->orderBy('section_name', 'asc')

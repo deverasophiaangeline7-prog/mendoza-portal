@@ -59,7 +59,7 @@ class StudentCalendarController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->role === 'admin') { 
+        if (in_array($user->role, ['admin', 'superadmin'])) { 
             abort(403, 'Admins cannot modify student participation.');
         }
 
