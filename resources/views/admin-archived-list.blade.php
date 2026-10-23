@@ -12,7 +12,7 @@
                 <h3 class="text-2xl font-bold text-gray-500 mt-1 italic">Archived Admins</h3>
             </div>
             <div class="flex gap-4">
-                <a href="{{ route('account.admin.list') }}" class="bg-gray-800 hover:bg-black text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black">
+                <a href="{{ route('admin.list') }}" class="bg-gray-800 hover:bg-black text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black">
                     <i class="fa-solid fa-arrow-left"></i> Back
                 </a>
             </div>
@@ -32,7 +32,7 @@
                         <td class="px-4 py-4 border-r-2 border-black text-center font-bold text-lg text-gray-700">{{ $index + 1 }}</td>
                         <td class="px-6 py-4 flex justify-between items-center text-gray-500">
                             <span class="font-bold text-lg uppercase">
-                                {{ $adminUser->admin?->first_name ?? 'NO PROFILE' }} {{ $adminUser->admin?->last_name ?? '' }}
+                                {{ $adminUser->name }}
                             </span>
                             <div class="flex gap-2 items-center">
                                 <button type="button" 

@@ -140,6 +140,9 @@ class UserController extends Controller
 
         // 4. Create the Admin User
         $user = User::create([
+            'first_name' => $request->first_name,
+            'middle_name' => $request->middle_name,
+            'last_name' => $request->last_name,
             'name' => $fullName,
             'username' => $request->username,
             'password' => Hash::make($request->password),
@@ -162,13 +165,10 @@ class UserController extends Controller
 
     public function adminList()
     {
-        // Fetch all active admins from the database
-        $admins = User::where('role', 'admin')
-                      ->where('status', 'active')
-                      ->get();
+        $males = User::where('role', 'admin')->where('status', 'active')->where('gender', 'Male')->get();
+        $females = User::where('role', 'admin')->where('status', 'active')->where('gender', 'Female')->get();
 
-        // Return a view (your groupmate will need to create this blade file)
-        return view('admin-list', compact('admins')); 
+        return view('admin-list', compact('males', 'females')); 
     }
 
     public function archivedAdminList()
@@ -180,6 +180,78 @@ class UserController extends Controller
 
         // Return a view (your groupmate will need to create this blade file)
         return view('admin-archived-list', compact('archivedAdmins')); 
+    }
+
+    public function archiveAdmin($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['status' => 'archived']);
+        
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Archive Admin',
+            'description' => Auth::user()->name . " archived admin account: " . $user->name
+        ]);
+        
+        return back()->with('success', 'Admin account archived successfully.');
+    }
+
+    public function restoreAdmin($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['status' => 'active']);
+        
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Restore Admin',
+            'description' => Auth::user()->name . " restored admin account: " . $user->name
+        ]);
+        
+        return back()->with('success', 'Admin account restored successfully.');
+    }
+
+    public function destroyAdmin($id)
+    {
+        $user = User::findOrFail($id);
+        $name = $user->name;
+        $user->delete();
+        
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Delete Admin',
+            'description' => Auth::user()->name . " permanently deleted admin account: " . $name
+        ]);
+        
+        return back()->with('success', 'Admin account permanently deleted.');
+    }
+
+    public function updateAdmin(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+        ]);
+
+        $middleInitial = $request->filled('middle_name') ? substr($request->middle_name, 0, 1) . '.' : '';
+        $fullName = trim("{$request->last_name}, {$request->first_name} {$middleInitial}");
+
+        $user->update([
+            'first_name' => $request->first_name,
+            'middle_name' => $request->middle_name,
+            'last_name' => $request->last_name,
+            'name' => $fullName,
+        ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Edit Admin',
+            'description' => Auth::user()->name . " updated admin account: " . $user->name
+        ]);
+
+        return back()->with('success', 'Admin account updated successfully.');
     }
 
     public function finalize(Request $request)

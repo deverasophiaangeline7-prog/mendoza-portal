@@ -158,6 +158,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::post('/admin/store', [App\Http\Controllers\Admin\UserController::class, 'storeAdmin'])->name('account.admin.store');
     Route::get('/admin-list', [App\Http\Controllers\Admin\UserController::class, 'adminList'])->name('admin.list');
     Route::get('/admin-list/archived', [App\Http\Controllers\Admin\UserController::class, 'archivedAdminList'])->name('admin.archived');
+    Route::patch('/admin/{id}/archive', [App\Http\Controllers\Admin\UserController::class, 'archiveAdmin'])->name('account.admin.archive');
+    Route::patch('/admin/{id}/restore', [App\Http\Controllers\Admin\UserController::class, 'restoreAdmin'])->name('account.admin.restore');
+    Route::delete('/admin/{id}/delete', [App\Http\Controllers\Admin\UserController::class, 'destroyAdmin'])->name('account.admin.destroy');
+    Route::put('/admin/accounts/admin/{id}/edit', [App\Http\Controllers\Admin\UserController::class, 'updateAdmin'])->name('account.admin.update');
+    
     Route::get('/account-management', function () { 
         $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
         $archivedYears = \App\Models\SchoolYear::where('status', 'archived')->orderBy('id', 'desc')->get();
