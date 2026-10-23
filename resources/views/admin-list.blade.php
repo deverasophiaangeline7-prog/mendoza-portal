@@ -49,15 +49,15 @@
                     @foreach($males as $index => $admin)
                         <tr class="border-b-2 border-black hover:bg-gray-50 transition">
                             <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
-                            <td class="p-4 font-bold uppercase">{{ $admin->first_name }} {{ $admin->middle_name }} {{ $admin->last_name }}</td>
+                            <td class="p-4 font-bold uppercase">{{ $admin->name }}</td>
                             <td class="p-4">
                                 <div class="flex justify-center gap-2 items-center">
                                     <button type="button" 
                                             @click="adminEditModal = true; 
-                                                    editAdminId = '{{ $admin->admin_id ?? $admin->id }}'; 
-                                                    editFirstName = '{{ addslashes($admin->first_name) }}'; 
-                                                    editMiddleName = '{{ addslashes($admin->middle_name) }}'; 
-                                                    editLastName = '{{ addslashes($admin->last_name) }}';"
+                                                    editAdminId = '{{ $admin->user_id ?? $admin->id }}'; 
+                                                    editFirstName = '{{ addslashes($admin->admin->first_name ?? '') }}'; 
+                                                    editMiddleName = '{{ addslashes($admin->admin->middle_name ?? '') }}'; 
+                                                    editLastName = '{{ addslashes($admin->admin->last_name ?? '') }}';"
                                             class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
                                         Edit
                                     </button>
@@ -77,15 +77,15 @@
                     @foreach($females as $index => $admin)
                         <tr class="border-b-2 border-black hover:bg-gray-50 transition">
                             <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
-                           <td class="p-4 font-bold uppercase">{{ $admin->first_name }} {{ $admin->middle_name }} {{ $admin->last_name }}</td>
+                           <td class="p-4 font-bold uppercase">{{ $admin->name }}</td>
                             <td class="p-4">
                                 <div class="flex justify-center gap-2 items-center">
                                     <button type="button" 
                                             @click="adminEditModal = true; 
-                                                    editAdminId = '{{ $admin->admin_id ?? $admin->id }}'; 
-                                                    editFirstName = '{{ addslashes($admin->first_name) }}'; 
-                                                    editMiddleName = '{{ addslashes($admin->middle_name) }}'; 
-                                                    editLastName = '{{ addslashes($admin->last_name) }}';" 
+                                                    editAdminId = '{{ $admin->user_id ?? $admin->id }}'; 
+                                                    editFirstName = '{{ addslashes($admin->admin->first_name ?? '') }}'; 
+                                                    editMiddleName = '{{ addslashes($admin->admin->middle_name ?? '') }}'; 
+                                                    editLastName = '{{ addslashes($admin->admin->last_name ?? '') }}';" 
                                             class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
                                         Edit
                                     </button>

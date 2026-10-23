@@ -32,7 +32,13 @@ class User extends Authenticatable
      * These allow you to do things like $user->student->lrn
      */
 
-    // Link to Student Table
+    // Link to Student 
+    
+    public function admin()
+    {
+        return $this->hasOne(Admin::class, 'user_id', 'user_id');
+    }
+
     public function student()
     {
         return $this->hasOne(\App\Models\Student::class, 'user_id', 'user_id');
@@ -100,6 +106,15 @@ class User extends Authenticatable
      */
     public function getNameAttribute(): ?string
     {
+        // If the user has a linked admin profile
+        if ($this->admin) {
+            return implode(' ', array_filter([
+                $this->admin->first_name, 
+                $this->admin->middle_name, 
+                $this->admin->last_name
+            ]));
+        }
+        
         // If the user has a linked student profile
         if ($this->student) {
             return implode(' ', array_filter([

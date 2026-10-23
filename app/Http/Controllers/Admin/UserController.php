@@ -111,7 +111,6 @@ class UserController extends Controller
 
     public function storeAdmin(Request $request)
     {
-        // 1. Validate the incoming data from the admin form
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -124,12 +123,10 @@ class UserController extends Controller
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        // 2. Format the full name (Last Name, First Name Middle Initial Ext)
         $middleInitial = $request->filled('middle_name') ? substr($request->middle_name, 0, 1) . '.' : '';
         $ext = $request->filled('ext_name') ? $request->ext_name : '';
         $fullName = trim("{$request->last_name}, {$request->first_name} {$middleInitial} {$ext}");
 
-        // 3. Handle Profile Photo Upload (if provided)
         $photoPath = null;
         if ($request->hasFile('profile_photo')) {
             $file = $request->file('profile_photo');
@@ -138,22 +135,27 @@ class UserController extends Controller
             $photoPath = 'uploads/profiles/' . $filename;
         }
 
-        // 4. Create the Admin User
+        // 1. Create the base User authentication record
         $user = User::create([
-            'first_name' => $request->first_name,
-            'middle_name' => $request->middle_name,
-            'last_name' => $request->last_name,
             'name' => $fullName,
             'username' => $request->username,
             'password' => Hash::make($request->password),
             'role' => 'admin',
             'status' => 'active',
+        ]);
+
+        // 2. Create the linked Admin profile record
+        \App\Models\Admin::create([
+            'user_id' => $user->user_id, // Or $user->id if your primary key is just 'id'
+            'first_name' => $request->first_name,
+            'middle_name' => $request->middle_name,
+            'last_name' => $request->last_name,
+            'ext_name' => $request->ext_name,
             'gender' => $request->gender,
             'birthdate' => $request->birthdate,
             'profile_photo_path' => $photoPath,
         ]);
 
-        // 5. Log the Action
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Admin Account Created',
@@ -165,8 +167,12 @@ class UserController extends Controller
 
     public function adminList()
     {
-        $males = User::where('role', 'admin')->where('status', 'active')->where('gender', 'Male')->get();
-        $females = User::where('role', 'admin')->where('status', 'active')->where('gender', 'Female')->get();
+        // Query users, but filter by the gender column inside their linked 'admin' profile
+        $males = User::where('role', 'admin')->where('status', 'active')
+                     ->whereHas('admin', function($q) { $q->where('gender', 'Male'); })->get();
+                     
+        $females = User::where('role', 'admin')->where('status', 'active')
+                       ->whereHas('admin', function($q) { $q->where('gender', 'Female'); })->get();
 
         return view('admin-list', compact('males', 'females')); 
     }
@@ -238,12 +244,17 @@ class UserController extends Controller
         $middleInitial = $request->filled('middle_name') ? substr($request->middle_name, 0, 1) . '.' : '';
         $fullName = trim("{$request->last_name}, {$request->first_name} {$middleInitial}");
 
-        $user->update([
-            'first_name' => $request->first_name,
-            'middle_name' => $request->middle_name,
-            'last_name' => $request->last_name,
-            'name' => $fullName,
-        ]);
+        // 1. Update the base User table
+        $user->update(['name' => $fullName]);
+
+        // 2. Update the linked Admin table
+        if ($user->admin) {
+            $user->admin->update([
+                'first_name' => $request->first_name,
+                'middle_name' => $request->middle_name,
+                'last_name' => $request->last_name,
+            ]);
+        }
 
         AuditLog::create([
             'user_id' => Auth::id(),

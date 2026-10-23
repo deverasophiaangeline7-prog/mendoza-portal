@@ -146,23 +146,15 @@ Route::middleware(['auth', 'teacher'])->group(function () {
 // ==========================================
 // 4. ADMIN ONLY ROUTES (Management & CRUD)
 // ==========================================
-Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin,superadmin'])->group(function () {
     
     Route::get('/admin/student-participation', [StudentCalendarController::class, 'index'])->name('admin.student.participation');
     Route::get('/students/view/{id}', [App\Http\Controllers\Admin\StudentController::class, 'showStudent'])->name('students.showStudent');
     Route::get('/archives/report-cards/{school_year_id}', [ReportCardController::class, 'archivedIndex'])->name('archives.reportcards');
     Route::get('/archives/report-cards/view/{student_id}/{school_year_id}', [ReportCardController::class, 'archivedShowStudent'])->name('archives.reportcards.showStudent');
     
-    // Accounts Overview
-    Route::get('/admin/create', [App\Http\Controllers\Admin\UserController::class, 'createAdmin'])->name('admin.create');
-    Route::post('/admin/store', [App\Http\Controllers\Admin\UserController::class, 'storeAdmin'])->name('account.admin.store');
-    Route::get('/admin-list', [App\Http\Controllers\Admin\UserController::class, 'adminList'])->name('admin.list');
-    Route::get('/admin-list/archived', [App\Http\Controllers\Admin\UserController::class, 'archivedAdminList'])->name('admin.archived');
-    Route::patch('/admin/{id}/archive', [App\Http\Controllers\Admin\UserController::class, 'archiveAdmin'])->name('account.admin.archive');
-    Route::patch('/admin/{id}/restore', [App\Http\Controllers\Admin\UserController::class, 'restoreAdmin'])->name('account.admin.restore');
-    Route::delete('/admin/{id}/delete', [App\Http\Controllers\Admin\UserController::class, 'destroyAdmin'])->name('account.admin.destroy');
-    Route::put('/admin/accounts/admin/{id}/edit', [App\Http\Controllers\Admin\UserController::class, 'updateAdmin'])->name('account.admin.update');
     
+
     Route::get('/account-management', function () { 
         $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
         $archivedYears = \App\Models\SchoolYear::where('status', 'archived')->orderBy('id', 'desc')->get();
@@ -253,6 +245,20 @@ Route::middleware(['auth', 'role:admin,teacher'])->group(function () {
 // Only users with the 'parent' role can access these routes
 Route::middleware(['auth', 'role:parent'])->group(function () {
     Route::get('/student-view', [ParentAccountController::class, 'showStudentProfile'])->name('student.view');
+});
+
+// ==========================================
+// 5. SUPERADMIN ONLY ROUTES
+// ==========================================
+Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
+    Route::get('/admin/create', [App\Http\Controllers\Admin\UserController::class, 'createAdmin'])->name('admin.create');
+    Route::post('/admin/store', [App\Http\Controllers\Admin\UserController::class, 'storeAdmin'])->name('account.admin.store');
+    Route::get('/admin-list', [App\Http\Controllers\Admin\UserController::class, 'adminList'])->name('admin.list');
+    Route::get('/admin-list/archived', [App\Http\Controllers\Admin\UserController::class, 'archivedAdminList'])->name('admin.archived');
+    Route::patch('/admin/{id}/archive', [App\Http\Controllers\Admin\UserController::class, 'archiveAdmin'])->name('account.admin.archive');
+    Route::patch('/admin/{id}/restore', [App\Http\Controllers\Admin\UserController::class, 'restoreAdmin'])->name('account.admin.restore');
+    Route::delete('/admin/{id}/delete', [App\Http\Controllers\Admin\UserController::class, 'destroyAdmin'])->name('account.admin.destroy');
+    Route::put('/admin/accounts/admin/{id}/edit', [App\Http\Controllers\Admin\UserController::class, 'updateAdmin'])->name('account.admin.update');
 });
 
 require __DIR__.'/auth.php';
