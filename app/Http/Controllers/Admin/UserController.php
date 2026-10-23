@@ -168,11 +168,11 @@ class UserController extends Controller
     public function adminList()
     {
         // Query users, but filter by the gender column inside their linked 'admin' profile
-        $males = User::where('role', 'admin')->where('status', 'active')
-                     ->whereHas('admin', function($q) { $q->where('gender', 'Male'); })->get();
-                     
-        $females = User::where('role', 'admin')->where('status', 'active')
-                       ->whereHas('admin', function($q) { $q->where('gender', 'Female'); })->get();
+        $males = User::whereIn('role', ['admin', 'superadmin'])->where('status', 'active')
+             ->whereHas('admin', function($q) { $q->where('gender', 'Male'); })->get();
+             
+$females = User::whereIn('role', ['admin', 'superadmin'])->where('status', 'active')
+                ->whereHas('admin', function($q) { $q->where('gender', 'Female'); })->get();
 
         return view('admin-list', compact('males', 'females')); 
     }
@@ -180,7 +180,7 @@ class UserController extends Controller
     public function archivedAdminList()
     {
         // Fetch all archived admins from the database
-        $archivedAdmins = User::where('role', 'admin')
+        $archivedAdmins = User::whereIn('role', ['admin', 'superadmin'])
                               ->where('status', 'archived')
                               ->get();
 
