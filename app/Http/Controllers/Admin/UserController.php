@@ -160,6 +160,28 @@ class UserController extends Controller
         return redirect()->route('account.management')->with('success', 'Admin account created successfully!');
     }
 
+    public function adminList()
+    {
+        // Fetch all active admins from the database
+        $admins = User::where('role', 'admin')
+                      ->where('status', 'active')
+                      ->get();
+
+        // Return a view (your groupmate will need to create this blade file)
+        return view('admin-list', compact('admins')); 
+    }
+
+    public function archivedAdminList()
+    {
+        // Fetch all archived admins from the database
+        $archivedAdmins = User::where('role', 'admin')
+                              ->where('status', 'archived')
+                              ->get();
+
+        // Return a view (your groupmate will need to create this blade file)
+        return view('admin-archived-list', compact('archivedAdmins')); 
+    }
+
     public function finalize(Request $request)
     {
         $request->validate([
