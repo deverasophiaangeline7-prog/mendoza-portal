@@ -104,6 +104,62 @@ class UserController extends Controller
         return redirect()->route('dashboard')->with('success', 'User created successfully!');
     }
 
+    public function createAdmin()
+    {
+        return view('admin.create-admin-account'); // Matches your new blade file name
+    }
+
+    public function storeAdmin(Request $request)
+    {
+        // 1. Validate the incoming data from the admin form
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'ext_name' => 'nullable|string|max:10',
+            'gender' => 'required|in:Male,Female',
+            'birthdate' => 'required|date',
+            'username' => 'required|string|unique:users,username',
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        // 2. Format the full name (Last Name, First Name Middle Initial Ext)
+        $middleInitial = $request->filled('middle_name') ? substr($request->middle_name, 0, 1) . '.' : '';
+        $ext = $request->filled('ext_name') ? $request->ext_name : '';
+        $fullName = trim("{$request->last_name}, {$request->first_name} {$middleInitial} {$ext}");
+
+        // 3. Handle Profile Photo Upload (if provided)
+        $photoPath = null;
+        if ($request->hasFile('profile_photo')) {
+            $file = $request->file('profile_photo');
+            $filename = time() . '_' . Str::slug($request->username) . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/profiles'), $filename);
+            $photoPath = 'uploads/profiles/' . $filename;
+        }
+
+        // 4. Create the Admin User
+        $user = User::create([
+            'name' => $fullName,
+            'username' => $request->username,
+            'password' => Hash::make($request->password),
+            'role' => 'admin',
+            'status' => 'active',
+            'gender' => $request->gender,
+            'birthdate' => $request->birthdate,
+            'profile_photo_path' => $photoPath,
+        ]);
+
+        // 5. Log the Action
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Admin Account Created',
+            'description' => Auth::user()->name . " created a new admin account for: " . $user->name
+        ]);
+
+        return redirect()->route('account.management')->with('success', 'Admin account created successfully!');
+    }
+
     public function finalize(Request $request)
     {
         $request->validate([
