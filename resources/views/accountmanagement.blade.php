@@ -128,10 +128,9 @@
                 $canFinalize = false;
                 $term3EndDate = 'UNSET';
                 $isTerm3Ended = false;
-                $hasAnyGrades = false; // Initialize the missing variable
+                $hasAnyGrades = false;
                 
                 if (isset($activeYear)) {
-                    // Check if the current school year has ANY grades or NKP evaluations right here
                     $gradesExist = \Illuminate\Support\Facades\DB::table('grades')->where('school_year_id', $activeYear->id)->exists();
                     $nkpExist = \Illuminate\Support\Facades\DB::table('nkp_evaluations')->where('school_year_id', $activeYear->id)->exists();
                     $hasAnyGrades = $gradesExist || $nkpExist;
@@ -142,7 +141,6 @@
                     }
                 }
 
-                // Must pass BOTH checks: Term 3 is done AND there is at least one grade in the database
                 if ($isTerm3Ended && $hasAnyGrades) {
                     $canFinalize = true;
                 }
@@ -161,7 +159,7 @@
             </button>
 
             <button @click="passwordModal = true" class="w-full bg-[#ff3366] hover:bg-[#ff1a53] text-black font-black text-lg md:text-2xl py-4 md:py-5 px-4 md:px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-3">
-                Change User Password <i class="fa-solid fa-key ml-1 md:ml-2"></i>
+                Update Email & Password <i class="fa-solid fa-user-shield ml-1 md:ml-2"></i>
             </button>
 
             <button @click="termScheduleModal = true" class="w-full bg-purple-400 hover:bg-purple-500 text-black font-black text-lg md:text-2xl py-4 md:py-5 px-4 md:px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-3">
@@ -208,7 +206,6 @@
     </div>
     <!-- END: Blocked Finalization Modal -->
 
-    <!-- Modals Section remains unchanged below this point -->
     <div x-show="finalizeModal" 
          x-transition:opacity
          class="fixed inset-0 z-[9999] flex p-4 bg-black/80 backdrop-blur-sm overflow-y-auto" 
@@ -253,6 +250,7 @@
         </div>
     </div>
 
+    <!-- UPDATE EMAIL / PASSWORD MODAL -->
     <div x-show="passwordModal" 
          x-data="{ 
              userId: '', 
@@ -270,14 +268,14 @@
          }"
          class="fixed inset-0 z-[9999] flex p-4 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
-        <div @click.away="passwordModal = false; userId = ''; newPassword = ''; confirmPassword = ''" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto">
+        <div @click.away="passwordModal = false; userId = ''; newPassword = ''; confirmPassword = ''" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[85vh] overflow-y-auto scrollbar-hide">
             
             <button @click="passwordModal = false; userId = ''; newPassword = ''; confirmPassword = ''" class="absolute top-4 right-6 text-3xl font-black text-gray-400 hover:text-black transition-colors">&times;</button>
 
-            <h2 class="text-3xl font-black mb-6 uppercase tracking-tight text-center text-black italic">Reset Password</h2>
+            <h2 class="text-3xl font-black mb-6 uppercase tracking-tight text-center text-black italic">Update Credentials</h2>
 
             <form action="{{ route('admin.password.reset') }}" method="POST" 
-                  @submit.prevent="if(newPassword === confirmPassword && strength() === 'Strong') $el.submit()">
+                  @submit.prevent="if(newPassword === confirmPassword && (newPassword === '' || strength() === 'Strong')) $el.submit()">
                 @csrf
                 @method('PUT')
                 
@@ -291,11 +289,24 @@
                             <p class="text-red-600 font-bold text-sm mt-2 flex items-center gap-1"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>
                         @enderror
                     </div>
+
+                    <!-- NEW EMAIL FIELD -->
+                    <div>
+                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">
+                            New Email <span class="text-gray-400 normal-case text-xs ml-1">(Optional)</span>
+                        </label>
+                        <input type="email" name="email" class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366] transition-colors @error('email') border-red-500 bg-red-50 @else bg-white @enderror" value="{{ old('email') }}" placeholder="Leave blank to keep current">
+                        @error('email') 
+                            <p class="text-red-600 font-bold text-sm mt-2 flex items-center gap-1"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>
+                        @enderror
+                    </div>
                     
                     <div>
-                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">New Password</label>
+                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">
+                            New Password <span class="text-gray-400 normal-case text-xs ml-1">(Optional)</span>
+                        </label>
                         <div class="relative" x-data="{ show: false }">
-                            <input :type="show ? 'text' : 'password'" name="password" x-model="newPassword" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366] pr-10">
+                            <input :type="show ? 'text' : 'password'" name="password" x-model="newPassword" placeholder="Leave blank to keep current" class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366] pr-10">
                             <button type="button" @click="show = !show" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black"><i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i></button>
                         </div>
 
@@ -316,9 +327,9 @@
                     </div>
 
                     <div>
-                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Confirm New Password</label>
+                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Confirm Password</label>
                         <div class="relative" x-data="{ show: false }">
-                            <input :type="show ? 'text' : 'password'" name="password_confirmation" x-model="confirmPassword" required class="w-full border-2 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-colors pr-10" :class="(confirmPassword !== '' && newPassword !== confirmPassword) ? 'border-red-500 focus:ring-red-500 bg-red-50' : 'border-black focus:ring-[#ff3366] bg-white'">
+                            <input :type="show ? 'text' : 'password'" name="password_confirmation" x-model="confirmPassword" class="w-full border-2 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-colors pr-10" :class="(confirmPassword !== '' && newPassword !== confirmPassword) ? 'border-red-500 focus:ring-red-500 bg-red-50' : 'border-black focus:ring-[#ff3366] bg-white'">
                             <button type="button" @click="show = !show" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black"><i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i></button>
                         </div>
                         <p x-show="confirmPassword !== '' && newPassword !== confirmPassword" x-transition class="text-red-600 font-bold text-sm mt-2 flex items-center gap-1">
@@ -329,10 +340,10 @@
 
                 <div class="flex flex-col gap-3">
                     <button type="submit" 
-                            :disabled="(confirmPassword !== '' && newPassword !== confirmPassword) || newPassword === '' || strength() !== 'Strong'"
-                            :class="((confirmPassword !== '' && newPassword !== confirmPassword) || newPassword === '' || strength() !== 'Strong') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#ff1a53] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
+                            :disabled="(confirmPassword !== '' && newPassword !== confirmPassword) || (newPassword !== '' && strength() !== 'Strong')"
+                            :class="((confirmPassword !== '' && newPassword !== confirmPassword) || (newPassword !== '' && strength() !== 'Strong')) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#ff1a53] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
                             class="w-full bg-[#ff3366] text-black font-black py-4 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-xl uppercase">
-                        <i class="fa-solid fa-key mr-2"></i> Reset Password
+                        <i class="fa-solid fa-floppy-disk mr-2"></i> Update Data
                     </button>
                     <button type="button" @click="passwordModal = false; userId = ''; newPassword = ''; confirmPassword = ''" class="w-full bg-gray-100 text-black font-black py-4 rounded-xl border-[3px] border-black hover:bg-gray-200 transition-all text-lg font-bold active:translate-x-[2px] active:translate-y-[2px] active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                         CANCEL
@@ -348,7 +359,6 @@
          class="fixed inset-0 z-[9999] flex p-4 md:p-8 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
         
-        <!-- Adjusted margins to prevent top cut-off on mobile -->
         <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[4px] border-black rounded-[2rem] p-5 md:p-8 max-w-4xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto scrollbar-hide">
             
             <button @click="termScheduleModal = false" class="absolute top-3 md:top-4 right-5 md:right-6 text-4xl md:text-5xl font-black text-black hover:text-gray-700 transition-colors leading-none z-10">&times;</button>

@@ -530,13 +530,19 @@ class UserController extends Controller
      */
     public function resetUserPassword(Request $request)
     {
-        // 1. Validate the incoming request
+        // 1. Validate the incoming request (password and email are now nullable/optional)
         $request->validate([
             'login_id' => ['required', 'string'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
+            'email'    => ['nullable', 'email', 'unique:users,email'],
+            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
         ]);
 
-        // 2. Find the user by Username, Email, or LRN (inside the students table)
+        // If they left both fields blank, return an error
+        if (!$request->filled('password') && !$request->filled('email')) {
+            return back()->with('error', 'You must provide a new password or a new email to update.');
+        }
+
+        // 2. Find the user by Username, Email, or LRN
         $user = User::where('username', $request->login_id)
                     ->orWhere('email', $request->login_id)
                     ->orWhereHas('student', function ($query) use ($request) {
@@ -544,36 +550,46 @@ class UserController extends Controller
                     })
                     ->first();
 
-        // 3. If they typed an ID that doesn't exist, throw an error
+        // 3. Throw an error if user doesn't exist
         if (!$user) {
             return back()->with('error', 'User not found in the system. Please check the LRN, Email, or Username.');
         }
 
-        // 4. Check if the new password perfectly matches their current password
-        if (Hash::check($request->password, $user->password)) {
-            return back()->with('error', 'The new password cannot be the exact same as their current password!');
+        $actions = [];
+
+        // 4. Handle Password Update
+        if ($request->filled('password')) {
+            if (Hash::check($request->password, $user->password)) {
+                return back()->with('error', 'The new password cannot be the exact same as their current password!');
+            }
+            $user->password = Hash::make($request->password);
+            $actions[] = 'password';
         }
 
-        // 5. Securely hash the new password and save it
-        $user->password = Hash::make($request->password);
+        // 5. Handle Email Update
+        if ($request->filled('email')) {
+            $user->email = $request->email;
+            $actions[] = 'email';
+        }
+
         $user->save();
 
-        // 6. Trigger the security notification for the user
+        // 6. Trigger security notification
         $user->customNotifications()->create([
             'type' => 'security',
-            'title' => 'Password Reset by Admin',
-            'message' => 'Your account password was reset by an administrator.',
+            'title' => 'Credentials Updated by Admin',
+            'message' => 'Your account ' . implode(' and ', $actions) . ' was updated by an administrator.',
         ]);
 
         // 7. Log the action
         AuditLog::create([
             'user_id' => Auth::id(),
-            'action' => 'Admin Password Reset',
-            'description' => Auth::user()->username . ' forcibly reset the password for user: ' . ($user->username ?? $user->email)
+            'action' => 'Admin Credentials Reset',
+            'description' => Auth::user()->username . ' forcibly updated the ' . implode(' and ', $actions) . ' for user: ' . ($user->username ?? $user->email)
         ]);
 
-        // 8. Redirect back with your green success toast
-        return back()->with('success', 'Password successfully reset for ' . ($user->username ?? $user->email));
+        // 8. Redirect back with success message
+        return back()->with('success', ucfirst(implode(' and ', $actions)) . ' successfully updated for ' . ($user->username ?? $user->email));
     }
 
     public function updateTerms(Request $request)
