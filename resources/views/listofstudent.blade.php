@@ -391,8 +391,8 @@
                 <i class="fa-solid fa-circle-info mr-1"></i> Students with incomplete or failing grades will automatically be skipped.
             </div>
 
-            <form action="{{ route('teacher.promote.all', $section_id) }}" method="POST" class="flex justify-center space-x-4">
-                @csrf
+            <form action="{{ route('teacher.promote.all', $section->section_id ?? $section->id) }}" method="POST" class="flex justify-center space-x-4">
+                @csrf              
                 <button type="button" @click="promoteAllModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4">
                     Cancel
                 </button>
