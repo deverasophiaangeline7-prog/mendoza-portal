@@ -4,6 +4,33 @@
 
 @section('content')
 <main class="flex-1 p-8 bg-white min-h-screen" x-data="{ addSectionModal: false, deleteSectionModal: false, changePicModal: false }">
+    
+    {{-- ADD THIS TOAST BLOCK HERE --}}
+    @if(session()->has('toast_status'))
+        <div id="import-toast" class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-4 min-w-[320px] rounded-xl border-[3px] border-black {{ session('toast_status') === 'success' ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900' }} px-5 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-opacity duration-500">
+            <div class="flex items-center gap-3">
+                @if(session('toast_status') === 'success')
+                    <i class="fa-solid fa-circle-check text-2xl"></i>
+                @else
+                    <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                @endif
+                <span class="text-base">{{ session('toast_message') }}</span>
+            </div>
+            <button onclick="document.getElementById('import-toast').style.display='none'" class="text-2xl hover:scale-110 transition ml-2">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <script>
+            setTimeout(function() {
+                var toast = document.getElementById('import-toast');
+                if (toast) {
+                    toast.style.opacity = '0';
+                    setTimeout(function() { toast.style.display = 'none'; }, 500);
+                }
+            }, 5000);
+        </script>
+    @endif
     <div class="max-w-6xl mx-auto">
         
         <!-- RESPONSIVE HEADER SECTION -->

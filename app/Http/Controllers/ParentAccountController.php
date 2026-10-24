@@ -335,6 +335,9 @@ class ParentAccountController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'Parent profile picture updated successfully!');
+        return redirect()->back()->with([
+    'toast_status' => 'success',
+    'toast_message' => 'Parent profile picture updated successfully!'
+]);
     }
 }
