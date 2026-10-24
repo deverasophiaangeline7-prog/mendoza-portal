@@ -32,6 +32,16 @@
         </script>
     @endif
     <div class="max-w-6xl mx-auto">
+        @if ($errors->any())
+            <div class="bg-red-100 border-4 border-red-500 text-red-900 px-6 py-4 rounded-xl mb-6 font-bold shadow-[4px_4px_0px_0px_rgba(239,68,68,1)]">
+                <p class="text-xl mb-2"><i class="fa-solid fa-triangle-exclamation"></i> Upload Failed. Here is why:</p>
+                <ul class="list-disc ml-6">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
         
         <!-- RESPONSIVE HEADER SECTION -->
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 w-full">
