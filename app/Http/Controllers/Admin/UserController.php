@@ -534,10 +534,10 @@ class UserController extends Controller
         $request->validate([
             'login_id' => ['required', 'string'],
             'email'    => ['nullable', 'email'], 
-            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
+            'password' => ['nullable', 'confirmed'], // Removed strict validation if blank
         ]);
 
-        if (!$request->filled('password') && (!$request->filled('email'))) {
+        if (empty($request->password) && empty($request->email)) {
             return back()->with('error', 'You must provide a new password or a new email to update.');
         }
 
@@ -555,31 +555,41 @@ class UserController extends Controller
 
         $actions = [];
 
-        // 3. FORCE EMAIL UPDATE AT DATABASE LEVEL
-        if ($request->filled('email')) {
+        // 3. NUCLEAR OPTION: Force Database Table Update
+        if (!empty($request->email)) {
             $newEmail = trim($request->email);
             
+            // Only block if the email is taken by SOMEONE ELSE
             if ($newEmail !== $user->email) {
-                // Manually check if taken
                 if (User::where('email', $newEmail)->exists()) {
                     return back()->with('error', 'The new email is already taken by another account.');
                 }
-                
-                // THE FIX: Directly update the database row to bypass any Model blocks
-                User::where('username', $user->username)->update(['email' => $newEmail]);
-                
-                $user->email = $newEmail; // Update local instance for the success message
-                $actions[] = 'email';
             }
+            
+            // Bypass the Model entirely and write straight to the database row
+            $primaryKey = $user->getKeyName();
+            $userId = $user->getKey();
+            
+            \Illuminate\Support\Facades\DB::table('users')
+                ->where($primaryKey, $userId)
+                ->update(['email' => $newEmail]);
+            
+            $user->email = $newEmail; // Update local instance for the toast
+            $actions[] = 'email';
         }
 
         // 4. Handle Password Update
-        if ($request->filled('password')) {
+        if (!empty($request->password)) {
+            // Apply strict password rules only if they typed a password
+            $request->validate([
+                'password' => [Password::min(8)->letters()->numbers()->symbols()],
+            ]);
+
             if (Hash::check($request->password, $user->password)) {
                 return back()->with('error', 'The new password cannot be the exact same as their current password!');
             }
             $user->password = Hash::make($request->password);
-            $user->save(); // Save password normally
+            $user->save(); 
             $actions[] = 'password';
         }
 
