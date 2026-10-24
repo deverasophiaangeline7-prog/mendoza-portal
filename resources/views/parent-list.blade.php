@@ -103,7 +103,7 @@
                         <option value="" disabled selected>-- Select Parent --</option>
                         <!-- Example loop: You will need to pass $parents from your controller -->
                         @foreach($parents ?? [] as $parent)
-                            <option value="{{ $parent->id }}">{{ $parent->name }}</option>
+                           <option value="{{ $parent->user_id }}">{{ $parent->username }}</option>
                         @endforeach
                     </select>
                 </div>
