@@ -39,20 +39,40 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         $loginField = $this->input('login_id');
+        
+        // Base credentials required for all logins
+        $credentials = [
+            'password' => $this->input('password'),
+            'status' => 'active'
+        ];
 
+        // 1. Check if input is an LRN (numeric)
         if (is_numeric($loginField)) {
             $student = \App\Models\Student::where('lrn', $loginField)->first();
             
             if ($student && $student->user) {
-                $loginField = $student->user->username; 
+                // Map the LRN to the parent's actual username
+                $credentials['username'] = $student->user->username; 
+            } else {
+                // Fallback to force a normal failure if LRN doesn't exist
+                $credentials['username'] = $loginField;
             }
+        } 
+        // 2. Check if input is an Email
+        elseif (filter_var($loginField, FILTER_VALIDATE_EMAIL)) {
+            $credentials['email'] = $loginField;
+        } 
+        // 3. Fallback for standard Admin Usernames
+        else {
+            $credentials['username'] = $loginField;
         }
 
-        if (! Auth::attempt(['username' => $loginField, 'password' => $this->input('password'), 'status' => 'active'], $this->boolean('remember'))) {
+        // Attempt login using the dynamically generated credentials
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'login_id' => __('auth.failed'),
+                'login_id' => __('auth.failed'), // "These credentials do not match our records."
             ]);
         }
 
