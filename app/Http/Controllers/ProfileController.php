@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
-
+use Illuminate\Validation\ValidationException;
 class ProfileController extends Controller
 {
     /**
@@ -42,33 +43,43 @@ class ProfileController extends Controller
 
     public function updatePassword(Request $request)
     {
-        // 1. Validate the form inputs
+        // 1. Strict form validation (Requires 8 chars, letters, numbers, and symbols)
         $request->validate([
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'min:8', 'confirmed'],
+            'password' => [
+                'required', 
+                'confirmed', 
+                Password::min(8)->letters()->numbers()->symbols()
+            ],
         ]);
 
-        // 2. Encrypt, unlock the account, and save
         $user = $request->user();
+
+        // 2. Custom Validation: Ensure new password is not the exact same as the old one
+        if (Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'password' => 'Your new password cannot be the same as your current default password.',
+            ]);
+        }
+
+        // 3. Encrypt, unlock the account, and save
         $user->password = Hash::make($request->password);
-        $user->is_first_login = false; // 👈 UNLOCKS THE ACCOUNT
+        $user->is_first_login = false; // Unlocks the account
         $user->save();
 
-        // 3. Trigger the notification
+        // 4. Trigger notifications and logs
         $user->customNotifications()->create([
             'type' => 'security',
             'title' => 'Password Changed',
             'message' => 'Your account password was successfully updated.',
         ]);
 
-        // 4. Log the action in the audit log
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Change Password',
             'description' => $user->username . ' updated their account password.'
         ]);
 
-        // 5. Send them back to the dashboard with a success message
         return back()->with('success', 'Your password has been successfully updated!');
     }
 

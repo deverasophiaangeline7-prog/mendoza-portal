@@ -52,25 +52,44 @@
                     @csrf
                     @method('put')
 
-                    <div class="mb-4 text-left">
+                    <!-- Current Password -->
+                    <div class="mb-4 text-left" x-data="{ show: false }">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Current Default Password</label>
-                        <input type="password" name="current_password" required class="w-full px-4 py-2 border rounded-lg focus:ring-orange-500 focus:border-orange-500">
+                        <div class="relative">
+                            <input :type="show ? 'text' : 'password'" name="current_password" required class="w-full px-4 py-2 border rounded-lg focus:ring-orange-500 focus:border-orange-500 pr-10">
+                            <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-[#6d0101] focus:outline-none">
+                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
                         @error('current_password') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="mb-4 text-left">
+                    <!-- New Password -->
+                    <div class="mb-4 text-left" x-data="{ show: false }">
                         <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                        <input type="password" name="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-orange-500 focus:border-orange-500">
-                        @error('password') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        <div class="relative">
+                            <input :type="show ? 'text' : 'password'" name="password" required minlength="8" class="w-full px-4 py-2 border rounded-lg focus:ring-orange-500 focus:border-orange-500 pr-10">
+                            <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-[#6d0101] focus:outline-none">
+                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1"><i class="fa-solid fa-circle-info mr-1"></i>Min. 8 characters, containing letters, numbers, and symbols.</p>
+                        @error('password') <span class="text-red-500 text-xs block mt-1">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="mb-6 text-left">
+                    <!-- Confirm Password -->
+                    <div class="mb-6 text-left" x-data="{ show: false }">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                        <input type="password" name="password_confirmation" required class="w-full px-4 py-2 border rounded-lg focus:ring-orange-500 focus:border-orange-500">
+                        <div class="relative">
+                            <input :type="show ? 'text' : 'password'" name="password_confirmation" required minlength="8" class="w-full px-4 py-2 border rounded-lg focus:ring-orange-500 focus:border-orange-500 pr-10">
+                            <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-[#6d0101] focus:outline-none">
+                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-[#6d0101] text-white font-bold py-3 px-4 rounded-lg hover:bg-red-800 transition shadow-lg">
-                        Update & Continue
+                    <button type="submit" class="w-full bg-[#6d0101] text-white font-bold py-3 px-4 rounded-lg hover:bg-red-800 transition shadow-lg flex justify-center items-center">
+                        Update & Continue <i class="fa-solid fa-arrow-right ml-2"></i>
                     </button>
                 </form>
             </div>
