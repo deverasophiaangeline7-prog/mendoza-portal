@@ -530,19 +530,18 @@ class UserController extends Controller
      */
     public function resetUserPassword(Request $request)
     {
-        // 1. Validate the incoming request (password and email are now nullable/optional)
+        // 1. Base validation
         $request->validate([
             'login_id' => ['required', 'string'],
-            'email'    => ['nullable', 'email'], // We will check uniqueness manually below
+            'email'    => ['nullable', 'email'], 
             'password' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
         ]);
 
-        // If they left both fields blank, return an error
-        if (!$request->filled('password') && !$request->filled('email')) {
+        if (!$request->filled('password') && (!$request->filled('email'))) {
             return back()->with('error', 'You must provide a new password or a new email to update.');
         }
 
-        // 2. Find the user by Username, Email, or LRN (inside the students table)
+        // 2. Find the user
         $user = User::where('username', $request->login_id)
                     ->orWhere('email', $request->login_id)
                     ->orWhereHas('student', function ($query) use ($request) {
@@ -550,60 +549,58 @@ class UserController extends Controller
                     })
                     ->first();
 
-        // 3. If they typed an ID that doesn't exist, throw an error
         if (!$user) {
             return back()->with('error', 'User not found in the system. Please check the LRN, Email, or Username.');
         }
 
         $actions = [];
-        $hasChanges = false;
 
-        // 4. Handle Email Update & Uniqueness Check
-        if ($request->filled('email') && $request->email !== $user->email) {
-            $emailExists = User::where('email', $request->email)->exists();
-            if ($emailExists) {
-                return back()->withErrors(['email' => 'The email has already been taken by another account.'])->withInput();
+        // 3. FORCE EMAIL UPDATE AT DATABASE LEVEL
+        if ($request->filled('email')) {
+            $newEmail = trim($request->email);
+            
+            if ($newEmail !== $user->email) {
+                // Manually check if taken
+                if (User::where('email', $newEmail)->exists()) {
+                    return back()->with('error', 'The new email is already taken by another account.');
+                }
+                
+                // THE FIX: Directly update the database row to bypass any Model blocks
+                User::where('username', $user->username)->update(['email' => $newEmail]);
+                
+                $user->email = $newEmail; // Update local instance for the success message
+                $actions[] = 'email';
             }
-            // Force the email update directly to the user model
-            $user->email = $request->email;
-            $actions[] = 'email';
-            $hasChanges = true;
         }
 
-        // 5. Handle Password Update
+        // 4. Handle Password Update
         if ($request->filled('password')) {
             if (Hash::check($request->password, $user->password)) {
                 return back()->with('error', 'The new password cannot be the exact same as their current password!');
             }
             $user->password = Hash::make($request->password);
+            $user->save(); // Save password normally
             $actions[] = 'password';
-            $hasChanges = true;
         }
 
-        // Stop if they submitted the form but actually changed nothing
-        if (!$hasChanges) {
+        if (empty($actions)) {
             return back()->with('error', 'No changes were made to the account credentials.');
         }
 
-        // 6. Save ALL updates to the database
-        $user->save();
-
-        // 7. Trigger the security notification for the user
+        // 5. Audit logs and Notifications
         $user->customNotifications()->create([
             'type' => 'security',
             'title' => 'Credentials Updated by Admin',
             'message' => 'Your account ' . implode(' and ', $actions) . ' was updated by an administrator.',
         ]);
 
-        // 8. Log the action
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Admin Credentials Update',
             'description' => Auth::user()->username . ' forcibly updated the ' . implode(' and ', $actions) . ' for user: ' . ($user->username ?? $user->email)
         ]);
 
-        // 9. Redirect back with your green success toast
-        return back()->with('success', ucfirst(implode(' and ', $actions)) . ' successfully updated for ' . ($user->username ?? $user->name));
+        return back()->with('success', ucfirst(implode(' and ', $actions)) . ' successfully updated.');
     }
 
     public function updateTerms(Request $request)
