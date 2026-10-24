@@ -103,7 +103,11 @@ class ParentAccountController extends Controller
 
         $students = Student::with('user', 'section')->get();
         
-        return view('parent-list', compact('sections', 'students'));
+        // 👇 ADDED THIS LINE to get all active parents for the dropdown menu
+        $parents = User::where('role', 'parent')->where('status', 'active')->get();
+        
+        // 👇 Updated the compact() to include 'parents'
+        return view('parent-list', compact('sections', 'students', 'parents'));
     }
 
     /**
@@ -293,5 +297,44 @@ class ParentAccountController extends Controller
 
         // 5. Return success
         return back()->with('success', strtoupper($student->first_name) . ' is no longer queued for promotion.');
+    }
+    /**
+     * Update the parent's profile picture.
+     */
+    public function updatePicture(Request $request)
+    {
+        // 1. Validate the incoming request
+        $request->validate([
+            'parent_id'       => 'required|exists:users,user_id', 
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg|max:2048', // Max 2MB
+        ]);
+
+        // 2. Find the parent/user record
+        $user = User::findOrFail($request->parent_id);
+
+        // 3. Handle the file upload
+        if ($request->hasFile('profile_picture')) {
+            
+            // Delete the old picture from storage if it exists to prevent clutter
+            if ($user->profile_photo_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_photo_path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_photo_path);
+            }
+
+            // Store the new file in the exact same folder you used in your store() method
+            $path = $request->file('profile_picture')->store('profile_photos', 'public');
+
+            // 4. Update the database record
+            $user->profile_photo_path = $path;
+            $user->save();
+
+            // 5. Log the action (since you have AuditLogs set up!)
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'Update Profile Picture',
+                'description' => Auth::user()->username . ' updated profile picture for Parent ID: ' . $user->user_id
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Parent profile picture updated successfully!');
     }
 }

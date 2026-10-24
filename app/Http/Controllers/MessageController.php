@@ -81,8 +81,15 @@ class MessageController extends Controller
         $request->validate([
             'group_name' => 'required|string|max:255',
             'members'    => 'required|array',
-            'members.*'  => 'exists:users,user_id'
+            'members.*'  => 'exists:users,user_id',
+            'group_photo'=> 'nullable|image|mimes:jpeg,png,jpg|max:2048' // 👈 Add image validation
         ]);
+
+        // Process the photo upload if they selected one
+        $photoPath = null;
+        if ($request->hasFile('group_photo')) {
+            $photoPath = $request->file('group_photo')->store('profile_photos', 'public');
+        }
 
         // 1. Create a "Virtual User" to act as the Group Chat entity
         $groupUser = new User();
@@ -92,6 +99,7 @@ class MessageController extends Controller
         $groupUser->role        = 'admin';        // Bypasses any strict enum rules
         $groupUser->custom_name = $request->group_name; // Saves into our new column!
         $groupUser->status      = 'active';
+        $groupUser->profile_photo_path  = $photoPath; // Save the photo path
         $groupUser->save();
 
         // 2. Link the members to the group

@@ -282,7 +282,7 @@
                 <div class="space-y-4 mb-6">
                     <div>
                         <label class="block font-bold uppercase text-gray-600 text-sm mb-1.5 tracking-widest">
-                            User ID <span class="text-red-600">*</span>
+                            User Email/LRN <span class="text-red-600">*</span>
                         </label>
                         <input type="text" name="login_id" class="w-full border-2 border-black rounded-xl px-4 py-2.5 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366] transition-colors @error('login_id') border-red-500 bg-red-50 @else bg-white @enderror" value="{{ old('login_id') }}" required>
                         @error('login_id') 
@@ -303,19 +303,19 @@
                     
                     <!-- TWO COLUMN GRID FOR PASSWORDS -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
+                        <div class="flex flex-col justify-end">
                             <label class="block font-bold uppercase text-gray-600 text-sm mb-1.5 tracking-widest">
-                                New Password <span class="text-gray-400 normal-case text-xs ml-1">(Optional)</span>
+                                New Password <span class="text-gray-400 normal-case text-xs ml-1 whitespace-nowrap">(Optional)</span>
                             </label>
-                            <div class="relative" x-data="{ show: false }">
+                            <div class="relative mt-auto" x-data="{ show: false }">
                                 <input :type="show ? 'text' : 'password'" name="password" x-model="newPassword" placeholder="Leave blank" class="w-full border-2 border-black rounded-xl px-4 py-2.5 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366] pr-10">
                                 <button type="button" @click="show = !show" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black"><i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i></button>
                             </div>
                         </div>
 
-                        <div>
+                        <div class="flex flex-col justify-end">
                             <label class="block font-bold uppercase text-gray-600 text-sm mb-1.5 tracking-widest">Confirm Password</label>
-                            <div class="relative" x-data="{ show: false }">
+                            <div class="relative mt-auto" x-data="{ show: false }">
                                 <input :type="show ? 'text' : 'password'" name="password_confirmation" x-model="confirmPassword" class="w-full border-2 rounded-xl px-4 py-2.5 font-bold focus:outline-none focus:ring-4 transition-colors pr-10" :class="(confirmPassword !== '' && newPassword !== confirmPassword) ? 'border-red-500 focus:ring-red-500 bg-red-50' : 'border-black focus:ring-[#ff3366] bg-white'">
                                 <button type="button" @click="show = !show" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black"><i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i></button>
                             </div>

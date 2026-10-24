@@ -97,7 +97,16 @@
                     x-show="searchQuery === '' || '{{ strtolower(addslashes($user->custom_name ?? $user->name)) }}'.includes(searchQuery.toLowerCase())"
                     class="block p-4 border-b border-gray-200 transition {{ $hasUnread ? 'bg-blue-50/70' : 'bg-white hover:bg-gray-50' }} {{ (isset($selectedUser) && $selectedUser->user_id == $user->user_id) ? 'border-l-4 border-[#6d0101] bg-gray-50' : 'border-l-4 border-transparent' }}">
                     <div class="flex items-center">
-                        <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}" class="w-12 h-12 rounded-full mr-3 border flex-shrink-0" alt="User">
+                        @php
+                            $photoName = $user->custom_name ?? $user->name;
+                            $photoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($photoName) . '&background=f3f4f6&color=374151';
+                            if ($user->profile_photo_path) {
+                                $photoUrl = str_starts_with($user->profile_photo_path, 'profile_photos') 
+                                    ? asset('storage/' . $user->profile_photo_path) 
+                                    : asset($user->profile_photo_path);
+                            }
+                        @endphp
+                        <img src="{{ $photoUrl }}" class="w-12 h-12 rounded-full mr-3 border object-cover flex-shrink-0" alt="User">
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between items-baseline">
                                 <span class="truncate flex items-center gap-1 min-w-0 {{ $hasUnread ? 'font-bold text-black' : 'font-bold text-gray-900' }}">
@@ -156,7 +165,16 @@
                         <i class="fa-solid fa-arrow-left"></i>
                     </a>
 
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode($selectedUser->custom_name ?? $selectedUser->name) }}" class="w-10 h-10 rounded-full mr-3 border" alt="User">
+                    @php
+                        $headerName = $selectedUser->custom_name ?? $selectedUser->name;
+                        $headerPhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($headerName) . '&background=f3f4f6&color=374151';
+                        if ($selectedUser->profile_photo_path) {
+                            $headerPhotoUrl = str_starts_with($selectedUser->profile_photo_path, 'profile_photos') 
+                                ? asset('storage/' . $selectedUser->profile_photo_path) 
+                                : asset($selectedUser->profile_photo_path);
+                        }
+                    @endphp
+                    <img src="{{ $headerPhotoUrl }}" class="w-10 h-10 rounded-full mr-3 border object-cover" alt="User">
                     <div>
                         <h3 class="font-bold text-gray-800 flex items-center gap-2">
                             {{ $selectedUser->custom_name ?? $selectedUser->name }}
@@ -325,8 +343,15 @@
                                class="flex items-center p-3 hover:bg-red-50 transition-colors"
                                x-show="userSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(userSearch.toLowerCase())">
                                 
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode($contact->name) }}" class="w-10 h-10 rounded-full mr-3 border" alt="User">
-                                
+                @php
+                    $photoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($contact->name) . '&background=f3f4f6&color=374151';
+                    if ($contact->profile_photo_path) {
+                        $photoUrl = str_starts_with($contact->profile_photo_path, 'profile_photos') 
+                            ? asset('storage/' . $contact->profile_photo_path) 
+                            : asset($contact->profile_photo_path);
+                    }
+                @endphp
+                <img src="{{ $photoUrl }}" class="w-10 h-10 rounded-full mr-3 border object-cover" alt="User">                                
                                 <div>
                                     <h4 class="font-bold text-gray-800 text-sm leading-tight">{{ $contact->name }}</h4>
                                     <span class="text-[10px] font-black uppercase tracking-wider {{ $contact->role === 'admin' ? 'text-blue-600' : ($contact->role === 'teacher' ? 'text-amber-600' : 'text-gray-500') }}">
@@ -359,11 +384,38 @@
                 </button>
             </div>
             
-            <div class="p-6" x-data="{ groupName: '', groupSearch: '', selectedMembers: [] }">
-                <!-- NOTE: Update the action to point to your backend route when you build it -->
-                <form action="{{ route('messages.group.store') }}" method="POST">
+            <div class="p-6" x-data="{ groupName: '', groupSearch: '', selectedMembers: [], photoPreview: null }">
+                
+                <!-- 🚨 CRITICAL: Added enctype to allow file uploads -->
+                <form action="{{ route('messages.group.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     
+                    <!-- Group Photo Upload (Interactive UI) -->
+                    <div class="mb-5 flex flex-col items-center">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Group Photo (Optional)</label>
+                        <div class="relative w-24 h-24 group cursor-pointer" @click="$refs.groupPhotoInput.click()">
+                            <!-- Image Preview -->
+                            <img :src="photoPreview || 'https://ui-avatars.com/api/?name=' + (groupName ? encodeURIComponent(groupName) : 'Group') + '&background=f3f4f6&color=374151'" 
+                                 class="w-24 h-24 rounded-full border-[3px] border-gray-200 object-cover shadow-sm transition group-hover:border-[#6d0101]">
+                            
+                            <!-- Little Camera Badge -->
+                            <div class="absolute bottom-0 right-0 bg-[#6d0101] text-white rounded-full w-8 h-8 flex items-center justify-center border-[3px] border-white shadow-sm">
+                                <i class="fa-solid fa-camera text-xs"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden File Input handled by Alpine -->
+                        <input type="file" name="group_photo" x-ref="groupPhotoInput" accept="image/*" class="hidden" 
+                            @change="
+                                const file = $event.target.files[0];
+                                if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = (e) => photoPreview = e.target.result;
+                                    reader.readAsDataURL(file);
+                                }
+                            ">
+                    </div>
+
                     <!-- Group Name Input -->
                     <div class="mb-4">
                         <label class="block text-sm font-bold text-gray-700 mb-1">Group Name <span class="text-red-600">*</span></label>
@@ -387,7 +439,16 @@
                                     
                                     <input type="checkbox" name="members[]" value="{{ $contact->user_id }}" x-model="selectedMembers" class="rounded text-[#6d0101] border-gray-300 focus:ring-[#6d0101] w-4 h-4 mr-3">
                                     
-                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($contact->name) }}" class="w-9 h-9 rounded-full mr-3 border" alt="User">
+                                    <!-- 👇 ADDED THE PHP CUSTOM PHOTO LOGIC HERE 👇 -->
+                                    @php
+                                        $groupPhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($contact->name) . '&background=f3f4f6&color=374151';
+                                        if ($contact->profile_photo_path) {
+                                            $groupPhotoUrl = str_starts_with($contact->profile_photo_path, 'profile_photos') 
+                                                ? asset('storage/' . $contact->profile_photo_path) 
+                                                : asset($contact->profile_photo_path);
+                                        }
+                                    @endphp
+                                    <img src="{{ $groupPhotoUrl }}" class="w-9 h-9 rounded-full mr-3 border object-cover" alt="User">
                                     
                                     <div>
                                         <h4 class="font-bold text-gray-800 text-sm leading-tight">{{ $contact->name }}</h4>

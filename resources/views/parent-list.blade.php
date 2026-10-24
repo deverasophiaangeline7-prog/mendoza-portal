@@ -3,7 +3,7 @@
 @section('title', 'Parent Accounts')
 
 @section('content')
-<main class="flex-1 p-8 bg-white min-h-screen" x-data="{ addSectionModal: false, deleteSectionModal: false }">
+<main class="flex-1 p-8 bg-white min-h-screen" x-data="{ addSectionModal: false, deleteSectionModal: false, changePicModal: false }">
     <div class="max-w-6xl mx-auto">
         
         <!-- RESPONSIVE HEADER SECTION -->
@@ -14,6 +14,9 @@
             </div>
             
             <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                <button @click="changePicModal = true" type="button" class="flex-1 lg:flex-none justify-center bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-5 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
+                    <i class="fa-solid fa-image"></i> Change Picture
+                </button>
                 <button @click="addSectionModal = true" type="button" class="flex-1 lg:flex-none justify-center bg-green-600 hover:bg-green-700 text-white px-3 md:px-5 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
                     <i class="fa-solid fa-plus"></i> Add Section
                 </button>
@@ -47,6 +50,37 @@
             @endforeach
         </div>
         
+    </div>
+
+    {{-- CHANGE PROFILE PICTURE MODAL --}}
+    <div x-show="changePicModal" class="fixed inset-0 z-50 flex p-4 bg-black/50 overflow-y-auto" x-cloak>
+        <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative m-auto flex-shrink-0 max-h-[90vh] overflow-y-auto">
+            <button @click="changePicModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
+            <h3 class="text-2xl font-black mb-4">Change Parent Picture</h3>
+            <!-- Note: Ensure your route is correct and the form handles multipart data for file uploads -->
+            <form action="{{ route('parent.updatePicture') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="mb-4">
+                    <label class="block font-bold mb-1">Select Parent Account</label>
+                    <select name="parent_id" required class="w-full border rounded-lg p-2 font-bold bg-white">
+                        <option value="" disabled selected>-- Select Parent --</option>
+                        <!-- Example loop: You will need to pass $parents from your controller -->
+                        @foreach($parents ?? [] as $parent)
+                            <option value="{{ $parent->id }}">{{ $parent->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block font-bold mb-1">Upload New Picture</label>
+                    <input type="file" name="profile_picture" accept="image/*" required class="w-full border rounded-lg p-2 font-bold bg-gray-50">
+                    <p class="text-xs text-gray-500 mt-1">Accepted formats: JPG, PNG. Max size: 2MB.</p>
+                </div>
+                <div class="flex justify-end gap-2 mt-4 shrink-0">
+                    <button type="button" @click="changePicModal = false" class="px-4 py-2 bg-gray-200 rounded-lg font-bold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold">Upload</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     {{-- ADD SECTION MODAL (Fixed Mobile Centering) --}}

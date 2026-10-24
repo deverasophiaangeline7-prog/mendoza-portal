@@ -181,7 +181,8 @@ Route::middleware(['auth', 'verified', 'role:admin,superadmin'])->group(function
     Route::patch('/account/parent/{id}/restore', [ParentAccountController::class, 'restore'])->name('account.parent.restore');
     Route::get('/parent-list/archived', [ParentAccountController::class, 'archivedIndex'])->name('parent.archived');
     Route::put('/admin/students/{id}/edit', [App\Http\Controllers\Admin\StudentController::class, 'updateStudent'])->name('admin.students.update');
-
+    Route::post('/parent/update-picture', [ParentAccountController::class, 'updatePicture'])->name('parent.updatePicture');
+    
     // User General CRUD
     Route::post('/finalize-year', [UserController::class, 'finalize'])->name('finalize.year');
     Route::get('/admin/users/create', [UserController::class, 'create'])->name('admin.users.create');
