@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -146,7 +147,7 @@ class UserController extends Controller
 
         // 2. Create the linked Admin profile record
         \App\Models\Admin::create([
-            'user_id' => $user->user_id, // Or $user->id if your primary key is just 'id'
+            'user_id' => $user->user_id ?? $user->id, // Or $user->id if your primary key is just 'id'
             'first_name' => $request->first_name,
             'middle_name' => $request->middle_name,
             'last_name' => $request->last_name,
@@ -171,7 +172,7 @@ class UserController extends Controller
         $males = User::whereIn('role', ['admin', 'superadmin'])->where('status', 'active')
              ->whereHas('admin', function($q) { $q->where('gender', 'Male'); })->get();
              
-$females = User::whereIn('role', ['admin', 'superadmin'])->where('status', 'active')
+        $females = User::whereIn('role', ['admin', 'superadmin'])->where('status', 'active')
                 ->whereHas('admin', function($q) { $q->where('gender', 'Female'); })->get();
 
         return view('admin-list', compact('males', 'females')); 
@@ -191,7 +192,10 @@ $females = User::whereIn('role', ['admin', 'superadmin'])->where('status', 'acti
     public function archiveAdmin($id)
     {
         $user = User::findOrFail($id);
-        $user->update(['status' => 'archived']);
+        
+        // Force the update directly instead of mass assignment
+        $user->status = 'archived';
+        $user->save();
         
         AuditLog::create([
             'user_id' => Auth::id(),
@@ -205,7 +209,10 @@ $females = User::whereIn('role', ['admin', 'superadmin'])->where('status', 'acti
     public function restoreAdmin($id)
     {
         $user = User::findOrFail($id);
-        $user->update(['status' => 'active']);
+        
+        // Force the update directly instead of mass assignment
+        $user->status = 'active';
+        $user->save();
         
         AuditLog::create([
             'user_id' => Auth::id(),
@@ -364,7 +371,7 @@ $females = User::whereIn('role', ['admin', 'superadmin'])->where('status', 'acti
                     \App\Models\StudentHistory::create([
                         'student_id' => $student->student_id,
                         'school_year_id' => $currentYear->id,
-                        'section_name' => strtoupper($student->section->grade_level . ' - ' . $student->section->section_name)
+                        'section_name' => strtoupper($student->section->grade_level . ' ' . $student->section->section_name)
                     ]);
                 }
 

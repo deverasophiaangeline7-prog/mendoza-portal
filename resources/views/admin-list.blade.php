@@ -154,7 +154,7 @@
                     Are you sure you want to archive this admin account? They will no longer have access to the system.
                 </p>
                 <div class="flex flex-col gap-4">
-                    <form :action="archiveUrl" method="POST">
+                    <form x-bind:action="archiveUrl" method="POST">
                         @csrf
                         @method('PATCH')
                         <button type="submit" class="w-full bg-[#ffb72b] text-black font-black py-4 rounded-full border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-500 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
