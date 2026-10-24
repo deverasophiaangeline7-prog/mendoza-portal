@@ -7,7 +7,8 @@
 <div class="flex-1 p-8 bg-gray-100 min-h-screen" 
      x-data="{ 
          openModal: false, 
-         promoteModal: false, 
+         promoteModal: false,
+         promoteAllModal: false, 
          studentName: '', 
          studentId: '', 
          promoteUrl: '', 
@@ -62,6 +63,89 @@
                 </p>
             </div>
         </div>
+
+        <!-- ========================================== -->
+        <!-- STRICT CHECK: IS THE ENTIRE CLASS GRADED? -->
+        <!-- ========================================== -->
+        @php
+            $isEntireClassGraded = true; // Assume true until we find a missing grade
+            $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
+            
+            // Combine both arrays to scan the whole class
+            $allStudents = collect($males)->merge($females);
+
+            // If the class has zero students, keep the button disabled
+            if ($allStudents->isEmpty()) {
+                $isEntireClassGraded = false;
+            }
+
+            foreach($allStudents as $std) {
+                // If they are already pending promotion, they are considered "done"
+                if ($std->promotion_status === 'pending') {
+                    continue;
+                }
+
+                $gradeLvl = strtoupper(trim($std->grade_level));
+                $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
+                $studentComplete = false;
+
+                if (in_array($gradeLvl, $nkpLevels)) {
+                    $studentComplete = (bool)($std->has_nkp_eval ?? false);
+                } else {
+                    preg_match('/\d+/', $gradeLvl, $matches);
+                    $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
+                    
+                    if ($gradeNum >= 1 && $gradeNum <= 3) {
+                        $requiredSubjects = 5;
+                    } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
+                        $requiredSubjects = 8;
+                    } else {
+                        $requiredSubjects = 9; 
+                    }
+
+                    $currentGrades = $std->grades->where('school_year_id', $activeYear ? $activeYear->id : null);
+                    
+                    // Check if any subject is missing a final grade
+                    $hasMissingFinal = $currentGrades->contains(function($g) {
+                        return is_null($g->final_grade) || $g->final_grade === '';
+                    });
+                    
+                    // They are only complete if they have all subjects AND no missing final grades
+                    if ($currentGrades->count() >= $requiredSubjects && !$hasMissingFinal) {
+                        $studentComplete = true;
+                    }
+                }
+
+                // If even ONE student is incomplete, lock the button and stop scanning!
+                if (!$studentComplete) {
+                    $isEntireClassGraded = false;
+                    break;
+                }
+            }
+        @endphp
+
+        <!-- PROMOTE ALL BUTTON -->
+        <div class="mb-4 flex justify-end">
+            @if($isEntireClassGraded)
+                <button @click="promoteAllModal = true" 
+                        class="bg-blue-500 text-white font-black uppercase tracking-wider px-6 py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-400 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-users"></i> Promote All Students
+                </button>
+            @else
+                <div class="flex flex-col items-end">
+                    <button type="button" 
+                            onclick="event.stopPropagation();"
+                            class="bg-gray-400 text-gray-600 font-black uppercase tracking-wider px-6 py-3 rounded-xl border-[3px] border-gray-500 opacity-60 cursor-not-allowed shadow-none flex items-center gap-2"
+                            title="You must finish uploading final grades for all students before bulk promotion is allowed.">
+                        <i class="fa-solid fa-lock"></i> Promote All Students
+                    </button>
+                    <span class="text-red-500 text-xs font-bold mt-2 uppercase tracking-wider">
+                        <i class="fa-solid fa-circle-exclamation"></i> Upload all final grades to unlock
+                    </span>
+                </div>
+            @endif
+        </div>
+        <!-- ========================================== -->
 
         <div class="border-[3px] border-black rounded-lg overflow-x-auto bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
             <table class="w-full text-left border-collapse min-w-max">
@@ -290,6 +374,30 @@
                 </button>
                 <button type="submit" class="bg-[#8cc63f] text-black font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
                     Yes, Promote
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- PROMOTE ALL CONFIRMATION MODAL -->
+    <div x-show="promoteAllModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity">
+        <div @click.away="promoteAllModal = false" class="bg-white border-[3px] border-black rounded-[30px] p-8 w-full max-w-md shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] text-center">
+            
+            <i class="fa-solid fa-users text-blue-500 text-6xl mb-4"></i>
+            <h2 class="text-3xl font-black uppercase text-black mb-2">Promote All?</h2>
+            <p class="text-gray-600 font-bold mb-6">Are you sure you want to queue <span class="text-blue-500 uppercase">all eligible students</span> in this section for the next grade level?</p>
+            
+            <div class="bg-blue-50 border-2 border-blue-200 text-blue-700 text-xs font-bold p-3 rounded-lg text-left mb-8">
+                <i class="fa-solid fa-circle-info mr-1"></i> Students with incomplete or failing grades will automatically be skipped.
+            </div>
+
+            <form action="{{ route('teacher.promote.all', $section_id) }}" method="POST" class="flex justify-center space-x-4">
+                @csrf
+                <button type="button" @click="promoteAllModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4">
+                    Cancel
+                </button>
+                <button type="submit" class="bg-[#8cc63f] text-black font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
+                    Yes, Promote All
                 </button>
             </form>
         </div>

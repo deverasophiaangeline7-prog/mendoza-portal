@@ -324,6 +324,9 @@ class TeacherAccountController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'Teacher profile picture updated successfully!');
+        return redirect()->back()->with([
+    'toast_status' => 'success',
+    'toast_message' => 'Teacher profile picture updated successfully!'
+        ]);
     }
 }

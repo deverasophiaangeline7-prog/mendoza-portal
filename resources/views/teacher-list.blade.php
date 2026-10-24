@@ -79,6 +79,35 @@ x-data="{
 }">
     
     <main class="flex-1 p-8">
+        @if(session()->has('toast_status') || session()->has('success') || $errors->any())
+        @php
+            $isError = $errors->any() || session('toast_status') === 'error';
+            $toastMessage = $errors->any() ? $errors->first() : (session('toast_message') ?? session('success'));
+        @endphp
+        <div id="import-toast" class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-4 min-w-[320px] max-w-[400px] rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-green-100 text-green-900' }} px-5 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-opacity duration-500">
+            <div class="flex items-center gap-3">
+                @if($isError)
+                    <i class="fa-solid fa-triangle-exclamation text-2xl shrink-0"></i>
+                @else
+                    <i class="fa-solid fa-circle-check text-2xl shrink-0"></i>
+                @endif
+                <span class="text-sm md:text-base leading-tight">{{ $toastMessage }}</span>
+            </div>
+            <button onclick="document.getElementById('import-toast').style.display='none'" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <script>
+            setTimeout(function() {
+                var toast = document.getElementById('import-toast');
+                if (toast) {
+                    toast.style.opacity = '0';
+                    setTimeout(function() { toast.style.display = 'none'; }, 500);
+                }
+            }, 5000);
+        </script>
+    @endif
         <div class="max-w-6xl mx-auto">
             
             <!-- RESPONSIVE HEADER SECTION -->
@@ -90,16 +119,17 @@ x-data="{
                 
                 <div class="flex flex-wrap gap-3 w-full md:w-auto">
                     <!-- NEW CHANGE PICTURE BUTTON -->
-                    <button @click="changePicModal = true" type="button" class="flex-1 md:flex-none justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] text-sm md:text-base whitespace-nowrap">
-                        <i class="fa-solid fa-image"></i> Change Picture
-                    </button>
+                   <button @click="changePicModal = true" type="button" class="flex-1 md:flex-none justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
+                    <i class="fa-solid fa-image"></i> Change Picture
+                </button>
 
-                    <a href="{{ route('teacher.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] text-sm md:text-base whitespace-nowrap">
-                        <i class="fa-solid fa-box-archive"></i> View Archives
-                    </a>
-                    <a href="{{ route('account.management') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] text-sm md:text-base whitespace-nowrap">
-                        <i class="fa-solid fa-arrow-left"></i> Back
-                    </a>
+                <a href="{{ route('teacher.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
+                    <i class="fa-solid fa-box-archive"></i> View Archives
+                </a>
+
+                <a href="{{ route('account.management') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </a>
                 </div>
             </div>
 
@@ -383,41 +413,6 @@ x-data="{
 
 </div>
 
-<!-- SUCCESS TOAST -->
-@if(session('success'))
-<div x-data="{ show: true }" x-init="setTimeout(() => show = false, 4000)" x-show="show" 
-     x-transition:enter="transition ease-out duration-300"
-     x-transition:enter-start="opacity-0 translate-y-10"
-     x-transition:enter-end="opacity-100 translate-y-0"
-     x-transition:leave="transition ease-in duration-300"
-     x-transition:leave-start="opacity-100 translate-y-0"
-     x-transition:leave-end="opacity-0 translate-y-10"
-     class="fixed bottom-10 right-10 z-[9999] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center gap-4 bg-[#4ade80] text-black">
-    <i class="fa-solid fa-circle-check text-3xl"></i>
-    <span class="font-black text-xl tracking-wide">{{ session('success') }}</span>
-</div>
-@endif
 
-<!-- ERROR TOAST -->
-@if($errors->any())
-<div x-data="{ show: true }" x-init="setTimeout(() => show = false, 6000)" x-show="show" 
-     x-transition:enter="transition ease-out duration-300"
-     x-transition:enter-start="opacity-0 translate-y-10"
-     x-transition:enter-end="opacity-100 translate-y-0"
-     x-transition:leave="transition ease-in duration-300"
-     x-transition:leave-start="opacity-100 translate-y-0"
-     x-transition:leave-end="opacity-0 translate-y-10"
-     class="fixed bottom-10 right-10 z-[9999] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-2 bg-red-500 text-white">
-    <div class="flex items-center gap-4 border-b-2 border-black/20 pb-2">
-        <i class="fa-solid fa-circle-exclamation text-3xl"></i>
-        <span class="font-black text-xl tracking-wide uppercase">Save Failed!</span>
-    </div>
-    <ul class="font-bold text-sm list-disc list-inside">
-        @foreach($errors->all() as $error)
-            <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
-@endif
 
 @endsection

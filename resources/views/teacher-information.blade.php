@@ -56,7 +56,7 @@
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Email Address</label>
                             <!-- Removed "uppercase" and changed "break-all" to "break-words" to preserve email casing and formatting -->
                             <p class="text-3xl font-black italic break-words">
-                                {{ auth()->user()->username ?? auth()->user()->lrn ?? 'N/A' }}
+                                {{ auth()->user()->email ?? auth()->user()->username ?? 'N/A' }}
                             </p>
                         </div>
 

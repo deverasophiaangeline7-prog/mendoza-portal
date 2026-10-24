@@ -140,6 +140,7 @@ Route::middleware(['auth', 'teacher'])->group(function () {
     Route::delete('/teacher/students/delete/{id}', [App\Http\Controllers\Admin\StudentController::class, 'destroyStudent'])->name('teacher.students.destroy');
     
     Route::post('/teacher/promote/{id}', [TeacherController::class, 'promoteStudent'])->name('teacher.promote');
+    Route::post('/teacher/section/{section_id}/promote-all', [TeacherController::class, 'promoteAll'])->name('teacher.promote.all');
     Route::post('/teacher/announcement', [ClassroomAnnouncementController::class, 'store'])->name('teacher.announcement.store');
 });
 
