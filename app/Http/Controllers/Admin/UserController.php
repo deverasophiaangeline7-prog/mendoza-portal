@@ -556,18 +556,18 @@ class UserController extends Controller
         }
 
         $actions = [];
+        $hasChanges = false;
 
         // 4. Handle Email Update & Uniqueness Check
-        if ($request->filled('email')) {
-            // Check if the email they typed is already taken by a DIFFERENT user
-            if ($request->email !== $user->email) {
-                $emailExists = User::where('email', $request->email)->exists();
-                if ($emailExists) {
-                    return back()->withErrors(['email' => 'The email has already been taken by another account.'])->withInput();
-                }
-                $user->email = $request->email;
-                $actions[] = 'email';
+        if ($request->filled('email') && $request->email !== $user->email) {
+            $emailExists = User::where('email', $request->email)->exists();
+            if ($emailExists) {
+                return back()->withErrors(['email' => 'The email has already been taken by another account.'])->withInput();
             }
+            // Force the email update directly to the user model
+            $user->email = $request->email;
+            $actions[] = 'email';
+            $hasChanges = true;
         }
 
         // 5. Handle Password Update
@@ -577,14 +577,15 @@ class UserController extends Controller
             }
             $user->password = Hash::make($request->password);
             $actions[] = 'password';
+            $hasChanges = true;
         }
 
-        // If they typed their existing email and left the password blank, stop here
-        if (empty($actions)) {
+        // Stop if they submitted the form but actually changed nothing
+        if (!$hasChanges) {
             return back()->with('error', 'No changes were made to the account credentials.');
         }
 
-        // 6. Save the updates to the database
+        // 6. Save ALL updates to the database
         $user->save();
 
         // 7. Trigger the security notification for the user
