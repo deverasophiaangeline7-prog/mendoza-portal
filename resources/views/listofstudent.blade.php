@@ -64,23 +64,18 @@
             </div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- STRICT CHECK: IS THE ENTIRE CLASS GRADED? -->
-        <!-- ========================================== -->
+       
         @php
-            $isEntireClassGraded = true; // Assume true until we find a missing grade
+            $isEntireClassGraded = true; 
             $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
             
-            // Combine both arrays to scan the whole class
             $allStudents = collect($males)->merge($females);
 
-            // If the class has zero students, keep the button disabled
             if ($allStudents->isEmpty()) {
                 $isEntireClassGraded = false;
             }
 
             foreach($allStudents as $std) {
-                // If they are already pending promotion, they are considered "done"
                 if ($std->promotion_status === 'pending') {
                     continue;
                 }
@@ -92,6 +87,7 @@
                 if (in_array($gradeLvl, $nkpLevels)) {
                     $studentComplete = (bool)($std->has_nkp_eval ?? false);
                 } else {
+                    // 1. ACADEMIC CHECK
                     preg_match('/\d+/', $gradeLvl, $matches);
                     $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
                     
@@ -105,18 +101,37 @@
 
                     $currentGrades = $std->grades->where('school_year_id', $activeYear ? $activeYear->id : null);
                     
-                    // Check if any subject is missing a final grade
                     $hasMissingFinal = $currentGrades->contains(function($g) {
-                        return is_null($g->final_grade) || $g->final_grade === '';
+                        return empty(trim((string)$g->final_grade));
                     });
                     
-                    // They are only complete if they have all subjects AND no missing final grades
-                    if ($currentGrades->count() >= $requiredSubjects && !$hasMissingFinal) {
+                    $academicComplete = ($currentGrades->count() >= $requiredSubjects) && !$hasMissingFinal;
+
+                    // 2. BEHAVIOR CHECK (Checks for 7 records and ensures Term 1, 2, and 3 are not empty)
+                    $currentBehaviors = $std->behaviors->where('school_year_id', $activeYear ? $activeYear->id : null);
+                    $behaviorComplete = true;
+
+                    if ($currentBehaviors->count() < 7) {
+                        $behaviorComplete = false; // Missing behavior rows
+                    } else {
+                        $hasMissingBehaviorTerm = $currentBehaviors->contains(function($b) {
+                            return empty(trim((string)$b->term1)) || 
+                                   empty(trim((string)$b->term2)) || 
+                                   empty(trim((string)$b->term3));
+                        });
+                        
+                        if ($hasMissingBehaviorTerm) {
+                            $behaviorComplete = false; // Missing a specific term grade (AO, SO, RO, NO)
+                        }
+                    }
+
+                    // 3. COMBINE BOTH CHECKS
+                    if ($academicComplete && $behaviorComplete) {
                         $studentComplete = true;
                     }
                 }
 
-                // If even ONE student is incomplete, lock the button and stop scanning!
+                // If even ONE student is missing academics or behaviors, lock the button and stop scanning!
                 if (!$studentComplete) {
                     $isEntireClassGraded = false;
                     break;

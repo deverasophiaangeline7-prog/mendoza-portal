@@ -34,6 +34,10 @@ class Student extends Model
         return $this->hasMany(\App\Models\Grade::class, 'student_id', 'student_id');
     }
 
+    public function behaviors() {
+        return $this->hasMany(\App\Models\BehaviorReport::class, 'student_id', 'student_id');
+    }
+
     public function events() {
     return $this->hasMany(EventParticipant::class, 'student_id');
     }
