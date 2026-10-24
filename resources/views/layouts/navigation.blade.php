@@ -28,72 +28,136 @@
 <!-- Wrap body in Alpine state -->
 <body class="bg-gray-100" x-data="{ sidebarOpen: false }">
     @if(auth()->check() && auth()->user()->is_first_login)
-        <!-- UNCLOSEABLE SECURITY POP-UP MODAL -->
-        <div class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all relative">
+        <!-- NEO-BRUTALIST SECURITY POP-UP MODAL -->
+        <div class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            
+            <!-- Alpine component handling visibility and password strength -->
+            <div x-data="passwordStrengthMeter()" class="bg-white rounded-3xl border-[3px] border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] w-full max-w-md p-8 relative">
                 
-                <!-- Logout button -->
-                <form method="POST" action="{{ route('logout') }}" class="absolute top-4 right-4">
-                    @csrf
-                    <button type="submit" class="text-gray-400 hover:text-red-600" title="Logout">
-                        <i class="fa-solid fa-right-from-bracket text-xl"></i>
-                    </button>
-                </form>
+                <h2 class="text-3xl font-black italic uppercase text-center mb-6 tracking-wide">Change Password</h2>
+                
+                <p class="text-sm font-bold text-gray-600 text-center mb-6 uppercase tracking-wider">
+                    <i class="fa-solid fa-lock mr-1"></i> Security action required
+                </p>
 
-                <div class="text-center mb-6 mt-2">
-                    <div class="bg-orange-100 text-orange-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fa-solid fa-lock text-3xl"></i>
+                <!-- Global Error Alert (e.g. Current Password is wrong) -->
+                @if($errors->any())
+                    <div class="bg-red-100 border-2 border-red-500 text-red-700 px-4 py-3 rounded-xl mb-6 font-bold text-sm shadow-[4px_4px_0_0_rgba(239,68,68,1)]">
+                        <i class="fa-solid fa-triangle-exclamation mr-2"></i> 
+                        @foreach($errors->all() as $error)
+                            <p>{{ $error }}</p>
+                        @endforeach
                     </div>
-                    <h2 class="text-2xl font-bold text-gray-800">Action Required</h2>
-                    <p class="text-sm text-gray-500 mt-2">For your security, you must change your default password before accessing the system.</p>
-                </div>
+                @endif
 
                 <form method="POST" action="{{ route('user.password.update') }}">
                     @csrf
                     @method('put')
 
                     <!-- Current Password -->
-                    <div class="mb-4 text-left" x-data="{ show: false }">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Current Default Password</label>
+                    <div class="mb-5 text-left">
+                        <label class="block text-sm font-black text-gray-700 mb-2 uppercase tracking-wider">Current Password</label>
                         <div class="relative">
-                            <input :type="show ? 'text' : 'password'" name="current_password" required class="w-full px-4 py-2 border rounded-lg focus:ring-orange-500 focus:border-orange-500 pr-10">
-                            <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-[#6d0101] focus:outline-none">
-                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            <input :type="show1 ? 'text' : 'password'" name="current_password" required 
+                                class="w-full px-4 py-3 border-2 border-black rounded-xl focus:bg-blue-50 focus:outline-none transition-colors font-bold text-lg pr-12">
+                            <button type="button" @click="show1 = !show1" class="absolute inset-y-0 right-0 px-4 flex items-center text-gray-500 hover:text-black focus:outline-none">
+                                <i class="fa-solid text-xl" :class="show1 ? 'fa-eye-slash' : 'fa-eye'"></i>
                             </button>
                         </div>
-                        @error('current_password') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- New Password -->
-                    <div class="mb-4 text-left" x-data="{ show: false }">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <div class="mb-2 text-left">
+                        <label class="block text-sm font-black text-gray-700 mb-2 uppercase tracking-wider">New Password</label>
                         <div class="relative">
-                            <input :type="show ? 'text' : 'password'" name="password" required minlength="8" class="w-full px-4 py-2 border rounded-lg focus:ring-orange-500 focus:border-orange-500 pr-10">
-                            <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-[#6d0101] focus:outline-none">
-                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
-                            </button>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1"><i class="fa-solid fa-circle-info mr-1"></i>Min. 8 characters, containing letters, numbers, and symbols.</p>
-                        @error('password') <span class="text-red-500 text-xs block mt-1">{{ $message }}</span> @enderror
-                    </div>
-
-                    <!-- Confirm Password -->
-                    <div class="mb-6 text-left" x-data="{ show: false }">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                        <div class="relative">
-                            <input :type="show ? 'text' : 'password'" name="password_confirmation" required minlength="8" class="w-full px-4 py-2 border rounded-lg focus:ring-orange-500 focus:border-orange-500 pr-10">
-                            <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-[#6d0101] focus:outline-none">
-                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            <input :type="show2 ? 'text' : 'password'" name="password" required x-model="password" @input="checkStrength"
+                                class="w-full px-4 py-3 border-2 border-black rounded-xl focus:bg-blue-50 focus:outline-none transition-colors font-bold text-lg pr-12">
+                            <button type="button" @click="show2 = !show2" class="absolute inset-y-0 right-0 px-4 flex items-center text-gray-500 hover:text-black focus:outline-none">
+                                <i class="fa-solid text-xl" :class="show2 ? 'fa-eye-slash' : 'fa-eye'"></i>
                             </button>
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-[#6d0101] text-white font-bold py-3 px-4 rounded-lg hover:bg-red-800 transition shadow-lg flex justify-center items-center">
-                        Update & Continue <i class="fa-solid fa-arrow-right ml-2"></i>
-                    </button>
+                    <!-- Live Password Strength Meter -->
+                    <div class="flex items-center justify-between mb-5 border-2 border-black rounded-xl px-4 py-2 bg-gray-50">
+                        <span class="text-xs font-black uppercase tracking-wider text-gray-700">Strength:</span>
+                        <div class="flex gap-1 flex-1 mx-4">
+                            <div class="h-2 flex-1 rounded-full border border-black" :class="strength >= 1 ? (strength == 1 ? 'bg-red-500' : 'bg-yellow-400') : 'bg-gray-200'"></div>
+                            <div class="h-2 flex-1 rounded-full border border-black" :class="strength >= 2 ? (strength == 3 ? 'bg-green-500' : 'bg-yellow-400') : 'bg-gray-200'"></div>
+                            <div class="h-2 flex-1 rounded-full border border-black" :class="strength >= 3 ? 'bg-green-500' : 'bg-gray-200'"></div>
+                        </div>
+                        <span class="text-xs font-black uppercase tracking-wider w-12 text-right" 
+                              :class="{'text-red-500': strength == 1, 'text-yellow-600': strength == 2, 'text-green-600': strength == 3}"
+                              x-text="strengthText"></span>
+                    </div>
+
+                    <!-- Confirm New Password -->
+                    <div class="mb-8 text-left">
+                        <label class="block text-sm font-black text-gray-700 mb-2 uppercase tracking-wider">Confirm New Password</label>
+                        <div class="relative">
+                            <input :type="show3 ? 'text' : 'password'" name="password_confirmation" required 
+                                class="w-full px-4 py-3 border-2 border-black rounded-xl focus:bg-blue-50 focus:outline-none transition-colors font-bold text-lg pr-12">
+                            <button type="button" @click="show3 = !show3" class="absolute inset-y-0 right-0 px-4 flex items-center text-gray-500 hover:text-black focus:outline-none">
+                                <i class="fa-solid text-xl" :class="show3 ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex gap-4">
+                        <!-- Optional Logout Button -->
+                        <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form-modal').submit();" 
+                           class="w-1/3 bg-white text-black font-black uppercase tracking-wider py-3 rounded-xl border-2 border-black text-center shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] transition-all flex items-center justify-center">
+                            Cancel
+                        </a>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" class="w-2/3 bg-[#86efac] text-black font-black uppercase tracking-wider py-3 rounded-xl border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] transition-all flex items-center justify-center">
+                            <i class="fa-solid fa-check mr-2"></i> Update
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Hidden Logout Form for the Cancel button -->
+                <form id="logout-form-modal" method="POST" action="{{ route('logout') }}" class="hidden">
+                    @csrf
                 </form>
             </div>
         </div>
+
+        <!-- Alpine.js Logic for the Password Strength Meter -->
+        <script>
+            function passwordStrengthMeter() {
+                return {
+                    show1: false, show2: false, show3: false,
+                    password: '',
+                    strength: 0,
+                    strengthText: 'NONE',
+                    checkStrength() {
+                        let score = 0;
+                        if (!this.password) {
+                            this.strength = 0;
+                            this.strengthText = 'NONE';
+                            return;
+                        }
+                        
+                        // Rule 1: Length >= 8
+                        if (this.password.length >= 8) score++;
+                        // Rule 2: Contains both letters and numbers
+                        if (/[a-zA-Z]/.test(this.password) && /[0-9]/.test(this.password)) score++;
+                        // Rule 3: Contains special symbols
+                        if (/[^a-zA-Z0-9]/.test(this.password)) score++;
+
+                        this.strength = score;
+                        
+                        if (score === 1) this.strengthText = 'WEAK';
+                        else if (score === 2) this.strengthText = 'MID';
+                        else if (score === 3) this.strengthText = 'STRONG';
+                        else this.strengthText = 'WEAK';
+                    }
+                }
+            }
+        </script>
     @endif
     <div class="min-h-screen flex flex-col">
         
@@ -245,12 +309,22 @@
                     </x-sidebar-link>
 
                     @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
-                        <x-sidebar-link href="{{ route('account.management') }}"
-                            icon="fa-solid fa-users-gear"
-                            :active="request()->routeIs(['account.management', 'admin.audit_logs', 'parent.*', 'teacher.*', 'grade.show', 'account.*'])">
-                            Account Management
-                        </x-sidebar-link>
-                    @endif
+                    <x-sidebar-link href="{{ route('account.management') }}"
+                        icon="fa-solid fa-users-gear"
+                        :active="request()->routeIs([
+                            'account.management', 
+                            'admin.audit_logs', 
+                            'parent.*', 
+                            'teacher.*', 
+                            'grade.show', 
+                            'account.*', 
+                            'admin.list', 
+                            'admin.archived', 
+                            'admin.create'
+                        ])">
+                        Account Management
+                    </x-sidebar-link>
+                @endif
                 </ul>
             </nav>
 
