@@ -8,7 +8,7 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
 </style>
 
-<div class="flex-1 flex flex-col h-full overflow-hidden relative" x-data="{ passwordModal: false, photoModal: false }">
+<div class="flex-1 flex flex-col h-full overflow-hidden relative" x-data="{ passwordModal: false }">
     
     <main class="flex-1 bg-white p-10 relative overflow-y-hidden custom-scrollbar">
         
@@ -27,9 +27,6 @@
                             <i class="fa-solid fa-user-graduate text-7xl text-black"></i>
                         @endif
                         </div>
-                        <button @click="photoModal = true" class="absolute -bottom-2 -right-2 bg-white text-black border-[3px] border-black rounded-full w-12 h-12 flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all z-10 text-xl">
-                            <i class="fa-solid fa-camera"></i>
-                        </button>
                     </div>
 
                     <div class="text-center md:text-left">
@@ -85,37 +82,6 @@
             </div>
         </div>
     </main>
-
-    <div x-show="photoModal" 
-         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
-        <div @click.away="photoModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
-            
-            <div class="flex justify-between items-start mb-6">
-                <h2 class="text-3xl font-black uppercase text-black italic">Update Photo</h2>
-                <button @click="photoModal = false" class="text-gray-400 hover:text-red-600 text-3xl transition-colors"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            
-            <form action="{{ route('profile.photo.update') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
-                
-                <div class="space-y-5 mb-8">
-                    <div>
-                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Select New Image</label>
-                        <input type="file" name="profile_photo" accept="image/jpeg,image/png,image/jpg" required class="w-full border-2 border-black rounded-xl p-2 font-bold focus:outline-none focus:ring-4 focus:ring-red-400 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-2 file:border-black file:text-sm file:font-black file:bg-[#ffb31a] file:text-black hover:file:bg-[#e68a2d] file:transition-colors cursor-pointer">
-                    </div>
-                </div>
-
-                <div class="flex justify-end space-x-4">
-                    <button type="button" @click="photoModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4 transition-colors">Cancel</button>
-                    
-                    <button type="submit" class="bg-[#34C759] text-white font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-green-600 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all flex items-center">
-                        <i class="fa-solid fa-upload mr-2"></i> Upload
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     {{-- PASSWORD UPDATE MODAL (With Strength Indicator) --}}
     <div x-show="passwordModal" 

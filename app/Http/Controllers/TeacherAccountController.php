@@ -286,4 +286,44 @@ class TeacherAccountController extends Controller
 
         return redirect()->back()->with('success', 'Teacher reassigned successfully!');
     }
+
+    /**
+     * UPDATE TEACHER PROFILE PICTURE (ADMIN ONLY)
+     */
+    public function updatePicture(Request $request)
+    {
+        // 1. Validate the incoming request
+        $request->validate([
+            'teacher_id'      => 'required|exists:users,user_id', 
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg|max:2048', // Max 2MB
+        ]);
+
+        // 2. Find the user record for this teacher
+        $user = User::findOrFail($request->teacher_id);
+
+        // 3. Handle the file upload
+        if ($request->hasFile('profile_picture')) {
+            
+            // Delete the old picture from storage if it exists to prevent clutter
+            if ($user->profile_photo_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_photo_path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_photo_path);
+            }
+
+            // Store the new file in the exact same folder used in store()
+            $path = $request->file('profile_picture')->store('profile_photos', 'public');
+
+            // 4. Update the database record
+            $user->profile_photo_path = $path;
+            $user->save();
+
+            // 5. Log the action
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'Update Profile Picture',
+                'description' => Auth::user()->username . ' updated profile picture for Teacher ID: ' . $user->user_id
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Teacher profile picture updated successfully!');
+    }
 }

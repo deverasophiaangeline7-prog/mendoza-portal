@@ -5,44 +5,41 @@
 @section('content')
 <main class="flex-1 p-8 bg-white min-h-screen" x-data="{ addSectionModal: false, deleteSectionModal: false, changePicModal: false }">
     
-    {{-- ADD THIS TOAST BLOCK HERE --}}
-    @if(session()->has('toast_status'))
-        <div id="import-toast" class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-4 min-w-[320px] rounded-xl border-[3px] border-black {{ session('toast_status') === 'success' ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900' }} px-5 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-opacity duration-500">
+    <!-- FIXED TOAST NOTIFICATION -->
+    @if(session()->has('toast_status') || $errors->any() || session('success'))
+        @php
+            $isError = $errors->any() || session('toast_status') === 'error';
+            // Check for both 'toast_message' and 'success' so it works with your controller
+            $toastMessage = $errors->any() ? $errors->first() : (session('toast_message') ?? session('success'));
+        @endphp
+        
+        <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-10"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-300"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 translate-y-10"
+             class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-4 min-w-[320px] max-w-[400px] rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-[#4ade80] text-black' }} px-5 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            
             <div class="flex items-center gap-3">
-                @if(session('toast_status') === 'success')
-                    <i class="fa-solid fa-circle-check text-2xl"></i>
+                @if($isError)
+                    <i class="fa-solid fa-triangle-exclamation text-2xl shrink-0"></i>
                 @else
-                    <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                    <i class="fa-solid fa-circle-check text-2xl shrink-0"></i>
                 @endif
-                <span class="text-base">{{ session('toast_message') }}</span>
+                <span class="text-sm md:text-base leading-tight">{{ $toastMessage }}</span>
             </div>
-            <button onclick="document.getElementById('import-toast').style.display='none'" class="text-2xl hover:scale-110 transition ml-2">
+            
+            <button @click="show = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        
-        <script>
-            setTimeout(function() {
-                var toast = document.getElementById('import-toast');
-                if (toast) {
-                    toast.style.opacity = '0';
-                    setTimeout(function() { toast.style.display = 'none'; }, 500);
-                }
-            }, 5000);
-        </script>
     @endif
+    <!-- END TOAST -->
+
     <div class="max-w-6xl mx-auto">
-        @if ($errors->any())
-            <div class="bg-red-100 border-4 border-red-500 text-red-900 px-6 py-4 rounded-xl mb-6 font-bold shadow-[4px_4px_0px_0px_rgba(239,68,68,1)]">
-                <p class="text-xl mb-2"><i class="fa-solid fa-triangle-exclamation"></i> Upload Failed. Here is why:</p>
-                <ul class="list-disc ml-6">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-        
+       
         <!-- RESPONSIVE HEADER SECTION -->
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 w-full">
             <div>
@@ -94,14 +91,12 @@
         <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative m-auto flex-shrink-0 max-h-[90vh] overflow-y-auto">
             <button @click="changePicModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
             <h3 class="text-2xl font-black mb-4">Change Parent Picture</h3>
-            <!-- Note: Ensure your route is correct and the form handles multipart data for file uploads -->
             <form action="{{ route('parent.updatePicture') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="mb-4">
                     <label class="block font-bold mb-1">Select Parent Account</label>
                     <select name="parent_id" required class="w-full border rounded-lg p-2 font-bold bg-white">
                         <option value="" disabled selected>-- Select Parent --</option>
-                        <!-- Example loop: You will need to pass $parents from your controller -->
                         @foreach($parents ?? [] as $parent)
                            <option value="{{ $parent->user_id }}">{{ $parent->username }}</option>
                         @endforeach

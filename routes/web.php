@@ -151,10 +151,8 @@ Route::middleware(['auth', 'verified', 'role:admin,superadmin'])->group(function
     Route::get('/admin/student-participation', [StudentCalendarController::class, 'index'])->name('admin.student.participation');
     Route::get('/students/view/{id}', [App\Http\Controllers\Admin\StudentController::class, 'showStudent'])->name('students.showStudent');
     Route::get('/archives/report-cards/{school_year_id}', [ReportCardController::class, 'archivedIndex'])->name('archives.reportcards');
-    Route::get('/archives/report-cards/view/{student_id}/{school_year_id}', [ReportCardController::class, 'archivedShowStudent'])->name('archives.reportcards.showStudent');
+    Route::get('/archives/report-cards/view/{student_id}/{school_year_id}', [ReportCardController::class, 'archivedShowStudent'])->name('archives.reportcards.showStudent'); 
     
-    
-
     Route::get('/account-management', function () { 
         $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
         $archivedYears = \App\Models\SchoolYear::where('status', 'archived')->orderBy('id', 'desc')->get();
@@ -171,7 +169,8 @@ Route::middleware(['auth', 'verified', 'role:admin,superadmin'])->group(function
     Route::get('/teacher-list/archived', [TeacherAccountController::class, 'archivedIndex'])->name('teacher.archived');
     Route::patch('/teacher/{id}/restore', [TeacherAccountController::class, 'restore'])->name('account.teacher.restore');
     Route::put('/account/teacher/{id}/edit', [App\Http\Controllers\TeacherAccountController::class, 'update'])->name('account.teacher.update');
-    
+    Route::post('/account/teacher/update-picture', [TeacherAccountController::class, 'updatePicture'])->name('account.teacher.updatePicture');
+
     // Parent Management
     Route::get('/create-parent-account', [ParentAccountController::class, 'create'])->name('parent.create'); 
     Route::post('/account/parent/store', [ParentAccountController::class, 'store'])->name('account.parent.store');
