@@ -209,6 +209,7 @@
                                         </span>
                                     </div>
                                 @else
+
                                     @php
                                         $gradeLvl = strtoupper(trim($student->grade_level));
                                         $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
@@ -217,34 +218,46 @@
                                             $isPassed = (bool)($student->has_nkp_eval ?? false);
                                             $isComplete = $isPassed;
                                         } else {
-                                            // --- DYNAMIC SUBJECT COUNTING FIX ---
                                             preg_match('/\d+/', $gradeLvl, $matches);
                                             $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
                                             
-                                            // Grades 1, 2, and 3 have 5 subjects. Grades 4, 5, and 6 have 8 subjects.
                                             if ($gradeNum >= 1 && $gradeNum <= 3) {
                                                 $requiredSubjects = 5;
                                             } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
                                                 $requiredSubjects = 8;
                                             } else {
-                                                $requiredSubjects = 9; // Fallback
+                                                $requiredSubjects = 9; 
                                             }
-                                            // ------------------------------------
 
                                             $passingMark = 75; 
-                                            
-                                            // 1. Isolate ONLY the grades for the active school year
                                             $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
+                                            
+                                            // 1. ACADEMIC CHECK
                                             $currentGrades = $student->grades->where('school_year_id', $activeYear ? $activeYear->id : null);
-                                            
-                                            $gradesCount = $currentGrades->count(); 
-                                            
-                                            // 2. Safely check for failing OR empty final grades in the CURRENT year only
                                             $failingGrade = $currentGrades->first(function($g) use ($passingMark) {
-                                                return is_null($g->final_grade) || $g->final_grade === '' || (float)$g->final_grade < $passingMark;
+                                                return empty(trim((string)$g->final_grade)) || (float)$g->final_grade < $passingMark;
                                             }); 
-                                            
-                                            $isComplete = $gradesCount >= $requiredSubjects; 
+                                            $academicComplete = $currentGrades->count() >= $requiredSubjects;
+
+                                            // 2. BEHAVIOR CHECK
+                                            $currentBehaviors = $student->behaviors->where('school_year_id', $activeYear ? $activeYear->id : null);
+                                            $behaviorComplete = true;
+
+                                            if ($currentBehaviors->count() < 7) {
+                                                $behaviorComplete = false; 
+                                            } else {
+                                                $hasMissingBehaviorTerm = $currentBehaviors->contains(function($b) {
+                                                    return empty(trim((string)$b->term1)) || 
+                                                           empty(trim((string)$b->term2)) || 
+                                                           empty(trim((string)$b->term3));
+                                                });
+                                                if ($hasMissingBehaviorTerm) {
+                                                    $behaviorComplete = false; 
+                                                }
+                                            }
+
+                                            // 3. COMBINE BOTH CHECKS
+                                            $isComplete = $academicComplete && $behaviorComplete; 
                                             $isPassed = $isComplete && !$failingGrade;
                                         }
                                     @endphp
