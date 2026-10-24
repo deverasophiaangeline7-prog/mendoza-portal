@@ -143,7 +143,7 @@
 
                     @php
                         $calendarRoute = match(auth()->user()->role) {
-                            'admin' => route('admin.student.participation'),
+                            'admin', 'superadmin' => route('admin.student.participation'),
                             'parent' => route('student.calendar'),
                             default => route('student.calendar.index'),
                         };
@@ -176,7 +176,7 @@
                         Appointment Scheduling
                     </x-sidebar-link>
 
-                    @if(auth()->user()->role === 'admin')
+                    @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
                         <x-sidebar-link href="{{ route('account.management') }}"
                             icon="fa-solid fa-users-gear"
                             :active="request()->routeIs(['account.management', 'admin.audit_logs', 'parent.*', 'teacher.*', 'grade.show', 'account.*'])">

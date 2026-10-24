@@ -97,7 +97,7 @@ class AppointmentController extends Controller
                 
             return view('appointment_parent', compact('incomingRequests', 'mySentRequests', 'adviserSchedule', 'student', 'adviserName', 'bookedAppointments'));                
        
-            } elseif ($user->role === 'admin') {
+            } elseif (in_array($user->role, ['admin', 'superadmin'])) {
             
             $advisersList = [];
 

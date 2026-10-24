@@ -31,8 +31,8 @@ class AuthenticatedSessionController extends Controller
         $role = auth()->user()->role;
         $loginType = $request->input('login_type');
 
-        // If someone used the Admin form but is NOT an admin, block them
-        if ($loginType === 'admin' && $role !== 'admin') {
+        // 1. If someone used the Admin form but is NOT an admin or superadmin, block them
+        if ($loginType === 'admin' && !in_array($role, ['admin', 'superadmin'])) {
             
             // 🚨 LOG: Unauthorized access to Admin portal
             \App\Models\AuditLog::create([
@@ -50,14 +50,14 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        // If someone used the Parent/Teacher form but IS an admin, block them too
-        if ($loginType !== 'admin' && $role === 'admin') {
+        // 2. If someone used the Parent/Teacher form but IS an admin/superadmin, block them too
+        if ($loginType !== 'admin' && in_array($role, ['admin', 'superadmin'])) {
             
             // 🚨 LOG: Admin using the wrong portal
             \App\Models\AuditLog::create([
                 'user_id' => auth()->id(),
                 'action' => 'Invalid Portal Use',
-                'description' => auth()->user()->username . ' (Admin) attempted to log in through the Parent/Teacher portal.'
+                'description' => auth()->user()->username . ' (' . ucfirst($role) . ') attempted to log in through the Parent/Teacher portal.'
             ]);
 
             Auth::guard('web')->logout();
@@ -76,7 +76,9 @@ class AuthenticatedSessionController extends Controller
             'description' => auth()->user()->username . ' successfully logged into the system.'
         ]);
 
+        // 3. Route the user to their dashboard
         return match($role) {
+            'superadmin' => redirect()->route('dashboard'),
             'admin'   => redirect()->route('dashboard'),
             'teacher' => redirect()->route('dashboard'),
             'parent'  => redirect()->route('dashboard'),

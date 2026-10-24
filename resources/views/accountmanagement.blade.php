@@ -81,9 +81,11 @@
                      x-transition:enter-end="opacity-100 transform translate-y-0"
                      x-cloak 
                      class="absolute top-full mt-4 left-0 w-full bg-white border-[3px] border-black rounded-2xl overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] z-20">
+                     @if(auth()->user()->role === 'superadmin')
                      <a href="{{ route('admin.list') }}" class="block px-6 py-4 text-lg md:text-xl font-bold border-b-[3px] border-black hover:bg-yellow-100 transition-colors">
                         Admin Accounts
                     </a>
+                    @endif
                     <a href="{{ route('teacher.list') }}" class="block px-6 py-4 text-lg md:text-xl font-bold border-b-[3px] border-black hover:bg-yellow-100 transition-colors">
                         Teacher Accounts
                     </a>
@@ -105,7 +107,9 @@
                      x-transition:enter-end="opacity-100 transform translate-y-0"
                      x-cloak 
                      class="absolute top-full mt-4 left-0 w-full bg-white border-[3px] border-black rounded-2xl overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] z-20">
+                     @if(auth()->user()->role === 'superadmin')
                     <a href="{{ route('admin.create') }}" class="block px-6 py-4 text-lg md:text-xl font-bold border-b-[3px] border-black hover:bg-yellow-100 transition-colors">Admin Account</a>
+                    @endif
                     <a href="{{ route('teacher.create') }}" class="block px-6 py-4 text-lg md:text-xl font-bold border-b-[3px] border-black hover:bg-yellow-100 transition-colors">Teacher Account</a>
                     <a href="{{ route('parent.create') }}" class="block px-6 py-4 text-lg md:text-xl font-bold hover:bg-yellow-100 transition-colors">Parent Account</a>
                 </div>

@@ -45,7 +45,7 @@ class UserController extends Controller
             ];
         }
 
-        if ($role === 'admin') {
+        if ($role === 'admin' || $role === 'superadmin') {
             $users = User::where('status', 'active')->get();
             $activeYear = SchoolYear::where('status', 'active')->first(); 
             
@@ -111,7 +111,6 @@ class UserController extends Controller
 
     public function storeAdmin(Request $request)
     {
-        // 1. Validate the incoming data from the admin form
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -124,12 +123,10 @@ class UserController extends Controller
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        // 2. Format the full name (Last Name, First Name Middle Initial Ext)
         $middleInitial = $request->filled('middle_name') ? substr($request->middle_name, 0, 1) . '.' : '';
         $ext = $request->filled('ext_name') ? $request->ext_name : '';
         $fullName = trim("{$request->last_name}, {$request->first_name} {$middleInitial} {$ext}");
 
-        // 3. Handle Profile Photo Upload (if provided)
         $photoPath = null;
         if ($request->hasFile('profile_photo')) {
             $file = $request->file('profile_photo');
@@ -138,19 +135,27 @@ class UserController extends Controller
             $photoPath = 'uploads/profiles/' . $filename;
         }
 
-        // 4. Create the Admin User
+        // 1. Create the base User authentication record
         $user = User::create([
             'name' => $fullName,
             'username' => $request->username,
             'password' => Hash::make($request->password),
             'role' => 'admin',
             'status' => 'active',
+        ]);
+
+        // 2. Create the linked Admin profile record
+        \App\Models\Admin::create([
+            'user_id' => $user->user_id, // Or $user->id if your primary key is just 'id'
+            'first_name' => $request->first_name,
+            'middle_name' => $request->middle_name,
+            'last_name' => $request->last_name,
+            'ext_name' => $request->ext_name,
             'gender' => $request->gender,
             'birthdate' => $request->birthdate,
             'profile_photo_path' => $photoPath,
         ]);
 
-        // 5. Log the Action
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Admin Account Created',
@@ -162,24 +167,102 @@ class UserController extends Controller
 
     public function adminList()
     {
-        // Fetch all active admins from the database
-        $admins = User::where('role', 'admin')
-                      ->where('status', 'active')
-                      ->get();
+        // Query users, but filter by the gender column inside their linked 'admin' profile
+        $males = User::whereIn('role', ['admin', 'superadmin'])->where('status', 'active')
+             ->whereHas('admin', function($q) { $q->where('gender', 'Male'); })->get();
+             
+$females = User::whereIn('role', ['admin', 'superadmin'])->where('status', 'active')
+                ->whereHas('admin', function($q) { $q->where('gender', 'Female'); })->get();
 
-        // Return a view (your groupmate will need to create this blade file)
-        return view('admin-list', compact('admins')); 
+        return view('admin-list', compact('males', 'females')); 
     }
 
     public function archivedAdminList()
     {
         // Fetch all archived admins from the database
-        $archivedAdmins = User::where('role', 'admin')
+        $archivedAdmins = User::whereIn('role', ['admin', 'superadmin'])
                               ->where('status', 'archived')
                               ->get();
 
         // Return a view (your groupmate will need to create this blade file)
         return view('admin-archived-list', compact('archivedAdmins')); 
+    }
+
+    public function archiveAdmin($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['status' => 'archived']);
+        
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Archive Admin',
+            'description' => Auth::user()->name . " archived admin account: " . $user->name
+        ]);
+        
+        return back()->with('success', 'Admin account archived successfully.');
+    }
+
+    public function restoreAdmin($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['status' => 'active']);
+        
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Restore Admin',
+            'description' => Auth::user()->name . " restored admin account: " . $user->name
+        ]);
+        
+        return back()->with('success', 'Admin account restored successfully.');
+    }
+
+    public function destroyAdmin($id)
+    {
+        $user = User::findOrFail($id);
+        $name = $user->name;
+        $user->delete();
+        
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Delete Admin',
+            'description' => Auth::user()->name . " permanently deleted admin account: " . $name
+        ]);
+        
+        return back()->with('success', 'Admin account permanently deleted.');
+    }
+
+    public function updateAdmin(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+        ]);
+
+        $middleInitial = $request->filled('middle_name') ? substr($request->middle_name, 0, 1) . '.' : '';
+        $fullName = trim("{$request->last_name}, {$request->first_name} {$middleInitial}");
+
+        // 1. Update the base User table
+        $user->update(['name' => $fullName]);
+
+        // 2. Update the linked Admin table
+        if ($user->admin) {
+            $user->admin->update([
+                'first_name' => $request->first_name,
+                'middle_name' => $request->middle_name,
+                'last_name' => $request->last_name,
+            ]);
+        }
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Edit Admin',
+            'description' => Auth::user()->name . " updated admin account: " . $user->name
+        ]);
+
+        return back()->with('success', 'Admin account updated successfully.');
     }
 
     public function finalize(Request $request)

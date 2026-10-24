@@ -31,7 +31,7 @@ class SchoolCalendarController extends Controller
         $announcementImages = \App\Models\AnnouncementImage::where('status', 'active')->get();
 
         // --- ROLE-BASED TRAFFIC CONTROL ---
-        if ($user->role === 'admin') {
+        if (in_array($user->role, ['admin', 'superadmin'])) {
             return view('dashboard', compact('eventsData', 'announcementImages', 'user'));
         } 
         

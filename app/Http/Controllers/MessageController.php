@@ -208,7 +208,7 @@ class MessageController extends Controller
 
         // AI triggers if ANYONE messages the Admin, OR if a PARENT messages a TEACHER
         $teacherRoles = ['teacher', 'adviser', 'faculty', 'instructor'];
-        $aiShouldRespond = ($receiverRole === 'admin') || ($senderRole === 'parent' && in_array($receiverRole, $teacherRoles));
+        $aiShouldRespond = (in_array($receiverRole, ['admin', 'superadmin'])) || ($senderRole === 'parent' && in_array($receiverRole, $teacherRoles));
 
         // STRICT CHECK: Run AI only if conditions are met AND it is NOT a Group Chat
         if ($apiKey && $aiShouldRespond && $receiver && is_null($receiver->custom_name)) {
@@ -275,7 +275,7 @@ class MessageController extends Controller
             // DYNAMIC AI PROMPTS BASED ON RECEIVER ROLE
             // ==========================================
 
-            if ($receiverRole === 'admin') {
+            if (in_array($receiverRole, ['admin', 'superadmin'])) {
            
                 // 🛑 ADMIN PROMPT: ONLY handles Passwords and Account Settings
                 $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc.
@@ -441,18 +441,18 @@ class MessageController extends Controller
             ->where(function ($query) use ($authUser) {
                 
                 // ADMIN: Can message absolutely everyone
-                if ($authUser->role === 'admin') {
+                if (in_array($authUser->role, ['admin', 'superadmin'])) {
                     $query->whereNotNull('user_id');
                 }
                 
                 // TEACHER: Can message Admins, ALL Teachers, and ALL Parents
                 elseif ($authUser->role === 'teacher') {
-                    $query->whereIn('role', ['admin', 'teacher', 'parent']);
+                    $query->whereIn('role', ['admin', 'superadmin', 'teacher', 'parent']);
                 }
                 
                 elseif ($authUser->role === 'parent') {
                     // Start by allowing Admins and all other Parents
-                    $query->whereIn('role', ['admin', 'parent']);
+                    $query->whereIn('role', ['admin', 'superadmin', 'parent']);
                     
                     // FIX: Pull the section_id directly from the linked student profile 
                     $currentSectionId = $authUser->student ? $authUser->student->section_id : $authUser->section_id;

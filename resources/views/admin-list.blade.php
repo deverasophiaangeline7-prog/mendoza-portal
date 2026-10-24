@@ -25,7 +25,7 @@
             </div>
             
             <div class="flex flex-wrap gap-3 w-full lg:w-auto">
-                <a href="{{ route('account.admin.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black whitespace-nowrap text-sm md:text-base">
+                <a href="{{ route('admin.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black whitespace-nowrap text-sm md:text-base">
                     <i class="fa-solid fa-box-archive"></i> View Archives
                 </a>
                 <a href="{{ route('account.management') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black whitespace-nowrap text-sm md:text-base">
@@ -49,15 +49,15 @@
                     @foreach($males as $index => $admin)
                         <tr class="border-b-2 border-black hover:bg-gray-50 transition">
                             <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
-                            <td class="p-4 font-bold uppercase">{{ $admin->first_name }} {{ $admin->middle_name }} {{ $admin->last_name }}</td>
+                            <td class="p-4 font-bold uppercase">{{ $admin->name }}</td>
                             <td class="p-4">
                                 <div class="flex justify-center gap-2 items-center">
                                     <button type="button" 
                                             @click="adminEditModal = true; 
-                                                    editAdminId = '{{ $admin->admin_id ?? $admin->id }}'; 
-                                                    editFirstName = '{{ addslashes($admin->first_name) }}'; 
-                                                    editMiddleName = '{{ addslashes($admin->middle_name) }}'; 
-                                                    editLastName = '{{ addslashes($admin->last_name) }}';"
+                                                    editAdminId = '{{ $admin->user_id ?? $admin->id }}'; 
+                                                    editFirstName = '{{ addslashes($admin->admin->first_name ?? '') }}'; 
+                                                    editMiddleName = '{{ addslashes($admin->admin->middle_name ?? '') }}'; 
+                                                    editLastName = '{{ addslashes($admin->admin->last_name ?? '') }}';"
                                             class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
                                         Edit
                                     </button>
@@ -77,15 +77,15 @@
                     @foreach($females as $index => $admin)
                         <tr class="border-b-2 border-black hover:bg-gray-50 transition">
                             <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
-                           <td class="p-4 font-bold uppercase">{{ $admin->first_name }} {{ $admin->middle_name }} {{ $admin->last_name }}</td>
+                           <td class="p-4 font-bold uppercase">{{ $admin->name }}</td>
                             <td class="p-4">
                                 <div class="flex justify-center gap-2 items-center">
                                     <button type="button" 
                                             @click="adminEditModal = true; 
-                                                    editAdminId = '{{ $admin->admin_id ?? $admin->id }}'; 
-                                                    editFirstName = '{{ addslashes($admin->first_name) }}'; 
-                                                    editMiddleName = '{{ addslashes($admin->middle_name) }}'; 
-                                                    editLastName = '{{ addslashes($admin->last_name) }}';" 
+                                                    editAdminId = '{{ $admin->user_id ?? $admin->id }}'; 
+                                                    editFirstName = '{{ addslashes($admin->admin->first_name ?? '') }}'; 
+                                                    editMiddleName = '{{ addslashes($admin->admin->middle_name ?? '') }}'; 
+                                                    editLastName = '{{ addslashes($admin->admin->last_name ?? '') }}';" 
                                             class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
                                         Edit
                                     </button>
