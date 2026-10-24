@@ -534,14 +534,14 @@ class UserController extends Controller
         $request->validate([
             'login_id' => ['required', 'string'],
             'email'    => ['nullable', 'email'], 
-            'password' => ['nullable', 'confirmed'], // Removed strict validation if blank
+            'password' => ['nullable', 'confirmed'], 
         ]);
 
         if (empty($request->password) && empty($request->email)) {
             return back()->with('error', 'You must provide a new password or a new email to update.');
         }
 
-        // 2. Find the user
+        // 2. Find the exact user
         $user = User::where('username', $request->login_id)
                     ->orWhere('email', $request->login_id)
                     ->orWhereHas('student', function ($query) use ($request) {
@@ -554,33 +554,26 @@ class UserController extends Controller
         }
 
         $actions = [];
+        $updateData = [];
 
-        // 3. NUCLEAR OPTION: Force Database Table Update
+        // 3. Prepare Email Update
         if (!empty($request->email)) {
             $newEmail = trim($request->email);
             
-            // Only block if the email is taken by SOMEONE ELSE
             if ($newEmail !== $user->email) {
+                // Safely check if the email is already in use by someone else
                 if (User::where('email', $newEmail)->exists()) {
                     return back()->with('error', 'The new email is already taken by another account.');
                 }
+                
+                $updateData['email'] = $newEmail;
+                $actions[] = 'email';
             }
-            
-            // Bypass the Model entirely and write straight to the database row
-            $primaryKey = $user->getKeyName();
-            $userId = $user->getKey();
-            
-            \Illuminate\Support\Facades\DB::table('users')
-                ->where($primaryKey, $userId)
-                ->update(['email' => $newEmail]);
-            
-            $user->email = $newEmail; // Update local instance for the toast
-            $actions[] = 'email';
         }
 
-        // 4. Handle Password Update
+        // 4. Prepare Password Update
         if (!empty($request->password)) {
-            // Apply strict password rules only if they typed a password
+            // Apply strict password rules only if they typed a new password
             $request->validate([
                 'password' => [Password::min(8)->letters()->numbers()->symbols()],
             ]);
@@ -588,16 +581,25 @@ class UserController extends Controller
             if (Hash::check($request->password, $user->password)) {
                 return back()->with('error', 'The new password cannot be the exact same as their current password!');
             }
-            $user->password = Hash::make($request->password);
-            $user->save(); 
+            
+            $updateData['password'] = Hash::make($request->password);
             $actions[] = 'password';
         }
 
-        if (empty($actions)) {
+        // Prevent empty saves if nothing was actually changed
+        if (empty($updateData)) {
             return back()->with('error', 'No changes were made to the account credentials.');
         }
 
-        // 5. Audit logs and Notifications
+        // 5. THE ULTIMATE FIX: Target the exact Primary Key to guarantee precision
+        $primaryKey = $user->getKeyName();
+        $userId = $user->getKey();
+        
+        \Illuminate\Support\Facades\DB::table($user->getTable())
+            ->where($primaryKey, $userId)
+            ->update($updateData);
+
+        // 6. Audit logs and Notifications
         $user->customNotifications()->create([
             'type' => 'security',
             'title' => 'Credentials Updated by Admin',
@@ -607,7 +609,7 @@ class UserController extends Controller
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Admin Credentials Update',
-            'description' => Auth::user()->username . ' forcibly updated the ' . implode(' and ', $actions) . ' for user: ' . ($user->username ?? $user->email)
+            'description' => Auth::user()->username . ' forcibly updated the ' . implode(' and ', $actions) . ' for user: ' . ($user->username ?? $user->email ?? 'ID: ' . $userId)
         ]);
 
         return back()->with('success', ucfirst(implode(' and ', $actions)) . ' successfully updated.');
