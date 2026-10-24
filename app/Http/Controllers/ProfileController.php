@@ -48,11 +48,11 @@ class ProfileController extends Controller
             'password' => ['required', 'min:8', 'confirmed'],
         ]);
 
-        // 2. Encrypt and save the new password
+        // 2. Encrypt, unlock the account, and save
         $user = $request->user();
-        $user->update([
-            'password' => Hash::make($request->password),
-        ]);
+        $user->password = Hash::make($request->password);
+        $user->is_first_login = false; // 👈 UNLOCKS THE ACCOUNT
+        $user->save();
 
         // 3. Trigger the notification
         $user->customNotifications()->create([

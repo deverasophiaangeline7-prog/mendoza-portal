@@ -41,7 +41,7 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'
 // ==========================================
 // 2. GENERAL LOGGED-IN USERS (View Only)
 // ==========================================
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\ForcePasswordChange::class])->group(function () {
     Route::get('/dashboard', [SchoolCalendarController::class, 'index'])->name('dashboard');
     Route::get('/fetch-events', [App\Http\Controllers\SchoolCalendarController::class, 'fetchEvents'])->name('events.fetch');
     Route::get('/fetch-active-banner', [App\Http\Controllers\AnnouncementImageController::class, 'fetchActive'])->name('banner.fetch');
