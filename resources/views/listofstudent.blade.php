@@ -4,6 +4,107 @@
 @section('title', 'List of Students')
 
 @section('content')
+
+@php
+    // 1. ALL PHP LOGIC MUST BE HERE FIRST!
+    $isEntireClassGraded = true; 
+    $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
+    
+    $allStudents = collect($males)->merge($females);
+
+    if ($allStudents->isEmpty()) {
+        $isEntireClassGraded = false;
+    }
+
+    $promotableList = [];
+    $nonPromotableList = [];
+
+    foreach($allStudents as $std) {
+        $std->isPassed = false;
+        $std->isComplete = false;
+
+        if ($std->promotion_status === 'pending') {
+            continue; 
+        }
+
+        $gradeLvl = strtoupper(trim($std->grade_level));
+        $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
+
+        if (in_array($gradeLvl, $nkpLevels)) {
+            $std->isComplete = (bool)($std->has_nkp_eval ?? false);
+            $std->isPassed = $std->isComplete;
+        } else {
+            preg_match('/\d+/', $gradeLvl, $matches);
+            $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
+            
+            if ($gradeNum >= 1 && $gradeNum <= 3) {
+                $requiredSubjects = 5;
+            } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
+                $requiredSubjects = 8;
+            } else {
+                $requiredSubjects = 9; 
+            }
+
+            $passingMark = 75; 
+            $currentGrades = $std->grades->where('school_year_id', $activeYear ? $activeYear->id : null);
+            
+            $hasMissingGrades = $currentGrades->contains(function($g) {
+                return trim((string)$g->term1) === '' || 
+                       trim((string)$g->term2) === '' || 
+                       trim((string)$g->term3) === '' || 
+                       trim((string)$g->final_grade) === '';
+            });
+
+            $failingGrade = $currentGrades->first(function($g) use ($passingMark) {
+                return trim((string)$g->term1) === '' || 
+                       trim((string)$g->term2) === '' || 
+                       trim((string)$g->term3) === '' || 
+                       trim((string)$g->final_grade) === '' || 
+                       (float)$g->final_grade < $passingMark;
+            });
+
+            $academicComplete = ($currentGrades->count() >= $requiredSubjects) && !$hasMissingGrades;
+
+            $currentBehaviors = $std->behaviors->where('school_year_id', $activeYear ? $activeYear->id : null);
+            $behaviorComplete = true;
+
+            if ($currentBehaviors->count() < 7) {
+                $behaviorComplete = false; 
+            } else {
+                $hasMissingBehaviorTerm = $currentBehaviors->contains(function($b) {
+                    return empty(trim((string)$b->term1)) || 
+                           empty(trim((string)$b->term2)) || 
+                           empty(trim((string)$b->term3));
+                });
+                if ($hasMissingBehaviorTerm) {
+                    $behaviorComplete = false; 
+                }
+            }
+
+            $std->isComplete = $academicComplete && $behaviorComplete; 
+            $std->isPassed = $std->isComplete && !$failingGrade;
+        }
+
+        if (!$std->isComplete) {
+            $isEntireClassGraded = false;
+        }
+
+        // Add to our lists for the new Modal
+        if ($std->isPassed) {
+            $promotableList[] = [
+                'id' => $std->student_id ?? $std->id,
+                'name' => $std->last_name . ', ' . $std->first_name
+            ];
+        } else {
+            $nonPromotableList[] = [
+                'id' => $std->student_id ?? $std->id,
+                'name' => $std->last_name . ', ' . $std->first_name,
+                'reason' => !$std->isComplete ? 'Incomplete Records' : 'Failed Grades'
+            ];
+        }
+    }
+@endphp
+
 <div class="flex-1 p-8 bg-gray-100 min-h-screen" 
      x-data="{ 
          openModal: false, 
