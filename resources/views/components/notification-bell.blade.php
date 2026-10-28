@@ -26,7 +26,7 @@
             });
     @endphp
 
-    <div class="relative inline-block z-[999]" 
+    <div class="relative flex items-center z-[999]" 
          x-data="{ 
              notifOpen: false,
              notifications: {{ json_encode($initialNotifications) }},
@@ -75,13 +75,16 @@
          @click.away="notifOpen = false">
         
         <!-- BELL BUTTON -->
-        <button @click="notifOpen = !notifOpen" title="Notifications" class="relative focus:outline-none p-2 hover:scale-110 transition-transform">
-            <i class="fa-solid fa-bell text-2xl text-white"></i>
+        <button @click="notifOpen = !notifOpen" 
+                title="Notifications" 
+                :class="notifOpen ? 'text-orange-400' : 'text-white hover:text-gray-200'"
+                class="relative hover:scale-110 transition inline-flex items-center justify-center focus:outline-none">
+            <i class="fa-solid fa-bell text-2xl"></i>
             
-            <!-- RED BADGE: Only show count for UNREAD notifications -->
+            <!-- RED BADGE: Only show count for UNREAD notifications (caps at 99+) -->
             <template x-if="notifications.filter(n => !n.is_read).length > 0">
-                <span class="absolute top-0 right-0 bg-yellow-400 text-red-700 text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold border border-black" 
-                      x-text="notifications.filter(n => !n.is_read).length">
+                <span class="absolute -top-2 -right-2.5 bg-[#facc15] text-[#b91c1c] font-black text-[10px] min-w-[20px] h-5 px-1 flex items-center justify-center rounded-full border-[2px] border-black leading-none" 
+                      x-text="notifications.filter(n => !n.is_read).length > 99 ? '99+' : notifications.filter(n => !n.is_read).length">
                 </span>
             </template>
         </button>
@@ -89,7 +92,7 @@
         <!-- DROPDOWN MENU -->
         <div x-show="notifOpen" 
              x-transition.opacity.duration.200ms
-             class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border-[3px] border-black overflow-hidden"
+             class="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border-[3px] border-black overflow-hidden"
              style="display: none;" 
              x-cloak>
             

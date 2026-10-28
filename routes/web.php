@@ -87,6 +87,16 @@ Route::middleware(['auth', \App\Http\Middleware\ForcePasswordChange::class])->gr
     Route::get('/messages/{conversation_id}/poll', [MessageController::class, 'pollForMessages'])->name('messages.poll');
     // 2. Seen endpoint to dynamically mark unread messages from other user as read (DB update).
     Route::post('/messages/{conversation_id}/mark-as-read', [MessageController::class, 'markMessagesRead'])->name('messages.markAsRead');
+
+    // 💡 ADD THE UNREAD COUNT JSON ROUTE HERE:
+    Route::get('/messages/unread-count', function () {
+        $user = auth()->user();
+        $unreadTotal = \App\Models\Message::where('receiver_id', $user->user_id ?? $user->id)
+            ->where('is_read', false)
+            ->count();
+        
+        return response()->json(['unreadTotal' => $unreadTotal]);
+    })->name('messages.unread-count');
     
     // Report Card Views
     Route::get('/report-card', [ReportCardController::class, 'index'])->name('reportcard.index');
