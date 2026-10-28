@@ -180,21 +180,18 @@
                 </a>
             </div>
 
- <!-- Tightened the spacing classes on this parent div from space-x-6 to space-x-4 -->
-<div class="flex items-center space-x-2 sm:space-x-4 text-2xl">
-    
-    <!-- Added -mr-2 to gently nudge the chat icon closer to the bell -->
-    <a href="{{ route('messages.index') }} "title="Messages" class="relative transition inline-flex items-center p-2 -mr-2 rounded-lg {{ request()->routeIs('messages*') ? 'text-orange-400' : 'text-white hover:text-orange-400' }}">
-        
-        <!-- Changed text-xl to text-2xl to match the bell size perfectly -->
-        <i class="fa-solid fa-comment-dots text-2xl"></i>
-        
-        @if(isset($unreadTotal) && $unreadTotal > 0)
-            <span class="absolute -top-1 -right-1 bg-yellow-400 text-red-600 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold shadow-sm">
-                {{ $unreadTotal }}
-            </span>
-        @endif
-    </a>
+            <div class="flex items-center space-x-4 sm:space-x-6 text-2xl">
+                
+                <a href="{{ route('messages.index') }}" title="Messages" class="relative transition inline-flex items-center justify-center {{ request()->routeIs('messages*') ? 'text-orange-400' : 'text-white hover:text-gray-200' }}">
+                    
+                    <i class="fa-solid fa-comment-dots text-2xl"></i>
+                    
+                    @if(isset($unreadTotal) && $unreadTotal > 0)
+                        <span class="absolute -top-2 -right-2.5 bg-[#facc15] text-[#b91c1c] font-black text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-[2px] border-black leading-none">
+                            {{ $unreadTotal }}
+                        </span>
+                    @endif
+                </a>
                 
                 @include('components.notification-bell')
 
