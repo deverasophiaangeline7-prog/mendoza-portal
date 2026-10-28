@@ -57,96 +57,71 @@ class TeacherController extends Controller
         return back()->with('error', 'Cannot promote this student further. Check if their grade level is formatted correctly.');
     }
 
-   public function promoteAll($section_id)
-    {
-        // 1. Get all students in this specific section, along with their grades
-        $students = Student::with('grades')->where('section_id', $section_id)->get();
-        $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
-        
-        $promotedCount = 0;
-        $skippedCount = 0; // Track students skipped due to failing/incomplete grades
-        
-        // 2. Grade progression map
-        $gradeProgression = [
-            'NURSERY'      => 'Kindergarten',
-            'KINDER'       => 'Preparatory',
-            'KINDERGARTEN' => 'Preparatory',
-            'PREP'         => '1',
-            'PREPARATORY'  => '1',
-            '1' => '2', '2' => '3', '3' => '4', 
-            '4' => '5', '5' => '6', '6' => 'Graduate'
-        ];
+        public function promoteAll(Request $request, $section_id)
+        {
+            $studentIds = $request->input('student_ids');
 
-        // 3. Loop through every student and check if they are eligible
-        foreach ($students as $student) {
-            // Skip students who are already queued for promotion (Don't count them as failed)
-            if ($student->promotion_status === 'pending') {
-                continue;
+            if (empty($studentIds)) {
+                return back()->with('error', 'No students were selected for promotion.');
             }
 
-            $gradeLvl = strtoupper(trim($student->grade_level));
-            $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
+            $promotedCount = 0;
+            $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
             
-            $isPassed = false;
+            $gradeProgression = [
+                'NURSERY'      => 'Kindergarten',
+                'KINDER'       => 'Preparatory',
+                'KINDERGARTEN' => 'Preparatory',
+                'PREP'         => '1',
+                'PREPARATORY'  => '1',
+                '1' => '2', '2' => '3', '3' => '4', 
+                '4' => '5', '5' => '6', '6' => 'Graduate'
+            ];
 
-            // --- REPLICATING YOUR BLADE LOGIC FOR PASS/FAIL ---
-            if (in_array($gradeLvl, $nkpLevels)) {
-                $isPassed = (bool)($student->has_nkp_eval ?? false);
-            } else {
-                preg_match('/\d+/', $gradeLvl, $matches);
-                $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
-                
-                if ($gradeNum >= 1 && $gradeNum <= 3) {
-                    $requiredSubjects = 5;
-                } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
-                    $requiredSubjects = 8;
-                } else {
-                    $requiredSubjects = 9; 
+            foreach ($studentIds as $id) {
+                $student = Student::with(['grades' => function($query) use ($activeYear) {
+                    $query->where('school_year_id', $activeYear ? $activeYear->id : null);
+                }])->find($id);
+
+                if ($student && $student->promotion_status !== 'pending') {
+                    
+                    // BACKEND SECURITY CHECK: Verify they actually passed before applying
+                    $gradeLvl = strtoupper(trim($student->grade_level));
+                    $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
+                    $isValid = false;
+
+                    if (in_array($gradeLvl, $nkpLevels)) {
+                        $isValid = (bool)($student->has_nkp_eval ?? false);
+                    } else {
+                        $failingGrade = $student->grades->first(function($g) {
+                            return trim((string)$g->term1) === '' || 
+                                trim((string)$g->term2) === '' || 
+                                trim((string)$g->term3) === '' || 
+                                trim((string)$g->final_grade) === '' || 
+                                (float)$g->final_grade < 75;
+                        });
+                        $isValid = !$failingGrade && $student->grades->isNotEmpty();
+                    }
+
+                    // Only promote if the backend confirms they passed
+                    if ($isValid) {
+                        $nextGrade = $gradeProgression[$gradeLvl] ?? null;
+
+                        if ($nextGrade) {
+                            $student->update([
+                                'promotion_status' => 'pending',
+                                'next_grade_level' => $nextGrade
+                            ]);
+                            $promotedCount++;
+                        }
+                    }
                 }
-
-                $passingMark = 75;
-                
-                $currentGrades = $student->grades->where('school_year_id', $activeYear ? $activeYear->id : null);
-                $gradesCount = $currentGrades->count();
-                
-                $failingGrade = $currentGrades->first(function($g) use ($passingMark) {
-                    return is_null($g->final_grade) || $g->final_grade === '' || (float)$g->final_grade < $passingMark;
-                });
-                
-                $isComplete = $gradesCount >= $requiredSubjects;
-                $isPassed = $isComplete && !$failingGrade;
             }
-            // ---------------------------------------------------
 
-            // 4. If they legitimately passed, safely promote them!
-            if ($isPassed) {
-                $nextGrade = $gradeProgression[$gradeLvl] ?? null;
-                
-                if ($nextGrade) {
-                    $student->update([
-                        'promotion_status' => 'pending',
-                        'next_grade_level' => $nextGrade
-                    ]);
-                    $promotedCount++;
-                }
-            } else {
-                // If they did not pass, add them to the skipped counter
-                $skippedCount++;
+            if ($promotedCount > 0) {
+                return back()->with('success', "Successfully queued {$promotedCount} student(s) for promotion!");
             }
-        }
 
-        // 5. Return dynamic success or error messages
-        if ($promotedCount > 0) {
-            $message = "Successfully queued {$promotedCount} eligible student(s) for promotion!";
-            
-            // Append a warning if any students were left behind
-            if ($skippedCount > 0) {
-                $message .= " ({$skippedCount} student/s were skipped due to failing or incomplete grades).";
-            }
-            
-            return back()->with('success', $message);
-        } else {
-            return back()->with('error', "No eligible students found to promote. {$skippedCount} student(s) were skipped due to failing or incomplete records.");
+            return back()->with('error', "Failed to promote. The selected students may have failing grades or incomplete records.");
         }
     }
-}

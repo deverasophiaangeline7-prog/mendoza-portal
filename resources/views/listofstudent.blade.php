@@ -12,7 +12,9 @@
          studentName: '', 
          studentId: '', 
          promoteUrl: '', 
-         passwordModal: {{ $errors->has('current_password') || $errors->has('password') ? 'true' : 'false' }} 
+         passwordModal: {{ $errors->has('current_password') || $errors->has('password') ? 'true' : 'false' }},
+         promotableStudents: {{ json_encode($promotableList ?? []) }},
+         nonPromotableStudents: {{ json_encode($nonPromotableList ?? []) }}
      }">
      
     @if(session('success'))
@@ -75,19 +77,24 @@
                 $isEntireClassGraded = false;
             }
 
+            $promotableList = [];
+            $nonPromotableList = [];
+
             foreach($allStudents as $std) {
+                $std->isPassed = false;
+                $std->isComplete = false;
+
                 if ($std->promotion_status === 'pending') {
-                    continue;
+                    continue; // Skip evaluating those already pending
                 }
 
                 $gradeLvl = strtoupper(trim($std->grade_level));
                 $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
-                $studentComplete = false;
 
                 if (in_array($gradeLvl, $nkpLevels)) {
-                    $studentComplete = (bool)($std->has_nkp_eval ?? false);
+                    $std->isComplete = (bool)($std->has_nkp_eval ?? false);
+                    $std->isPassed = $std->isComplete;
                 } else {
-                    // 1. ACADEMIC CHECK
                     preg_match('/\d+/', $gradeLvl, $matches);
                     $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
                     
@@ -99,42 +106,62 @@
                         $requiredSubjects = 9; 
                     }
 
+                    $passingMark = 75; 
                     $currentGrades = $std->grades->where('school_year_id', $activeYear ? $activeYear->id : null);
                     
-                    $hasMissingFinal = $currentGrades->contains(function($g) {
-                        return empty(trim((string)$g->final_grade));
+                    $hasMissingGrades = $currentGrades->contains(function($g) {
+                        return trim((string)$g->term1) === '' || 
+                               trim((string)$g->term2) === '' || 
+                               trim((string)$g->term3) === '' || 
+                               trim((string)$g->final_grade) === '';
                     });
-                    
-                    $academicComplete = ($currentGrades->count() >= $requiredSubjects) && !$hasMissingFinal;
 
-                    // 2. BEHAVIOR CHECK (Checks for 7 records and ensures Term 1, 2, and 3 are not empty)
+                    $failingGrade = $currentGrades->first(function($g) use ($passingMark) {
+                        return trim((string)$g->term1) === '' || 
+                               trim((string)$g->term2) === '' || 
+                               trim((string)$g->term3) === '' || 
+                               trim((string)$g->final_grade) === '' || 
+                               (float)$g->final_grade < $passingMark;
+                    });
+
+                    $academicComplete = ($currentGrades->count() >= $requiredSubjects) && !$hasMissingGrades;
+
                     $currentBehaviors = $std->behaviors->where('school_year_id', $activeYear ? $activeYear->id : null);
                     $behaviorComplete = true;
 
                     if ($currentBehaviors->count() < 7) {
-                        $behaviorComplete = false; // Missing behavior rows
+                        $behaviorComplete = false; 
                     } else {
                         $hasMissingBehaviorTerm = $currentBehaviors->contains(function($b) {
                             return empty(trim((string)$b->term1)) || 
                                    empty(trim((string)$b->term2)) || 
                                    empty(trim((string)$b->term3));
                         });
-                        
                         if ($hasMissingBehaviorTerm) {
-                            $behaviorComplete = false; // Missing a specific term grade (AO, SO, RO, NO)
+                            $behaviorComplete = false; 
                         }
                     }
 
-                    // 3. COMBINE BOTH CHECKS
-                    if ($academicComplete && $behaviorComplete) {
-                        $studentComplete = true;
-                    }
+                    $std->isComplete = $academicComplete && $behaviorComplete; 
+                    $std->isPassed = $std->isComplete && !$failingGrade;
                 }
 
-                // If even ONE student is missing academics or behaviors, lock the button and stop scanning!
-                if (!$studentComplete) {
+                if (!$std->isComplete) {
                     $isEntireClassGraded = false;
-                    break;
+                }
+
+                // Add to our lists for the new Modal
+                if ($std->isPassed) {
+                    $promotableList[] = [
+                        'id' => $std->student_id ?? $std->id,
+                        'name' => $std->last_name . ', ' . $std->first_name
+                    ];
+                } else {
+                    $nonPromotableList[] = [
+                        'id' => $std->student_id ?? $std->id,
+                        'name' => $std->last_name . ', ' . $std->first_name,
+                        'reason' => !$std->isComplete ? 'Incomplete Records' : 'Failed Grades'
+                    ];
                 }
             }
         @endphp
@@ -209,6 +236,22 @@
                                         </span>
                                     </div>
                                 @else
+                                    @if($student->isPassed && $isEntireClassGraded)
+                                        <button type="button" 
+                                                @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; promoteUrl = '{{ route('teacher.promote', $student->student_id ?? $student->id) }}'; promoteModal = true;" 
+                                                class="bg-[#8cc63f] text-black text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
+                                            Promote
+                                        </button>
+                                    @else
+                                        <button type="button" 
+                                                onclick="event.stopPropagation();" 
+                                                class="bg-gray-400 text-gray-600 text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-gray-500 opacity-60 cursor-not-allowed shadow-none" 
+                                                title="{{ !$isEntireClassGraded ? 'Upload all grades (Term 1-3 & Final) for ALL students to unlock' : (!$student->isComplete ? 'Records Incomplete' : 'Failed Grades') }}">
+                                            Promote
+                                        </button>
+                                    @endif
+                                @endif
+                            </td>
 
                                     @php
                                         $gradeLvl = strtoupper(trim($student->grade_level));
@@ -235,7 +278,11 @@
                                             // 1. ACADEMIC CHECK
                                             $currentGrades = $student->grades->where('school_year_id', $activeYear ? $activeYear->id : null);
                                             $failingGrade = $currentGrades->first(function($g) use ($passingMark) {
-                                                return empty(trim((string)$g->final_grade)) || (float)$g->final_grade < $passingMark;
+                                                return trim((string)$g->term1) === '' || 
+                                                    trim((string)$g->term2) === '' || 
+                                                    trim((string)$g->term3) === '' || 
+                                                    trim((string)$g->final_grade) === '' || 
+                                                    (float)$g->final_grade < $passingMark;
                                             }); 
                                             $academicComplete = $currentGrades->count() >= $requiredSubjects;
 
@@ -262,7 +309,7 @@
                                         }
                                     @endphp
                                     
-                                    @if($isPassed)
+                                    @if($isPassed && $isEntireClassGraded)
                                         <button type="button" 
                                                 @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; promoteUrl = '{{ route('teacher.promote', $student->student_id ?? $student->id) }}'; promoteModal = true;" 
                                                 class="bg-[#8cc63f] text-black text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
@@ -272,7 +319,7 @@
                                         <button type="button" 
                                                 onclick="event.stopPropagation();" 
                                                 class="bg-gray-400 text-gray-600 text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-gray-500 opacity-60 cursor-not-allowed shadow-none" 
-                                                title="{{ !$isComplete ? 'Records Incomplete' : 'Failed Grades' }}">
+                                                title="{{ !$isEntireClassGraded ? 'Upload all grades (Term 1-3 & Final) for ALL students to unlock' : (!$isComplete ? 'Records Incomplete' : 'Failed Grades') }}">
                                             Promote
                                         </button>
                                     @endif
@@ -319,6 +366,23 @@
                                         </span>
                                     </div>
                                 @else
+                                    @if($student->isPassed && $isEntireClassGraded)
+                                        <button type="button" 
+                                                @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; promoteUrl = '{{ route('teacher.promote', $student->student_id ?? $student->id) }}'; promoteModal = true;" 
+                                                class="bg-[#8cc63f] text-black text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
+                                            Promote
+                                        </button>
+                                    @else
+                                        <button type="button" 
+                                                onclick="event.stopPropagation();" 
+                                                class="bg-gray-400 text-gray-600 text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-gray-500 opacity-60 cursor-not-allowed shadow-none" 
+                                                title="{{ !$isEntireClassGraded ? 'Upload all grades (Term 1-3 & Final) for ALL students to unlock' : (!$student->isComplete ? 'Records Incomplete' : 'Failed Grades') }}">
+                                            Promote
+                                        </button>
+                                    @endif
+                                @endif
+                            </td>
+
                                     @php
                                         $gradeLvl = strtoupper(trim($student->grade_level));
                                         $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
@@ -351,15 +415,37 @@
                                             
                                             // 2. Safely check for failing OR empty final grades in the CURRENT year only
                                             $failingGrade = $currentGrades->first(function($g) use ($passingMark) {
-                                                return is_null($g->final_grade) || $g->final_grade === '' || (float)$g->final_grade < $passingMark;
+                                                return trim((string)$g->term1) === '' || 
+                                                    trim((string)$g->term2) === '' || 
+                                                    trim((string)$g->term3) === '' || 
+                                                    trim((string)$g->final_grade) === '' || 
+                                                    (float)$g->final_grade < $passingMark;
                                             }); 
                                             
                                             $isComplete = $gradesCount >= $requiredSubjects; 
-                                            $isPassed = $isComplete && !$failingGrade;
-                                        }
+
+                                            // Apply behavior logic in female loop too for strict consistency
+                                            $currentBehaviors = $student->behaviors->where('school_year_id', $activeYear ? $activeYear->id : null);
+                                            $behaviorComplete = true;
+
+                                            if ($currentBehaviors->count() < 7) {
+                                                $behaviorComplete = false; 
+                                            } else {
+                                                $hasMissingBehaviorTerm = $currentBehaviors->contains(function($b) {
+                                                    return empty(trim((string)$b->term1)) || 
+                                                        empty(trim((string)$b->term2)) || 
+                                                        empty(trim((string)$b->term3));
+                                                });
+                                                if ($hasMissingBehaviorTerm) {
+                                                    $behaviorComplete = false; 
+                                                }
+                                            }
+
+                                            $isPassed = $isComplete && $behaviorComplete && !$failingGrade;
+                                         }
                                     @endphp
                                     
-                                    @if($isPassed)
+                                    @if($isPassed && $isEntireClassGraded)
                                         <button type="button" 
                                                 @click="event.stopPropagation(); studentName = '{{ $student->first_name }} {{ $student->last_name }}'; promoteUrl = '{{ route('teacher.promote', $student->student_id ?? $student->id) }}'; promoteModal = true;" 
                                                 class="bg-[#8cc63f] text-black text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
@@ -369,7 +455,7 @@
                                         <button type="button" 
                                                 onclick="event.stopPropagation();" 
                                                 class="bg-gray-400 text-gray-600 text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg border-2 border-gray-500 opacity-60 cursor-not-allowed shadow-none" 
-                                                title="{{ !$isComplete ? 'Records Incomplete' : 'Failed Grades' }}">
+                                                title="{{ !$isEntireClassGraded ? 'Upload all grades (Term 1-3 & Final) for ALL students to unlock' : (!$isComplete ? 'Records Incomplete' : 'Failed Grades') }}">
                                             Promote
                                         </button>
                                     @endif
@@ -407,25 +493,80 @@
         </div>
     </div>
 
-    <!-- PROMOTE ALL CONFIRMATION MODAL -->
-    <div x-show="promoteAllModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity">
-        <div @click.away="promoteAllModal = false" class="bg-white border-[3px] border-black rounded-[30px] p-8 w-full max-w-md shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] text-center">
+    <!-- NEW ADVANCED PROMOTE ALL CONFIRMATION MODAL -->
+    <div x-show="promoteAllModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity p-4">
+        <div @click.away="promoteAllModal = false" class="bg-white border-[3px] border-black rounded-[30px] p-8 w-full max-w-4xl shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]">
             
-            <i class="fa-solid fa-users text-blue-500 text-6xl mb-4"></i>
-            <h2 class="text-3xl font-black uppercase text-black mb-2">Promote All?</h2>
-            <p class="text-gray-600 font-bold mb-6">Are you sure you want to queue <span class="text-blue-500 uppercase">all eligible students</span> in this section for the next grade level?</p>
+            <div class="text-center mb-6 shrink-0">
+                <i class="fa-solid fa-users text-blue-500 text-6xl mb-4"></i>
+                <h2 class="text-3xl font-black uppercase text-black mb-2">Promote All Confirmation</h2>
+                <p class="text-gray-600 font-bold">Review the promotion lists below. You can remove students from the promotion queue by clicking the <span class="text-red-500"><i class="fa-solid fa-circle-xmark"></i></span> next to their name.</p>
+            </div>
             
-            <div class="bg-blue-50 border-2 border-blue-200 text-blue-700 text-xs font-bold p-3 rounded-lg text-left mb-8">
-                <i class="fa-solid fa-circle-info mr-1"></i> Students with incomplete or failing grades will automatically be skipped.
+            <div class="flex flex-col md:flex-row gap-6 mb-8 overflow-hidden flex-1">
+                
+                <!-- PROMOTABLE LIST -->
+                <div class="flex-1 flex flex-col bg-white border-[3px] border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+                    <div class="bg-[#8cc63f] text-black font-black uppercase tracking-widest p-4 border-b-[3px] border-black flex justify-between items-center shrink-0">
+                        <span>To Be Promoted</span>
+                        <span class="bg-white text-black px-2 py-1 rounded-lg text-sm border-2 border-black font-black" x-text="promotableStudents.length"></span>
+                    </div>
+                    <div class="p-4 overflow-y-auto flex-1 bg-gray-50">
+                        <ul class="space-y-3">
+                            <template x-for="(student, index) in promotableStudents" :key="student.id">
+                                <li class="flex justify-between items-center bg-white p-3 border-[3px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                    <span class="font-bold text-sm uppercase" x-text="student.name"></span>
+                                    <button type="button" @click="promotableStudents.splice(index, 1)" class="text-red-500 hover:text-red-700 hover:scale-125 transition-transform" title="Remove from promotion list">
+                                        <i class="fa-solid fa-circle-xmark text-2xl"></i>
+                                    </button>
+                                </li>
+                            </template>
+                            <template x-if="promotableStudents.length === 0">
+                                <li class="text-center font-bold text-gray-500 italic p-4 border-2 border-dashed border-gray-300 rounded-xl">No students to promote.</li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- NON-PROMOTABLE LIST -->
+                <div class="flex-1 flex flex-col bg-white border-[3px] border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+                    <div class="bg-red-500 text-white font-black uppercase tracking-widest p-4 border-b-[3px] border-black flex justify-between items-center shrink-0">
+                        <span>Not Eligible</span>
+                        <span class="bg-white text-black px-2 py-1 rounded-lg text-sm border-2 border-black font-black" x-text="nonPromotableStudents.length"></span>
+                    </div>
+                    <div class="p-4 overflow-y-auto flex-1 bg-gray-50">
+                        <ul class="space-y-3">
+                            <template x-for="student in nonPromotableStudents" :key="student.id">
+                                <li class="flex flex-col justify-center bg-white p-3 border-[3px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] opacity-75">
+                                    <span class="font-bold text-sm uppercase" x-text="student.name"></span>
+                                    <span class="text-xs font-black text-red-600 mt-1 uppercase" x-text="student.reason"></span>
+                                </li>
+                            </template>
+                            <template x-if="nonPromotableStudents.length === 0">
+                                <li class="text-center font-bold text-gray-500 italic p-4 border-2 border-dashed border-gray-300 rounded-xl">All students passed!</li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+
             </div>
 
-            <form action="{{ route('teacher.promote.all', $section->section_id ?? $section->id) }}" method="POST" class="flex justify-center space-x-4">
-                @csrf              
-                <button type="button" @click="promoteAllModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4">
+            <form action="{{ route('teacher.promote.all', $section->section_id ?? $section->id) }}" method="POST" class="flex justify-center items-center space-x-6 shrink-0">
+                @csrf
+                
+                <!-- Hidden inputs so the server gets ONLY the IDs that remain in the list -->
+                <template x-for="student in promotableStudents" :key="student.id">
+                    <input type="hidden" name="student_ids[]" :value="student.id">
+                </template>
+                
+                <button type="button" @click="promoteAllModal = false" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-6 py-3">
                     Cancel
                 </button>
-                <button type="submit" class="bg-[#8cc63f] text-black font-black uppercase tracking-wider px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-green-500 active:translate-y-1 active:shadow-none transition-all">
-                    Yes, Promote All
+                <button type="submit" 
+                        :disabled="promotableStudents.length === 0"
+                        :class="promotableStudents.length === 0 ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-[#8cc63f] hover:bg-green-500 active:translate-y-1 active:shadow-none'"
+                        class="text-black font-black uppercase tracking-wider px-8 py-4 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all">
+                    Confirm Promotion
                 </button>
             </form>
         </div>
