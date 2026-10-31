@@ -59,11 +59,30 @@
                         
                         @if($event->time)
                             @php
-                                $timeParts = explode("\n", $event->time);
-                                $startTime = isset($timeParts[0]) && trim($timeParts[0]) ? \Carbon\Carbon::parse(trim($timeParts[0]))->format('h:i A') : '';
-                                $endTime = isset($timeParts[1]) && trim($timeParts[1]) ? \Carbon\Carbon::parse(trim($timeParts[1]))->format('h:i A') : '';
+                                // Smartly split by newline or dash to handle both old and new data formats
+                                $timeParts = preg_split('/(\r\n|\n| - )/', $event->time);
+                                
+                                $startTime = '';
+                                if (isset($timeParts[0]) && trim($timeParts[0])) {
+                                    try {
+                                        $startTime = \Carbon\Carbon::parse(trim($timeParts[0]))->format('h:i A');
+                                    } catch (\Exception $e) {
+                                        $startTime = trim($timeParts[0]); // Fallback if parse fails
+                                    }
+                                }
+                                
+                                $endTime = '';
+                                if (isset($timeParts[1]) && trim($timeParts[1])) {
+                                    try {
+                                        $endTime = \Carbon\Carbon::parse(trim($timeParts[1]))->format('h:i A');
+                                    } catch (\Exception $e) {
+                                        $endTime = trim($timeParts[1]); // Fallback if parse fails
+                                    }
+                                }
+                                
                                 $displayTime = implode(' - ', array_filter([$startTime, $endTime]));
                             @endphp
+                            
                             @if($displayTime)
                             <p class="font-bold text-gray-400 italic text-sm">
                                 <i class="fa-regular fa-clock w-4"></i>
