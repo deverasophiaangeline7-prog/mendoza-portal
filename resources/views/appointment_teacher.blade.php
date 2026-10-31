@@ -279,7 +279,6 @@
         font-weight: 900;
         color: var(--ma-red);
         margin: -5px 0 15px 0;
-        animation: pulse 2s infinite;
     }
 
     @keyframes pulse {
@@ -1169,6 +1168,19 @@
         if (event.target === decOverlay) closeModal('trueDeclineModal');
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
+
+    // CHECK URL FOR NOTIFICATION TRIGGER ON PAGE LOAD
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.get('action') === 'view_requests') {
+            // Open the incoming requests modal
+            openModal('requestsModalOverlay');
+            
+            // Optional: Clean up the URL so it doesn't reopen if the user refreshes the page
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({path: cleanUrl}, '', cleanUrl);
+        }
 
     // UPDATE END TIME DYNAMICALLY WHEN DURATION RADIO IS CHANGED
     document.querySelectorAll('input[name="duration_pref"]').forEach(radio => {

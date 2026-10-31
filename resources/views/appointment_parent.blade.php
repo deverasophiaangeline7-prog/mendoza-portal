@@ -263,7 +263,6 @@
         font-weight: 900;
         color: var(--ma-red);
         margin: -5px 0 15px 0;
-        animation: pulse 2s infinite;
     }
 
     @keyframes pulse {
