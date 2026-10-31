@@ -48,10 +48,12 @@
 
         <div id="calendar-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             @foreach($events as $event)
-            <div class="bg-white border-[3px] border-black p-6 rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col h-[480px]">
+            <!-- Reduced height to h-[380px] -->
+            <div class="bg-white border-[3px] border-black p-6 rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col h-[380px]">
                 <div class="mb-4">
                     <h4 class="text-3xl font-black text-red-600 uppercase leading-tight mb-2">{{ $event->event_title }}</h4>
-                    <div class="flex flex-col gap-1">
+                    <!-- Made Date and Time side-by-side -->
+                    <div class="flex flex-wrap items-center gap-4">
                         <p class="font-bold text-gray-400 italic text-sm">
                             <i class="fa-regular fa-calendar w-4"></i>
                             {{ \Carbon\Carbon::parse($event->start_date)->format('F d, Y') }}
@@ -59,30 +61,25 @@
                         
                         @if($event->time)
                             @php
-                                // Smartly split by newline or dash to handle both old and new data formats
                                 $timeParts = preg_split('/(\r\n|\n| - )/', $event->time);
-                                
                                 $startTime = '';
                                 if (isset($timeParts[0]) && trim($timeParts[0])) {
                                     try {
                                         $startTime = \Carbon\Carbon::parse(trim($timeParts[0]))->format('h:i A');
                                     } catch (\Exception $e) {
-                                        $startTime = trim($timeParts[0]); // Fallback if parse fails
+                                        $startTime = trim($timeParts[0]);
                                     }
                                 }
-                                
                                 $endTime = '';
                                 if (isset($timeParts[1]) && trim($timeParts[1])) {
                                     try {
                                         $endTime = \Carbon\Carbon::parse(trim($timeParts[1]))->format('h:i A');
                                     } catch (\Exception $e) {
-                                        $endTime = trim($timeParts[1]); // Fallback if parse fails
+                                        $endTime = trim($timeParts[1]);
                                     }
                                 }
-                                
                                 $displayTime = implode(' - ', array_filter([$startTime, $endTime]));
                             @endphp
-                            
                             @if($displayTime)
                             <p class="font-bold text-gray-400 italic text-sm">
                                 <i class="fa-regular fa-clock w-4"></i>
@@ -108,7 +105,7 @@
                         @forelse($groupedByStudent as $studentId => $studentParticipants)
                             @php 
                                 $studentInfo = $studentParticipants->first()->student; 
-                                $sectionName = $studentInfo->section->section_name ?? ''; 
+                                $sectionString = $studentInfo->section ? ($studentInfo->section->grade_level . ' - ' . $studentInfo->section->section_name) : ''; 
                             @endphp
                             <div class="pb-2 border-b border-gray-100 last:border-b-0">
                                 <div class="flex justify-between items-start">
@@ -117,9 +114,9 @@
                                             <span class="text-sm font-black text-gray-900">
                                                 {{ $studentInfo->last_name ?? '' }}, {{ $studentInfo->first_name ?? '' }}
                                             </span>
-                                            @if($sectionName)
+                                            @if($sectionString)
                                                 <span class="text-[9px] bg-gray-100 text-gray-600 font-extrabold px-1.5 py-0.5 rounded border border-gray-300 uppercase">
-                                                    {{ $sectionName }}
+                                                    {{ $sectionString }}
                                                 </span>
                                             @endif
                                         </div>
@@ -189,7 +186,7 @@
                     <select id="student-select" name="student_ids[]" multiple placeholder="Type name..." autocomplete="off">
                         @foreach($students as $student)
                             <option value="{{ $student->student_id }}">
-                                {{ $student->first_name }} {{ $student->last_name }} @if($student->section)({{ $student->section->section_name }})@endif
+                                {{ $student->first_name }} {{ $student->last_name }} @if($student->section)({{ $student->section->grade_level }} - {{ $student->section->section_name }})@endif
                             </option>
                         @endforeach
                     </select>

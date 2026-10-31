@@ -18,7 +18,9 @@ class SchoolCalendarController extends Controller
         $eventsData = [];
 
         foreach ($dbEvents as $event) {
-            $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
+            // Smart split to handle both legacy newlines and new dash formats safely
+            $timeParts = $event->time ? preg_split('/(\r\n|\n| - )/', $event->time) : ['', ''];
+            
             $eventsData[$event->start_date] = [
                 'name'       => $event->event_title,
                 'start_time' => $timeParts[0] ?? '',
@@ -57,6 +59,7 @@ class SchoolCalendarController extends Controller
 
     public function store(Request $request)
     {
+        // Standardize saving the time with a clean dash separator
         $combinedTime = $request->start_time . ' - ' . $request->end_time;
 
         // 1. Save or Update the Event
@@ -119,7 +122,7 @@ class SchoolCalendarController extends Controller
             'event_title' => $request->event_title,
             'description' => $request->description,
             'start_date'  => $request->start_date,
-            'time'        => $request->start_time . ' - ' . $request->end_time,
+            'time'        => $request->start_time . ' - ' . $request->end_time, // Standardized dash format
         ]);
 
         // Added notification logic here as well just in case you edit from a separate page!
@@ -161,7 +164,9 @@ class SchoolCalendarController extends Controller
         $eventsData = [];
 
         foreach ($dbEvents as $event) {
-            $timeParts = $event->time ? explode(' - ', $event->time) : ['', ''];
+            // Smart split to handle both legacy newlines and new dash formats safely
+            $timeParts = $event->time ? preg_split('/(\r\n|\n| - )/', $event->time) : ['', ''];
+            
             $eventsData[$event->start_date] = [
                 'name'       => $event->event_title,
                 'start_time' => $timeParts[0] ?? '',

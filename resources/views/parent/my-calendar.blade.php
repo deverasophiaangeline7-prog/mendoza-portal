@@ -11,7 +11,8 @@
         <div class="bg-white border-[3px] border-black p-6 rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
             <div class="mb-4">
                 <h4 class="text-2xl font-black text-red-600 uppercase leading-tight mb-2">{{ $event->event_title }}</h4>
-                <div class="flex flex-col gap-1">
+                <!-- Changed flex-col to flex-wrap items-center for side-by-side layout -->
+                <div class="flex flex-wrap items-center gap-4">
                     <p class="font-bold text-gray-500 italic text-sm">
                         <i class="fa-regular fa-calendar w-4"></i>
                         {{ \Carbon\Carbon::parse($event->start_date)->format('F d, Y') }}
@@ -44,7 +45,7 @@
                             @endphp
                             
                             @if($displayTime)
-                            <p class="font-bold text-gray-400 italic text-sm">
+                            <p class="font-bold text-gray-500 italic text-sm">
                                 <i class="fa-regular fa-clock w-4"></i>
                                 {{ $displayTime }}
                             </p>
