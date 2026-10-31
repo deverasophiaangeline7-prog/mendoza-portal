@@ -5,22 +5,24 @@
 @section('content')
 <div class="p-4 md:p-8 flex flex-col items-center w-full min-h-screen bg-white" x-data="{ passwordModal: {{ $errors->has('current_password') || $errors->has('password') ? 'true' : 'false' }} }">
     
-    <!-- Header Section (Matches Attendance size and style) -->
-    <h2 class="text-3xl md:text-5xl font-black text-black mb-2 md:mb-3 uppercase tracking-tight">
-        REPORT CARD
-    </h2>
+    <!-- Main Title & Inline Admin Count (Matches Attendance layout structure exactly) -->
+    <div class="flex flex-col md:flex-row items-center justify-center gap-2 mb-2 md:mb-3">
+        <h2 class="text-3xl md:text-5xl font-black text-black uppercase tracking-tight">
+            REPORT CARD
+        </h2>
+        @if(auth()->user()->role === 'admin')    
+            <span class="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full border border-black/20">
+                Total: <span class="text-[#b91c1c] font-black">{{ \App\Models\Student::count() }}</span>
+            </span>
+        @endif
+    </div>
 
-    <h3 class="text-xl md:text-3xl font-black text-black mb-4 md:mb-6">
+    <!-- Subtitle (Exact size and margin match to Attendance) -->
+    <h3 class="text-xl md:text-3xl font-black text-black mb-6 md:mb-8">
         Select Section:
     </h3>
 
-    @if(auth()->user()->role === 'admin')    
-        <div class="mb-6 text-sm md:text-base font-bold text-gray-700 uppercase tracking-wider bg-gray-100 px-4 py-1.5 rounded-full border border-black/20">
-            Total Students: <span class="text-[#b91c1c] font-black">{{ \App\Models\Student::count() }}</span>
-        </div>
-    @endif
-
-    <!-- Sections Grid (Exact match to Attendance layout, spacing, and card text-stroke style) -->
+    <!-- Sections Grid (Exact match to Attendance layout & spacing) -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 md:gap-x-14 gap-y-6 md:gap-y-12 w-full max-w-6xl justify-items-center px-2">
         @foreach($sections as $section)
             @php
@@ -31,7 +33,6 @@
             <a href="{{ route('reportcard.show', $section->section_id) }}"
                class="bg-[#e68a2d] w-full max-w-[350px] py-6 rounded-[40px] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all text-center flex flex-col justify-center items-center group active:scale-95">
                
-                <!-- Updated to use -webkit-text-stroke just like Attendance -->
                 <span class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight transition-transform group-hover:-translate-y-1" 
                       style="-webkit-text-stroke: 1.5px white;">
                     {{ $displayLevel }}
