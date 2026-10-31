@@ -3,6 +3,17 @@
 @section('title', 'Student Calendar')
 
 @section('content')
+
+@php
+    $myStudentIds = [];
+    if (auth()->user()->role !== 'admin') {
+        $myStudentIds = \App\Models\Student::active()
+            ->whereHas('section', function ($q) {
+                $q->where('teacher_id', auth()->user()->user_id);
+            })->pluck('student_id')->toArray();
+    }
+@endphp
+
 <!-- Tom Select Styles and Scripts CDN -->
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
@@ -37,55 +48,90 @@
 
         <div id="calendar-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             @foreach($events as $event)
-            <div class="bg-white border-[3px] border-black p-6 rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col h-full">
+            <div class="bg-white border-[3px] border-black p-6 rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col h-[480px]">
                 <div class="mb-4">
-                    <h4 class="text-3xl font-black text-red-600 uppercase leading-tight">{{ $event->event_title }}</h4>
-                    <p class="font-bold text-gray-400 italic text-sm">{{ \Carbon\Carbon::parse($event->start_date)->format('F d, Y') }}</p>
+                    <h4 class="text-3xl font-black text-red-600 uppercase leading-tight mb-2">{{ $event->event_title }}</h4>
+                    <div class="flex flex-col gap-1">
+                        <p class="font-bold text-gray-400 italic text-sm">
+                            <i class="fa-regular fa-calendar w-4"></i>
+                            {{ \Carbon\Carbon::parse($event->start_date)->format('F d, Y') }}
+                        </p>
+                        
+                        @if($event->time)
+                            @php
+                                $timeParts = explode("\n", $event->time);
+                                $startTime = isset($timeParts[0]) && trim($timeParts[0]) ? \Carbon\Carbon::parse(trim($timeParts[0]))->format('h:i A') : '';
+                                $endTime = isset($timeParts[1]) && trim($timeParts[1]) ? \Carbon\Carbon::parse(trim($timeParts[1]))->format('h:i A') : '';
+                                $displayTime = implode(' - ', array_filter([$startTime, $endTime]));
+                            @endphp
+                            @if($displayTime)
+                            <p class="font-bold text-gray-400 italic text-sm">
+                                <i class="fa-regular fa-clock w-4"></i>
+                                {{ $displayTime }}
+                            </p>
+                            @endif
+                        @endif
+                    </div>
                 </div>
                 
-                <div class="flex-1 border-t-2 border-dashed border-black pt-4">
-                    <h5 class="font-black text-[10px] uppercase mb-4 text-gray-400 tracking-widest text-center">Event Program</h5>
+                <!-- Fixed size scrollable area for participants -->
+                <div class="flex-1 border-t-2 border-dashed border-black pt-4 flex flex-col overflow-hidden">
+                    <h5 class="font-black text-[10px] uppercase mb-3 text-gray-400 tracking-widest text-center flex-shrink-0">Event Program</h5>
                     
                     @php
-                        // Group participants by student so each student appears only once per event card
+                        // Group participants by student
                         $groupedByStudent = $event->participants->groupBy(function($participant) {
                             return $participant->student_id;
-                        });
+                        })->sortKeys();
                     @endphp
 
-                    @forelse($groupedByStudent as $studentId => $studentParticipants)
-                        @php $studentInfo = $studentParticipants->first()->student; @endphp
-                        <div class="mb-4 pb-3 border-b border-gray-100 last:border-b-0">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <span class="text-sm font-black text-gray-900">
-                                        {{ $studentInfo->last_name ?? '' }}, {{ $studentInfo->first_name ?? '' }}
-                                    </span>
-                                    <div class="flex flex-wrap gap-1 mt-1.5">
-                                        @foreach($studentParticipants as $participant)
-                                            <span class="inline-flex items-center text-[10px] bg-amber-700 text-white px-2 py-0.5 rounded font-black uppercase tracking-tighter group/badge">
-                                                {{ $participant->role ?: 'General Participant' }}
-                                                
-                                                @if(auth()->user()->role !== 'admin')
-                                                <button type="button" 
-                                                        @click="deleteModal = true; deleteUrl = '{{ route('calendar.deleteParticipant', $participant->id) }}'; deleteParticipantName = '{{ addslashes(($studentInfo->last_name ?? '') . ', ' . ($studentInfo->first_name ?? '') . ' (' . ($participant->role ?: 'General Participant') . ')') }}'"
-                                                        class="ml-1.5 text-amber-200 hover:text-white transition-colors" title="Remove role">
-                                                    <i class="fa-solid fa-xmark text-[10px]"></i>
-                                                </button>
-                                                @endif
+                    <div class="overflow-y-auto flex-1 pr-2 space-y-3 custom-scrollbar">
+                        @forelse($groupedByStudent as $studentId => $studentParticipants)
+                            @php 
+                                $studentInfo = $studentParticipants->first()->student; 
+                                $sectionName = $studentInfo->section->section_name ?? ''; 
+                            @endphp
+                            <div class="pb-2 border-b border-gray-100 last:border-b-0">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-sm font-black text-gray-900">
+                                                {{ $studentInfo->last_name ?? '' }}, {{ $studentInfo->first_name ?? '' }}
                                             </span>
-                                        @endforeach
+                                            @if($sectionName)
+                                                <span class="text-[9px] bg-gray-100 text-gray-600 font-extrabold px-1.5 py-0.5 rounded border border-gray-300 uppercase">
+                                                    {{ $sectionName }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            @foreach($studentParticipants as $participant)
+                                                <span class="inline-flex items-center text-[10px] bg-amber-700 text-white px-2 py-0.5 rounded font-black uppercase tracking-tighter">
+                                                    {{ $participant->role ?: 'General Participant' }}
+                                                    
+                                                    @if(auth()->user()->role !== 'admin' && in_array($participant->student_id, $myStudentIds))
+                                                    <button type="button" 
+                                                            @click="deleteModal = true; deleteUrl = '{{ route('calendar.deleteParticipant', $participant->id) }}'; deleteParticipantName = '{{ addslashes(($studentInfo->last_name ?? '') . ', ' . ($studentInfo->first_name ?? '') . ' (' . ($participant->role ?: 'General Participant') . ')') }}'"
+                                                            class="ml-1.5 text-amber-200 hover:text-white transition-colors" title="Remove role">
+                                                        <i class="fa-solid fa-xmark text-[10px]"></i>
+                                                    </button>
+                                                    @endif
+                                                </span>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    @empty
-                        <p class="text-sm text-gray-300 italic text-center py-4">No participants assigned yet.</p>
-                    @endforelse
+                        @empty
+                            <div class="flex items-center justify-center h-full">
+                                <p class="text-sm text-gray-300 italic text-center">No participants assigned yet.</p>
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
 
                 @if(auth()->user()->role !== 'admin')
-                <div class="mt-4 pt-4 border-t-2 border-black">
+                <div class="mt-4 pt-4 border-t-2 border-black flex-shrink-0">
                     <button type="button" @click="
                         selectedEventId = '{{ $event->calendar_id }}'; 
                         selectedEventTitle = '{{ addslashes($event->event_title) }}'; 
@@ -124,7 +170,7 @@
                     <select id="student-select" name="student_ids[]" multiple placeholder="Type name..." autocomplete="off">
                         @foreach($students as $student)
                             <option value="{{ $student->student_id }}">
-                                {{ $student->first_name }} {{ $student->last_name }}
+                                {{ $student->first_name }} {{ $student->last_name }} @if($student->section)({{ $student->section->section_name }})@endif
                             </option>
                         @endforeach
                     </select>
@@ -171,9 +217,11 @@
             </div>
         </div>
     </div>
+    @endif
 
     <script>
         function initTomSelect() {
+            let select = document.getElementById('student-select');
             if(!document.getElementById('student-select').tomselect) {
                 new TomSelect("#student-select", { 
                     plugins: ['remove_button'], 
@@ -223,7 +271,6 @@
             }
         }, 3000);
     </script>
-    @endif
 
     <!-- TOAST NOTIFICATIONS -->
     <div x-show="showSuccessToast" x-cloak x-transition class="fixed bottom-10 right-10 z-[200] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black font-black uppercase">

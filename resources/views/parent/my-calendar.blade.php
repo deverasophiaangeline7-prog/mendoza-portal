@@ -10,11 +10,28 @@
         @forelse($events as $event)
         <div class="bg-white border-[3px] border-black p-6 rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
             <div class="mb-4">
-                <h4 class="text-2xl font-black text-red-600 uppercase leading-tight mb-1">{{ $event->event_title }}</h4>
-                <p class="font-bold text-gray-500 italic text-sm">
-                    <i class="fa-regular fa-calendar mr-1"></i>
-                    {{ \Carbon\Carbon::parse($event->start_date)->format('F d, Y') }}
-                </p>
+                <h4 class="text-2xl font-black text-red-600 uppercase leading-tight mb-2">{{ $event->event_title }}</h4>
+                <div class="flex flex-col gap-1">
+                    <p class="font-bold text-gray-500 italic text-sm">
+                        <i class="fa-regular fa-calendar w-4"></i>
+                        {{ \Carbon\Carbon::parse($event->start_date)->format('F d, Y') }}
+                    </p>
+                    
+                    @if($event->time)
+                        @php
+                            $timeParts = explode("\n", $event->time);
+                            $startTime = isset($timeParts[0]) && trim($timeParts[0]) ? \Carbon\Carbon::parse(trim($timeParts[0]))->format('h:i A') : '';
+                            $endTime = isset($timeParts[1]) && trim($timeParts[1]) ? \Carbon\Carbon::parse(trim($timeParts[1]))->format('h:i A') : '';
+                            $displayTime = implode(' - ', array_filter([$startTime, $endTime]));
+                        @endphp
+                        @if($displayTime)
+                        <p class="font-bold text-gray-500 italic text-sm">
+                            <i class="fa-regular fa-clock w-4"></i>
+                            {{ $displayTime }}
+                        </p>
+                        @endif
+                    @endif
+                </div>
             </div>
 
             <div class="mt-4 pt-4 border-t-[2px] border-dashed border-gray-300">

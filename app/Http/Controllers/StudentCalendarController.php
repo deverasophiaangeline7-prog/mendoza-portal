@@ -122,11 +122,23 @@ class StudentCalendarController extends Controller
 
     public function destroyParticipant($id)
     {
-        if (auth()->user()->role === 'admin') {
+        $user = auth()->user();
+
+        if ($user->role === 'admin') {
             abort(403, 'Admins cannot remove participants.');
         }
 
-        $participant = EventParticipant::findOrFail($id);
+        $participant = EventParticipant::with('student.section')->findOrFail($id);
+
+        // Security Check: Only allow deletion if the student belongs to the teacher's advisory section
+        if ($participant->student && $participant->student->section) {
+            if ($participant->student->section->teacher_id !== $user->user_id) {
+                abort(403, 'Unauthorized: You can only remove students that belong to your assigned advisory section.');
+            }
+        } else {
+             abort(403, 'Error: Student or section mapping is missing.');
+        }
+
         $participant->delete();
 
         return back()->with('success', 'Participant removed successfully!');
