@@ -87,12 +87,12 @@ class StudentController extends Controller
     {
         $section = Section::with('adviser')->findOrFail($id);
 
-        $students = Student::where('section_id', $section->id ?? $section->section_id)
+        $students = Student::active()
+                           ->where('section_id', $section->id ?? $section->section_id)
                            ->with(['section', 'grades']) 
                            ->orderBy('last_name', 'asc')
                            ->get();
 
-        // 👈 FIX: Check NKP Evaluations for the Promote Button
         $nkpLevels = ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'];
         
         foreach ($students as $student) {

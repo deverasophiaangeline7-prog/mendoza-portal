@@ -86,7 +86,8 @@ class ReportCardController extends Controller
         $section = Section::findOrFail($section_id);
         $sectionName = strtoupper($section->grade_level . "\n" . $section->section_name);
 
-        $students = Student::where('section_id', $section_id)
+        $students = Student::active()
+                           ->where('section_id', $section_id)
                            ->orderBy('last_name', 'asc')
                            ->get();
 
@@ -234,10 +235,10 @@ class ReportCardController extends Controller
     public function showParentReportCard()
     {
         $parentId = Auth::id();
-        $student = \App\Models\Student::where('user_id', $parentId)->first();
+        $student = \App\Models\Student::active()->where('user_id', $parentId)->first();
 
         if (!$student) {
-            return "No student record linked to Parent Account (user_id): " . $parentId;
+            return "No active student record linked to Parent Account (user_id): " . $parentId;
         }
 
         return $this->showStudent($student->student_id);
@@ -493,8 +494,6 @@ class ReportCardController extends Controller
         $processed = 0;
         $highestRow = $targetSheet->getHighestDataRow();
 
-        
-
         // PROCESS THE TARGET SHEET
         for ($row = 1; $row <= $highestRow; $row++) {
             $lrn = trim((string) $targetSheet->getCell('A' . $row)->getCalculatedValue());
@@ -570,7 +569,7 @@ class ReportCardController extends Controller
 
             // 7. DATABASE VALIDATION (Silently ignore unregistered Excel students)
             $cleanLrnForDb = preg_replace('/[^0-9]/', '', $lrn); 
-            $student = Student::where('lrn', $cleanLrnForDb)->first();
+            $student = Student::active()->where('lrn', $cleanLrnForDb)->first();
 
             if (!$student) {
                 continue; 
@@ -625,7 +624,8 @@ class ReportCardController extends Controller
         $message = "{$request->subject} Term {$activeTerm} grades imported! {$processed} student(s) updated.";
 
         // Find system students in this section whose LRNs were NOT updated
-        $missingStudents = Student::where('section_id', $section_id)
+        $missingStudents = Student::active()
+            ->where('section_id', $section_id)
             ->whereNotIn('lrn', $updatedLrnList ?? [])
             ->get();
 
@@ -658,7 +658,8 @@ class ReportCardController extends Controller
             'subject' => 'required|string'
         ]);
 
-        $students = Student::where('section_id', $section_id)
+        $students = Student::active()
+                        ->where('section_id', $section_id)
                         ->orderBy('gender', 'desc')
                         ->orderBy('last_name', 'asc')
                         ->get();

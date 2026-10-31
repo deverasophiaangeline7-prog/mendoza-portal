@@ -44,9 +44,12 @@ class AppointmentController extends Controller
             $sectionIds = $user->sections->pluck('section_id');
             $parents = User::where('role', 'parent')
                 ->whereHas('student', function ($query) use ($sectionIds) {
-                    $query->whereIn('section_id', $sectionIds);
+                    $query->active()
+                          ->whereIn('section_id', $sectionIds);
                 })
-                ->with('student')
+                ->with(['student' => function ($query) {
+                    $query->active();
+                }])
                 ->get()
                 ->sortBy(function ($parent) {
                     return strtoupper($parent->student->last_name ?? $parent->username);
@@ -57,7 +60,8 @@ class AppointmentController extends Controller
             return view('appointment_teacher', compact('incomingRequests', 'mySentRequests', 'parents', 'schedules', 'bookedAppointments'));
             
         } elseif ($user->role === 'parent') {
-            $student = Student::with('section.teacher')
+            $student = Student::active()
+                ->with('section.teacher')
                 ->where('user_id', $user->user_id)
                 ->first();
 
@@ -97,7 +101,7 @@ class AppointmentController extends Controller
                 
             return view('appointment_parent', compact('incomingRequests', 'mySentRequests', 'adviserSchedule', 'student', 'adviserName', 'bookedAppointments'));                
        
-            } elseif (in_array($user->role, ['admin', 'superadmin'])) {
+        } elseif (in_array($user->role, ['admin', 'superadmin'])) {
             
             $advisersList = [];
 
@@ -119,7 +123,7 @@ class AppointmentController extends Controller
             foreach ($sections as $section) {
                 $teacherProfile = \App\Models\Teacher::where('user_id', $section->teacher_id)->first();
                 $advisersList[] = [
-                    'section' => 'Grade ' . $section->grade_level . ' - ' . $section->section_name,
+                    'section' => 'Grade ' . $section->grade_level . "\n" . $section->section_name,
                     'name' => $teacherProfile ? $teacherProfile->first_name . ' ' . $teacherProfile->last_name : 'Unassigned',
                     'user_id' => $teacherProfile ? $teacherProfile->user_id : null,
                 ];
@@ -161,7 +165,7 @@ class AppointmentController extends Controller
             $validated['parent_id'] = $request->parent_id;
             $notifyUserId = $request->parent_id;
         } else {
-            $student = Student::with('section.teacher')->where('user_id', auth()->id())->first();
+            $student = Student::active()->with('section.teacher')->where('user_id', auth()->id())->first();
             $teacherUserId = $student?->section?->teacher?->user_id;
 
             if (!$teacherUserId && $student?->section) {

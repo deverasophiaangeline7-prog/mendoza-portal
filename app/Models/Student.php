@@ -22,6 +22,11 @@ class Student extends Model
         'next_grade_level'
     ];
 
+    public function scopeActive($query)
+    {
+        return $query->whereNull('deleted_at'); 
+    }
+
     public function user(){
         return $this->belongsTo(User::class, 'user_id');
     }
@@ -39,6 +44,6 @@ class Student extends Model
     }
 
     public function events() {
-    return $this->hasMany(EventParticipant::class, 'student_id');
+        return $this->hasMany(EventParticipant::class, 'student_id');
     }
 }

@@ -16,7 +16,7 @@ class AttendanceController extends Controller
         $user = Auth::user();
 
         if ($user->role === 'parent') {
-            $student = \App\Models\Student::where('user_id', $user->user_id)->first();
+            $student = \App\Models\Student::active()->where('user_id', $user->user_id)->first();
             if ($student && $student->section_id) {
                 return redirect()->route('attendance.show', $student->section_id);
             }
@@ -89,8 +89,8 @@ class AttendanceController extends Controller
             if ($user->role === 'teacher') {
                 $section = $query->where('teacher_id', $user->user_id)->first();
             } elseif ($user->role === 'parent') {
-                $student = Student::where('user_id', $user->user_id)->first();
-                $section = Section::find($student->section_id);
+                $student = Student::active()->where('user_id', $user->user_id)->first();
+                $section = Section::find($student?->section_id);
             } else {
                 $section = $query->first();
             }
@@ -100,7 +100,7 @@ class AttendanceController extends Controller
             return "Error: Section not found or you are not assigned to this grade.";
         }
 
-        $students = Student::where('section_id', $section->section_id)->get();
+        $students = Student::active()->where('section_id', $section->section_id)->get();
 
         // 1. Get ALL unique attendance dates, sorted newest to oldest
         $allDates = Attendance::whereIn('student_id', $students->pluck('student_id'))
@@ -136,7 +136,7 @@ class AttendanceController extends Controller
 
         return view('section-attendance', [
             'grade'         => $grade,
-            'displayName'   => strtoupper($section->grade_level . ' - ' . $section->section_name),
+            'displayName'   => strtoupper($section->grade_level . "\n" . $section->section_name),
             'students'      => $students,
             'existingDates' => $existingDates,
             'attendanceMap' => $attendanceMap,
@@ -161,9 +161,9 @@ class AttendanceController extends Controller
         }
 
         $firstRecord = $records[0];
-        $sampleStudent = Student::find($firstRecord['student_id']);
-        $sectionName = $sampleStudent->section->section_name ?? 'Unknown Section';
-        $gradeLevel = $sampleStudent->grade_level ?? '';
+        $sampleStudent = Student::active()->find($firstRecord['student_id']);
+        $sectionName = $sampleStudent?->section?->section_name ?? 'Unknown Section';
+        $gradeLevel = $sampleStudent?->grade_level ?? '';
         $attendanceDate = $firstRecord['date'];
         
         foreach ($records as $record) {
@@ -209,7 +209,7 @@ class AttendanceController extends Controller
             // Only trigger if the status GENUINELY changed or is NEW, AND is not 'Present'
             if ($isNew || $statusChanged) {
                 
-                $student = Student::find($record['student_id']);
+                $student = Student::active()->find($record['student_id']);
                 
                 if ($student && $student->user_id) {
                     $parent = User::find($student->user_id);
@@ -231,26 +231,26 @@ class AttendanceController extends Controller
         \App\Models\AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Attendance Submitted',
-            'description' => Auth::user()->username . " submitted attendance for {$gradeLevel} - {$sectionName} on {$attendanceDate}."
+            'description' => Auth::user()->username . " submitted attendance for {$gradeLevel}\n{$sectionName} on {$attendanceDate}."
         ]);
 
         return response()->json(['message' => 'Saved Successfully!']);
     }
 
     public function deleteDate(Request $request)
-{
-    $request->validate([
-        'date' => 'required|date',
-        'student_ids' => 'required|array'
-    ]);
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'student_ids' => 'required|array'
+        ]);
 
-    $dbDate = \Carbon\Carbon::parse($request->date)->format('Y-m-d');
+        $dbDate = \Carbon\Carbon::parse($request->date)->format('Y-m-d');
 
-    // Permanently delete all attendance records for these students on this specific day
-    \App\Models\Attendance::whereIn('student_id', $request->student_ids)
-        ->whereDate('attendance_date', $dbDate)
-        ->delete();
+        // Permanently delete all attendance records for these students on this specific day
+        \App\Models\Attendance::whereIn('student_id', $request->student_ids)
+            ->whereDate('attendance_date', $dbDate)
+            ->delete();
 
-    return response()->json(['message' => 'Attendance for date deleted successfully']);
-}
+        return response()->json(['message' => 'Attendance for date deleted successfully']);
+    }
 }
