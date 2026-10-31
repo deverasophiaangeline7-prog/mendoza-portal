@@ -86,6 +86,29 @@
         box-sizing: border-box;
     }
 
+    .radio-group {
+        display: flex;
+        gap: 15px;
+        margin-left: 5px;
+        margin-bottom: 10px;
+    }
+
+    .radio-group label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .radio-group input[type="radio"] {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+    }
+
     .time-group { display: flex; gap: 15px; width: 100%; }
 
     .btn-submit {
@@ -255,17 +278,23 @@
     .cell-half-top { background: linear-gradient(180deg, var(--ma-green) 0 50%, #ffffff 50% 100%); }
     .cell-half-bottom { background: linear-gradient(180deg, #ffffff 0 50%, var(--ma-green) 50% 100%); }
 
-    /* Clickable Schedule Cells */
+    /* Clickable Schedule Cells - Orange Hover & Selection */
     .schedule-grid td.cell-white {
         cursor: pointer;
-        transition: transform 0.1s, box-shadow 0.1s;
+        transition: transform 0.1s, background-color 0.2s, box-shadow 0.1s;
     }
     
     .schedule-grid td.cell-white:hover {
+        background-color: var(--ma-orange) !important; /* Turns orange on hover */
         transform: scale(1.05);
         box-shadow: 0 0 5px rgba(0,0,0,0.3);
         z-index: 10;
         position: relative;
+    }
+
+    .schedule-grid td.cell-selected {
+        background-color: var(--ma-orange) !important; /* Stays orange when selected */
+        border: 3px solid #000 !important; /* Bold border to show selection */
     }
 
     .legend {
@@ -409,6 +438,18 @@
                         <input type="date" id="appointment_date" name="appointment_date" class="form-control" required
                                min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
                                max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Duration Preference</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="duration_pref" value="30" checked> 30 Minutes
+                            </label>
+                            <label>
+                                <input type="radio" name="duration_pref" value="60"> 1 Hour
+                            </label>
+                        </div>
                     </div>
 
                     <div class="time-group">
@@ -771,10 +812,7 @@
         const startTimeInput = document.getElementById('start_time').value;
         const endTimeInput = document.getElementById('end_time').value;
         
-        // Grab the discussion topic to validate symbols
         const topicInput = document.querySelector('input[name="discussion_topic"]').value;
-
-        // Only allow letters, numbers, spaces, periods, commas, hyphens, and apostrophes
         const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
 
         if (invalidTopicRegex.test(topicInput)) {
@@ -909,40 +947,67 @@
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
 
+    // UPDATE END TIME DYNAMICALLY WHEN DURATION RADIO IS CHANGED
+    document.querySelectorAll('input[name="duration_pref"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const startInput = document.getElementById('start_time').value;
+            if (startInput) {
+                const parts = startInput.split(':');
+                let h = parseInt(parts[0]);
+                let m = parseInt(parts[1]);
+                
+                if (this.value === '30') {
+                    let endH = h;
+                    let endM = m + 30;
+                    if (endM >= 60) { endH++; endM -= 60; }
+                    document.getElementById('end_time').value = endH.toString().padStart(2, '0') + ':' + endM.toString().padStart(2, '0');
+                } else {
+                    let endH = h + 1;
+                    document.getElementById('end_time').value = endH.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
+                }
+            }
+        });
+    });
+
     // HANDLE CELL CLICKS TO AUTO-FILL FORM
     document.addEventListener('click', function(event) {
-        // Check if the click happened on a schedule cell
         const cell = event.target.closest('#sync-schedule-grid td[data-date]');
         
         if (cell) {
-            // Check if the clicked cell is available
             if (cell.classList.contains('cell-white') || cell.getAttribute('data-status') === 'available') {
                 
+                // Clear previous selection highlight
+                document.querySelectorAll('.cell-selected').forEach(c => c.classList.remove('cell-selected'));
+                // Add highlight to the clicked cell
+                cell.classList.add('cell-selected');
+
                 const date = cell.getAttribute('data-date');
-                const timeLabel = cell.getAttribute('data-time'); // e.g., '8AM', '1PM'
+                const timeLabel = cell.getAttribute('data-time');
                 
-                // Parse the 12-hour format into 24-hour format for the input[type="time"] fields
                 let startHour = parseInt(timeLabel.replace(/AM|PM/g, ''));
                 if (timeLabel.includes('PM') && startHour !== 12) {
                     startHour += 12;
                 }
                 
-                const endHour = startHour + 1;
+                // Read the chosen duration (30 or 60)
+                const duration = parseInt(document.querySelector('input[name="duration_pref"]:checked').value);
+                let endHour = startHour;
+                let endMin = duration === 30 ? '30' : '00';
                 
-                // Format to HH:mm string (e.g., '08:00', '13:00')
+                if (duration === 60) {
+                    endHour += 1;
+                }
+                
                 const formattedStartTime = startHour.toString().padStart(2, '0') + ':00';
-                const formattedEndTime = endHour.toString().padStart(2, '0') + ':00';
+                const formattedEndTime = endHour.toString().padStart(2, '0') + ':' + endMin;
                 
-                // Populate the form on the left
                 document.getElementById('appointment_date').value = date;
                 document.getElementById('start_time').value = formattedStartTime;
                 document.getElementById('end_time').value = formattedEndTime;
                 
-                // Automatically focus the Discussion Topic input so they can just type and hit submit
                 document.querySelector('input[name="discussion_topic"]').focus();
                 
             } else {
-                // Optional: Provide feedback if they click an unavailable cell
                 let status = cell.getAttribute('data-status');
                 let message = 'This time slot is unavailable.';
                 
@@ -972,11 +1037,27 @@
                         currentParentRequests.innerHTML = newParentRequests.innerHTML;
                     }
 
-                    // Sync Schedule Grid Live Updates
                     const newScheduleGrid = doc.getElementById('sync-schedule-grid');
                     const currentScheduleGrid = document.getElementById('sync-schedule-grid');
                     if (newScheduleGrid && currentScheduleGrid) {
+                        // Preserve the currently selected cell before swapping HTML
+                        let selectedDate = null;
+                        let selectedTime = null;
+                        const activeCell = document.querySelector('.cell-selected');
+                        if (activeCell) {
+                            selectedDate = activeCell.getAttribute('data-date');
+                            selectedTime = activeCell.getAttribute('data-time');
+                        }
+
                         currentScheduleGrid.innerHTML = newScheduleGrid.innerHTML;
+
+                        // Re-apply the selection class after the HTML swaps
+                        if (selectedDate && selectedTime) {
+                            const newActiveCell = document.querySelector(`td[data-date="${selectedDate}"][data-time="${selectedTime}"]`);
+                            if (newActiveCell && newActiveCell.getAttribute('data-status') === 'available') {
+                                newActiveCell.classList.add('cell-selected');
+                            }
+                        }
                     }
                 })
                 .catch(error => console.error('Error syncing appointments:', error));
