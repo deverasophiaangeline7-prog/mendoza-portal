@@ -80,17 +80,20 @@
                                        oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" 
                                        x-model="grades['{{ $subject }}'].term{{ $t }}" @input="calculateGrades()" 
                                        class="form-input-pill">
-                                <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}') || !canGradeSubject('{{ $subject }}')" x-text="grades['{{ $subject }}'].term{{ $t }}"></span>
+                                <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}') || !canGradeSubject('{{ $subject }}')" 
+                                x-text="gradeLevelNum === 1 ? getDescriptor(grades['{{ $subject }}'].term{{ $t }}) : grades['{{ $subject }}'].term{{ $t }}"></span>
                             </td>
                             @endfor
-                            <td class="text-center font-bold" x-text="grades['{{ $subject }}'].final_grade"></td>
+                            <td class="text-center font-bold" 
+                            x-text="gradeLevelNum === 1 ? getDescriptor(grades['{{ $subject }}'].final_grade) : grades['{{ $subject }}'].final_grade"></td>
                             <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
                         </tr>
                         @endforeach
 
                         <tr>
                             <td colspan="4" class="text-right font-bold pr-4">General Average</td>
-                            <td class="text-center font-bold text-lg" x-text="generalAverage"></td>
+                            <td class="text-center font-bold text-lg" 
+                            x-text="gradeLevelNum === 1 ? getDescriptor(generalAverage) : generalAverage"></td>
                             <td class="text-center font-bold" x-text="finalStatus"></td>
                         </tr>
                     </tbody>
@@ -104,7 +107,8 @@
         <tbody>
             @for($t = 1; $t <= 3; $t++)
             <tr>
-                <td class="w-32 font-bold align-top px-3 py-2 text-left">Term {{ $t }}</td>
+                <!-- Changed align-top to align-middle and text-left to text-center -->
+                <td class="w-32 font-bold align-middle px-3 py-2 text-center">Term {{ $t }}</td>
                 <td class="p-0 align-top relative">
                     <!-- Added @input regex replacement to filter out disallowed characters -->
                     <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
@@ -185,6 +189,23 @@
             
             assignedString: '{{ \App\Models\Teacher::where("user_id", auth()->id())->value("assigned_subject") ?? "NONE" }}',
             
+            gradeLevelNum: {{ $gradeNum ?? 0 }}, 
+            
+            getDescriptor(score) {
+                if (score === '' || score === null || score === undefined) return '';
+                
+                let s = parseFloat(score);
+                if (isNaN(s)) return score; 
+                
+                if (s >= 90 && s <= 100) return 'Advancing';
+                if (s >= 80 && s <= 89) return 'Benchmarking';
+                if (s >= 75 && s <= 79) return 'Connecting';
+                if (s >= 65 && s <= 74) return 'Developing';
+                if (s >= 0 && s <= 64) return 'Emerging';
+                
+                return '';
+            },
+
             canGradeSubject(subj) {
                 let assigned = this.assignedString.toUpperCase();
                 return assigned.includes('ALL') || assigned.includes(subj.toUpperCase());
@@ -315,14 +336,14 @@
                     if (vals.every(v => !isNaN(v))) {
                         let avg = vals.reduce((a,b) => a+b, 0) / 3; 
                         g.final_grade = Math.round(avg);
-                        g.remarks = g.final_grade >= 75 ? 'Passed' : 'Failed';
+                        g.remarks = g.final_grade >= 65 ? 'Passed' : 'Failed';
                         totalScore += avg; count++;
                     } else { g.final_grade = ''; g.remarks = ''; }
                 });
                 
                 if (count > 0) {
                     this.generalAverage = Math.round(totalScore / count);
-                    this.finalStatus = this.generalAverage >= 75 ? 'Promoted' : 'Retained';
+                    this.finalStatus = this.generalAverage >= 65 ? 'Promoted' : 'Retained';
                 }
             },
 

@@ -226,7 +226,8 @@ class ReportCardController extends Controller
             'savedRemarks' => $existingRemarks, // Passed to Blade template
             'canManage' => $canManage,
             'activeYear' => $activeYear,
-            'activeTerm' => $activeTerm 
+            'activeTerm' => $activeTerm,
+            'gradeNum' => $gradeNum,
         ]);
     }
 
@@ -805,7 +806,8 @@ class ReportCardController extends Controller
                 'savedRemarks' => $existingRemarks, 
                 'canManage' => false,
                 'activeYear' => $schoolYear,
-                'activeTerm' => 3 
+                'activeTerm' => 3,
+                'gradeNum' => $gradeNum,
             ]);
         }
     }

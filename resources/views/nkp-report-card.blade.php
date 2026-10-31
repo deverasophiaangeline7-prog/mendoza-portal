@@ -206,14 +206,15 @@
             @endforeach
         </div>
 
-        <!-- NEW TEACHER'S COMMENTS/REMARKS SECTION (Added here before indicators) -->
+        <!-- NEW TEACHER'S COMMENTS/REMARKS SECTION -->
         <div class="mb-10">
             <h4 class="text-center font-bold text-lg mb-2 uppercase">Teacher's Comments/Remarks</h4>
             <table class="w-full text-sm deped-table bg-white">
                 <tbody>
                     @for($t = 1; $t <= 3; $t++)
                     <tr>
-                        <td class="w-32 font-bold align-top px-3 py-2 text-left bg-gray-50">Term {{ $t }}</td>
+                        
+                        <td class="w-32 font-bold align-middle px-3 py-2 text-center">Term {{ $t }}</td>
                         <td class="p-0 align-top relative">
                             <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
                                       x-model="teacherRemarks.term{{ $t }}" 
