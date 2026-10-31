@@ -178,12 +178,13 @@ public function show($section_id)
 
             return view('nkp-report-card', [
                 'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
-                'sectionName' => $student->section ? strtoupper($gradeLevel . ' - ' . $student->section->section_name) : 'UNASSIGNED',
+                'sectionName' => $student->section ? strtoupper($gradeLevel . ' ' . $student->section->section_name) : 'UNASSIGNED',
                 'student_id' => $student_id,
                 'section_id' => $student->section_id,
                 'savedEvaluations' => $existingEvaluations,
                 'canManage' => $canManage,
-                'activeTerm' => $activeTerm // Passes term number to the Blade file
+                'activeTerm' => $activeTerm,
+                'activeYear' => $activeYear
             ]);
         }
 
