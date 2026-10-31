@@ -45,7 +45,7 @@ class AuthenticatedSessionController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login')->withErrors([
+            return redirect()->route('login')->withInput()->withErrors([
                 'login_id' => 'Access denied. This login is for authorized personnel only.',
             ]);
         }
@@ -64,7 +64,7 @@ class AuthenticatedSessionController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login')->withErrors([
+            return redirect()->route('login')->withInput()->withErrors([
                 'login_id' => 'Please use the Admin Login form.',
             ]);
         }

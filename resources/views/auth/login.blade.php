@@ -39,8 +39,7 @@
                     </button>
                 </div>
 
-                <x-modal name="parent-login" :show="$errors->has('login_id') && request('login_type') !== 'admin'" maxWidth="md" focusable>
-                    <div class="p-8 bg-white rounded-2xl border-t-8 border-red-800 shadow-2xl text-center relative">
+                    <x-modal name="parent-login" :show="$errors->has('login_id') && old('login_type') !== 'admin'" maxWidth="md" focusable>                    <div class="p-8 bg-white rounded-2xl border-t-8 border-red-800 shadow-2xl text-center relative">
                         <button @click="$dispatch('close-modal', 'parent-login')" class="absolute top-4 right-4 text-gray-400 hover:text-red-800 transition-colors">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -97,8 +96,7 @@
                     </div>
                 </x-modal>
 
-                <x-modal name="admin-login" :show="$errors->has('login_id') && request('login_type') === 'admin'" maxWidth="md" focusable>
-                    <div class="p-8 bg-gray-50 rounded-2xl border-t-8 border-gray-900 shadow-2xl text-center relative">
+                    <x-modal name="admin-login" :show="$errors->has('login_id') && old('login_type') === 'admin'" maxWidth="md" focusable>                    <div class="p-8 bg-gray-50 rounded-2xl border-t-8 border-gray-900 shadow-2xl text-center relative">
                         <button @click="$dispatch('close-modal', 'admin-login')" class="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
