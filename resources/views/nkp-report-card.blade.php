@@ -27,8 +27,8 @@
                 @if($canManage ?? true)
                 <div class="flex space-x-2 items-center">
                     
-                    <!-- NEW BULK FILL BUTTONS -->
-                    <div x-show="isManaging" x-cloak class="flex items-center space-x-1 mr-2 bg-gray-100 p-1.5 rounded border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <!-- BULK FILL BUTTONS (Only visible when managing and term is unlocked) -->
+                    <div x-show="isManaging && isTermUnlocked(activeTerm)" x-cloak class="flex items-center space-x-1 mr-2 bg-gray-100 p-1.5 rounded border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                         <span class="text-xs font-black uppercase mx-1">Fill Empty:</span>
                         <button @click="fillEmpty('CO')" class="px-2 py-1 bg-white border-2 border-black font-black hover:bg-gray-200 active:bg-gray-300 rounded text-sm transition-colors">CO</button>
                         <button @click="fillEmpty('DV')" class="px-2 py-1 bg-white border-2 border-black font-black hover:bg-gray-200 active:bg-gray-300 rounded text-sm transition-colors">DV</button>
@@ -302,14 +302,25 @@
                 return current ? current.innerText.trim() : 'General';
             },
 
+            isTermUnlocked(termNumber) {
+                const today = new Date().toISOString().split('T')[0];
+                const term = this.termDates['term' + termNumber];
+                if (!term.start || !term.end) return false; 
+                return today >= term.start && today <= term.end;
+            },
+
             determineActiveTerm() {
-                const isComplete = (t) => Object.values(this.evaluations).every(s => String(s['term'+t] || '').trim() !== '');
-                if (isComplete(1) && isComplete(2)) return '3';
-                if (isComplete(1)) return '2';
-                return '1';
+                if (this.isTermUnlocked('3')) return '3';
+                if (this.isTermUnlocked('2')) return '2';
+                if (this.isTermUnlocked('1')) return '1';
+                
+                return '1'; 
             },
             
             cycleGrade(skill, termKey) {
+                const termNumber = termKey.replace('term', '');
+                if (!this.isTermUnlocked(termNumber)) return; 
+
                 const currentVal = this.evaluations[skill][termKey] || '';
                 const nextVal = {
                     '': 'CO',
