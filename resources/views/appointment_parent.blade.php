@@ -255,6 +255,19 @@
     .cell-half-top { background: linear-gradient(180deg, var(--ma-green) 0 50%, #ffffff 50% 100%); }
     .cell-half-bottom { background: linear-gradient(180deg, #ffffff 0 50%, var(--ma-green) 50% 100%); }
 
+    /* Clickable Schedule Cells */
+    .schedule-grid td.cell-white {
+        cursor: pointer;
+        transition: transform 0.1s, box-shadow 0.1s;
+    }
+    
+    .schedule-grid td.cell-white:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        z-index: 10;
+        position: relative;
+    }
+
     .legend {
         display: flex;
         justify-content: center;
@@ -895,6 +908,52 @@
         if (event.target === decOverlay) closeModal('trueDeclineModal');
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
+
+    // HANDLE CELL CLICKS TO AUTO-FILL FORM
+    document.addEventListener('click', function(event) {
+        // Check if the click happened on a schedule cell
+        const cell = event.target.closest('#sync-schedule-grid td[data-date]');
+        
+        if (cell) {
+            // Check if the clicked cell is available
+            if (cell.classList.contains('cell-white') || cell.getAttribute('data-status') === 'available') {
+                
+                const date = cell.getAttribute('data-date');
+                const timeLabel = cell.getAttribute('data-time'); // e.g., '8AM', '1PM'
+                
+                // Parse the 12-hour format into 24-hour format for the input[type="time"] fields
+                let startHour = parseInt(timeLabel.replace(/AM|PM/g, ''));
+                if (timeLabel.includes('PM') && startHour !== 12) {
+                    startHour += 12;
+                }
+                
+                const endHour = startHour + 1;
+                
+                // Format to HH:mm string (e.g., '08:00', '13:00')
+                const formattedStartTime = startHour.toString().padStart(2, '0') + ':00';
+                const formattedEndTime = endHour.toString().padStart(2, '0') + ':00';
+                
+                // Populate the form on the left
+                document.getElementById('appointment_date').value = date;
+                document.getElementById('start_time').value = formattedStartTime;
+                document.getElementById('end_time').value = formattedEndTime;
+                
+                // Automatically focus the Discussion Topic input so they can just type and hit submit
+                document.querySelector('input[name="discussion_topic"]').focus();
+                
+            } else {
+                // Optional: Provide feedback if they click an unavailable cell
+                let status = cell.getAttribute('data-status');
+                let message = 'This time slot is unavailable.';
+                
+                if (status === 'class') message = 'Cannot book here. This slot is reserved for Class Hours.';
+                if (status === 'leave') message = 'Cannot book here. The adviser is On Leave.';
+                if (status === 'booked') message = 'Cannot book here. This slot is already taken.';
+                
+                showValidationPopUp(message);
+            }
+        }
+    });
 
     // SILENT BACKGROUND SYNC FOR APPOINTMENTS
     setInterval(() => {
