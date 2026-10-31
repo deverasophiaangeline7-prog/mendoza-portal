@@ -25,7 +25,16 @@
                     <i class="fa-solid fa-circle-left"></i>
                 </button>
                 @if($canManage ?? true)
-                <div class="flex space-x-2">
+                <div class="flex space-x-2 items-center">
+                    
+                    <!-- NEW BULK FILL BUTTONS -->
+                    <div x-show="isManaging" x-cloak class="flex items-center space-x-1 mr-2 bg-gray-100 p-1.5 rounded border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <span class="text-xs font-black uppercase mx-1">Fill Empty:</span>
+                        <button @click="fillEmpty('CO')" class="px-2 py-1 bg-white border-2 border-black font-black hover:bg-gray-200 active:bg-gray-300 rounded text-sm transition-colors">CO</button>
+                        <button @click="fillEmpty('DV')" class="px-2 py-1 bg-white border-2 border-black font-black hover:bg-gray-200 active:bg-gray-300 rounded text-sm transition-colors">DV</button>
+                        <button @click="fillEmpty('BG')" class="px-2 py-1 bg-white border-2 border-black font-black hover:bg-gray-200 active:bg-gray-300 rounded text-sm transition-colors">BG</button>
+                    </div>
+
                     <button @click="isManaging = !isManaging" class="font-black px-4 py-2 border-[3px] border-black rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all" :class="isManaging ? 'bg-green-400' : 'bg-gray-200'">
                         <i class="fa-solid" :class="isManaging ? 'fa-unlock' : 'fa-lock'"></i> <span x-text="isManaging ? ' EDITING' : ' VIEWING'"></span>
                     </button>
@@ -277,7 +286,6 @@
                     let firstTd = row.querySelector('td:first-child');
                     if(firstTd) {
                         let skillText = firstTd.innerText.trim();
-                        // Ignore the bottom table's rows by checking if the skill text matches "Consistent (CO)" etc.
                         if(!['Consistent (CO)', 'Developing (DV)', 'Beginning (BG)'].includes(skillText)) {
                             if(!this.evaluations[skillText]) {
                                 this.evaluations[skillText] = { category: this.findCategory(row), term1: '', term2: '', term3: '' };
@@ -304,12 +312,21 @@
             cycleGrade(skill, termKey) {
                 const currentVal = this.evaluations[skill][termKey] || '';
                 const nextVal = {
-                    '': 'BG',
-                    'BG': 'DV',
-                    'DV': 'CO',
-                    'CO': ''
+                    '': 'CO',
+                    'CO': 'DV',
+                    'DV': 'BG',
+                    'BG': ''
                 };
                 this.evaluations[skill][termKey] = nextVal[currentVal];
+            },
+
+            fillEmpty(grade) {
+                let tKey = 'term' + this.activeTerm;
+                Object.keys(this.evaluations).forEach(skill => {
+                    if (!this.evaluations[skill][tKey]) {
+                        this.evaluations[skill][tKey] = grade;
+                    }
+                });
             },
 
             async saveNKP() {
