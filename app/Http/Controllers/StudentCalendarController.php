@@ -15,8 +15,8 @@ class StudentCalendarController extends Controller
     {
         $user = auth()->user();
 
-        // Fetch all events with participant relationships
-        $events = SchoolCalendar::with('participants.student')->orderBy('start_date', 'asc')->get();
+        // Fetch all events with participant relationships (Latest first)
+        $events = SchoolCalendar::with('participants.student')->orderBy('start_date', 'desc')->get();
         
         // Filter active students list based on user role
         if ($user->role === 'admin') {
@@ -49,7 +49,7 @@ class StudentCalendarController extends Controller
         ->with(['participants' => function($query) use ($studentId) {
             $query->where('student_id', $studentId);
         }])
-        ->orderBy('start_date', 'asc')
+        ->orderBy('start_date', 'desc')
         ->get();
 
         return view('parent.my-calendar', compact('events', 'student'));
