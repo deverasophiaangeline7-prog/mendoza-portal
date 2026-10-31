@@ -6,7 +6,6 @@
 <style>
     .deped-table th, .deped-table td { border: 1px solid black; padding: 0.4rem 0.6rem; vertical-align: middle; }
     .deped-table th { background-color: #f3f4f6; font-weight: 800; text-transform: uppercase; text-align: center; }
-    .form-select-pill { border: 1px solid #999; height: 32px; width: 100%; text-align: center; font-weight: 900; outline: none; cursor: pointer; border-radius: 4px; background: #fff; }
     .category-header { background-color: #e5e7eb; font-weight: 900; font-size: 1.1rem; }
     .sub-category-header { background-color: #f9fafb; font-weight: 800; font-size: 0.95rem; color: #4b5563; }
 </style>
@@ -149,11 +148,19 @@
                             <tr>
                                 <td class="font-medium pl-4">{{ $skill }}</td>
                                 @for($t=1; $t<=3; $t++)
-                                <td class="p-0">
-                                    <select x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" x-model="evaluations['{{ addslashes($skill) }}'].term{{ $t }}" class="form-select-pill">
-                                        <option value=""></option><option value="BG">BG</option><option value="DV">DV</option><option value="CO">CO</option>
-                                    </select>
-                                    <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" class="block text-center font-black text-blue-600 text-[1rem]" x-text="evaluations['{{ addslashes($skill) }}'].term{{ $t }}"></span>
+                                <td class="p-0 text-center cursor-pointer select-none" 
+                                    @click="if(isManaging && activeTerm == '{{ $t }}') cycleGrade('{{ addslashes($skill) }}', 'term{{ $t }}')">
+                                    
+                                    <div x-show="isManaging && activeTerm == '{{ $t }}'" 
+                                         class="h-[32px] w-full flex items-center justify-center font-black text-blue-600 hover:bg-gray-200 transition-colors"
+                                         :class="{'bg-red-100': !evaluations['{{ addslashes($skill) }}'].term{{ $t }}}"
+                                         x-text="evaluations['{{ addslashes($skill) }}'].term{{ $t }} || '-'">
+                                    </div>
+                                    
+                                    <span x-show="!isManaging || activeTerm != '{{ $t }}'" 
+                                          class="block text-center font-black text-blue-600 text-[1rem]" 
+                                          x-text="evaluations['{{ addslashes($skill) }}'].term{{ $t }}">
+                                    </span>
                                 </td>
                                 @endfor
                             </tr>
@@ -165,11 +172,19 @@
                             <tr>
                                 <td class="font-medium pl-10">{{ $skill }}</td>
                                 @for($t=1; $t<=3; $t++)
-                                <td class="p-0">
-                                    <select x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" x-model="evaluations['{{ addslashes($skill) }}'].term{{ $t }}" class="form-select-pill">
-                                        <option value=""></option><option value="BG">BG</option><option value="DV">DV</option><option value="CO">CO</option>
-                                    </select>
-                                    <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" class="block text-center font-black text-blue-600 text-[1rem]" x-text="evaluations['{{ addslashes($skill) }}'].term{{ $t }}"></span>
+                                <td class="p-0 text-center cursor-pointer select-none" 
+                                    @click="if(isManaging && activeTerm == '{{ $t }}') cycleGrade('{{ addslashes($skill) }}', 'term{{ $t }}')">
+                                    
+                                    <div x-show="isManaging && activeTerm == '{{ $t }}'" 
+                                         class="h-[32px] w-full flex items-center justify-center font-black text-blue-600 hover:bg-gray-200 transition-colors"
+                                         :class="{'bg-red-100': !evaluations['{{ addslashes($skill) }}'].term{{ $t }}}"
+                                         x-text="evaluations['{{ addslashes($skill) }}'].term{{ $t }} || '-'">
+                                    </div>
+                                    
+                                    <span x-show="!isManaging || activeTerm != '{{ $t }}'" 
+                                          class="block text-center font-black text-blue-600 text-[1rem]" 
+                                          x-text="evaluations['{{ addslashes($skill) }}'].term{{ $t }}">
+                                    </span>
                                 </td>
                                 @endfor
                             </tr>
@@ -186,9 +201,9 @@
             <h5 class="font-black text-center text-xl mb-4 uppercase">Rating Indicators</h5>
             <table class="w-full text-sm deped-table bg-white">
                 <thead>
-                    <tr class="bg-black text-white border-black">
-                        <th class="w-1/4">Rating</th>
-                        <th>Indicators</th>
+                    <tr class="bg-gray-200 text-black border-black">
+                        <th class="w-1/4 font-black">RATING</th>
+                        <th class="font-black">INDICATORS</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -262,8 +277,11 @@
                     let firstTd = row.querySelector('td:first-child');
                     if(firstTd) {
                         let skillText = firstTd.innerText.trim();
-                        if(!this.evaluations[skillText]) {
-                            this.evaluations[skillText] = { category: this.findCategory(row), term1: '', term2: '', term3: '' };
+                        // Ignore the bottom table's rows by checking if the skill text matches "Consistent (CO)" etc.
+                        if(!['Consistent (CO)', 'Developing (DV)', 'Beginning (BG)'].includes(skillText)) {
+                            if(!this.evaluations[skillText]) {
+                                this.evaluations[skillText] = { category: this.findCategory(row), term1: '', term2: '', term3: '' };
+                            }
                         }
                     }
                 });
@@ -272,7 +290,7 @@
             },
 
             findCategory(rowElement) {
-                let current = rowElement.closest('div.border-black').querySelector('th.text-left');
+                let current = rowElement.closest('div.border-black')?.querySelector('th.text-left');
                 return current ? current.innerText.trim() : 'General';
             },
 
@@ -282,12 +300,16 @@
                 if (isComplete(1)) return '2';
                 return '1';
             },
-
-            isTermUnlocked(termNumber) {
-                const today = new Date().toISOString().split('T')[0];
-                const term = this.termDates['term' + termNumber];
-                if (!term.start || !term.end) return false; 
-                return today >= term.start && today <= term.end;
+            
+            cycleGrade(skill, termKey) {
+                const currentVal = this.evaluations[skill][termKey] || '';
+                const nextVal = {
+                    '': 'BG',
+                    'BG': 'DV',
+                    'DV': 'CO',
+                    'CO': ''
+                };
+                this.evaluations[skill][termKey] = nextVal[currentVal];
             },
 
             async saveNKP() {
