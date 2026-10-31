@@ -303,10 +303,24 @@
             },
 
             isTermUnlocked(termNumber) {
-                const today = new Date().toISOString().split('T')[0];
                 const term = this.termDates['term' + termNumber];
                 if (!term.start || !term.end) return false; 
-                return today >= term.start && today <= term.end;
+
+                // Convert string to a real date object to handle DD/MM/YYYY format
+                const parseDate = (dateStr) => {
+                    if (dateStr.includes('/')) {
+                        const parts = dateStr.split('/');
+                        // new Date(year, monthIndex, day)
+                        return new Date(parts[2], parts[1] - 1, parts[0]).setHours(0,0,0,0);
+                    }
+                    return new Date(dateStr + 'T00:00:00').setHours(0,0,0,0);
+                };
+
+                const today = new Date().setHours(0,0,0,0);
+                const start = parseDate(term.start);
+                const end = parseDate(term.end);
+
+                return today >= start && today <= end;
             },
 
             determineActiveTerm() {
