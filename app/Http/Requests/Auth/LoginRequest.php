@@ -35,49 +35,26 @@ class LoginRequest extends FormRequest
     }
 
     public function authenticate(): void
-    {
-        $this->ensureIsNotRateLimited();
+{
+    $this->ensureIsNotRateLimited();
 
-        $loginField = $this->input('login_id');
-        
-        // Base credentials required for all logins
-        $credentials = [
-            'password' => $this->input('password'),
-            'status' => 'active'
-        ];
+    $loginId = $this->input('login_id');
+    $password = $this->input('password');
 
-        // 1. Check if input is an LRN (numeric)
-        if (is_numeric($loginField)) {
-            $student = \App\Models\Student::where('lrn', $loginField)->first();
-            
-            if ($student && $student->user) {
-                // Map the LRN to the parent's actual username
-                $credentials['username'] = $student->user->username; 
-            } else {
-                // Fallback to force a normal failure if LRN doesn't exist
-                $credentials['username'] = $loginField;
-            }
-        } 
-        // 2. Check if input is an Email
-        elseif (filter_var($loginField, FILTER_VALIDATE_EMAIL)) {
-            $credentials['email'] = $loginField;
-        } 
-        // 3. Fallback for standard Admin Usernames
-        else {
-            $credentials['username'] = $loginField;
-        }
+    // Check if the input is an email format or a username
+    $fieldType = filter_var($loginId, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-        // Attempt login using the dynamically generated credentials
-        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+    // Attempt authentication using either username or email
+    if (! Auth::attempt([$fieldType => $loginId, 'password' => $password], $this->boolean('remember'))) {
+        RateLimiter::hit($this->throttleKey());
 
-            throw ValidationException::withMessages([
-                'login_id' => __('auth.failed'), // "These credentials do not match our records."
-            ]);
-        }
-
-        RateLimiter::clear($this->throttleKey());
+        throw ValidationException::withMessages([
+            'login_id' => trans('auth.failed'),
+        ]);
     }
+
+    RateLimiter::clear($this->throttleKey());
+}
 
     /**
      * Ensure the login request is not rate limited.
