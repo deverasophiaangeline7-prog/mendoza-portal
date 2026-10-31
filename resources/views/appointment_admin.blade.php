@@ -13,11 +13,14 @@
     }
 
     .dashboard-container { display: flex; font-family: 'Arial', sans-serif; width: 100%; height: 100%; overflow: hidden; }
-    .main-content { flex: 1; padding: 30px 20px; background-color: #ffffff; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
+    .main-content { flex: 1; padding: 20px; background-color: #ffffff; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
     
-    .page-title { font-size: 28px; font-weight: 900; text-align: center; margin-bottom: 30px; text-transform: uppercase; }
+    .page-title { font-size: 3rem; font-black text-black uppercase tracking-tight; font-weight: 900; text-align: center; margin-bottom: 0.5rem; }
+    .page-subtitle { font-size: 1.5rem; font-weight: 900; text-align: center; margin-bottom: 2rem; color: #000; }
+    
     @media (min-width: 768px) {
-        .page-title { font-size: 36px; margin-bottom: 40px; }
+        .page-title { font-size: 3rem; margin-bottom: 0.75rem; }
+        .page-subtitle { font-size: 1.875rem; margin-bottom: 2rem; }
         .main-content { padding: 30px 50px; }
     }
     
@@ -126,12 +129,15 @@
 <div class="dashboard-container">
     <div class="main-content">
         <h1 class="page-title">Appointment Scheduling</h1>
+        <h3 class="page-subtitle">Select Section:</h3>
+        
         <div class="adviser-grid">
             @foreach($advisersList as $adviser)
                 @php 
-                    $assigned = !empty($adviser['user_id']);$teacherId = $assigned ? $adviser['user_id'] : 'null';
+                    $assigned = !empty($adviser['user_id']);
+                    $teacherId = $assigned ? $adviser['user_id'] : 'null';
                 @endphp
-                <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{$teacherId }}')" @endif>
+                <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{ $teacherId }}')" @endif>
                     <span>{{ $adviser['section'] }}</span>
                     <span>{{ $adviser['name'] }}</span>
                 </div>
@@ -151,13 +157,17 @@
             } else {
                 $currentDate = \Carbon\Carbon::now();
                 if ($currentDate->isWeekend()) {
-                    $currentDate =$currentDate->next(\Carbon\Carbon::MONDAY);
+                    $currentDate = $currentDate->next(\Carbon\Carbon::MONDAY);
                 }
             }
 
-            $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);$prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');$nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');$calendarDays = [];
+            $startOfWeek = $currentDate->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
+            $prevWeekDate = $startOfWeek->copy()->subWeek()->format('Y-m-d');
+            $nextWeekDate = $startOfWeek->copy()->addWeek()->format('Y-m-d');
+            $calendarDays = [];
             
-            for ($i = 0; $i < 5; $i++) {$calendarDays[] = $startOfWeek->copy()->addDays($i); 
+            for ($i = 0; $i < 5; $i++) {
+                $calendarDays[] = $startOfWeek->copy()->addDays($i); 
             }
             $timeSlots = ['8AM', '9AM', '10AM', '11AM', '1PM', '2PM', '3PM', '4PM'];
         @endphp
@@ -173,7 +183,7 @@
             </div>
             <div class="calendar-navigation">
                 <a href="{{ request()->fullUrlWithQuery(['date' => $prevWeekDate]) }}" class="nav-arrow">&laquo;</a>
-                <h2 class="month-title">{{ $startOfWeek->format('M j') }} - {{$startOfWeek->copy()->addDays(4)->format('M j, Y') }}</h2>
+                <h2 class="month-title">{{ $startOfWeek->format('M j') }} - {{ $startOfWeek->copy()->addDays(4)->format('M j, Y') }}</h2>
                 <a href="{{ request()->fullUrlWithQuery(['date' => $nextWeekDate]) }}" class="nav-arrow">&raquo;</a>
             </div>
             <button class="close-btn" onclick="closeAdminModal()">&times;</button>
@@ -195,7 +205,7 @@
                             <td class="time-col">{{ $time }}</td>
                             @foreach($calendarDays as $day)
                                 @php
-                                    $cellKey = $day->format('Y-m-d') . '\vert{}' .$time;
+                                    $cellKey = $day->format('Y-m-d') . '|' . $time;
                                     $cellStatus = $scheduleRows[$cellKey] ?? 'available';
                                     $cellClass = ['available' => 'cell-white', 'booked' => 'cell-green', 'booked-half' => 'cell-green-half', 'class' => 'cell-red', 'leave' => 'cell-grey'][$cellStatus] ?? 'cell-white';
                                 @endphp
@@ -605,7 +615,6 @@
         })
         .catch(error => {
             console.error('Error saving schedule:', error);
-            // This will show you exactly what line of PHP failed instead of a generic message
             showToast('Error: ' + error.message.substring(0, 60), true); 
         });
     }
