@@ -24,7 +24,9 @@ class Student extends Model
 
     public function scopeActive($query)
     {
-        return $query->whereNull('deleted_at'); 
+        return $query->whereHas('user', function ($q) {
+            $q->where('status', 'active');
+        });
     }
 
     public function user(){

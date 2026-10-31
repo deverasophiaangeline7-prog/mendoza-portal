@@ -56,8 +56,7 @@ class StudentController extends Controller
             return $gradeOrder[strtoupper($section->grade_level)] ?? 99;
         });
 
-        // 👈 FIX: This counts actual active students, ignoring deleted ones!
-        $totalStudents = \App\Models\Student::count(); 
+        $totalStudents = Student::active()->count(); 
 
         return view('student-dashboard', compact('sections', 'totalStudents')); 
     }
@@ -241,5 +240,4 @@ class StudentController extends Controller
 
         return redirect()->back()->with('success', 'Message sent to parent successfully!');
     }
-
 }

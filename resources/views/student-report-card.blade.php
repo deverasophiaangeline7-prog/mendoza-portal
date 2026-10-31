@@ -100,6 +100,50 @@
                 </table>
             </div>
 
+            <!-- BRAND NEW: PERFORMANCE DESCRIPTORS LEGEND (GRADE 1 ONLY) -->
+            <div x-show="gradeLevelNum === 1" x-cloak class="mb-4">
+                <h4 class="text-center font-bold text-lg mb-2">Performance Descriptors</h4>
+                <div class="max-w-3xl mx-auto">
+                    <table class="w-full text-sm deped-table bg-white">
+                        <thead>
+                            <tr>
+                                <th class="w-1/3">Grading Scale</th>
+                                <th class="w-1/3">Descriptors</th>
+                                <th class="w-1/3">Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-center font-semibold">
+                            <tr>
+                                <td>90 - 100</td>
+                                <td>A - Advancing</td>
+                                <td>Passed</td>
+                            </tr>
+                            <tr>
+                                <td>80 - 89</td>
+                                <td>B - Benchmarking</td>
+                                <td>Passed</td>
+                            </tr>
+                            <tr>
+                                <td>75 - 79</td>
+                                <td>C - Connecting</td>
+                                <td>Passed</td>
+                            </tr>
+                            <tr>
+                                <td>65 - 74</td>
+                                <td>D - Developing</td>
+                                <td>Passed</td>
+                            </tr>
+                            <tr>
+                                <td>0 - 64</td>
+                                <td>E - Emerging</td>
+                                <td>Failed</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- END OF LEGEND -->
+
             <!-- NEW TEACHER'S COMMENTS/REMARKS SECTION -->
 <div>
     <h4 class="text-center font-bold text-lg mb-2 uppercase">Teacher's Comments/Remarks</h4>
@@ -197,11 +241,11 @@
                 let s = parseFloat(score);
                 if (isNaN(s)) return score; 
                 
-                if (s >= 90 && s <= 100) return 'Advancing';
-                if (s >= 80 && s <= 89) return 'Benchmarking';
-                if (s >= 75 && s <= 79) return 'Connecting';
-                if (s >= 65 && s <= 74) return 'Developing';
-                if (s >= 0 && s <= 64) return 'Emerging';
+                if (s >= 90 && s <= 100) return 'A';
+                if (s >= 80 && s <= 89) return 'B';
+                if (s >= 75 && s <= 79) return 'C';
+                if (s >= 65 && s <= 74) return 'D';
+                if (s >= 0 && s <= 64) return 'E';
                 
                 return '';
             },
