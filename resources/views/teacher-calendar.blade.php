@@ -46,30 +46,38 @@
                 <div class="flex-1 border-t-2 border-dashed border-black pt-4">
                     <h5 class="font-black text-[10px] uppercase mb-4 text-gray-400 tracking-widest text-center">Event Program</h5>
                     
-                    @forelse($event->participants->groupBy('role') as $role => $group)
-                        <div class="mb-6 last:mb-0">
-                            <div class="flex items-center mb-2">
-                                <span class="text-[10px] bg-amber-700 text-white px-2 py-0.5 rounded font-black uppercase tracking-tighter">
-                                    {{ $role ?: 'General Participant' }}
-                                </span>
-                                <div class="flex-1 border-b border-amber-200 ml-2"></div>
-                            </div>
+                    @php
+                        // Group participants by student so each student appears only once per event card
+                        $groupedByStudent = $event->participants->groupBy(function($participant) {
+                            return $participant->student_id;
+                        });
+                    @endphp
 
-                            <ul class="space-y-1 ml-1">
-                                @foreach($group as $participant)
-                                    <li class="text-sm font-bold flex justify-between items-center group/item hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors">
-                                        <span class="text-gray-800">{{ $participant->student->last_name }}, {{ $participant->student->first_name }}</span>
-                                        
-                                        @if(auth()->user()->role !== 'admin')
-                                        <button type="button" 
-                                                @click="deleteModal = true; deleteUrl = '{{ route('calendar.deleteParticipant', $participant->id) }}'; deleteParticipantName = '{{ addslashes($participant->student->last_name . ', ' . $participant->student->first_name) }}'"
-                                                class="text-red-300 hover:text-red-600 transition-colors opacity-0 group-hover/item:opacity-100">
-                                            <i class="fa-solid fa-xmark text-xs"></i>
-                                        </button>
-                                        @endif
-                                    </li>
-                                @endforeach
-                            </ul>
+                    @forelse($groupedByStudent as $studentId => $studentParticipants)
+                        @php $studentInfo = $studentParticipants->first()->student; @endphp
+                        <div class="mb-4 pb-3 border-b border-gray-100 last:border-b-0">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="text-sm font-black text-gray-900">
+                                        {{ $studentInfo->last_name ?? '' }}, {{ $studentInfo->first_name ?? '' }}
+                                    </span>
+                                    <div class="flex flex-wrap gap-1 mt-1.5">
+                                        @foreach($studentParticipants as $participant)
+                                            <span class="inline-flex items-center text-[10px] bg-amber-700 text-white px-2 py-0.5 rounded font-black uppercase tracking-tighter group/badge">
+                                                {{ $participant->role ?: 'General Participant' }}
+                                                
+                                                @if(auth()->user()->role !== 'admin')
+                                                <button type="button" 
+                                                        @click="deleteModal = true; deleteUrl = '{{ route('calendar.deleteParticipant', $participant->id) }}'; deleteParticipantName = '{{ addslashes(($studentInfo->last_name ?? '') . ', ' . ($studentInfo->first_name ?? '') . ' (' . ($participant->role ?: 'General Participant') . ')') }}'"
+                                                        class="ml-1.5 text-amber-200 hover:text-white transition-colors" title="Remove role">
+                                                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                                                </button>
+                                                @endif
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     @empty
                         <p class="text-sm text-gray-300 italic text-center py-4">No participants assigned yet.</p>
@@ -148,9 +156,9 @@
                 <div class="bg-red-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                     <i class="fa-solid fa-user-xmark text-4xl text-red-600"></i>
                 </div>
-                <h2 class="text-3xl font-black mb-2 uppercase text-black">Remove Student?</h2>
+                <h2 class="text-3xl font-black mb-2 uppercase text-black">Remove Role?</h2>
                 <p class="text-lg font-bold text-gray-600 mb-8 leading-tight">
-                    Are you sure you want to remove <br><span class="font-black text-black underline" x-text="deleteParticipantName"></span><br> from this role?
+                    Are you sure you want to remove <br><span class="font-black text-black underline" x-text="deleteParticipantName"></span>?
                 </p>
                 <div class="flex flex-col gap-3">
                     <form :action="deleteUrl" method="POST">
@@ -198,7 +206,6 @@
         }
 
         setInterval(() => {
-            // Only run if a modal isn't currently open (so it doesn't interrupt the teacher)
             if (typeof openModal === 'undefined' || (!openModal && !deleteModal)) {
                 fetch(window.location.href)
                     .then(response => response.text())
