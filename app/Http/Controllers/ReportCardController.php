@@ -242,9 +242,23 @@ class ReportCardController extends Controller
             return response()->json(['message' => 'Unauthorized action. Only teachers can update grades.'], 403);
         }
 
+        // --- NEW BACKEND VALIDATION FOR REMARKS ---
+        $validator = Validator::make($request->all(), [
+            'remarks.term1' => ['nullable', 'regex:/^[a-zA-Z\s.,\-\']*$/'],
+            'remarks.term2' => ['nullable', 'regex:/^[a-zA-Z\s.,\-\']*$/'],
+            'remarks.term3' => ['nullable', 'regex:/^[a-zA-Z\s.,\-\']*$/'],
+        ], [
+            'remarks.*.regex' => 'Remarks can only contain letters, spaces, periods, commas, hyphens, and apostrophes.'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()], 422);
+        }
+        // ------------------------------------------
+
         $student_id = $request->input('student_id');
         $grades = $request->input('grades');
-        $remarks = $request->input('remarks'); // <-- CAPTURE NEW REMARKS
+        $remarks = $request->input('remarks'); 
         $nkpEvaluations = $request->input('nkp_evaluations');
 
         $activeYear = SchoolYear::where('status', 'active')->first();
@@ -270,7 +284,7 @@ class ReportCardController extends Controller
             }
         }
 
-        // ---> SAVE TEACHER REMARKS INSTEAD OF BEHAVIORS <---
+        // SAVE TEACHER REMARKS
         if ($remarks) {
             TeacherRemark::updateOrCreate(
                 ['student_id' => $student_id, 'school_year_id' => $activeYearId],

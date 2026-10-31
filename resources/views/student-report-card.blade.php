@@ -98,30 +98,31 @@
             </div>
 
             <!-- NEW TEACHER'S COMMENTS/REMARKS SECTION -->
-            <div>
-                <h4 class="text-center font-bold text-lg mb-2 uppercase">Teacher's Comments/Remarks</h4>
-                <table class="w-full text-sm deped-table bg-white">
-                    <tbody>
-                        @for($t = 1; $t <= 3; $t++)
-                        <tr>
-                            <td class="w-32 font-bold align-top p-4 text-left">Term {{ $t }}</td>
-                            <td class="p-0 align-top relative">
-                                <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
-                                          x-model="teacherRemarks.term{{ $t }}" 
-                                          class="w-full min-h-[6rem] p-4 outline-none resize-none focus:bg-white focus:ring-2 focus:ring-blue-500 bg-transparent border-none"
-                                          placeholder="Enter comments/remarks..."></textarea>
-                                <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
-                                     class="w-full min-h-[6rem] p-4 whitespace-pre-wrap text-left" 
-                                     x-text="teacherRemarks.term{{ $t }}"></div>
-                            </td>
-                        </tr>
-                        @endfor
-                    </tbody>
-                </table>
-            </div>
-            
-        </div>
-    </div>
+<div>
+    <h4 class="text-center font-bold text-lg mb-2 uppercase">Teacher's Comments/Remarks</h4>
+    <table class="w-full text-sm deped-table bg-white">
+        <tbody>
+            @for($t = 1; $t <= 3; $t++)
+            <tr>
+                <td class="w-32 font-bold align-top px-3 py-2 text-left">Term {{ $t }}</td>
+                <td class="p-0 align-top relative">
+                    <!-- Added @input regex replacement to filter out disallowed characters -->
+                    <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
+                              x-model="teacherRemarks.term{{ $t }}" 
+                              @input="teacherRemarks.term{{ $t }} = $event.target.value.replace(/[^a-zA-Z\s.,\-']/g, '')"
+                              rows="2"
+                              class="w-full min-h-[3rem] px-3 py-2 outline-none resize-y focus:bg-white focus:ring-2 focus:ring-blue-500 bg-transparent border-none"
+                              placeholder="Enter comments/remarks..."></textarea>
+                              
+                    <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
+                         class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left" 
+                         x-text="teacherRemarks.term{{ $t }}"></div>
+                </td>
+            </tr>
+            @endfor
+        </tbody>
+    </table>
+</div>
 
     <!-- BRAND NEW STRICT LOCK MODAL -->
     <div x-show="showStrictLockModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition.opacity>
