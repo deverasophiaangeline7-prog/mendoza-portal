@@ -15,12 +15,7 @@
     .dashboard-container { display: flex; font-family: 'Arial', sans-serif; width: 100%; height: 100%; overflow: hidden; }
     .main-content { flex: 1; padding: 20px; background-color: #ffffff; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
     
-    .page-title { font-size: 3rem; font-black text-black uppercase tracking-tight; font-weight: 900; text-align: center; margin-bottom: 0.5rem; }
-    .page-subtitle { font-size: 1.5rem; font-weight: 900; text-align: center; margin-bottom: 2rem; color: #000; }
-    
     @media (min-width: 768px) {
-        .page-title { font-size: 3rem; margin-bottom: 0.75rem; }
-        .page-subtitle { font-size: 1.875rem; margin-bottom: 2rem; }
         .main-content { padding: 30px 50px; }
     }
     
@@ -128,8 +123,13 @@
 
 <div class="dashboard-container">
     <div class="main-content">
-        <h1 class="page-title">Appointment Scheduling</h1>
-        <h3 class="page-subtitle">Select Section:</h3>
+        <!-- Unified Heading Layout Matching Attendance & Report Card -->
+        <h2 class="text-3xl md:text-5xl font-black text-black mb-2 md:mb-3 uppercase tracking-tight text-center">
+            Appointment Scheduling
+        </h2>
+        <h3 class="text-xl md:text-3xl font-black text-black mb-6 md:mb-8 text-center">
+            Select Section:
+        </h3>
         
         <div class="adviser-grid">
             @foreach($advisersList as $adviser)
