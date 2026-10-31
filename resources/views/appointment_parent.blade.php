@@ -257,6 +257,21 @@
 
     .nav-arrow:hover { transform: scale(1.2); color: var(--ma-red); }
 
+    .tap-instruction {
+        text-align: center;
+        font-size: 14px;
+        font-weight: 900;
+        color: var(--ma-red);
+        margin: -5px 0 15px 0;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+
     .schedule-grid {
         width: 100%;
         border-collapse: collapse;
@@ -285,7 +300,7 @@
     }
     
     .schedule-grid td.cell-white:hover {
-        background-color: var(--ma-orange) !important; /* Turns orange on hover */
+        background-color: var(--ma-orange) !important;
         transform: scale(1.05);
         box-shadow: 0 0 5px rgba(0,0,0,0.3);
         z-index: 10;
@@ -293,8 +308,8 @@
     }
 
     .schedule-grid td.cell-selected {
-        background-color: var(--ma-orange) !important; /* Stays orange when selected */
-        border: 3px solid #000 !important; /* Bold border to show selection */
+        background-color: var(--ma-orange) !important;
+        border: 3px solid #000 !important;
     }
 
     .legend {
@@ -598,6 +613,11 @@
                     <a href="{{ request()->url() }}?date={{ $nextWeekDate }}" class="nav-arrow">&raquo;</a>
                 </div>
             </div>
+
+            <!-- Tap Instruction added here -->
+            <p class="tap-instruction">
+                <i class="fa-solid fa-hand-pointer"></i> Tap on an available cell below to quickly select your time.
+            </p>
 
             <!-- Wrapped Table in table-responsive -->
             <div class="table-responsive" id="sync-schedule-grid">

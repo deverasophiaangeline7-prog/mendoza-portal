@@ -83,6 +83,29 @@
         box-sizing: border-box;
     }
 
+    .radio-group {
+        display: flex;
+        gap: 15px;
+        margin-left: 5px;
+        margin-bottom: 10px;
+    }
+
+    .radio-group label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .radio-group input[type="radio"] {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+    }
+
     .time-group { display: flex; gap: 15px; width: 100%; }
 
     .btn-submit {
@@ -250,6 +273,21 @@
         margin-top: 5px;
     }
 
+    .tap-instruction {
+        text-align: center;
+        font-size: 14px;
+        font-weight: 900;
+        color: var(--ma-red);
+        margin: -5px 0 15px 0;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+
     .schedule-grid {
         width: 100%;
         border-collapse: collapse;
@@ -285,6 +323,25 @@
         background: linear-gradient(180deg, #ffffff 0 50%, var(--ma-green) 50% 100%);
         background-repeat: no-repeat;
         background-size: 100% 100%;
+    }
+
+    /* Clickable Schedule Cells - Orange Hover & Selection */
+    .schedule-grid td.cell-white {
+        cursor: pointer;
+        transition: transform 0.1s, background-color 0.2s, box-shadow 0.1s;
+    }
+    
+    .schedule-grid td.cell-white:hover {
+        background-color: var(--ma-orange) !important;
+        transform: scale(1.05);
+        box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        z-index: 10;
+        position: relative;
+    }
+
+    .schedule-grid td.cell-selected {
+        background-color: var(--ma-orange) !important;
+        border: 3px solid #000 !important;
     }
 
     .legend {
@@ -585,6 +642,18 @@
                                max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
                     </div>
 
+                    <div class="form-group">
+                        <label>Duration Preference</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="duration_pref" value="30" checked> 30 Minutes
+                            </label>
+                            <label>
+                                <input type="radio" name="duration_pref" value="60"> 1 Hour
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="time-group">
                         <div class="form-group" style="flex: 1;">
                             <label>Start Time</label>
@@ -691,7 +760,10 @@
                 </div>
             </div>
 
-            <!-- ADDED SYNC ID HERE FOR REAL-TIME UPDATES -->
+            <p class="tap-instruction">
+                <i class="fa-solid fa-hand-pointer"></i> Tap on an available cell below to quickly select your time.
+            </p>
+
             <div class="table-responsive" id="sync-schedule-grid">
                 <table class="schedule-grid">
                     <thead>
@@ -962,10 +1034,8 @@
         const startTimeInput = document.getElementById('start_time').value;
         const endTimeInput = document.getElementById('end_time').value;
         
-        // Grab the discussion topic to validate symbols
         const topicInput = document.querySelector('input[name="discussion_topic"]').value;
 
-        // Only allow letters, numbers, spaces, periods, commas, hyphens, and apostrophes
         const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
 
         if (invalidTopicRegex.test(topicInput)) {
@@ -1058,7 +1128,7 @@
                 const cellStatus = matchingCell.getAttribute('data-status');
                 if (cellStatus === 'leave') {
                     event.preventDefault();
-                    showValidationPopUp('Cannot book an appointment! The teacher is On Leave for this day.');
+                    showValidationPopUp('Cannot book an appointment! You are On Leave for this day.');
                     return false;
                 } else if (cellStatus === 'class') {
                     event.preventDefault();
@@ -1100,6 +1170,84 @@
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
 
+    // UPDATE END TIME DYNAMICALLY WHEN DURATION RADIO IS CHANGED
+    document.querySelectorAll('input[name="duration_pref"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const startInput = document.getElementById('start_time').value;
+            if (startInput) {
+                const parts = startInput.split(':');
+                let h = parseInt(parts[0]);
+                let m = parseInt(parts[1]);
+                
+                if (this.value === '30') {
+                    let endH = h;
+                    let endM = m + 30;
+                    if (endM >= 60) { endH++; endM -= 60; }
+                    document.getElementById('end_time').value = endH.toString().padStart(2, '0') + ':' + endM.toString().padStart(2, '0');
+                } else {
+                    let endH = h + 1;
+                    document.getElementById('end_time').value = endH.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
+                }
+            }
+        });
+    });
+
+    // HANDLE CELL CLICKS TO AUTO-FILL FORM
+    document.addEventListener('click', function(event) {
+        const cell = event.target.closest('#sync-schedule-grid td[data-date]');
+        
+        if (cell) {
+            if (cell.classList.contains('cell-white') || cell.getAttribute('data-status') === 'available') {
+                
+                // Clear previous selection highlight
+                document.querySelectorAll('.cell-selected').forEach(c => c.classList.remove('cell-selected'));
+                // Add highlight to the clicked cell
+                cell.classList.add('cell-selected');
+
+                const date = cell.getAttribute('data-date');
+                const timeLabel = cell.getAttribute('data-time');
+                
+                let startHour = parseInt(timeLabel.replace(/AM|PM/g, ''));
+                if (timeLabel.includes('PM') && startHour !== 12) {
+                    startHour += 12;
+                }
+                
+                const duration = parseInt(document.querySelector('input[name="duration_pref"]:checked').value);
+                let endHour = startHour;
+                let endMin = duration === 30 ? '30' : '00';
+                
+                if (duration === 60) {
+                    endHour += 1;
+                }
+                
+                const formattedStartTime = startHour.toString().padStart(2, '0') + ':00';
+                const formattedEndTime = endHour.toString().padStart(2, '0') + ':' + endMin;
+                
+                document.getElementById('appointment_date').value = date;
+                document.getElementById('start_time').value = formattedStartTime;
+                document.getElementById('end_time').value = formattedEndTime;
+                
+                // Focus on parent select dropdown if empty, otherwise go to discussion topic
+                const parentSelect = document.querySelector('select[name="parent_id"]');
+                if (!parentSelect.value) {
+                    parentSelect.focus();
+                } else {
+                    document.querySelector('input[name="discussion_topic"]').focus();
+                }
+                
+            } else {
+                let status = cell.getAttribute('data-status');
+                let message = 'This time slot is unavailable.';
+                
+                if (status === 'class') message = 'Cannot book here. This slot is reserved for Class Hours.';
+                if (status === 'leave') message = 'Cannot book here. You are On Leave for this day.';
+                if (status === 'booked') message = 'Cannot book here. This slot is already taken.';
+                
+                showValidationPopUp(message);
+            }
+        }
+    });
+
     // SILENT BACKGROUND SYNC FOR APPOINTMENTS
     setInterval(() => {
         const isModalOpen = document.querySelectorAll('.modal-overlay:not(.modal-hidden)').length > 0;
@@ -1138,11 +1286,28 @@
                         currentBadge.innerText = newBadge.innerText;
                     }
 
-                    // 4. Sync Schedule Grid Live Updates
+                    // 4. Sync Schedule Grid Live Updates & Maintain Selection Memory
                     const newScheduleGrid = doc.getElementById('sync-schedule-grid');
                     const currentScheduleGrid = document.getElementById('sync-schedule-grid');
                     if (newScheduleGrid && currentScheduleGrid) {
+                        // Preserve the currently selected cell before swapping HTML
+                        let selectedDate = null;
+                        let selectedTime = null;
+                        const activeCell = document.querySelector('.cell-selected');
+                        if (activeCell) {
+                            selectedDate = activeCell.getAttribute('data-date');
+                            selectedTime = activeCell.getAttribute('data-time');
+                        }
+
                         currentScheduleGrid.innerHTML = newScheduleGrid.innerHTML;
+
+                        // Re-apply the selection class after the HTML swaps
+                        if (selectedDate && selectedTime) {
+                            const newActiveCell = document.querySelector(`td[data-date="${selectedDate}"][data-time="${selectedTime}"]`);
+                            if (newActiveCell && newActiveCell.getAttribute('data-status') === 'available') {
+                                newActiveCell.classList.add('cell-selected');
+                            }
+                        }
                     }
                 })
                 .catch(error => console.error('Error syncing appointments:', error));
