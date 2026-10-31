@@ -18,12 +18,12 @@ class StudentCalendarController extends Controller
         // Fetch all events with participant relationships
         $events = SchoolCalendar::with('participants.student')->orderBy('start_date', 'asc')->get();
         
-        // Filter students list based on user role
+        // Filter active students list based on user role
         if ($user->role === 'admin') {
-            $students = Student::orderBy('last_name', 'asc')->get();
+            $students = Student::active()->orderBy('last_name', 'asc')->get();
         } else {
-            // FIX: Use 'teacher_id' and the custom '$user->user_id' based on your models
-            $students = Student::whereHas('section', function ($query) use ($user) {
+            // FIX: Use 'teacher_id' and the custom '$user->user_id' based on your models, restricted to active students
+            $students = Student::active()->whereHas('section', function ($query) use ($user) {
                 $query->where('teacher_id', $user->user_id); 
             })->orderBy('last_name', 'asc')->get();
         }
@@ -35,7 +35,7 @@ class StudentCalendarController extends Controller
     {
         $userId = auth()->id(); // This works if configured right, but let's be safe below
         
-        $student = \App\Models\Student::where('user_id', $userId)->first();
+        $student = \App\Models\Student::active()->where('user_id', $userId)->first();
 
         if (!$student) {
             return view('my-calendar', ['events' => collect()]);
@@ -69,14 +69,14 @@ class StudentCalendarController extends Controller
             'roles'       => 'nullable|array',
         ]);
 
-        // FIX: Strict Backend Validation using 'teacher_id' and '$user->user_id'
-        $allowedStudentIds = Student::whereHas('section', function ($query) use ($user) {
+        // FIX: Strict Backend Validation using 'teacher_id' and '$user->user_id' with active students only
+        $allowedStudentIds = Student::active()->whereHas('section', function ($query) use ($user) {
             $query->where('teacher_id', $user->user_id);
         })->pluck('student_id')->toArray();
 
         foreach ($request->student_ids as $student_id) {
             if (!in_array($student_id, $allowedStudentIds)) {
-                abort(403, 'Unauthorized: You can only assign students that belong to your assigned advisory section.');
+                abort(403, 'Unauthorized: You can only assign active students that belong to your assigned advisory section.');
             }
         }
 
@@ -87,7 +87,7 @@ class StudentCalendarController extends Controller
         foreach ($request->student_ids as $student_id) {
             // 2. Fetch the student record to find the linked parent (user_id)
             // Explicitly use 'student_id' as the column
-            $student = Student::where('student_id', $student_id)->first();
+            $student = Student::active()->where('student_id', $student_id)->first();
 
             foreach ($roles as $role) {
                 EventParticipant::firstOrCreate([

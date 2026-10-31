@@ -115,27 +115,27 @@
                         <tbody class="text-center font-semibold">
                             <tr>
                                 <td>90 - 100</td>
-                                <td>A - Advancing</td>
+                                <td>Advancing</td>
                                 <td>Passed</td>
                             </tr>
                             <tr>
                                 <td>80 - 89</td>
-                                <td>B - Benchmarking</td>
+                                <td>Benchmarking</td>
                                 <td>Passed</td>
                             </tr>
                             <tr>
                                 <td>75 - 79</td>
-                                <td>C - Connecting</td>
+                                <td>Connecting</td>
                                 <td>Passed</td>
                             </tr>
                             <tr>
                                 <td>65 - 74</td>
-                                <td>D - Developing</td>
+                                <td>Developing</td>
                                 <td>Passed</td>
                             </tr>
                             <tr>
                                 <td>0 - 64</td>
-                                <td>E - Emerging</td>
+                                <td>Emerging</td>
                                 <td>Failed</td>
                             </tr>
                         </tbody>
