@@ -12,47 +12,7 @@
         --ma-dark-grey: #b0b0b0; 
     }
 
-    .dashboard-container { display: flex; font-family: 'Arial', sans-serif; width: 100%; height: 100%; overflow: hidden; }
-    .main-content { flex: 1; padding: 20px; background-color: #ffffff; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
-    
-    @media (min-width: 768px) {
-        .main-content { padding: 30px 50px; }
-    }
-    
-    .adviser-grid { 
-        display: grid; 
-        grid-template-columns: 1fr; 
-        gap: 30px; 
-        width: 100%; 
-        max-width: 1100px; 
-    }
-    @media (min-width: 768px) {
-        .adviser-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-    
-    .adviser-btn { 
-        background-color: var(--ma-orange); 
-        border: 2px solid #000; 
-        border-radius: 40px; 
-        padding: 25px 15px; 
-        text-align: center; 
-        cursor: pointer; 
-        transition: all 0.1s ease-in-out; 
-        display: block; 
-        box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
-    }
-    .adviser-btn:hover { 
-        transform: translateY(-4px); 
-    }
-    .adviser-btn:active { 
-        transform: scale(0.95); 
-        box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
-    }
-    
-    .adviser-btn span { display: block; color: #fff; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; font-weight: 900; font-size: 22px; }
-
+    /* ONLY Modal, Calendar Grid, and Toast styles remain here. Layout styles removed to use Tailwind! */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 999999; }
     .modal-overlay.hidden, .toast-banner.hidden { display: none !important; }
     
@@ -86,7 +46,6 @@
     .cell-white { background-color: #ffffff; }
     .cell-grey { background-color: var(--ma-dark-grey); }
     
-    /* 30-minute block gradient */
     .cell-green-half { background: linear-gradient(to bottom, var(--ma-green) 50%, #ffffff 50%); }
 
     .toast-banner {
@@ -110,7 +69,6 @@
     .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 15px; font-weight: 900; }
     .legend-item span { display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #000; vertical-align: middle; margin-right: 5px; }
 
-    /* Custom Confirm Modal Styles */
     .custom-confirm-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
     .custom-confirm-overlay.hidden { display: none !important; }
     .custom-confirm-box { background: #fff; border: 4px solid #000; border-radius: 20px; padding: 30px; width: 90%; max-width: 420px; text-align: center; box-shadow: 6px 6px 0px 0px rgba(0,0,0,1); }
@@ -121,25 +79,37 @@
     .btn-cancel:active, .btn-confirm:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px 0px #000; }
 </style>
 
-<div class="dashboard-container">
-    <div class="main-content">
-        <!-- Unified Heading Layout Matching Attendance & Report Card -->
-        <h2 class="text-3xl md:text-5xl font-black text-black mb-2 md:mb-3 uppercase tracking-tight text-center">
+<!-- Using the exact same layout structure and classes as Attendance -->
+<div class="flex-1 p-4 md:p-8 bg-white min-h-screen relative flex flex-col items-center">
+    <div class="max-w-6xl w-full text-center flex flex-col items-center">
+        
+        <h2 class="text-3xl md:text-5xl font-black text-black mb-2 md:mb-3 uppercase tracking-tight">
             Appointment Scheduling
         </h2>
-        <h3 class="text-xl md:text-3xl font-black text-black mb-6 md:mb-8 text-center">
+
+        <h3 class="text-xl md:text-3xl font-black text-black mb-6 md:mb-8">
             Select Section:
         </h3>
         
-        <div class="adviser-grid">
+        <!-- Exact match to Attendance Grid & Buttons -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 md:gap-x-14 gap-y-6 md:gap-y-12 w-full max-w-6xl justify-items-center px-2">
             @foreach($advisersList as $adviser)
                 @php 
                     $assigned = !empty($adviser['user_id']);
                     $teacherId = $assigned ? $adviser['user_id'] : 'null';
                 @endphp
-                <div class="adviser-btn {{ $assigned ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed' }}" @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{ $teacherId }}')" @endif>
-                    <span>{{ $adviser['section'] }}</span>
-                    <span>{{ $adviser['name'] }}</span>
+
+                <div @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{ $teacherId }}')" @endif
+                     class="border-2 border-black w-full max-w-[350px] rounded-[40px] py-6 flex flex-col items-center group transition-all relative shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-[#e68a2d] {{ $assigned ? 'cursor-pointer hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:scale-95' : 'opacity-50 cursor-not-allowed' }}">
+                    
+                    <span class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight transition-transform {{ $assigned ? 'group-hover:-translate-y-1 group-hover:text-amber-700' : '' }}" 
+                          style="-webkit-text-stroke: 1.5px white;">
+                        {{ $adviser['section'] }}
+                    </span>
+                    
+                    <span class="text-lg md:text-xl font-medium text-black transition-transform mt-1 {{ $assigned ? 'group-hover:-translate-y-1' : '' }}">
+                        {{ $assigned ? $adviser['name'] : 'Unassigned' }}
+                    </span>
                 </div>
             @endforeach
         </div>
@@ -228,7 +198,6 @@
     </div>
 </div>
 
-<!-- Custom Confirmation Modal for Leaves -->
 <div id="customConfirmModal" class="custom-confirm-overlay hidden">
     <div class="custom-confirm-box">
         <div class="custom-confirm-text">
@@ -241,7 +210,6 @@
     </div>
 </div>
 
-<!-- Cancel Confirmation Modal for Existing Bookings -->
 <div id="customCancelModal" class="custom-confirm-overlay hidden">
     <div class="custom-confirm-box">
         <div class="custom-confirm-text">
@@ -257,17 +225,11 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const modal = document.getElementById('adminCalendarModal');
-        if (modal) {
-            document.body.appendChild(modal);
-        }
+        if (modal) document.body.appendChild(modal);
         const confirmModal = document.getElementById('customConfirmModal');
-        if (confirmModal) {
-            document.body.appendChild(confirmModal);
-        }
+        if (confirmModal) document.body.appendChild(confirmModal);
         const cancelModal = document.getElementById('customCancelModal');
-        if (cancelModal) {
-            document.body.appendChild(cancelModal);
-        }
+        if (cancelModal) document.body.appendChild(cancelModal);
     });
 
     let currentTeacherId = null;
@@ -333,10 +295,7 @@
         toast.innerText = message;
         toast.style.background = isError ? 'var(--ma-red)' : '#000';
         toast.classList.remove('hidden');
-        
-        setTimeout(() => {
-            toast.classList.add('hidden');
-        }, 2000);
+        setTimeout(() => { toast.classList.add('hidden'); }, 2000);
     }
 
     function resetControlModes() {
@@ -368,17 +327,12 @@
 
         let currentClass = cycleClasses.find(cls => cell.classList.contains(cls));
         if (!currentClass) currentClass = 'cell-white';
-
         let currentIndex = cycleClasses.indexOf(currentClass);
         
-        if (direction === 'next') {
-            currentIndex = (currentIndex + 1) % cycleClasses.length;
-        } else if (direction === 'prev') {
-            currentIndex = (currentIndex - 1 + cycleClasses.length) % cycleClasses.length;
-        }
+        if (direction === 'next') currentIndex = (currentIndex + 1) % cycleClasses.length;
+        else if (direction === 'prev') currentIndex = (currentIndex - 1 + cycleClasses.length) % cycleClasses.length;
         
         let nextClass = cycleClasses[currentIndex];
-
         cell.classList.remove('cell-white', 'cell-red', 'cell-grey', 'cell-green', 'cell-green-half');
         cell.classList.add(nextClass);
     }
@@ -398,19 +352,12 @@
 
     function clearCellListeners() {
         const cells = document.querySelectorAll('.schedule-grid td:not(.time-col)');
-        cells.forEach(cell => {
-            cell.style.cursor = 'default';
-            cell.onclick = null;
-        });
+        cells.forEach(cell => { cell.style.cursor = 'default'; cell.onclick = null; });
     }
 
     function clearDayHeaderListeners() {
         const headers = document.querySelectorAll('.day-header');
-        headers.forEach(header => {
-            header.classList.remove('day-header-active');
-            header.style.cursor = 'default';
-            header.onclick = null;
-        });
+        headers.forEach(header => { header.classList.remove('day-header-active'); header.style.cursor = 'default'; header.onclick = null; });
     }
 
     function toggleManageMode() {
@@ -426,10 +373,7 @@
             const cells = document.querySelectorAll('.schedule-grid td:not(.time-col)');
             cells.forEach(cell => {
                 cell.style.cursor = 'pointer';
-                cell.onclick = function() {
-                    selectCell(this);
-                    changeCellColor(this, 'next');
-                };
+                cell.onclick = function() { selectCell(this); changeCellColor(this, 'next'); };
             });
         } else {
             resetControlModes();
@@ -450,9 +394,7 @@
             const headers = document.querySelectorAll('.day-header');
             headers.forEach(header => {
                 header.classList.add('day-header-active');
-                header.onclick = function() {
-                    toggleWholeDayLeave(this.getAttribute('data-date'));
-                };
+                header.onclick = function() { toggleWholeDayLeave(this.getAttribute('data-date')); };
             });
         } else {
             resetControlModes();
@@ -482,46 +424,19 @@
         });
     }
 
-    function closeCustomConfirm() {
-        document.getElementById('customConfirmModal').classList.add('hidden');
-        pendingLeaveAction = null;
-    }
-
-    function executePendingLeave() {
-        if (typeof pendingLeaveAction === 'function') {
-            pendingLeaveAction();
-        }
-        closeCustomConfirm();
-    }
-
-    function closeCancelConfirm() {
-        document.getElementById('customCancelModal').classList.add('hidden');
-        pendingCancelAction = null;
-    }
-
-    function executePendingCancel() {
-        if (typeof pendingCancelAction === 'function') {
-            pendingCancelAction();
-        }
-        closeCancelConfirm();
-    }
+    function closeCustomConfirm() { document.getElementById('customConfirmModal').classList.add('hidden'); pendingLeaveAction = null; }
+    function executePendingLeave() { if (typeof pendingLeaveAction === 'function') pendingLeaveAction(); closeCustomConfirm(); }
+    function closeCancelConfirm() { document.getElementById('customCancelModal').classList.add('hidden'); pendingCancelAction = null; }
+    function executePendingCancel() { if (typeof pendingCancelAction === 'function') pendingCancelAction(); closeCancelConfirm(); }
 
     document.addEventListener('keydown', function(event) {
         if (!isManageMode || !selectedCell) return;
-        if (event.key === 'ArrowRight') {
-            event.preventDefault();
-            changeCellColor(selectedCell, 'next');
-        } else if (event.key === 'ArrowLeft') {
-            event.preventDefault();
-            changeCellColor(selectedCell, 'prev');
-        }
+        if (event.key === 'ArrowRight') { event.preventDefault(); changeCellColor(selectedCell, 'next'); } 
+        else if (event.key === 'ArrowLeft') { event.preventDefault(); changeCellColor(selectedCell, 'prev'); }
     });
 
     function loadTeacherSchedule(teacherId) {
-        fetch("{{ route('appointments.getAvailability') }}?teacher_id=" + encodeURIComponent(teacherId), {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
-        })
+        fetch("{{ route('appointments.getAvailability') }}?teacher_id=" + encodeURIComponent(teacherId), { method: 'GET', headers: { 'Accept': 'application/json' } })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -533,25 +448,12 @@
                     
                     cell.classList.remove('cell-white', 'cell-green', 'cell-green-half', 'cell-red', 'cell-grey');
 
-                    if (!match || match.status === 'available') {
-                        cell.classList.add('cell-white');
-                        cell.dataset.originalStatus = 'available';
-                    } else if (match.status === 'booked') {
-                        cell.classList.add('cell-green');
-                        cell.dataset.originalStatus = 'booked';
-                    } else if (match.status === 'booked-half') {
-                        cell.classList.add('cell-green-half');
-                        cell.dataset.originalStatus = 'booked';
-                    } else if (match.status === 'class' || match.status === 'class_hours') {
-                        cell.classList.add('cell-red');
-                        cell.dataset.originalStatus = 'class';
-                    } else if (match.status === 'leave' || match.status === 'on_leave') {
-                        cell.classList.add('cell-grey');
-                        cell.dataset.originalStatus = 'leave';
-                    } else {
-                        cell.classList.add('cell-white');
-                        cell.dataset.originalStatus = 'available';
-                    }
+                    if (!match || match.status === 'available') { cell.classList.add('cell-white'); cell.dataset.originalStatus = 'available'; }
+                    else if (match.status === 'booked') { cell.classList.add('cell-green'); cell.dataset.originalStatus = 'booked'; } 
+                    else if (match.status === 'booked-half') { cell.classList.add('cell-green-half'); cell.dataset.originalStatus = 'booked'; } 
+                    else if (match.status === 'class' || match.status === 'class_hours') { cell.classList.add('cell-red'); cell.dataset.originalStatus = 'class'; } 
+                    else if (match.status === 'leave' || match.status === 'on_leave') { cell.classList.add('cell-grey'); cell.dataset.originalStatus = 'leave'; } 
+                    else { cell.classList.add('cell-white'); cell.dataset.originalStatus = 'available'; }
                 });
             }
         })
@@ -559,10 +461,7 @@
     }
 
     function saveScheduleToDatabase() {
-        if (!currentTeacherId || Number.isNaN(currentTeacherId)) {
-            showToast("No teacher selected!", true);
-            return;
-        }
+        if (!currentTeacherId || Number.isNaN(currentTeacherId)) { showToast("No teacher selected!", true); return; }
 
         let scheduleData = []; 
         const cells = document.querySelectorAll('.schedule-grid td:not(.time-col)');
@@ -575,30 +474,16 @@
             if (cell.classList.contains('cell-grey')) cellStatus = 'leave';
 
             let originalStatus = cell.dataset.originalStatus;
-            
             let needsReschedule = (originalStatus === 'booked' && cellStatus === 'leave');
             let isCancelled = (originalStatus === 'booked' && cellStatus === 'available');
 
-            scheduleData.push({
-                date: cell.getAttribute('data-date'),
-                time: cell.getAttribute('data-time'),
-                status: cellStatus,
-                needs_reschedule: needsReschedule,
-                is_cancelled: isCancelled
-            });
+            scheduleData.push({ date: cell.getAttribute('data-date'), time: cell.getAttribute('data-time'), status: cellStatus, needs_reschedule: needsReschedule, is_cancelled: isCancelled });
         });
 
         fetch("{{ route('appointments.updateAvailability') }}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                teacher_id: currentTeacherId,
-                schedules: scheduleData
-            })
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+            body: JSON.stringify({ teacher_id: currentTeacherId, schedules: scheduleData })
         })
         .then(async response => {
             const text = await response.text();
@@ -606,12 +491,8 @@
             return JSON.parse(text);
         })
         .then(data => {
-            if (data.success) {
-                showToast('Schedule saved successfully!');
-                loadTeacherSchedule(currentTeacherId);
-            } else {
-                showToast('Save failed: ' + (data.message || 'Unknown error'), true);
-            }
+            if (data.success) { showToast('Schedule saved successfully!'); loadTeacherSchedule(currentTeacherId); } 
+            else { showToast('Save failed: ' + (data.message || 'Unknown error'), true); }
         })
         .catch(error => {
             console.error('Error saving schedule:', error);
