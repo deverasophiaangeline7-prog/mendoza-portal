@@ -35,7 +35,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div id="calendar-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             @foreach($events as $event)
             <div class="bg-white border-[3px] border-black p-6 rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col h-full">
                 <div class="mb-4">
@@ -107,7 +107,12 @@
                 @csrf
                 <input type="hidden" name="event_id" :value="selectedEventId">
                 <div>
-                    <label class="block font-black text-xs uppercase text-gray-400 mb-2">Search Students</label>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block font-black text-xs uppercase text-gray-400">Search Students</label>
+                        <button type="button" onclick="selectAllStudents()" class="text-[10px] font-black bg-gray-200 hover:bg-black hover:text-white text-black px-2 py-1 rounded-lg border border-black uppercase transition-colors">
+                            Select All
+                        </button>
+                    </div>
                     <select id="student-select" name="student_ids[]" multiple placeholder="Type name..." autocomplete="off">
                         @foreach($students as $student)
                             <option value="{{ $student->student_id }}">
@@ -164,7 +169,7 @@
             if(!document.getElementById('student-select').tomselect) {
                 new TomSelect("#student-select", { 
                     plugins: ['remove_button'], 
-                    maxItems: 50, 
+                    maxItems: 100, 
                     persist: false 
                 });
             }
@@ -183,6 +188,33 @@
                 });
             }
         }
+
+        function selectAllStudents() {
+            let select = document.getElementById('student-select');
+            if (select && select.tomselect) {
+                let allValues = Array.from(select.options).map(opt => opt.value);
+                select.tomselect.setValue(allValues);
+            }
+        }
+
+        setInterval(() => {
+            // Only run if a modal isn't currently open (so it doesn't interrupt the teacher)
+            if (typeof openModal === 'undefined' || (!openModal && !deleteModal)) {
+                fetch(window.location.href)
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newCalendar = doc.getElementById('calendar-container');
+                        const oldCalendar = document.getElementById('calendar-container');
+                        
+                        if (newCalendar && oldCalendar && newCalendar.innerHTML !== oldCalendar.innerHTML) {
+                            oldCalendar.innerHTML = newCalendar.innerHTML;
+                        }
+                    })
+                    .catch(err => console.error('Sync error:', err));
+            }
+        }, 3000);
     </script>
     @endif
 

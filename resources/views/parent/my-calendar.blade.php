@@ -6,7 +6,7 @@
 <main class="p-8 bg-white min-h-screen">
     <h2 class="text-3xl font-black uppercase mb-8 tracking-tight">Student Calendar</h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div id="calendar-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
         @forelse($events as $event)
         <div class="bg-white border-[3px] border-black p-6 rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
             <div class="mb-4">
@@ -40,4 +40,22 @@
         @endforelse
     </div>
 </main>
+
+<script>
+    setInterval(() => {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newCalendar = doc.getElementById('calendar-container');
+                const oldCalendar = document.getElementById('calendar-container');
+                
+                if (newCalendar && oldCalendar && newCalendar.innerHTML !== oldCalendar.innerHTML) {
+                    oldCalendar.innerHTML = newCalendar.innerHTML;
+                }
+            })
+            .catch(err => console.error('Sync error:', err));
+    }, 3000); 
+</script>
 @endsection
