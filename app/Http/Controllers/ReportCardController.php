@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use App\Models\Student;
 use App\Models\Grade;
 use App\Models\Section;
-use App\Models\BehaviorReport;
+use App\Models\TeacherRemark; // <-- ADDED THIS FOR THE NEW REMARKS
 use App\Models\NkpEvaluation;
 use App\Models\User;
 use App\Models\AuditLog;
@@ -25,66 +25,66 @@ use Illuminate\Support\Facades\Validator;
 class ReportCardController extends Controller
 {
     public function index()
-{
-    $user = Auth::user();
+    {
+        $user = Auth::user();
 
-    $orderLogic = "
-        CASE 
-            WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1 
-            WHEN grade_level IN ('Kindergarten', 'Kinder', 'KINDER') THEN 2 
-            WHEN grade_level IN ('Preparatory', 'Prep', 'PREPARATORY') THEN 3 
-            ELSE 4 
-        END ASC
-    ";
+        $orderLogic = "
+            CASE 
+                WHEN grade_level IN ('Nursery', 'NURSERY') THEN 1 
+                WHEN grade_level IN ('Kindergarten', 'Kinder', 'KINDER') THEN 2 
+                WHEN grade_level IN ('Preparatory', 'Prep', 'PREPARATORY') THEN 3 
+                ELSE 4 
+            END ASC
+        ";
 
-    if (in_array($user->role, ['admin', 'superadmin'])) {
-        $sections = Section::orderByRaw($orderLogic)
-            ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
-            ->orderBy('section_name', 'asc')
-            ->get();
-        
-        return view('report-card-index', compact('sections'));
-    }
-
-    if ($user->role === 'teacher') {
-        // 1. Get sections where they are the HOMEROOM ADVISER
-        $adviserSectionIds = Section::where('teacher_id', $user->user_id)
-            ->pluck('section_id')
-            ->toArray();
-        
-        // 2. Get sections where they are a SUBJECT TEACHER
-        $subjectSectionIds = \App\Models\SubjectAssignment::where('teacher_id', $user->user_id)
-            ->pluck('section_id')
-            ->toArray();
-        
-        // 3. Combine both lists safely
-        $allAssignedIds = array_unique(array_merge($adviserSectionIds, $subjectSectionIds));
-
-        // 4. Fetch the sections
-        $sections = Section::whereIn('section_id', $allAssignedIds)
-            ->orderByRaw($orderLogic)
-            ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
-            ->orderBy('section_name', 'asc')
-            ->get();
-        
-        if ($sections->count() > 1) {
+        if (in_array($user->role, ['admin', 'superadmin'])) {
+            $sections = Section::orderByRaw($orderLogic)
+                ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+                ->orderBy('section_name', 'asc')
+                ->get();
+            
             return view('report-card-index', compact('sections'));
         }
 
-        if ($sections->count() === 1) {
-            return redirect()->route('reportcard.show', $sections->first()->section_id);
+        if ($user->role === 'teacher') {
+            // 1. Get sections where they are the HOMEROOM ADVISER
+            $adviserSectionIds = Section::where('teacher_id', $user->user_id)
+                ->pluck('section_id')
+                ->toArray();
+            
+            // 2. Get sections where they are a SUBJECT TEACHER
+            $subjectSectionIds = \App\Models\SubjectAssignment::where('teacher_id', $user->user_id)
+                ->pluck('section_id')
+                ->toArray();
+            
+            // 3. Combine both lists safely
+            $allAssignedIds = array_unique(array_merge($adviserSectionIds, $subjectSectionIds));
+
+            // 4. Fetch the sections
+            $sections = Section::whereIn('section_id', $allAssignedIds)
+                ->orderByRaw($orderLogic)
+                ->orderByRaw("CAST(grade_level AS UNSIGNED) ASC")
+                ->orderBy('section_name', 'asc')
+                ->get();
+            
+            if ($sections->count() > 1) {
+                return view('report-card-index', compact('sections'));
+            }
+
+            if ($sections->count() === 1) {
+                return redirect()->route('reportcard.show', $sections->first()->section_id);
+            }
+            
+            return abort(403, 'You do not have any sections assigned to you.');
         }
-        
-        return abort(403, 'You do not have any sections assigned to you.');
+
+        return abort(403, 'Unauthorized access.');
     }
 
-    return abort(403, 'Unauthorized access.');
-}
-
-public function show($section_id)
+    public function show($section_id)
     {
         $section = Section::findOrFail($section_id);
-        $sectionName = strtoupper($section->grade_level . ' - ' . $section->section_name);
+        $sectionName = strtoupper($section->grade_level . "\n" . $section->section_name);
 
         $students = Student::where('section_id', $section_id)
                            ->orderBy('last_name', 'asc')
@@ -201,28 +201,26 @@ public function show($section_id)
             $subjects = []; 
         }
 
-        $coreValues = ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'];
-
         $existingGrades = Grade::where('student_id', $student_id)
             ->where('school_year_id', $activeYearId)
             ->get()->keyBy('subject_name')->toArray();
             
-        $existingBehaviors = BehaviorReport::where('student_id', $student_id)
+        // ---> FETCH NEW REMARKS INSTEAD OF BEHAVIORS <---
+        $existingRemarks = TeacherRemark::where('student_id', $student_id)
             ->where('school_year_id', $activeYearId)
-            ->get()->keyBy('core_value')->toArray();
+            ->first();
 
         return view('student-report-card', [
             'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
-            'sectionName' => $student->section ? strtoupper($gradeLevel . ' - ' . $student->section->section_name) : 'UNASSIGNED',
+            'sectionName' => $student->section ? strtoupper($gradeLevel . "\n" . $student->section->section_name) : 'UNASSIGNED',
             'student_id' => $student_id,
             'section_id' => $student->section_id,
             'subjects' => $subjects,
-            'coreValues' => $coreValues,
             'savedGrades' => $existingGrades,
-            'savedBehaviors' => $existingBehaviors,
+            'savedRemarks' => $existingRemarks, // Passed to Blade template
             'canManage' => $canManage,
             'activeYear' => $activeYear,
-            'activeTerm' => $activeTerm // Passes term number to the Blade file
+            'activeTerm' => $activeTerm 
         ]);
     }
 
@@ -246,7 +244,7 @@ public function show($section_id)
 
         $student_id = $request->input('student_id');
         $grades = $request->input('grades');
-        $behaviors = $request->input('behaviors');
+        $remarks = $request->input('remarks'); // <-- CAPTURE NEW REMARKS
         $nkpEvaluations = $request->input('nkp_evaluations');
 
         $activeYear = SchoolYear::where('status', 'active')->first();
@@ -272,17 +270,16 @@ public function show($section_id)
             }
         }
 
-        if ($behaviors) {
-            foreach ($behaviors as $value => $data) {
-                BehaviorReport::updateOrCreate(
-                    ['student_id' => $student_id, 'core_value' => $value, 'school_year_id' => $activeYearId],
-                    [
-                        'term1' => $data['term1'] ?? null,
-                        'term2' => $data['term2'] ?? null,
-                        'term3' => $data['term3'] ?? null,
-                    ]
-                );
-            }
+        // ---> SAVE TEACHER REMARKS INSTEAD OF BEHAVIORS <---
+        if ($remarks) {
+            TeacherRemark::updateOrCreate(
+                ['student_id' => $student_id, 'school_year_id' => $activeYearId],
+                [
+                    'term1' => $remarks['term1'] ?? null,
+                    'term2' => $remarks['term2'] ?? null,
+                    'term3' => $remarks['term3'] ?? null,
+                ]
+            );
         }
 
         if ($nkpEvaluations) {
@@ -314,7 +311,7 @@ public function show($section_id)
 
         if ($student) {
             $studentName = strtoupper($student->last_name . ', ' . $student->first_name);
-            $sectionName = $student->section ? strtoupper($student->section->grade_level . ' - ' . $student->section->section_name) : 'UNASSIGNED';
+            $sectionName = $student->section ? strtoupper($student->section->grade_level . "\n" . $student->section->section_name) : 'UNASSIGNED';
 
             AuditLog::create([
                 'user_id' => Auth::id(),
@@ -465,7 +462,7 @@ public function show($section_id)
             return redirect()->route('reportcard.show', [
                 'section_id' => $section_id,
                 'toast_status' => 'error',
-                'toast_message' => "GRADE/SECTION MISMATCH: The uploaded file does not appear to belong to Grade {$expectedGrade} - {$expectedSection}."
+                'toast_message' => "GRADE/SECTION MISMATCH: The uploaded file does not appear to belong to Grade {$expectedGrade}\n{$expectedSection}."
             ]);
         }
         // ==========================================
@@ -723,7 +720,7 @@ public function show($section_id)
                 $gradeLevel = $curr; 
             }
             
-            $displaySection = $student->section ? strtoupper($gradeLevel . ' - ' . $student->section->section_name) : 'ARCHIVED';
+            $displaySection = $student->section ? strtoupper($gradeLevel . "\n" . $student->section->section_name) : 'ARCHIVED';
         }
         
 
@@ -770,18 +767,18 @@ public function show($section_id)
                 ->where('school_year_id', $school_year_id)
                 ->get()->keyBy('subject_name')->toArray();
                 
-            $existingBehaviors = BehaviorReport::where('student_id', $student_id)
+            // ---> FETCH NEW REMARKS INSTEAD OF BEHAVIORS <---
+            $existingRemarks = TeacherRemark::where('student_id', $student_id)
                 ->where('school_year_id', $school_year_id)
-                ->get()->keyBy('core_value')->toArray();
+                ->first();
 
             return view('student-report-card', [
                 'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
                 'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year . ' | ' . $displaySection,
                 'student_id' => $student_id,
                 'subjects' => $subjects,
-                'coreValues' => ['Maka-Diyos', 'Makatao', 'Maka-kalikasan', 'Maka-bansa'],
                 'savedGrades' => $existingGrades,
-                'savedBehaviors' => $existingBehaviors,
+                'savedRemarks' => $existingRemarks, // Passed to Blade template
                 'canManage' => false,
                 'activeYear' => $schoolYear,
                 'activeTerm' => 3 // Force Term 3 open for viewing the completed archive
@@ -793,20 +790,21 @@ public function show($section_id)
     {
         $activeYear = SchoolYear::where('status', 'active')->first();
         if (!$activeYear) {
-            return response()->json(['grades' => [], 'behaviors' => []]);
+            return response()->json(['grades' => [], 'remarks' => []]);
         }
 
         $grades = Grade::where('student_id', $student_id)
             ->where('school_year_id', $activeYear->id)
             ->get()->keyBy('subject_name')->toArray();
 
-        $behaviors = BehaviorReport::where('student_id', $student_id)
+        // ---> SEND NEW REMARKS JSON PAYLOAD INSTEAD OF BEHAVIORS <---
+        $remarks = TeacherRemark::where('student_id', $student_id)
             ->where('school_year_id', $activeYear->id)
-            ->get()->keyBy('core_value')->toArray();
+            ->first();
 
         return response()->json([
             'grades' => $grades,
-            'behaviors' => $behaviors
+            'remarks' => $remarks
         ]);
     }
 }

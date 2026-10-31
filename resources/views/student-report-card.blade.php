@@ -97,56 +97,29 @@
                 </table>
             </div>
 
+            <!-- NEW TEACHER'S COMMENTS/REMARKS SECTION -->
             <div>
-                <h4 class="text-center font-bold text-lg mb-2 uppercase">Report on Learner's Observed Values</h4>
-                <table class="w-full text-xs deped-table bg-white">
-                    <thead>
-                        <tr class="bg-[#8faadc]">
-                            <th rowspan="2" class="w-1/4">Core Values</th>
-                            <th rowspan="2">Behavior Statements</th>
-                            <th colspan="3">Term</th>
-                        </tr>
-                        <tr class="bg-[#8faadc]">
-                            <th class="w-10">1</th>
-                            <th class="w-10">2</th>
-                            <th class="w-10">3</th>
-                        </tr>
-                    </thead>
+                <h4 class="text-center font-bold text-lg mb-2 uppercase">Teacher's Comments/Remarks</h4>
+                <table class="w-full text-sm deped-table bg-white">
                     <tbody>
-                        @php
-                            $behaviorRows = [
-                                ['Maka-Diyos', "Expresses one's spiritual beliefs while respecting the spiritual beliefs of others", 'Expresses ones spiritual beliefs'],
-                                ['Maka-Diyos', 'Shows adherence to ethical principles by upholding truth', 'Shows adherence to ethical principles'],
-                                ['Makatao', 'Is sensitive to individual, social, and cultural differences', 'Is sensitive to individual differences'],
-                                ['Makatao', 'Demonstrates contributions toward solidarity', 'Demonstrates contributions toward solidarity'],
-                                ['Maka-kalikasan', 'Cares for the environment and utilizes resources wisely, judiciously, and economically', 'Cares for the environment'],
-                                ['Maka-bansa', 'Demonstrates pride in being a Filipino; exercises the rights and responsibilities of a Filipino citizen', 'Demonstrates pride in being a Filipino'],
-                                ['Maka-bansa', 'Demonstrates appropriate behavior in carrying out activities in the school, community, and country', 'Demonstrates appropriate behavior'],
-                            ];
-                        @endphp
-
-                        @foreach($behaviorRows as $index => $row)
+                        @for($t = 1; $t <= 3; $t++)
                         <tr>
-                            @if($index === 0) <td rowspan="2" class="font-bold align-top">1. Maka-Diyos</td> @endif
-                            @if($index === 2) <td rowspan="2" class="font-bold align-top">2. Makatao</td> @endif
-                            @if($index === 4) <td class="font-bold align-top">3. Maka-kalikasan</td> @endif
-                            @if($index === 5) <td rowspan="2" class="font-bold align-top">4. Maka-bansa</td> @endif
-                            
-                            <td class="p-2">{{ $row[1] }}</td>
-
-                            <template x-for="t in ['term1','term2','term3']">
-                                <td class="input-cell text-center">
-                                    <select x-show="isManaging && activeTerm == t.replace('term','')" x-model="behaviors['{{ $row[2] }}'][t]" class="form-select-pill">
-                                        <option value=""></option><option value="AO">AO</option><option value="SO">SO</option><option value="RO">RO</option><option value="NO">NO</option>
-                                    </select>
-                                    <span x-show="!isManaging || activeTerm != t.replace('term','')" x-text="behaviors['{{ $row[2] }}'][t]"></span>
-                                </td>
-                            </template>
+                            <td class="w-32 font-bold align-top p-4 text-left">Term {{ $t }}</td>
+                            <td class="p-0 align-top relative">
+                                <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
+                                          x-model="teacherRemarks.term{{ $t }}" 
+                                          class="w-full min-h-[6rem] p-4 outline-none resize-none focus:bg-white focus:ring-2 focus:ring-blue-500 bg-transparent border-none"
+                                          placeholder="Enter comments/remarks..."></textarea>
+                                <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
+                                     class="w-full min-h-[6rem] p-4 whitespace-pre-wrap text-left" 
+                                     x-text="teacherRemarks.term{{ $t }}"></div>
+                            </td>
                         </tr>
-                        @endforeach
+                        @endfor
                     </tbody>
                 </table>
             </div>
+            
         </div>
     </div>
 
@@ -207,6 +180,7 @@
             grades: {}, 
             generalAverage: '', finalStatus: '', 
             behaviors: {},
+            teacherRemarks: { term1: '', term2: '', term3: '' },
             
             assignedString: '{{ \App\Models\Teacher::where("user_id", auth()->id())->value("assigned_subject") ?? "NONE" }}',
             
@@ -227,6 +201,9 @@
 
                 let rawBehaviors = @json((object)($savedBehaviors ?? []));
                 this.behaviors = (Array.isArray(rawBehaviors) || !rawBehaviors) ? {} : rawBehaviors;
+
+                let rawRemarks = @json((object)($savedRemarks ?? []));
+                this.teacherRemarks = Object.assign({ term1: '', term2: '', term3: '' }, Array.isArray(rawRemarks) || !rawRemarks ? {} : rawRemarks);
 
                 this.subjects.forEach(sub => { 
                     if (!this.grades[sub]) {
@@ -267,6 +244,7 @@
                             .then(data => {
                                 let freshGrades = data.grades || {};
                                 let freshBehaviors = data.behaviors || {};
+                                let freshRemarks = data.remarks || {}; // Assume API sends this back
 
                                 // Carefully inject the fresh data into the Alpine objects
                                 this.subjects.forEach(sub => { 
@@ -277,6 +255,8 @@
                                     this.behaviors[b] = freshBehaviors[b] || { term1: '', term2: '', term3: '' };
                                 });
 
+                                this.teacherRemarks = Object.assign(this.teacherRemarks, freshRemarks);
+
                                 // Recalculate the General Average immediately
                                 this.calculateGrades(); 
                             })
@@ -284,7 +264,7 @@
                     }
                 }, 1000);
                 @endif
-},
+            },
 
             determineActiveTerm() {
                 // Get the current date formatted as YYYY-MM-DD
@@ -394,7 +374,8 @@
                         body: JSON.stringify({ 
                             student_id: this.studentId, 
                             grades: this.grades, 
-                            behaviors: this.behaviors 
+                            behaviors: this.behaviors,
+                            remarks: this.teacherRemarks // Included new payload structure here
                         })
                     });
 
