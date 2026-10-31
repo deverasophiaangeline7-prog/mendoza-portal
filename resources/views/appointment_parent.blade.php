@@ -616,7 +616,7 @@
 
             <!-- Tap Instruction added here -->
             <p class="tap-instruction">
-                <i class="fa-solid fa-hand-pointer"></i> Tap on an available cell below to quickly select your time.
+                Tap on an available cell below to quickly select your time.
             </p>
 
             <!-- Wrapped Table in table-responsive -->
