@@ -6,11 +6,12 @@
 <div class="flex-1 p-4 md:p-8 bg-white min-h-screen relative flex flex-col items-center" x-data="{ passwordModal: {{ $errors->has('current_password') || $errors->has('password') ? 'true' : 'false' }} }">
     <div class="max-w-6xl w-full text-center flex flex-col items-center">
         
-        <!-- Header Section (Balanced spacing so it doesn't take up too much vertical room) -->
-        <h2 class="text-3xl md:text-4xl font-black text-black mb-3 uppercase tracking-tight">
+        <!-- Main Title (Matches Attendance size: text-3xl md:text-5xl) -->
+        <h2 class="text-3xl md:text-5xl font-black text-black mb-2 md:mb-3 uppercase tracking-tight">
             REPORT CARD
         </h2>
 
+        <!-- Admin Total Students Counter -->
         @if(auth()->user()->role === 'admin')    
             <div class="text-center mb-3">
                 <h2 class="text-2xl md:text-3xl font-black text-black uppercase tracking-tight">
@@ -19,13 +20,14 @@
             </div>
         @endif
 
-        <div class="text-center mb-6">
-            <h3 class="text-xl md:text-2xl font-black text-black">
+        <!-- Subtitle (Matches Attendance spacing style) -->
+        <div class="text-center mb-6 md:mb-8">
+            <h3 class="text-xl md:text-3xl font-black text-black">
                 Select Section:
             </h3>
         </div>
 
-        <!-- Sections Grid (Exact match to Attendance layout & spacing) -->
+        <!-- Sections Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 md:gap-x-12 gap-y-6 md:gap-y-8 w-full max-w-6xl justify-items-center px-2">
             @foreach($sections as $section)
                 @php
@@ -49,7 +51,7 @@
         </div>
     </div>
 
-    <!-- Password Modal (Carried over from your layout setup) -->
+    <!-- Password Modal -->
     <div x-show="passwordModal" 
          x-transition:opacity
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" 
