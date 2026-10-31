@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use App\Models\Student;
 use App\Models\Grade;
 use App\Models\Section;
-use App\Models\TeacherRemark; // <-- ADDED THIS FOR THE NEW REMARKS
+use App\Models\TeacherRemark; 
 use App\Models\NkpEvaluation;
 use App\Models\User;
 use App\Models\AuditLog;
@@ -176,12 +176,18 @@ class ReportCardController extends Controller
                 ->keyBy('skill')
                 ->toArray();
 
+            // ---> FETCH REMARKS FOR NKP <---
+            $existingRemarks = TeacherRemark::where('student_id', $student_id)
+                ->where('school_year_id', $activeYearId)
+                ->first();
+
             return view('nkp-report-card', [
                 'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
                 'sectionName' => $student->section ? strtoupper($gradeLevel . ' ' . $student->section->section_name) : 'UNASSIGNED',
                 'student_id' => $student_id,
                 'section_id' => $student->section_id,
                 'savedEvaluations' => $existingEvaluations,
+                'savedRemarks' => $existingRemarks, // Passed to Blade template
                 'canManage' => $canManage,
                 'activeTerm' => $activeTerm,
                 'activeYear' => $activeYear
@@ -205,7 +211,7 @@ class ReportCardController extends Controller
             ->where('school_year_id', $activeYearId)
             ->get()->keyBy('subject_name')->toArray();
             
-        // ---> FETCH NEW REMARKS INSTEAD OF BEHAVIORS <---
+        // ---> FETCH REMARKS FOR GRADES 1-6 <---
         $existingRemarks = TeacherRemark::where('student_id', $student_id)
             ->where('school_year_id', $activeYearId)
             ->first();
@@ -242,7 +248,9 @@ class ReportCardController extends Controller
             return response()->json(['message' => 'Unauthorized action. Only teachers can update grades.'], 403);
         }
 
-        // --- NEW BACKEND VALIDATION FOR REMARKS ---
+        // ==========================================
+        // STRICT BACKEND VALIDATION FOR REMARKS
+        // ==========================================
         $validator = Validator::make($request->all(), [
             'remarks.term1' => ['nullable', 'regex:/^[a-zA-Z\s.,\-\']*$/'],
             'remarks.term2' => ['nullable', 'regex:/^[a-zA-Z\s.,\-\']*$/'],
@@ -254,7 +262,7 @@ class ReportCardController extends Controller
         if ($validator->fails()) {
             return response()->json(['message' => $validator->errors()->first()], 422);
         }
-        // ------------------------------------------
+        // ==========================================
 
         $student_id = $request->input('student_id');
         $grades = $request->input('grades');
@@ -284,7 +292,7 @@ class ReportCardController extends Controller
             }
         }
 
-        // SAVE TEACHER REMARKS
+        // ---> SAVE TEACHER REMARKS <---
         if ($remarks) {
             TeacherRemark::updateOrCreate(
                 ['student_id' => $student_id, 'school_year_id' => $activeYearId],
@@ -522,7 +530,6 @@ class ReportCardController extends Controller
             // --- AT THIS POINT, WE ARE LOOKING AT A REAL STUDENT ROW ---
 
             // 4. Extract Grades
-            // 4. Extract Grades
             $cellF = $targetSheet->getCell('F' . $row); // Term 1
             $term1Val = (string) ($cellF->isFormula() ? $cellF->getOldCalculatedValue() : $cellF->getValue());
 
@@ -629,7 +636,7 @@ class ReportCardController extends Controller
             $namesString = implode('; ', $skippedNames);
             
             $message .= " However, no grades were imported for the following system student(s): {$namesString}.";
-            $status = 'warning'; // Optional: change to 'success' if your toast doesn't support 'warning'
+            $status = 'warning'; 
         }
         
         if ($processed === 0) {
@@ -747,20 +754,24 @@ class ReportCardController extends Controller
             $existingEvaluations = NkpEvaluation::where('student_id', $student_id)
                 ->where('school_year_id', $school_year_id)
                 ->get()->keyBy('skill')->toArray();
+                
+            // ---> FETCH REMARKS FOR ARCHIVED NKP <---
+            $existingRemarks = TeacherRemark::where('student_id', $student_id)
+                ->where('school_year_id', $school_year_id)
+                ->first();
 
             return view('nkp-report-card', [
                 'studentName' => strtoupper($student->last_name . ', ' . $student->first_name),
                 'sectionName' => 'ARCHIVED - SY ' . $schoolYear->school_year . ' | ' . $displaySection,
                 'student_id' => $student_id,
                 'savedEvaluations' => $existingEvaluations,
+                'savedRemarks' => $existingRemarks, // Passed to Blade template
                 'canManage' => $canManage,
                 'activeYear' => $schoolYear
             ]);
         } else {
-            // Try to get the number from the grade level first
             preg_match('/\d+/', $gradeLevel, $matches);
 
-            // Fallback: Try extracting it from the section name (e.g., "2 - HOPE")
             if (empty($matches)) {
                 preg_match('/\d+/', $displaySection, $matches);
             }
@@ -781,7 +792,6 @@ class ReportCardController extends Controller
                 ->where('school_year_id', $school_year_id)
                 ->get()->keyBy('subject_name')->toArray();
                 
-            // ---> FETCH NEW REMARKS INSTEAD OF BEHAVIORS <---
             $existingRemarks = TeacherRemark::where('student_id', $student_id)
                 ->where('school_year_id', $school_year_id)
                 ->first();
@@ -792,10 +802,10 @@ class ReportCardController extends Controller
                 'student_id' => $student_id,
                 'subjects' => $subjects,
                 'savedGrades' => $existingGrades,
-                'savedRemarks' => $existingRemarks, // Passed to Blade template
+                'savedRemarks' => $existingRemarks, 
                 'canManage' => false,
                 'activeYear' => $schoolYear,
-                'activeTerm' => 3 // Force Term 3 open for viewing the completed archive
+                'activeTerm' => 3 
             ]);
         }
     }
@@ -811,7 +821,6 @@ class ReportCardController extends Controller
             ->where('school_year_id', $activeYear->id)
             ->get()->keyBy('subject_name')->toArray();
 
-        // ---> SEND NEW REMARKS JSON PAYLOAD INSTEAD OF BEHAVIORS <---
         $remarks = TeacherRemark::where('student_id', $student_id)
             ->where('school_year_id', $activeYear->id)
             ->first();

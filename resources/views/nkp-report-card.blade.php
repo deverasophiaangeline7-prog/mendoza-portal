@@ -206,6 +206,33 @@
             @endforeach
         </div>
 
+        <!-- NEW TEACHER'S COMMENTS/REMARKS SECTION (Added here before indicators) -->
+        <div class="mb-10">
+            <h4 class="text-center font-bold text-lg mb-2 uppercase">Teacher's Comments/Remarks</h4>
+            <table class="w-full text-sm deped-table bg-white">
+                <tbody>
+                    @for($t = 1; $t <= 3; $t++)
+                    <tr>
+                        <td class="w-32 font-bold align-top px-3 py-2 text-left bg-gray-50">Term {{ $t }}</td>
+                        <td class="p-0 align-top relative">
+                            <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
+                                      x-model="teacherRemarks.term{{ $t }}" 
+                                      @input="teacherRemarks.term{{ $t }} = $event.target.value.replace(/[^a-zA-Z\s.,\-']/g, '')"
+                                      rows="2"
+                                      class="w-full min-h-[3rem] px-3 py-2 outline-none resize-y focus:bg-white focus:ring-2 focus:ring-blue-500 bg-transparent border-none"
+                                      placeholder="Enter comments/remarks..."></textarea>
+                                      
+                            <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
+                                 class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left" 
+                                 x-text="teacherRemarks.term{{ $t }}"></div>
+                        </td>
+                    </tr>
+                    @endfor
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Rating Indicators -->
         <div class="mt-8 p-6 border-2 border-black rounded-2xl bg-gray-50 shadow-sm">
             <h5 class="font-black text-center text-xl mb-4 uppercase">Rating Indicators</h5>
             <table class="w-full text-sm deped-table bg-white">
@@ -272,6 +299,7 @@
             isManaging: false, showErrorModal: false, activeTerm: '1',
             studentId: '{{ $student_id }}',
             evaluations: @json($savedEvaluations) || {},
+            teacherRemarks: { term1: '', term2: '', term3: '' }, // Initialize empty by default
             
             termDates: {
                 term1: { start: '{{ $activeYear->term1_start ?? "" }}', end: '{{ $activeYear->term1_end ?? "" }}' },
@@ -281,6 +309,10 @@
 
             init() {
                 if (Array.isArray(this.evaluations)) this.evaluations = {};
+
+                // Load existing remarks from the database safely
+                let rawRemarks = @json($savedRemarks ?? []);
+                this.teacherRemarks = Object.assign({ term1: '', term2: '', term3: '' }, Array.isArray(rawRemarks) || !rawRemarks ? {} : rawRemarks);
                 
                 document.querySelectorAll('tbody tr:not(.sub-category-header)').forEach(row => {
                     let firstTd = row.querySelector('td:first-child');
@@ -361,7 +393,8 @@
                         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                         body: JSON.stringify({ 
                             student_id: this.studentId, 
-                            nkp_evaluations: this.evaluations 
+                            nkp_evaluations: this.evaluations,
+                            remarks: this.teacherRemarks // Include remarks in the save payload
                         })
                     });
 
