@@ -277,7 +277,7 @@
         text-align: center;
         font-size: 14px;
         font-weight: 900;
-        color: var(--ma-red);
+        color: #000;
         margin: -5px 0 15px 0;
     }
 
@@ -1181,6 +1181,7 @@
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.replaceState({path: cleanUrl}, '', cleanUrl);
         }
+    });
 
     // UPDATE END TIME DYNAMICALLY WHEN DURATION RADIO IS CHANGED
     document.querySelectorAll('input[name="duration_pref"]').forEach(radio => {

@@ -261,7 +261,7 @@
         text-align: center;
         font-size: 14px;
         font-weight: 900;
-        color: var(--ma-red);
+        color: #000;
         margin: -5px 0 15px 0;
     }
 
