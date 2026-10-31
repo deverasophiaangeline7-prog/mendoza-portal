@@ -182,15 +182,29 @@
 
             <div class="flex items-center space-x-4 sm:space-x-6 text-2xl">
                 
-                <a href="{{ route('messages.index') }}" title="Messages" class="relative transition inline-flex items-center justify-center {{ request()->routeIs('messages*') ? 'text-orange-400' : 'text-white hover:text-gray-200' }}">
+                <a href="{{ route('messages.index') }}" 
+                title="Messages" 
+                x-data="{ 
+                    unreadTotal: {{ $unreadTotal ?? 0 }},
+                    init() {
+                        setInterval(() => {
+                            fetch('{{ route('messages.unread-count') }}?t=' + Date.now())
+                                .then(res => res.json())
+                                .then(data => { this.unreadTotal = data.unreadTotal; })
+                                .catch(err => console.error('Error fetching unread messages:', err));
+                        }, 5000);
+                    }
+                }"
+                class="relative hover:scale-110 transition inline-flex items-center justify-center {{ request()->routeIs('messages*') ? 'text-orange-400' : 'text-white hover:text-gray-200' }}">
                     
                     <i class="fa-solid fa-comment-dots text-2xl"></i>
                     
-                    @if(isset($unreadTotal) && $unreadTotal > 0)
-                        <span class="absolute -top-2 -right-2.5 bg-[#facc15] text-[#b91c1c] font-black text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-[2px] border-black leading-none">
-                            {{ $unreadTotal }}
+                    <!-- Dynamic Badge -->
+                    <template x-if="unreadTotal > 0">
+                        <span class="absolute -top-2 -right-2.5 bg-[#facc15] text-[#b91c1c] font-black text-[10px] min-w-[20px] h-5 px-1 flex items-center justify-center rounded-full border-[2px] border-black leading-none" 
+                            x-text="unreadTotal > 99 ? '99+' : unreadTotal">
                         </span>
-                    @endif
+                    </template>
                 </a>
                 
                 @include('components.notification-bell')
