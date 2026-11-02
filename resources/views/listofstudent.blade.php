@@ -155,10 +155,15 @@
             <div class="text-right border-r-4 border-[#b91c1c] pr-4">
                 <p class="text-gray-500 font-bold uppercase tracking-widest text-sm mb-1">Adviser</p>
                 <p class="text-2xl font-black text-black uppercase">
-                    @if($section->adviser)
-                        {{ $section->adviser->last_name }}, {{ $section->adviser->first_name }} 
-                        @if($section->adviser->middle_name)
-                            {{ substr($section->adviser->middle_name, 0, 1) }}.
+                    @php
+                        // Manually find the teacher who has this section_id in their 'advisory' string
+                        $teacher = \App\Models\Teacher::whereRaw("FIND_IN_SET(?, advisory)", [$section->section_id])->first();
+                    @endphp
+
+                    @if($teacher)
+                        {{ $teacher->last_name }}, {{ $teacher->first_name }} 
+                        @if($teacher->middle_name)
+                            {{ substr($teacher->middle_name, 0, 1) }}.
                         @endif
                     @else
                         No Adviser Assigned
@@ -267,7 +272,12 @@
             }
         @endphp
 
+        @php
+            $isNkpClass = in_array(strtoupper(trim($grade ?? '')), ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY']);
+        @endphp
+
         <!-- PROMOTE ALL BUTTON -->
+         @if(!$isNkpClass)
         <div class="mb-4 flex justify-end">
             @if($isEntireClassGraded)
                 <button @click="promoteAllModal = true" 
@@ -288,6 +298,7 @@
                 </div>
             @endif
         </div>
+        @endif
         <!-- ========================================== -->
 
         <div class="border-[3px] border-black rounded-lg overflow-x-auto bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
@@ -329,7 +340,14 @@
                             </td>
                             
                     <td class="p-2 text-center">
-                        @if($student->promotion_status === 'pending')
+                        @if($isNkpClass)
+                            <div class="flex flex-col items-center justify-center cursor-default">
+                                <i class="fa-solid fa-graduation-cap text-blue-500 mb-1"></i>
+                                <span class="text-blue-500 font-bold italic text-[10px] uppercase tracking-wider">
+                                    Auto-Promoted by Admin
+                                </span>
+                            </div>
+                        @elseif($student->promotion_status === 'pending')
                             <div class="flex flex-col items-center justify-center cursor-default" onclick="event.stopPropagation();">
                                 <i class="fa-solid fa-clock-rotate-left text-amber-700 mb-1"></i>
                                 <span class="text-amber-700 font-bold italic text-[10px] uppercase tracking-wider">
@@ -388,7 +406,14 @@
                             </td>
                             
                                     <td class="p-2 text-center">
-                                        @if($student->promotion_status === 'pending')
+                                        @if($isNkpClass)
+                                        <div class="flex flex-col items-center justify-center cursor-default">
+                                            <i class="fa-solid fa-graduation-cap text-blue-500 mb-1"></i>
+                                            <span class="text-blue-500 font-bold italic text-[10px] uppercase tracking-wider">
+                                                Auto-Promoted by Admin
+                                            </span>
+                                        </div>
+                                        @elseif($student->promotion_status === 'pending')
                                             <div class="flex flex-col items-center justify-center cursor-default" onclick="event.stopPropagation();">
                                                 <i class="fa-solid fa-clock-rotate-left text-amber-700 mb-1"></i>
                                                 <span class="text-amber-700 font-bold italic text-[10px] uppercase tracking-wider">
