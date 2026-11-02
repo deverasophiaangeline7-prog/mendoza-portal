@@ -52,18 +52,31 @@
             @php
                 $teacherData = \App\Models\Teacher::where('user_id', auth()->id())->first();
                 $assignedSubj = $teacherData ? $teacherData->assigned_subject : 'NONE';
+                
+                // Check if this is an NKP class by looking at the section name
+                $isNkpClass = false;
+                foreach(['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'] as $nkp) {
+                    if (stripos($sectionName ?? '', $nkp) !== false) {
+                        $isNkpClass = true;
+                        break;
+                    }
+                }
             @endphp
             
             <div class="mb-4 inline-flex items-center gap-3 bg-blue-50 border-[3px] border-black px-4 py-2 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 <i class="fa-solid fa-shield-halved text-blue-600 text-xl"></i>
                 <span class="font-bold text-gray-800">
-             You are assigned to grade <span class="text-red-600 font-black uppercase">{{ $assignedSubj }}</span>
+                    @if($isNkpClass)
+                        You are viewing your <span class="text-blue-600 font-black uppercase">NKP ADVISORY CLASS</span>
+                    @else
+                        You are assigned to grade <span class="text-red-600 font-black uppercase">{{ $assignedSubj }}</span>
+                    @endif
                 </span>
             </div>
         @endif
 
         {{-- NEW EXCEL SUBJECT IMPORT FORM --}}
-        @if(auth()->user()->role === 'teacher')
+        @if(auth()->user()->role === 'teacher' && !$isNkpClass)
         <form action="{{ route('batch.import', $section_id) }}" method="POST" enctype="multipart/form-data" class="mb-6 flex flex-wrap items-center justify-end gap-3">
             @csrf
             
