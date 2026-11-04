@@ -502,11 +502,38 @@
 
                             <!-- Staff & Admin Section -->
                             @if($staff->count() > 0)
+                                @php
+                                    // Sort staff: Admins first, then teachers ordered by grade level
+                                    $sortedStaff = $staff->sort(function($a, $b) use ($getGradeWeight) {
+                                        $roleA = strtolower($a->role);
+                                        $roleB = strtolower($b->role);
+
+                                        // Admins always come before teachers/staff
+                                        $isAdminA = in_array($roleA, ['admin', 'superadmin']);
+                                        $isAdminB = in_array($roleB, ['admin', 'superadmin']);
+
+                                        if ($isAdminA && !$isAdminB) return -1;
+                                        if (!$isAdminA && $isAdminB) return 1;
+
+                                        // If both are teachers, sort by their advisory section grade level
+                                        $getTeacherGradeWeight = function($teacher) use ($getGradeWeight) {
+                                            $tSec = \App\Models\Section::where('teacher_id', $teacher->user_id)->first();
+                                            if ($tSec) {
+                                                $tGradeStr = trim(($tSec->grade_level ?? '') . ' ' . ($tSec->section_name ?? $tSec->name ?? ''));
+                                                return $getGradeWeight($tGradeStr);
+                                            }
+                                            return 999; // Teachers without advisory go to the bottom
+                                        };
+
+                                        return $getTeacherGradeWeight($a) <=> $getTeacherGradeWeight($b);
+                                    });
+                                @endphp
+
                                 <div class="bg-gray-200/90 backdrop-blur-sm px-3 py-1.5 text-[10px] font-black text-gray-500 uppercase tracking-wider sticky top-0 z-10 shadow-sm" 
-                                    x-show="groupSearch === '' || {{ json_encode($staff->values()) }}.some(c => (c.name + ' ' + c.role).toLowerCase().includes(groupSearch.toLowerCase()))">
+                                    x-show="groupSearch === '' || {{ json_encode($sortedStaff->values()) }}.some(c => (c.name + ' ' + c.role).toLowerCase().includes(groupSearch.toLowerCase()))">
                                     Staff & Admins
                                 </div>
-                                @foreach ($staff as $contact)
+                                @foreach ($sortedStaff as $contact)
                                     @php
                                         $advisoryText = '';
                                         if (in_array(strtolower($contact->role), ['teacher', 'adviser', 'faculty', 'instructor'])) {
@@ -536,7 +563,7 @@
                                         <div class="flex-1 min-w-0">
                                             <h4 class="font-bold text-gray-800 text-sm leading-tight truncate">{{ $contact->name }}</h4>
                                             <div class="flex items-center gap-2">
-                                                <span class="text-[10px] font-black uppercase tracking-wider {{ $contact->role === 'admin' ? 'text-blue-600' : 'text-amber-600' }}">
+                                                <span class="text-[10px] font-black uppercase tracking-wider {{ in_array(strtolower($contact->role), ['admin', 'superadmin']) ? 'text-blue-600' : 'text-amber-600' }}">
                                                     {{ $contact->role }}
                                                 </span>
                                                 @if($advisoryText)

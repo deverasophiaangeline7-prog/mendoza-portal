@@ -701,9 +701,9 @@ class ReportCardController extends Controller
     {
         $user = auth()->user();
         
-        // Fetch section and attempt to join the users table directly to get the teacher's name if the relationship fails
-        $section = \App\Models\Section::leftJoin('users', 'sections.teacher_id', '=', 'users.user_id')
-            ->select('sections.*', 'users.first_name as t_first', 'users.last_name as t_last')
+        // FIX: Join the 'teachers' table instead of 'users' since that is where first_name is stored
+        $section = \App\Models\Section::leftJoin('teachers', 'sections.teacher_id', '=', 'teachers.user_id')
+            ->select('sections.*', 'teachers.first_name as t_first', 'teachers.last_name as t_last')
             ->where('sections.section_id', $section_id)
             ->firstOrFail();
 
