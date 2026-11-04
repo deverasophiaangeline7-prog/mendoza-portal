@@ -700,9 +700,13 @@ class ReportCardController extends Controller
     public function batchPrint($section_id)
     {
         $user = auth()->user();
-        $section = \App\Models\Section::with('teacher')->findOrFail($section_id);
+        
+        // Fetch section and attempt to join the users table directly to get the teacher's name if the relationship fails
+        $section = \App\Models\Section::leftJoin('users', 'sections.teacher_id', '=', 'users.user_id')
+            ->select('sections.*', 'users.first_name as t_first', 'users.last_name as t_last')
+            ->where('sections.section_id', $section_id)
+            ->firstOrFail();
 
-        // SECURITY CHECK: Allow Admins OR the Assigned Teacher
         if (!in_array(strtolower($user->role), ['admin', 'superadmin']) && $section->teacher_id !== $user->user_id) {
             abort(403, 'Unauthorized: You can only print report cards for your assigned advisory section.');
         }
@@ -712,7 +716,6 @@ class ReportCardController extends Controller
         
         $studentIds = $students->pluck('student_id');
         
-        // Group all grades by student ID for easy access in the loop
         $grades = \App\Models\Grade::whereIn('student_id', $studentIds)
                        ->where('school_year_id', $activeYear->id ?? null)
                        ->get()->groupBy('student_id');
@@ -734,7 +737,12 @@ class ReportCardController extends Controller
             $subjects = []; 
         }
 
-        return view('batch-print', compact('section', 'students', 'activeYear', 'grades', 'remarks', 'subjects', 'gradeNum'));
+        // Pass the resolved teacher name to the view
+        $teacherName = trim($section->t_first . ' ' . $section->t_last);
+        if (empty($teacherName)) $teacherName = '_________________';
+        $teacherName = strtoupper($teacherName);
+
+        return view('batch-print', compact('section', 'students', 'activeYear', 'grades', 'remarks', 'subjects', 'gradeNum', 'teacherName'));
     }
 
     public function archivedIndex($school_year_id)

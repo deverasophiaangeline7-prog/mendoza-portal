@@ -343,8 +343,8 @@
     </div>
 
     <!-- New Message Modal -->
-    <div x-show="newMsgModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-transition.opacity>
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col" @click.away="newMsgModal = false">
+    <div x-show="newMsgModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto" x-transition.opacity>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md my-auto overflow-hidden flex flex-col" @click.away="newMsgModal = false">
             <div class="p-4 border-b bg-[#6d0101] text-white flex justify-between items-center">
                 <h3 class="font-bold text-lg">New Message</h3>
                 <button @click="newMsgModal = false" class="hover:text-gray-300 transition text-xl">
@@ -352,7 +352,7 @@
                 </button>
             </div>
             
-            <div class="p-6" x-data="{ userSearch: '' }">
+            <div class="p-6 overflow-y-auto" x-data="{ userSearch: '' }">
                 
                 <!-- Search Bar -->
                 <div class="relative mb-4">
@@ -400,16 +400,16 @@
     </div>
 
     <!-- Create Group Chat Modal -->
-    <div x-show="createGroupModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto" x-transition.opacity>
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] my-auto overflow-hidden flex flex-col" @click.away="createGroupModal = false">            
-            <div class="p-4 border-b bg-[#6d0101] text-white flex justify-between items-center">
+    <div x-show="createGroupModal" x-cloak class="fixed inset-0 z-[100] flex justify-center pt-16 pb-8 px-4 bg-black/50 backdrop-blur-sm overflow-y-auto" x-transition.opacity>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col my-auto" @click.away="createGroupModal = false">            
+            <div class="p-4 border-b bg-[#6d0101] text-white flex justify-between items-center flex-shrink-0">
                 <h3 class="font-bold text-lg">Create Group Chat</h3>
                 <button @click="createGroupModal = false" class="hover:text-gray-300 transition text-xl">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             
-            <div class="p-6 overflow-y-auto" x-data="{ groupName: '', groupSearch: '', selectedMembers: [], photoPreview: null }">
+            <div class="p-6 overflow-y-auto flex-1" x-data="{ groupName: '', groupSearch: '', selectedMembers: [], photoPreview: null }">
                 
                 <!-- 🚨 CRITICAL: Added enctype to allow file uploads -->
                 <form action="{{ route('messages.group.store') }}" method="POST" enctype="multipart/form-data">
@@ -463,19 +463,21 @@
                                 $staff = $contactCollection->filter(fn($c) => strtolower($c->role) !== 'parent');
                                 $parents = $contactCollection->filter(fn($c) => strtolower($c->role) === 'parent');
 
-                                // Custom ordering weight so Nursery comes first
-                                $gradeOrder = [
-                                    'nursery' => 1,
-                                    'kindergarten' => 2,
-                                    'preparatory' => 3,
-                                    'prep' => 3,
-                                    'grade 1' => 4,
-                                    'grade 2' => 5,
-                                    'grade 3' => 6,
-                                    'grade 4' => 7,
-                                    'grade 5' => 8,
-                                    'grade 6' => 9,
-                                ];
+                                // Strict numerical grading weight to force correct display order
+                                $getGradeWeight = function($name) {
+                                    $lower = strtolower($name);
+                                    if (str_contains($lower, 'nursery')) return 1;
+                                    if (str_contains($lower, 'kinder')) return 2;
+                                    if (str_contains($lower, 'prep')) return 3;
+                                    
+                                    // Extract number for grades 1 through 12
+                                    preg_match('/(\d+)/', $lower, $matches);
+                                    if (isset($matches[1])) {
+                                        return 10 + (int)$matches[1];
+                                    }
+                                    
+                                    return 99; // Fallback for unmatched names
+                                };
 
                                 // Group parents by their school section
                                 $parentsBySection = $parents->groupBy(function($parent) {
@@ -493,14 +495,8 @@
                                         }
                                     }
                                     return 'Other Parents';
-                                })->sortBy(function($group, $sectionName) use ($gradeOrder) {
-                                    $lowerName = strtolower($sectionName);
-                                    foreach ($gradeOrder as $key => $weight) {
-                                        if (str_contains($lowerName, $key)) {
-                                            return $weight;
-                                        }
-                                    }
-                                    return 99;
+                                })->sortBy(function($group, $sectionName) use ($getGradeWeight) {
+                                    return $getGradeWeight($sectionName);
                                 });
                             @endphp
 

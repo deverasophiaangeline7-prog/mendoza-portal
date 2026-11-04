@@ -73,46 +73,49 @@
             </div>
         </div>
 
-        <div id="printable-area" class="flex flex-col space-y-6 mb-12 relative">
+        <div id="printable-area" class="w-full">
             
-            <!-- 1. HIDDEN PRINT HEADER -->
-            <div class="print-only text-black mb-4">
-                <div class="flex items-center justify-center gap-4 mb-6">
-                    <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-16 h-16 object-contain">
-                    <div class="text-center">
-                        <h1 class="text-xl font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
-                        <h2 class="text-base font-semibold">Temporary Learner’s Performance Report</h2>
-                        <p class="text-sm font-bold">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
+            <!-- 1. HIDDEN PRINT HEADER (Only visible on paper) -->
+            <div class="print-only text-black mb-6">
+                <div class="flex items-center justify-center gap-4 mb-4">
+                    <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-12 h-12 object-contain">
+                    <div class="text-center leading-none">
+                        <h1 class="text-lg font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
+                        <h2 class="text-[13px] font-semibold mt-1">Temporary Learner’s Performance Report</h2>
+                        <p class="text-[11px] font-bold mt-1">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
                     </div>
                 </div>
                 
-                <div class="text-[13px] font-semibold space-y-3">
+                <div class="text-[12px] font-semibold space-y-2">
                     <div class="flex items-end">
-                        <span class="w-14">Name:</span>
-                        <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-1">{{ $studentName }}</span>
+                        <span class="w-12">Name:</span>
+                        <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-0.5">{{ $studentName }}</span>
                     </div>
                     <div class="flex items-end gap-2">
                         <div class="flex items-end w-1/4">
                             <span class="mr-2">Grade:</span>
                             @php $cleanGrade = str_replace('GRADE', '', strtoupper($sectionName ?? '')); @endphp
-                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-1">{{ explode("\n", trim($cleanGrade))[0] }}</span>
+                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ explode("\n", trim($cleanGrade))[0] }}</span>
                         </div>
                         <div class="flex items-end w-1/3">
                             <span class="mr-2">Section:</span>
-                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-1">{{ explode("\n", $sectionName ?? '')[1] ?? '' }}</span>
+                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ explode("\n", $sectionName ?? '')[1] ?? '' }}</span>
                         </div>
                         <div class="flex items-end flex-1">
                             <span class="mr-2">LRN:</span>
-                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-1">{{ \App\Models\Student::find($student_id)->lrn ?? 'N/A' }}</span>
+                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ \App\Models\Student::find($student_id)->lrn ?? 'N/A' }}</span>
                         </div>
                     </div>
                     <div class="flex items-end">
-                        <span class="w-16">Teacher:</span>
-                        <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-1">_________________</span>
+                        <span class="w-14">Teacher:</span>
+                        <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-0.5">_________________</span>
                     </div>
                 </div>
             </div>
-            <div>
+            <!-- ON-SCREEN TABLES (Visible on screen AND paper) -->
+            <!-- Restored flex-col and space-y-12 so the screen layout looks correct -->
+            <div class="flex flex-col space-y-12 mb-12">
+                <div>
                 <h4 class="text-center font-bold text-lg mb-2 uppercase">Report on Learning Progress and Achievement</h4>
                 <table class="w-full text-sm deped-table bg-white">
                     <thead>

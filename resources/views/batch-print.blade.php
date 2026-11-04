@@ -4,35 +4,28 @@
 
 @section('content')
 <style>
-    /* Table specific sizing for 2-per-page layout */
-    .deped-table th, .deped-table td { border: 1px solid black; padding: 0.2rem; font-size: 0.7rem; }
+    .deped-table th, .deped-table td { border: 1px solid black; padding: 0.15rem; font-size: 0.65rem; }
     .deped-table th { text-align: center; font-weight: bold; background-color: #f9fafb !important; }
     
-    /* PRINT ONLY CSS STYLES (Identical to your student-report-card) */
     @media print {
-        body { background-color: white; }
-        
-        /* Hide the main layout elements (sidebar, topbar, etc.) */
+        body { background-color: white; margin: 0; padding: 0; }
         body * { visibility: hidden; }
         
-        /* Only show the batch print container */
         #batch-print-area, #batch-print-area * { visibility: visible; }
         
-        /* Pin it to the top left of the physical paper */
-        #batch-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        /* Force the print area to take up the full physical width of the landscape page */
+        #batch-print-area { position: absolute; left: 0; top: 0; width: 100%; max-width: 100%; margin: 0; padding: 0; }
         
         .no-print { display: none !important; }
-        
-        /* Force Landscape and page breaks */
         .page-break { page-break-after: always; }
-        @page { size: letter landscape; margin: 0.4in; }
+        
+        /* Remove browser margins so our grid can stretch to the edges */
+        @page { size: letter landscape; margin: 0.2in; }
     }
 </style>
 
 <main class="flex-1 p-6 bg-gray-100 min-h-screen">
-
     @php
-        // Wrap in function_exists to prevent Laravel redeclare errors
         if (!function_exists('getDescriptor')) {
             function getDescriptor($score) {
                 $s = floatval($score);
@@ -42,9 +35,7 @@
         }
     @endphp
 
-    <!-- Floating Buttons (Hidden on paper) -->
     <div class="fixed top-6 right-6 no-print z-50 flex gap-4">
-        <!-- Since this opens in a new tab, a 'Close Tab' button is more helpful than 'Back' -->
         <button onclick="window.close()" class="bg-gray-200 text-black font-black px-6 py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-300 transition-all uppercase tracking-wider text-sm">
             Close Tab
         </button>
@@ -53,69 +44,67 @@
         </button>
     </div>
 
-    <!-- MAIN BATCH PRINT CONTAINER -->
-    <div id="batch-print-area" class="max-w-[11in] mx-auto text-black">
+    <!-- WIDENED PRINT CONTAINER -->
+    <div id="batch-print-area" class="w-full text-black">
         
         @foreach($students->chunk(2) as $chunk)
-            <!-- grid-cols-2 puts two students side-by-side on the landscape page -->
-            <div class="grid grid-cols-2 gap-10 {{ !$loop->last ? 'page-break' : '' }} p-4 print:p-0 mb-10 print:mb-0">
+            <!-- Increased grid gap and widened structure -->
+            <div class="grid grid-cols-2 gap-x-12 gap-y-0 w-full {{ !$loop->last ? 'page-break' : '' }} pt-4 mb-10 print:mb-0">
                 
                 @foreach($chunk as $student)
                     @php
                         $studentGrades = isset($grades[$student->student_id]) ? $grades[$student->student_id]->keyBy('subject_name') : collect();
                         $studentRemark = $remarks[$student->student_id] ?? null;
                         $totalScore = 0; $count = 0;
-                        $teacherName = $section->teacher ? strtoupper($section->teacher->first_name . ' ' . $section->teacher->last_name) : '_________________';
                         $cleanGrade = str_replace('GRADE', '', strtoupper($section->grade_level));
                     @endphp
                     
-                    <div class="w-full bg-white p-4 border-2 border-black print:border-0 rounded-xl print:rounded-none">
+                    <!-- Added pr-4 to ensure they don't touch each other -->
+                    <div class="w-full bg-white print:bg-transparent p-4 border-2 border-black print:border-0 rounded-xl print:rounded-none">
                         
-                        <!-- 1. EXACT PRINT HEADER -->
                         <div class="mb-4">
                             <div class="flex items-center justify-center gap-3 mb-4">
-                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-12 h-12 object-contain">
-                                <div class="text-center leading-tight">
-                                    <h1 class="text-lg font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
-                                    <h2 class="text-[13px] font-semibold">Temporary Learner’s Performance Report</h2>
-                                    <p class="text-[11px] font-bold">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
+                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 object-contain">
+                                <div class="text-center leading-none">
+                                    <h1 class="text-base font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
+                                    <h2 class="text-[11px] font-semibold mt-1">Temporary Learner’s Performance Report</h2>
+                                    <p class="text-[9px] font-bold mt-1">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
                                 </div>
                             </div>
                             
-                            <div class="text-[12px] font-semibold space-y-2">
+                            <div class="text-[11px] font-semibold space-y-2">
                                 <div class="flex items-end">
                                     <span class="w-12">Name:</span>
-                                    <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-1">{{ strtoupper($student->last_name . ', ' . $student->first_name) }}</span>
+                                    <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-0.5">{{ strtoupper($student->last_name . ', ' . $student->first_name) }}</span>
                                 </div>
                                 <div class="flex items-end gap-2">
                                     <div class="flex items-end w-1/4">
                                         <span class="mr-1">Grade:</span>
-                                        <span class="flex-1 border-b border-black text-center font-normal leading-none pb-1">{{ trim($cleanGrade) }}</span>
+                                        <span class="flex-1 border-b border-black text-center font-normal leading-none pb-0.5">{{ trim($cleanGrade) }}</span>
                                     </div>
                                     <div class="flex items-end w-1/3">
                                         <span class="mr-1">Section:</span>
-                                        <span class="flex-1 border-b border-black text-center font-normal leading-none pb-1">{{ strtoupper($section->section_name) }}</span>
+                                        <span class="flex-1 border-b border-black text-center font-normal leading-none pb-0.5">{{ strtoupper($section->section_name) }}</span>
                                     </div>
                                     <div class="flex items-end flex-1">
                                         <span class="mr-1">LRN:</span>
-                                        <span class="flex-1 border-b border-black text-center font-normal leading-none pb-1">{{ $student->lrn ?? 'N/A' }}</span>
+                                        <span class="flex-1 border-b border-black text-center font-normal leading-none pb-0.5">{{ $student->lrn ?? 'N/A' }}</span>
                                     </div>
                                 </div>
                                 <div class="flex items-end">
                                     <span class="w-14">Teacher:</span>
-                                    <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-1">{{ $teacherName }}</span>
+                                    <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-0.5">{{ $teacherName }}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- GRADES TABLE -->
-                        <h4 class="text-center font-bold text-[11px] mb-1 uppercase">Report on Learning Progress and Achievement</h4>
-                        <table class="w-full deped-table mb-3">
+                        <h4 class="text-center font-bold text-[9px] mb-1 uppercase">Report on Learning Progress and Achievement</h4>
+                        <table class="w-full deped-table mb-2">
                             <thead>
                                 <tr>
                                     <th rowspan="2" class="w-1/3">Learning Areas</th>
                                     <th colspan="3">Term</th>
-                                    <th rowspan="2" class="w-12">Final<br>Grade</th>
+                                    <th rowspan="2" class="w-10">Final<br>Grade</th>
                                     <th rowspan="2">Remarks</th>
                                 </tr>
                                 <tr><th class="w-6">1</th><th class="w-6">2</th><th class="w-6">3</th></tr>
@@ -146,9 +135,8 @@
                             </tbody>
                         </table>
 
-                        <!-- LEGEND (Only for Grade 1) -->
                         @if($gradeNum == 1)
-                        <div class="mb-3 text-[9px]">
+                        <div class="mb-2 text-[8px]">
                             <h4 class="text-center font-bold mb-1">Performance Descriptors</h4>
                             <table class="w-full deped-table text-center font-semibold">
                                 <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
@@ -163,32 +151,21 @@
                         </div>
                         @endif
 
-                        <!-- TEACHER REMARKS -->
-                        <table class="w-full deped-table mb-4 text-[9px]">
+                        <table class="w-full deped-table mb-3 text-[8px]">
                             <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
                             <tbody>
-                                <tr><td class="w-12 font-bold text-center">Term 1</td><td class="text-left h-6">{{ $studentRemark->term1 ?? '' }}</td></tr>
-                                <tr><td class="font-bold text-center">Term 2</td><td class="text-left h-6">{{ $studentRemark->term2 ?? '' }}</td></tr>
-                                <tr><td class="font-bold text-center">Term 3</td><td class="text-left h-6">{{ $studentRemark->term3 ?? '' }}</td></tr>
+                                <tr><td class="w-12 font-bold text-center">Term 1</td><td class="text-left h-5">{{ $studentRemark->term1 ?? '' }}</td></tr>
+                                <tr><td class="font-bold text-center">Term 2</td><td class="text-left h-5">{{ $studentRemark->term2 ?? '' }}</td></tr>
+                                <tr><td class="font-bold text-center">Term 3</td><td class="text-left h-5">{{ $studentRemark->term3 ?? '' }}</td></tr>
                             </tbody>
                         </table>
 
-                        <!-- 2. EXACT PRINT FOOTER -->
-                        <div class="mt-4">
-                            <h4 class="font-bold text-center uppercase mb-5 text-[11px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
-                            <div class="space-y-3 text-[11px] font-semibold max-w-[220px] mx-auto">
-                                <div class="flex items-end gap-2">
-                                    <span class="w-12">Term 1</span>
-                                    <div class="flex-1 border-b border-black"></div>
-                                </div>
-                                <div class="flex items-end gap-2">
-                                    <span class="w-12">Term 2</span>
-                                    <div class="flex-1 border-b border-black"></div>
-                                </div>
-                                <div class="flex items-end gap-2">
-                                    <span class="w-12">Term 3</span>
-                                    <div class="flex-1 border-b border-black"></div>
-                                </div>
+                        <div class="mt-3">
+                            <h4 class="font-bold text-center uppercase mb-4 text-[10px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
+                            <div class="space-y-2 text-[10px] font-semibold max-w-[200px] mx-auto">
+                                <div class="flex items-end gap-2"><span class="w-10">Term 1</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-2"><span class="w-10">Term 2</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-2"><span class="w-10">Term 3</span><div class="flex-1 border-b border-black"></div></div>
                             </div>
                         </div>
 
@@ -199,7 +176,6 @@
     </div>
 </main>
 
-<!-- Auto-trigger print dialog when the page loads -->
 <script>
     window.onload = function() {
         setTimeout(() => window.print(), 500);
