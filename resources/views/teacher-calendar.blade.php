@@ -6,7 +6,7 @@
 
 @php
     $myStudentIds = [];
-    if (auth()->user()->role !== 'admin') {
+    if (!in_array(strtolower(auth()->user()->role), ['admin', 'superadmin'])) {
         $myStudentIds = \App\Models\Student::active()
             ->whereHas('section', function ($q) {
                 $q->where('teacher_id', auth()->user()->user_id);
@@ -125,7 +125,7 @@
                                                 <span class="inline-flex items-center text-[10px] bg-amber-700 text-white px-2 py-0.5 rounded font-black uppercase tracking-tighter">
                                                     {{ $participant->role ?: 'General Participant' }}
                                                     
-                                                    @if(auth()->user()->role !== 'admin' && in_array($participant->student_id, $myStudentIds))
+                                                    @if(!in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']) && in_array($participant->student_id, $myStudentIds))
                                                     <button type="button" 
                                                             @click="deleteModal = true; deleteUrl = '{{ route('calendar.deleteParticipant', $participant->id) }}'; deleteParticipantName = '{{ addslashes(($studentInfo->last_name ?? '') . ', ' . ($studentInfo->first_name ?? '') . ' (' . ($participant->role ?: 'General Participant') . ')') }}'"
                                                             class="ml-1.5 text-amber-200 hover:text-white transition-colors" title="Remove role">
@@ -146,7 +146,7 @@
                     </div>
                 </div>
 
-                @if(auth()->user()->role !== 'admin')
+                @if(!in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']))
                 <div class="mt-4 pt-4 border-t-2 border-black flex-shrink-0">
                     <button type="button" @click="
                         selectedEventId = '{{ $event->calendar_id }}'; 
@@ -163,7 +163,7 @@
     </main>
 
     <!-- ASSIGN PARTICIPANTS MODAL -->
-    @if(auth()->user()->role !== 'admin')
+    @if(!in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']))
     <div x-show="openModal" 
          class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" 
          x-cloak x-transition

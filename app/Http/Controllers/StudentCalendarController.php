@@ -19,10 +19,9 @@ class StudentCalendarController extends Controller
         $events = SchoolCalendar::with('participants.student')->orderBy('start_date', 'desc')->get();
         
         // Filter active students list based on user role
-        if ($user->role === 'admin') {
-            $students = Student::active()->orderBy('last_name', 'asc')->get();
+        if (in_array(strtolower($user->role), ['admin', 'superadmin'])) {
+            $students = collect(); 
         } else {
-            // FIX: Use 'teacher_id' and the custom '$user->user_id' based on your models, restricted to active students
             $students = Student::active()->whereHas('section', function ($query) use ($user) {
                 $query->where('teacher_id', $user->user_id); 
             })->orderBy('last_name', 'asc')->get();
@@ -59,7 +58,7 @@ class StudentCalendarController extends Controller
     {
         $user = auth()->user();
 
-        if (in_array($user->role, ['admin', 'superadmin'])) { 
+        if (in_array(strtolower($user->role), ['admin', 'superadmin'])) { 
             abort(403, 'Admins cannot modify student participation.');
         }
 
@@ -124,7 +123,7 @@ class StudentCalendarController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->role === 'admin') {
+        if (in_array(strtolower($user->role), ['admin', 'superadmin'])) {
             abort(403, 'Admins cannot remove participants.');
         }
 

@@ -3,7 +3,7 @@
 @section('title', 'Parent Accounts')
 
 @section('content')
-<main class="flex-1 p-8 bg-white min-h-screen" x-data="{ addSectionModal: false, deleteSectionModal: false, changePicModal: false }">
+<main class="flex-1 p-8 bg-white min-h-screen" x-data="{ addSectionModal: false, deleteSectionModal: false, changePicModal: false, confirmDeleteModal: false }">
     
     <!-- FIXED TOAST NOTIFICATION -->
     @if(session()->has('toast_status') || $errors->any() || session('success'))
@@ -149,17 +149,17 @@
         </div>
     </div>
 
-    {{-- DELETE SECTION MODAL (Fixed Mobile Centering) --}}
+    {{-- DELETE SECTION MODAL --}}
     <div x-show="deleteSectionModal" class="fixed inset-0 z-50 flex p-4 bg-black/50 overflow-y-auto" x-cloak>
         <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative m-auto flex-shrink-0 max-h-[90vh] overflow-y-auto">
             <button @click="deleteSectionModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
             <h3 class="text-2xl font-black mb-4">Delete Section</h3>
-            <form action="{{ route('sections.destroy') }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this section?');">
+            <form id="deleteSectionForm" action="{{ route('sections.destroy') }}" method="POST">
                 @csrf
                 @method('DELETE')
                 <div class="mb-4">
                     <label class="block font-bold mb-1">Select Section</label>
-                    <select name="section_id" required class="w-full border rounded-lg p-2 font-bold bg-white">
+                    <select name="section_id" id="sectionSelect" required class="w-full border rounded-lg p-2 font-bold bg-white">
                         <option value="" disabled selected>-- Select Section --</option>
                         @foreach($sections ?? [] as $sec)
                             <option value="{{ $sec->section_id }}">
@@ -175,9 +175,29 @@
                 </div>
                 <div class="flex justify-end gap-2 mt-4 shrink-0">
                     <button type="button" @click="deleteSectionModal = false" class="px-4 py-2 bg-gray-200 rounded-lg font-bold">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold">Delete</button>
+                    <button type="button" 
+                            @click="if(document.getElementById('sectionSelect').value) { deleteSectionModal = false; confirmDeleteModal = true; } else { document.getElementById('deleteSectionForm').reportValidity(); }" 
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold">
+                        Delete
+                    </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    {{-- CUSTOM CONFIRMATION MODAL --}}
+    <div x-show="confirmDeleteModal" class="fixed inset-0 z-[60] flex p-4 bg-black/50 overflow-y-auto" x-cloak>
+        <div class="bg-white border-[3px] border-black rounded-xl p-6 max-w-sm w-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] relative m-auto flex-shrink-0">
+            <div class="flex items-center gap-3 mb-2">
+                <i class="fa-solid fa-triangle-exclamation text-2xl text-red-600"></i>
+                <h3 class="text-2xl font-black text-red-600 uppercase tracking-tight">Confirm Deletion</h3>
+            </div>
+            <p class="text-black font-bold mb-6 mt-2">Are you sure you want to delete this section? This action cannot be undone.</p>
+            
+            <div class="flex justify-end gap-2 shrink-0">
+                <button type="button" @click="confirmDeleteModal = false; deleteSectionModal = true" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold transition">Cancel</button>
+                <button type="button" @click="document.getElementById('deleteSectionForm').submit()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition">Yes, Delete</button>
+            </div>
         </div>
     </div>
 </main>

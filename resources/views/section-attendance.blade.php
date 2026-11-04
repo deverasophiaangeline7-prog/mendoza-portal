@@ -18,11 +18,15 @@
         
         <!-- HEADER SECTION -->
         <div class="flex flex-col lg:flex-row justify-between items-center lg:items-start gap-6 mb-8">
-            <!-- Back Button -->
-            <div class="w-full lg:w-auto flex justify-center lg:justify-start order-2 lg:order-1">
+            
+            <!-- Back Button (Only appears for NKP) -->
+            <div class="w-full lg:w-auto flex justify-center lg:justify-start order-2 lg:order-1 lg:min-w-[60px]">
+                {{-- NOTE: Change $grade === 'NKP' to match the actual variable passed from your controller --}}
+                @if(isset($grade) && $grade === 'NKP') 
                 <a href="{{ route('attendance.index') }}" class="text-red-600 text-5xl hover:scale-110 transition">
                     <i class="fa-solid fa-circle-xmark"></i>
                 </a>
+                @endif
             </div>
 
             <!-- Title -->
@@ -34,7 +38,7 @@
             </div>
 
             <!-- Legend -->
-            <div class="w-full lg:w-auto flex justify-center lg:justify-end order-3 lg:order-3">
+            <div class="w-full lg:w-auto flex justify-center lg:justify-end order-3 lg:order-3 lg:min-w-[150px]">
                 <div class="text-sm font-bold bg-white p-3 border-[3px] border-black rounded-2xl shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] grid grid-cols-2 gap-x-6 gap-y-2 lg:grid-cols-1 lg:gap-1 lg:space-y-1">
                     <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-green-500 border-2 border-black"></span> Present</div>
                     <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-red-500 border-2 border-black"></span> Absent</div>

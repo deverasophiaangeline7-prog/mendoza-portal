@@ -145,74 +145,97 @@
             <!-- END OF LEGEND -->
 
             <!-- NEW TEACHER'S COMMENTS/REMARKS SECTION -->
-<div>
-    <h4 class="text-center font-bold text-lg mb-2 uppercase">Teacher's Comments/Remarks</h4>
-    <table class="w-full text-sm deped-table bg-white">
-        <tbody>
-            @for($t = 1; $t <= 3; $t++)
-            <tr>
-                <!-- Changed align-top to align-middle and text-left to text-center -->
-                <td class="w-32 font-bold align-middle px-3 py-2 text-center">Term {{ $t }}</td>
-                <td class="p-0 align-top relative">
-                    <!-- Added @input regex replacement to filter out disallowed characters -->
-                    <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
-                              x-model="teacherRemarks.term{{ $t }}" 
-                              @input="teacherRemarks.term{{ $t }} = $event.target.value.replace(/[^a-zA-Z\s.,\-']/g, '')"
-                              rows="2"
-                              class="w-full min-h-[3rem] px-3 py-2 outline-none resize-y focus:bg-white focus:ring-2 focus:ring-blue-500 bg-transparent border-none"
-                              placeholder="Enter comments/remarks..."></textarea>
-                              
-                    <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
-                         class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left" 
-                         x-text="teacherRemarks.term{{ $t }}"></div>
-                </td>
-            </tr>
-            @endfor
-        </tbody>
-    </table>
-</div>
+            <div>
+                <h4 class="text-center font-bold text-lg mb-2 uppercase">Teacher's Comments/Remarks</h4>
+                <table class="w-full text-sm deped-table bg-white">
+                    <tbody>
+                        @for($t = 1; $t <= 3; $t++)
+                        <tr>
+                            <!-- Changed align-top to align-middle and text-left to text-center -->
+                            <td class="w-32 font-bold align-middle px-3 py-2 text-center">Term {{ $t }}</td>
+                            <td class="p-0 align-top relative">
+                                <!-- Added @input regex replacement to filter out disallowed characters -->
+                                <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
+                                          x-model="teacherRemarks.term{{ $t }}" 
+                                          @input="teacherRemarks.term{{ $t }} = $event.target.value.replace(/[^a-zA-Z\s.,\-']/g, '')"
+                                          rows="2"
+                                          class="w-full min-h-[3rem] px-3 py-2 outline-none resize-y focus:bg-white focus:ring-2 focus:ring-blue-500 bg-transparent border-none"
+                                          placeholder="Enter comments/remarks..."></textarea>
+                                          
+                                <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
+                                     class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left" 
+                                     x-text="teacherRemarks.term{{ $t }}"></div>
+                            </td>
+                        </tr>
+                        @endfor
+                    </tbody>
+                </table>
+            </div>
 
-    <!-- BRAND NEW STRICT LOCK MODAL -->
-    <div x-show="showStrictLockModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition.opacity>
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showStrictLockModal = false"></div>
-        <div class="relative bg-white border-[4px] border-black rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 max-w-lg w-full flex flex-col items-center text-center space-y-4">
-            
-            <div class="bg-red-600 rounded-full w-20 h-20 flex items-center justify-center border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -mt-16">
-                <i class="fa-solid fa-lock text-white text-4xl font-black"></i>
+            <!-- BRAND NEW STRICT LOCK MODAL -->
+            <div x-show="showStrictLockModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition.opacity>
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showStrictLockModal = false"></div>
+                <div class="relative bg-white border-[4px] border-black rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 max-w-lg w-full flex flex-col items-center text-center space-y-4">
+                    
+                    <div class="bg-red-600 rounded-full w-20 h-20 flex items-center justify-center border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -mt-16">
+                        <i class="fa-solid fa-lock text-white text-4xl font-black"></i>
+                    </div>
+                    
+                    <h3 class="text-3xl font-black uppercase text-red-600 tracking-tight leading-tight mt-2">Strict Lock Active</h3>
+                    
+                    <p class="font-bold text-lg text-gray-800">
+                        You cannot save grades for <span class="text-black font-black uppercase underline">Term <span x-text="strictLockTerm"></span></span> because <span class="text-red-600 font-black uppercase underline">Term <span x-text="strictLockPastTerm"></span></span> is incomplete.
+                    </p>
+                    
+                    <div class="bg-gray-100 border-[3px] border-black rounded-xl p-4 w-full text-left shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+                        <p class="font-black text-xs uppercase text-gray-500 mb-2 tracking-wider">Missing Grades For:</p>
+                        <ul class="font-bold text-md list-disc list-inside text-black">
+                            <template x-for="sub in strictLockMissing" :key="sub">
+                                <li x-text="sub"></li>
+                            </template>
+                        </ul>
+                    </div>
+                    
+                    <p class="font-bold text-sm text-gray-600 italic">Please ask the Admin to extend the Term <span x-text="strictLockPastTerm"></span> deadline.</p>
+                    
+                    <button @click="showStrictLockModal = false" class="mt-4 bg-red-600 text-white font-black text-xl px-8 py-3 border-[3px] border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all w-full uppercase tracking-widest">
+                        Understood
+                    </button>
+                </div>
             </div>
-            
-            <h3 class="text-3xl font-black uppercase text-red-600 tracking-tight leading-tight mt-2">Strict Lock Active</h3>
-            
-            <p class="font-bold text-lg text-gray-800">
-                You cannot save grades for <span class="text-black font-black uppercase underline">Term <span x-text="strictLockTerm"></span></span> because <span class="text-red-600 font-black uppercase underline">Term <span x-text="strictLockPastTerm"></span></span> is incomplete.
-            </p>
-            
-            <div class="bg-gray-100 border-[3px] border-black rounded-xl p-4 w-full text-left shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
-                <p class="font-black text-xs uppercase text-gray-500 mb-2 tracking-wider">Missing Grades For:</p>
-                <ul class="font-bold text-md list-disc list-inside text-black">
-                    <template x-for="sub in strictLockMissing" :key="sub">
-                        <li x-text="sub"></li>
-                    </template>
-                </ul>
-            </div>
-            
-            <p class="font-bold text-sm text-gray-600 italic">Please ask the Admin to extend the Term <span x-text="strictLockPastTerm"></span> deadline.</p>
-            
-            <button @click="showStrictLockModal = false" class="mt-4 bg-red-600 text-white font-black text-xl px-8 py-3 border-[3px] border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all w-full uppercase tracking-widest">
-                Understood
-            </button>
-        </div>
-    </div>
 
-    <div x-show="showErrorModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition.opacity>
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showErrorModal = false"></div>
-        <div class="relative bg-red-500 border-[4px] border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-sm w-full flex items-center space-x-4">
-            <div class="bg-white rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-exclamation text-red-500 text-2xl font-black"></i>
-            </div>
-            <div class="text-white">
-                <h3 class="text-xl font-black uppercase leading-tight">Missing in Term <span x-text="activeTerm"></span>:</h3>
-                <ul class="font-bold text-sm mt-1"><template x-for="sub in missingSubjects" :key="sub"><li x-text="sub"></li></template></ul>
+            <!-- UPDATED: SOFT CONFIRMATION MODAL -->
+            <div x-show="showErrorModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition.opacity>
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showErrorModal = false"></div>
+                <div class="relative bg-white border-[4px] border-black rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 max-w-sm w-full flex flex-col items-center text-center space-y-4">
+                    
+                    <div class="bg-amber-400 rounded-full w-20 h-20 flex items-center justify-center border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -mt-16">
+                        <i class="fa-solid fa-triangle-exclamation text-black text-4xl font-black"></i>
+                    </div>
+                    
+                    <h3 class="text-2xl font-black uppercase text-amber-500 tracking-tight leading-tight mt-2">Missing Grades</h3>
+                    
+                    <p class="font-bold text-sm text-gray-800">
+                        You have empty fields for Term <span x-text="activeTerm"></span>. Other teachers can fill these in later, but do you want to save your current progress?
+                    </p>
+                    
+                    <div class="bg-gray-100 border-[3px] border-black rounded-xl p-3 w-full text-left shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+                        <ul class="font-bold text-sm list-disc list-inside text-black">
+                            <template x-for="sub in missingSubjects" :key="sub">
+                                <li x-text="sub"></li>
+                            </template>
+                        </ul>
+                    </div>
+                    
+                    <div class="flex w-full gap-3 mt-4">
+                        <button @click="showErrorModal = false" class="flex-1 bg-gray-200 text-black font-black text-sm px-4 py-3 border-[3px] border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all uppercase tracking-wider">
+                            Cancel
+                        </button>
+                        <button @click="saveGrades(true)" class="flex-1 bg-green-500 text-black font-black text-sm px-4 py-3 border-[3px] border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all uppercase tracking-wider">
+                            Proceed
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -391,10 +414,10 @@
                 }
             },
 
-            async saveGrades() {
+            async saveGrades(forceSave = false) {
                 let currentTermNum = parseInt(this.activeTerm);
                 
-                // 1. STRICT PREVIOUS TERM CHECK
+                // 1. STRICT PREVIOUS TERM CHECK (Keeps past terms locked)
                 if (currentTermNum > 1) {
                     for (let pastTerm = 1; pastTerm < currentTermNum; pastTerm++) {
                         let pastMissing = this.subjects.filter(s => {
@@ -403,30 +426,33 @@
                         });
 
                         if (pastMissing.length > 0) {
-                            // POPULATE AND SHOW THE CUSTOM MODAL INSTEAD OF NATIVE ALERT
                             this.strictLockTerm = currentTermNum;
                             this.strictLockPastTerm = pastTerm;
                             this.strictLockMissing = pastMissing;
                             this.showStrictLockModal = true;
-                            return; // Blocks the save completely
+                            return; 
                         }
                     }
                 }
 
-                // 2. CURRENT TERM CHECK (Uses your existing red error modal)
-                let tKey = 'term' + this.activeTerm;
-                
-                this.missingSubjects = this.subjects.filter(s => {
-                    let canGrade = this.assignedString.toUpperCase().includes('ALL') || this.assignedString.toUpperCase().includes(s.toUpperCase());
-                    let isEmpty = String(this.grades[s][tKey] || '').trim() === '';
-                    return canGrade && isEmpty; 
-                });
+                // 2. CURRENT TERM CHECK (Soft Warning)
+                if (!forceSave) {
+                    let tKey = 'term' + this.activeTerm;
+                    
+                    this.missingSubjects = this.subjects.filter(s => {
+                        let canGrade = this.assignedString.toUpperCase().includes('ALL') || this.assignedString.toUpperCase().includes(s.toUpperCase());
+                        let isEmpty = String(this.grades[s][tKey] || '').trim() === '';
+                        return canGrade && isEmpty; 
+                    });
 
-                if (this.missingSubjects.length > 0) {
-                    this.showErrorModal = true;
-                    setTimeout(() => { this.showErrorModal = false; }, 3000);
-                    return;
+                    if (this.missingSubjects.length > 0) {
+                        this.showErrorModal = true; // Show confirmation dialog
+                        return; // Stop here and wait for user to click Proceed
+                    }
                 }
+
+                // Hide modal if it was open
+                this.showErrorModal = false;
 
                 // 3. EXECUTE SAVE
                 try {
@@ -441,7 +467,7 @@
                             student_id: this.studentId, 
                             grades: this.grades, 
                             behaviors: this.behaviors,
-                            remarks: this.teacherRemarks // Included new payload structure here
+                            remarks: this.teacherRemarks
                         })
                     });
 
