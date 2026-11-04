@@ -29,6 +29,23 @@
         
         @page { size: letter landscape; margin: 0.5in; }
         #printable-area { width: 48%; padding-right: 0.2in; font-size: 12px; } 
+    }/* PRINT STYLES */
+    .print-only { display: none; }
+    
+    @media print {
+        body { background-color: white; }
+        body * { visibility: hidden; }
+        #printable-area, #printable-area * { visibility: visible; }
+        
+        .print-only { display: block !important; }
+        .no-print { display: none !important; }
+        
+        /* 1. Force Landscape */
+        @page { size: letter landscape; margin: 0.2in; }
+        
+        /* 2. Force exactly half-width (49%) pinned to the top left so it stretches perfectly */
+        #printable-area { position: absolute; left: 0; top: 0; width: 49% !important; max-width: 49% !important; margin: 0; padding: 0; }
+        .deped-table th, .deped-table td { padding: 0.15rem !important; font-size: 9px !important; }
     }
 </style>
 
