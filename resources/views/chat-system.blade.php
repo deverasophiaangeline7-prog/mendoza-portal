@@ -362,34 +362,98 @@
                 </div>
 
                 <!-- Scrollable Contact List -->
-                <div class="max-h-60 overflow-y-auto border-2 border-gray-100 rounded-xl divide-y divide-gray-100">
+                <div class="max-h-64 overflow-y-auto border-2 border-gray-100 rounded-xl divide-y divide-gray-100 mb-6 shadow-inner bg-gray-50 relative">
                     @if(isset($contacts) && count($contacts) > 0)
-                        @foreach($contacts as $contact)
-                            <a href="{{ route('messages.show', $contact->user_id) }}" 
-                               class="flex items-center p-3 hover:bg-red-50 transition-colors"
-                               x-show="userSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(userSearch.toLowerCase())">
+                        @php
+                            $contactCollection = collect($contacts);
+                            $staff = $contactCollection->filter(fn($c) => strtolower($c->role) !== 'parent');
+                            $parents = $contactCollection->filter(fn($c) => strtolower($c->role) === 'parent');
+
+                            // Group parents by their school section
+                            $parentsBySection = $parents->groupBy(function($parent) {
+                                // Find the section ID based on your database structure
+                                $sectionId = $parent->student ? $parent->student->section_id : $parent->section_id;
                                 
-                @php
-                    $photoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($contact->name) . '&background=f3f4f6&color=374151';
-                    if ($contact->profile_photo_path) {
-                        $photoUrl = str_starts_with($contact->profile_photo_path, 'profile_photos') 
-                            ? asset('storage/' . $contact->profile_photo_path) 
-                            : asset($contact->profile_photo_path);
-                    }
-                @endphp
-                <img src="{{ $photoUrl }}" class="w-10 h-10 rounded-full mr-3 border object-cover" alt="User">                                
-                                <div>
-                                    <h4 class="font-bold text-gray-800 text-sm leading-tight">{{ $contact->name }}</h4>
-                                    <span class="text-[10px] font-black uppercase tracking-wider {{ $contact->role === 'admin' ? 'text-blue-600' : ($contact->role === 'teacher' ? 'text-amber-600' : 'text-gray-500') }}">
-                                        {{ $contact->role }}
-                                    </span>
-                                </div>
-                            </a>
+                                if ($sectionId) {
+                                    $section = \App\Models\Section::where('section_id', $sectionId)->first();
+                                    if ($section) {
+                                        // Concatenate grade and name (adjust column names if yours differ slightly)
+                                        $grade = $section->grade_level ?? '';
+                                        $secName = $section->section_name ?? $section->name ?? '';
+                                        return trim($grade . ' - ' . $secName, ' -');
+                                    }
+                                }
+                                return 'Other Parents';
+                            })->sortKeys();
+                        @endphp
+
+                        <!-- Staff & Admin Section -->
+                        @if($staff->count() > 0)
+                            <div class="bg-gray-200/90 backdrop-blur-sm px-3 py-1.5 text-[10px] font-black text-gray-500 uppercase tracking-wider sticky top-0 z-10 shadow-sm" 
+                                x-show="groupSearch === '' || {{ json_encode($staff->values()) }}.some(c => (c.name + ' ' + c.role).toLowerCase().includes(groupSearch.toLowerCase()))">
+                                Staff & Admins
+                            </div>
+                            @foreach ($staff as $contact)
+                                <label class="flex items-center p-3 hover:bg-red-50 cursor-pointer transition-colors bg-white"
+                                    x-show="groupSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(groupSearch.toLowerCase())">
+                                    
+                                    <input type="checkbox" name="members[]" value="{{ $contact->user_id }}" x-model="selectedMembers" class="rounded text-[#6d0101] border-gray-300 focus:ring-[#6d0101] w-4 h-4 mr-3">
+                                    
+                                    @php
+                                        $groupPhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($contact->name) . '&background=f3f4f6&color=374151';
+                                        if ($contact->profile_photo_path) {
+                                            $groupPhotoUrl = str_starts_with($contact->profile_photo_path, 'profile_photos') 
+                                                ? asset('storage/' . $contact->profile_photo_path) 
+                                                : asset($contact->profile_photo_path);
+                                        }
+                                    @endphp
+                                    <img src="{{ $groupPhotoUrl }}" class="w-9 h-9 rounded-full mr-3 border object-cover" alt="User">
+                                    
+                                    <div>
+                                        <h4 class="font-bold text-gray-800 text-sm leading-tight">{{ $contact->name }}</h4>
+                                        <span class="text-[10px] font-black uppercase tracking-wider {{ $contact->role === 'admin' ? 'text-blue-600' : 'text-amber-600' }}">
+                                            {{ $contact->role }}
+                                        </span>
+                                    </div>
+                                </label>
+                            @endforeach
+                        @endif
+
+                        <!-- Parents Grouped by School Section -->
+                        @foreach($parentsBySection as $sectionName => $sectionParents)
+                            <div class="bg-gray-200/90 backdrop-blur-sm px-3 py-1.5 text-[10px] font-black text-gray-500 uppercase tracking-wider sticky top-0 z-10 shadow-sm" 
+                                x-show="groupSearch === '' || {{ json_encode($sectionParents->values()) }}.some(c => (c.name + ' ' + c.role).toLowerCase().includes(groupSearch.toLowerCase()))">
+                                {{ $sectionName }}
+                            </div>
+                            
+                            @foreach ($sectionParents as $contact)
+                                <label class="flex items-center p-3 hover:bg-red-50 cursor-pointer transition-colors bg-white"
+                                    x-show="groupSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(groupSearch.toLowerCase())">
+                                    
+                                    <input type="checkbox" name="members[]" value="{{ $contact->user_id }}" x-model="selectedMembers" class="rounded text-[#6d0101] border-gray-300 focus:ring-[#6d0101] w-4 h-4 mr-3">
+                                    
+                                    @php
+                                        $groupPhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($contact->name) . '&background=f3f4f6&color=374151';
+                                        if ($contact->profile_photo_path) {
+                                            $groupPhotoUrl = str_starts_with($contact->profile_photo_path, 'profile_photos') 
+                                                ? asset('storage/' . $contact->profile_photo_path) 
+                                                : asset($contact->profile_photo_path);
+                                        }
+                                    @endphp
+                                    <img src="{{ $groupPhotoUrl }}" class="w-9 h-9 rounded-full mr-3 border object-cover" alt="User">
+                                    
+                                    <div>
+                                        <h4 class="font-bold text-gray-800 text-sm leading-tight">{{ $contact->name }}</h4>
+                                        <span class="text-[10px] font-black uppercase tracking-wider text-green-600">
+                                            {{ $contact->role }}
+                                        </span>
+                                    </div>
+                                </label>
+                            @endforeach
                         @endforeach
+
                     @else
-                        <div class="p-6 text-center text-gray-500 text-sm font-bold">
-                            No contacts available.
-                        </div>
+                        <div class="p-6 text-center text-gray-500 text-sm font-bold">No contacts available.</div>
                     @endif
                 </div>
 
