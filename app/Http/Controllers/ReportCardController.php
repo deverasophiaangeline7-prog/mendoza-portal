@@ -697,6 +697,46 @@ class ReportCardController extends Controller
         return Excel::download($export, $fileName);
     }
 
+    public function batchPrint($section_id)
+    {
+        $user = auth()->user();
+        $section = \App\Models\Section::with('teacher')->findOrFail($section_id);
+
+        // SECURITY CHECK: Allow Admins OR the Assigned Teacher
+        if (!in_array(strtolower($user->role), ['admin', 'superadmin']) && $section->teacher_id !== $user->user_id) {
+            abort(403, 'Unauthorized: You can only print report cards for your assigned advisory section.');
+        }
+
+        $students = \App\Models\Student::active()->where('section_id', $section_id)->orderBy('last_name', 'asc')->get();
+        $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
+        
+        $studentIds = $students->pluck('student_id');
+        
+        // Group all grades by student ID for easy access in the loop
+        $grades = \App\Models\Grade::whereIn('student_id', $studentIds)
+                       ->where('school_year_id', $activeYear->id ?? null)
+                       ->get()->groupBy('student_id');
+                       
+        $remarks = \App\Models\TeacherRemark::whereIn('student_id', $studentIds)
+                                ->where('school_year_id', $activeYear->id ?? null)
+                                ->get()->keyBy('student_id');
+
+        preg_match('/\d+/', $section->grade_level, $matches);
+        $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
+
+        if ($gradeNum == 1) {
+            $subjects = ['Language', 'Reading and Literacy', 'Mathematics', 'Makabansa', 'GMRC'];
+        } elseif ($gradeNum == 2 || $gradeNum == 3) {
+            $subjects = ['English', 'Filipino', 'Mathematics', 'Makabansa', 'GMRC'];
+        } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
+            $subjects = ['Filipino', 'English', 'Mathematics', 'Science', 'Araling Panlipunan', 'GMRC', 'TLE', 'MAPEH'];
+        } else {
+            $subjects = []; 
+        }
+
+        return view('batch-print', compact('section', 'students', 'activeYear', 'grades', 'remarks', 'subjects', 'gradeNum'));
+    }
+
     public function archivedIndex($school_year_id)
     {
         $schoolYear = SchoolYear::findOrFail($school_year_id);

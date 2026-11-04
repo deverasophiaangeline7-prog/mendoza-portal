@@ -102,6 +102,7 @@ Route::middleware(['auth', \App\Http\Middleware\ForcePasswordChange::class])->gr
     Route::get('/report-card', [ReportCardController::class, 'index'])->name('reportcard.index');
     Route::get('/report-card/list/{section_id}', [ReportCardController::class, 'show'])->name('reportcard.show');
     Route::get('/report-card/view/{student_id}', [ReportCardController::class, 'showStudent'])->name('reportcard.showStudent');
+    Route::get('/sections/{section_id}/batch-print', [\App\Http\Controllers\ReportCardController::class, 'batchPrint'])->name('reportcard.batch-print');
     Route::get('/my-child/report-card', [ReportCardController::class, 'showParentReportCard'])->name('parent.reportcard');
     Route::get('/fetch-grades/{student_id}', [ReportCardController::class, 'fetchGrades'])->name('reportcard.fetch');
 

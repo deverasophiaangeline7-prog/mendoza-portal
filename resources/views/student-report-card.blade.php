@@ -15,6 +15,21 @@
     .deped-table th, .deped-table td { border: 1px solid black; padding: 0.25rem 0.5rem; }
     .deped-table th { text-align: center; font-weight: bold; }
     .deped-table td.input-cell { padding: 0; height: 35px; }
+
+    /* PRINT STYLES */
+    .print-only { display: none; }
+    
+    @media print {
+        body { background-color: white; }
+        body * { visibility: hidden; }
+        #printable-area, #printable-area * { visibility: visible; }
+        #printable-area { position: absolute; left: 0; top: 0; width: 100%; }
+        .print-only { display: block !important; }
+        .no-print { display: none !important; }
+        
+        @page { size: letter landscape; margin: 0.5in; }
+        #printable-area { width: 48%; padding-right: 0.2in; font-size: 12px; } 
+    }
 </style>
 
 <main class="flex-1 p-6 bg-white min-h-screen" x-data="gradeData()">
@@ -43,6 +58,11 @@
                     @endif
                 </div>
 
+                <div class="flex items-center gap-4 no-print">
+                    <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-lg border-[3px] border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 transition-all">
+                        <i class="fa-solid fa-print mr-1"></i> PRINT
+                    </button>
+
                 <!-- Back button restricted to Teachers and Admins (Hidden from Parents) -->
                 @if(auth()->user()->role !== 'parent')
                 <a href="javascript:history.back()" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
@@ -53,7 +73,45 @@
             </div>
         </div>
 
-        <div class="flex flex-col space-y-12 mb-12">
+        <div id="printable-area" class="flex flex-col space-y-6 mb-12 relative">
+            
+            <!-- 1. HIDDEN PRINT HEADER -->
+            <div class="print-only text-black mb-4">
+                <div class="flex items-center justify-center gap-4 mb-6">
+                    <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-16 h-16 object-contain">
+                    <div class="text-center">
+                        <h1 class="text-xl font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
+                        <h2 class="text-base font-semibold">Temporary Learner’s Performance Report</h2>
+                        <p class="text-sm font-bold">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
+                    </div>
+                </div>
+                
+                <div class="text-[13px] font-semibold space-y-3">
+                    <div class="flex items-end">
+                        <span class="w-14">Name:</span>
+                        <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-1">{{ $studentName }}</span>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <div class="flex items-end w-1/4">
+                            <span class="mr-2">Grade:</span>
+                            @php $cleanGrade = str_replace('GRADE', '', strtoupper($sectionName ?? '')); @endphp
+                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-1">{{ explode("\n", trim($cleanGrade))[0] }}</span>
+                        </div>
+                        <div class="flex items-end w-1/3">
+                            <span class="mr-2">Section:</span>
+                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-1">{{ explode("\n", $sectionName ?? '')[1] ?? '' }}</span>
+                        </div>
+                        <div class="flex items-end flex-1">
+                            <span class="mr-2">LRN:</span>
+                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-1">{{ \App\Models\Student::find($student_id)->lrn ?? 'N/A' }}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-end">
+                        <span class="w-16">Teacher:</span>
+                        <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-1">_________________</span>
+                    </div>
+                </div>
+            </div>
             <div>
                 <h4 class="text-center font-bold text-lg mb-2 uppercase">Report on Learning Progress and Achievement</h4>
                 <table class="w-full text-sm deped-table bg-white">
@@ -170,6 +228,16 @@
                         @endfor
                     </tbody>
                 </table>
+
+            <!-- 2. HIDDEN PRINT FOOTER -->
+                        <div class="print-only mt-6">
+                            <h4 class="font-bold text-center uppercase mb-6 text-sm">PARENT'S/GUARDIAN'S SIGNATURE</h4>
+                            <div class="space-y-4 text-sm font-semibold max-w-[280px] mx-auto">
+                                <div class="flex items-end gap-2"><span class="w-16">Term 1</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-2"><span class="w-16">Term 2</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-2"><span class="w-16">Term 3</span><div class="flex-1 border-b border-black"></div></div>
+                            </div>
+                        </div>  
             </div>
 
             <!-- BRAND NEW STRICT LOCK MODAL -->

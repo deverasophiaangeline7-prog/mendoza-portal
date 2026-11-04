@@ -39,6 +39,13 @@
                 <h2 class="text-4xl font-black text-black uppercase tracking-tight">Student List</h2>
                 <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName }}</h3>
             </div>
+
+            <div class="flex items-center gap-4">
+                {{-- BATCH PRINT BUTTON --}}
+                <a href="{{ route('reportcard.batch-print', $section_id) }}" target="_blank" 
+                   class="bg-blue-600 text-white font-black px-6 py-2 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 hover:scale-105 transition-all uppercase tracking-wider text-sm flex items-center">
+                    <i class="fa-solid fa-print mr-2"></i> Print All
+                </a>
             
             {{-- Conditionally show the back button based on section count --}}
             @if($showBackButton)
