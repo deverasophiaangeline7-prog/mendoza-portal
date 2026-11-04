@@ -10,12 +10,14 @@
     @media print {
         body { background-color: white; margin: 0; padding: 0; }
         body * { visibility: hidden; }
+        
+        /* FIXED: Target the correct ID matching our container below */
         #batch-print-area, #batch-print-area * { visibility: visible; }
         
-        #printable-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+        #batch-print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
         .no-print { display: none !important; }
         
-        /* 1. Strict Landscape with minimal margins to guarantee 1-page fit */
+        /* 1. Strict Landscape */
         @page { size: letter landscape; margin: 0.15in !important; }
         
         .print-sheet {
@@ -63,7 +65,8 @@
         </button>
     </div>
 
-    <div id="printable-area" class="w-full text-black">
+    <!-- MATCHED ID SELECTOR: batch-print-area -->
+    <div id="batch-print-area" class="w-full text-black">
         @foreach($students->chunk(2) as $chunk)
             <div class="print-sheet mb-10 print:mb-0 w-full flex bg-white shadow-xl print:shadow-none mx-auto">
                 @foreach($chunk as $student)
@@ -155,7 +158,7 @@
 
                         <!-- LEGEND -->
                         @if($gradeNum == 1)
-                        <div class="text-[7px] my-0.5">
+                        <div class="mb-2 text-[8px]">
                             <h4 class="text-center font-bold mb-0.5">Performance Descriptors</h4>
                             <table class="w-full deped-table text-center font-semibold">
                                 <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
@@ -171,16 +174,14 @@
                         @endif
 
                         <!-- REMARKS -->
-                        <div>
-                            <table class="w-full deped-table text-[7px] mb-1">
-                                <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
-                                <tbody>
-                                    <tr><td class="w-10 font-bold text-center py-0.5">Term 1</td><td class="text-left h-3 px-1">{{ $studentRemark->term1 ?? '' }}</td></tr>
-                                    <tr><td class="font-bold text-center py-0.5">Term 2</td><td class="text-left h-3 px-1">{{ $studentRemark->term2 ?? '' }}</td></tr>
-                                    <tr><td class="font-bold text-center py-0.5">Term 3</td><td class="text-left h-3 px-1">{{ $studentRemark->term3 ?? '' }}</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        <table class="w-full deped-table text-[8px] mb-1">
+                            <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
+                            <tbody>
+                                <tr><td class="w-12 font-bold text-center py-0.5">Term 1</td><td class="text-left h-3 px-1">{{ $studentRemark->term1 ?? '' }}</td></tr>
+                                <tr><td class="font-bold text-center py-0.5">Term 2</td><td class="text-left h-3 px-1">{{ $studentRemark->term2 ?? '' }}</td></tr>
+                                <tr><td class="font-bold text-center py-0.5">Term 3</td><td class="text-left h-3 px-1">{{ $studentRemark->term3 ?? '' }}</td></tr>
+                            </tbody>
+                        </table>
 
                         <!-- SIGNATURE -->
                         <div class="border-t border-black pt-1">
