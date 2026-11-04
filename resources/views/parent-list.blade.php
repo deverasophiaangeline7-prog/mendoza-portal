@@ -3,13 +3,12 @@
 @section('title', 'Parent Accounts')
 
 @section('content')
-<main class="flex-1 p-8 bg-white min-h-screen" x-data="{ addSectionModal: false, deleteSectionModal: false, changePicModal: false, confirmDeleteModal: false }">
+<main class="flex-1 p-8 bg-white min-h-screen" x-data="{ addSectionModal: false, deleteSectionModal: false, changePicModal: false, confirmDeleteModal: false, selectedSectionName: '' }">
     
     <!-- FIXED TOAST NOTIFICATION -->
     @if(session()->has('toast_status') || $errors->any() || session('success'))
         @php
             $isError = $errors->any() || session('toast_status') === 'error';
-            // Check for both 'toast_message' and 'success' so it works with your controller
             $toastMessage = $errors->any() ? $errors->first() : (session('toast_message') ?? session('success'));
         @endphp
         
@@ -20,18 +19,18 @@
              x-transition:leave="transition ease-in duration-300"
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 translate-y-10"
-             class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-4 min-w-[320px] max-w-[400px] rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-[#4ade80] text-black' }} px-5 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+             class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 min-w-[320px] rounded-xl border-4 border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-[#4ade80] text-black' }} px-6 py-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
             
             <div class="flex items-center gap-3">
                 @if($isError)
-                    <i class="fa-solid fa-triangle-exclamation text-2xl shrink-0"></i>
+                    <i class="fa-solid fa-circle-exclamation text-2xl shrink-0"></i>
                 @else
                     <i class="fa-solid fa-circle-check text-2xl shrink-0"></i>
                 @endif
-                <span class="text-sm md:text-base leading-tight">{{ $toastMessage }}</span>
+                <span class="text-lg font-black leading-tight">{{ $toastMessage }}</span>
             </div>
             
-            <button @click="show = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
+            <button @click="show = false" class="text-2xl hover:scale-110 transition shrink-0 font-black">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -115,7 +114,7 @@
         </div>
     </div>
 
-    {{-- ADD SECTION MODAL (Fixed Mobile Centering) --}}
+    {{-- ADD SECTION MODAL --}}
     <div x-show="addSectionModal" class="fixed inset-0 z-50 flex p-4 bg-black/50 overflow-y-auto" x-cloak>
         <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl relative m-auto flex-shrink-0 max-h-[90vh] overflow-y-auto">
             <button @click="addSectionModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
@@ -176,7 +175,16 @@
                 <div class="flex justify-end gap-2 mt-4 shrink-0">
                     <button type="button" @click="deleteSectionModal = false" class="px-4 py-2 bg-gray-200 rounded-lg font-bold">Cancel</button>
                     <button type="button" 
-                            @click="if(document.getElementById('sectionSelect').value) { deleteSectionModal = false; confirmDeleteModal = true; } else { document.getElementById('deleteSectionForm').reportValidity(); }" 
+                            @click="
+                                const select = document.getElementById('sectionSelect');
+                                if(select.value) { 
+                                    selectedSectionName = select.options[select.selectedIndex].text.trim();
+                                    deleteSectionModal = false; 
+                                    confirmDeleteModal = true; 
+                                } else { 
+                                    document.getElementById('deleteSectionForm').reportValidity(); 
+                                }
+                            " 
                             class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold">
                         Delete
                     </button>
@@ -185,18 +193,29 @@
         </div>
     </div>
 
-    {{-- CUSTOM CONFIRMATION MODAL --}}
+    {{-- CUSTOM CONFIRMATION MODAL (Matching UI Reference) --}}
     <div x-show="confirmDeleteModal" class="fixed inset-0 z-[60] flex p-4 bg-black/50 overflow-y-auto" x-cloak>
-        <div class="bg-white border-[3px] border-black rounded-xl p-6 max-w-sm w-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] relative m-auto flex-shrink-0">
-            <div class="flex items-center gap-3 mb-2">
-                <i class="fa-solid fa-triangle-exclamation text-2xl text-red-600"></i>
-                <h3 class="text-2xl font-black text-red-600 uppercase tracking-tight">Confirm Deletion</h3>
-            </div>
-            <p class="text-black font-bold mb-6 mt-2">Are you sure you want to delete this section? This action cannot be undone.</p>
+        <div class="bg-white border-4 border-[#b91c1c] rounded-3xl p-8 max-w-sm w-full shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative m-auto flex-shrink-0 text-center">
             
-            <div class="flex justify-end gap-2 shrink-0">
-                <button type="button" @click="confirmDeleteModal = false; deleteSectionModal = true" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold transition">Cancel</button>
-                <button type="button" @click="document.getElementById('deleteSectionForm').submit()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition">Yes, Delete</button>
+            <!-- Layered Red Trash Icon -->
+            <div class="relative w-20 h-20 mx-auto mb-4">
+                <div class="absolute inset-0 bg-[#b91c1c] rounded-full translate-x-1.5 translate-y-1.5"></div>
+                <div class="absolute inset-0 bg-[#fee2e2] rounded-full flex items-center justify-center border-2 border-[#b91c1c]">
+                    <i class="fa-solid fa-trash text-3xl text-[#b91c1c]"></i>
+                </div>
+            </div>
+
+            <h3 class="text-3xl font-black text-[#b91c1c] uppercase italic mb-3 tracking-tighter">Delete Section?</h3>
+            
+            <p class="text-gray-600 font-bold mb-8 text-sm uppercase leading-relaxed">
+                Are you sure you want to delete <br>
+                <span x-text="selectedSectionName" class="text-[#b91c1c] text-base font-black"></span>?<br>
+                This action cannot be undone.
+            </p>
+            
+            <div class="flex justify-center gap-3 shrink-0">
+                <button type="button" @click="confirmDeleteModal = false; deleteSectionModal = true" class="flex-1 py-3 bg-[#e5e7eb] border-2 border-black rounded-xl font-black text-black uppercase hover:bg-gray-300 transition">Cancel</button>
+                <button type="button" @click="document.getElementById('deleteSectionForm').submit()" class="flex-1 py-3 bg-[#b91c1c] border-2 border-black text-white rounded-xl font-black uppercase hover:bg-red-800 transition">Delete</button>
             </div>
         </div>
     </div>

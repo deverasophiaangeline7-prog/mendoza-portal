@@ -19,10 +19,9 @@
         <!-- HEADER SECTION -->
         <div class="flex flex-col lg:flex-row justify-between items-center lg:items-start gap-6 mb-8">
             
-            <!-- Back Button (Only appears for NKP) -->
+            <!-- Back Button (Only appears for NKP sections) -->
             <div class="w-full lg:w-auto flex justify-center lg:justify-start order-2 lg:order-1 lg:min-w-[60px]">
-                {{-- NOTE: Change $grade === 'NKP' to match the actual variable passed from your controller --}}
-                @if(isset($grade) && $grade === 'NKP') 
+                @if(\Illuminate\Support\Str::contains(strtoupper($displayName), ['NURSERY', 'KINDERGARTEN', 'PREPARATORY', 'NKP']))
                 <a href="{{ route('attendance.index') }}" class="text-red-600 text-5xl hover:scale-110 transition">
                     <i class="fa-solid fa-circle-xmark"></i>
                 </a>
@@ -110,7 +109,7 @@
             </div>
         @else
             <div class="mb-6">
-                <h3 class="font-black text-2xl uppercase border-b-4 border-black inline-block">Attendance Overview</h3>
+                <h3 class="font-black text-2xl uppercase inline-block">Attendance Overview</h3>
             </div>
         @endif
 
