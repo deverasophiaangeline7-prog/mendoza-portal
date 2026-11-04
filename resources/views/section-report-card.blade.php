@@ -32,113 +32,108 @@
         </script>
     @endif
 
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-7xl mx-auto">
         
-        <div class="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
+        <!-- ROW 1: HEADER & ACTION BUTTONS -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
                 <h2 class="text-4xl font-black text-black uppercase tracking-tight">Student List</h2>
                 <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName }}</h3>
             </div>
-
-            <div class="flex items-center gap-4">
+            
+            <div class="flex items-center gap-4 mt-4 md:mt-0">
                 {{-- BATCH PRINT BUTTON --}}
                 <a href="{{ route('reportcard.batch-print', $section_id) }}" target="_blank" 
-                   class="bg-blue-600 text-white font-black px-6 py-2 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 hover:scale-105 transition-all uppercase tracking-wider text-sm flex items-center">
+                   class="bg-blue-600 text-white font-black px-6 py-2 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all uppercase tracking-wider text-sm flex items-center">
                     <i class="fa-solid fa-print mr-2"></i> Print All
                 </a>
-            
-            {{-- Conditionally show the back button based on section count --}}
-            @if($showBackButton)
-                <a href="{{ route('reportcard.index') }}" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
-                    <i class="fa-solid fa-circle-left"></i>
-                </a>
-            @endif
+
+                {{-- BACK BUTTON --}}
+                @if($showBackButton)
+                    <a href="{{ route('reportcard.index') }}" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
+                        <i class="fa-solid fa-circle-left"></i>
+                    </a>
+                @endif
+            </div>
         </div>
 
-        @if(auth()->user()->role === 'teacher')
-            @php
-                $teacherData = \App\Models\Teacher::where('user_id', auth()->id())->first();
-                $assignedSubj = $teacherData ? $teacherData->assigned_subject : 'NONE';
-                
-                // Check if this is an NKP class by looking at the section name
-                $isNkpClass = false;
-                foreach(['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'] as $nkp) {
-                    if (stripos($sectionName ?? '', $nkp) !== false) {
-                        $isNkpClass = true;
-                        break;
-                    }
-                }
-            @endphp
+        <!-- ROW 2: INFO BOX & IMPORT FORM -->
+        <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-6 pb-6 border-b-4 border-black">
             
-            <div class="mb-4 inline-flex items-center gap-3 bg-blue-50 border-[3px] border-black px-4 py-2 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <i class="fa-solid fa-shield-halved text-blue-600 text-xl"></i>
-                <span class="font-bold text-gray-800">
-                    @if($isNkpClass)
-                        You are viewing your <span class="text-blue-600 font-black uppercase">NKP ADVISORY CLASS</span>
-                    @else
-                        You are assigned to grade <span class="text-red-600 font-black uppercase">{{ $assignedSubj }}</span>
-                    @endif
-                </span>
-            </div>
-        @endif
-
-        {{-- NEW EXCEL SUBJECT IMPORT FORM --}}
-        @if(auth()->user()->role === 'teacher' && !$isNkpClass)
-        <form action="{{ route('batch.import', $section_id) }}" method="POST" enctype="multipart/form-data" class="mb-6 flex flex-wrap items-center justify-end gap-3">
-            @csrf
-            
-          <select name="subject" required class="border-[3px] border-black rounded-xl px-3 py-2 font-black text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            <option value="" {{ stripos($assignedSubj, 'ALL') === false ? 'disabled' : '' }}>SELECT SUBJECT</option>
-            
-            @php
-                preg_match('/\d+/', $sectionName, $matches);
-                $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
-
-                if ($gradeNum == 1) {
-                    $subjectList = ['Language', 'Reading and Literacy', 'Mathematics', 'Makabansa', 'GMRC'];
-                } elseif ($gradeNum == 2 || $gradeNum == 3) {
-                    $subjectList = ['English', 'Filipino', 'Mathematics', 'Makabansa', 'GMRC'];
-                } elseif ($gradeNum >= 4 && $gradeNum <= 6) {
-                    $subjectList = ['Filipino', 'English', 'Mathematics', 'Science', 'Araling Panlipunan', 'GMRC', 'TLE', 'MAPEH'];
-                } else {
-                    $subjectList = [];
-                }
-            @endphp
-
-            @foreach($subjectList as $subj)
+            @if(auth()->user()->role === 'teacher')
                 @php
-                    $hasAccess = stripos($assignedSubj, 'ALL') !== false || stripos($assignedSubj, $subj) !== false;
+                    $teacherData = \App\Models\Teacher::where('user_id', auth()->id())->first();
+                    $assignedSubj = $teacherData ? $teacherData->assigned_subject : 'NONE';
+                    
+                    $isNkpClass = false;
+                    foreach(['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY'] as $nkp) {
+                        if (stripos($sectionName ?? '', $nkp) !== false) {
+                            $isNkpClass = true;
+                            break;
+                        }
+                    }
                 @endphp
                 
-                <option value="{{ $subj }}" 
-                    {{ !$hasAccess ? 'disabled' : '' }}
-                    class="{{ !$hasAccess ? 'text-gray-300 bg-gray-100' : 'text-black font-bold' }}"
-                    {{ stripos($assignedSubj, $subj) !== false && stripos($assignedSubj, 'ALL') === false ? 'selected' : '' }}>
-                    {{ $subj }}
-                </option>
-            @endforeach
-        </select>
-            
-            <div x-data="{ fileName: '' }">
-                <label :class="fileName ? 'bg-red-500 text-white' : 'bg-white text-black'" 
-                    class="cursor-pointer border-[3px] border-black rounded-xl px-3 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors inline-flex items-center">
-                    
-                    <i class="fa-solid fa-file-excel mr-2" :class="fileName ? 'text-white' : 'text-black'"></i>
-                    
-                    <span class="mr-2" x-text="fileName ? fileName : 'Choose XLSX'"></span>
-                    
-                    <input type="file" name="excel_file" accept=".xlsx, .xls" required class="hidden" 
-                        @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''">
-                </label>
-            </div>
+                {{-- TEACHER INFO BADGE --}}
+                <div class="inline-flex items-center gap-3 bg-blue-50 border-[3px] border-black px-5 py-3 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-full xl:w-auto">
+                    <i class="fa-solid fa-shield-halved text-blue-600 text-2xl"></i>
+                    <span class="font-bold text-gray-800 text-sm">
+                        @if($isNkpClass)
+                            You are viewing your <br/> <span class="text-blue-600 font-black uppercase">NKP ADVISORY CLASS</span>
+                        @else
+                            You are assigned to grade <br/> <span class="text-red-600 font-black uppercase">{{ $assignedSubj }}</span>
+                        @endif
+                    </span>
+                </div>
+            @else
+                <div></div> <!-- Spacer for layout -->
+            @endif
 
-            <button type="submit" class="bg-[#b26905] text-black font-black px-4 py-2 border-[3px] border-black rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
-                IMPORT GRADES
-            </button>
-        </form>
-        @endif
+            {{-- EXCEL IMPORT FORM --}}
+            @if(auth()->user()->role === 'teacher' && !$isNkpClass)
+            <form action="{{ route('batch.import', $section_id) }}" method="POST" enctype="multipart/form-data" class="w-full xl:w-auto flex flex-wrap items-center justify-start xl:justify-end gap-3">
+                @csrf
+                
+                <select name="subject" required class="border-[3px] border-black rounded-xl px-3 py-2 font-black text-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-sm">
+                    <option value="" {{ stripos($assignedSubj, 'ALL') === false ? 'disabled' : '' }}>SELECT SUBJECT</option>
+                    @php
+                        preg_match('/\d+/', $sectionName, $matches);
+                        $gradeNum = isset($matches[0]) ? (int)$matches[0] : 0;
+                        if ($gradeNum == 1) { $subjectList = ['Language', 'Reading and Literacy', 'Mathematics', 'Makabansa', 'GMRC']; }
+                        elseif ($gradeNum == 2 || $gradeNum == 3) { $subjectList = ['English', 'Filipino', 'Mathematics', 'Makabansa', 'GMRC']; }
+                        elseif ($gradeNum >= 4 && $gradeNum <= 6) { $subjectList = ['Filipino', 'English', 'Mathematics', 'Science', 'Araling Panlipunan', 'GMRC', 'TLE', 'MAPEH']; }
+                        else { $subjectList = []; }
+                    @endphp
+
+                    @foreach($subjectList as $subj)
+                        @php $hasAccess = stripos($assignedSubj, 'ALL') !== false || stripos($assignedSubj, $subj) !== false; @endphp
+                        <option value="{{ $subj }}" 
+                            {{ !$hasAccess ? 'disabled' : '' }}
+                            class="{{ !$hasAccess ? 'text-gray-300 bg-gray-100' : 'text-black font-bold' }}"
+                            {{ stripos($assignedSubj, $subj) !== false && stripos($assignedSubj, 'ALL') === false ? 'selected' : '' }}>
+                            {{ $subj }}
+                        </option>
+                    @endforeach
+                </select>
+                
+                <div x-data="{ fileName: '' }">
+                    <label :class="fileName ? 'bg-red-500 text-white' : 'bg-white text-black'" 
+                        class="cursor-pointer border-[3px] border-black rounded-xl px-4 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors inline-flex items-center text-sm">
+                        <i class="fa-solid fa-file-excel mr-2" :class="fileName ? 'text-white' : 'text-black'"></i>
+                        <span class="mr-2" x-text="fileName ? fileName : 'Choose XLSX'"></span>
+                        <input type="file" name="excel_file" accept=".xlsx, .xls" required class="hidden" 
+                            @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''">
+                    </label>
+                </div>
+
+                <button type="submit" class="bg-[#b26905] text-black font-black px-6 py-2 border-[3px] border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all text-sm">
+                    IMPORT
+                </button>
+            </form>
+            @endif
+        </div>
        
-        {{-- SEARCH BAR --}}
+        <!-- ROW 3: SEARCH BAR -->
         <div class="mb-6 flex justify-end">
             <div class="relative w-full md:w-1/3">
                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
