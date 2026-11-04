@@ -4,49 +4,42 @@
 
 @section('content')
 <style>
-    .deped-table th, .deped-table td { border: 1px solid black; padding: 0.15rem; font-size: 0.65rem; }
+    .deped-table th, .deped-table td { border: 1px solid black; padding: 0.1rem 0.2rem; font-size: 0.6rem; }
     .deped-table th { text-align: center; font-weight: bold; background-color: #f9fafb !important; }
     
     @media print {
         body { background-color: white; margin: 0; padding: 0; }
         body * { visibility: hidden; }
-        #printable-area, #printable-area * { visibility: visible; }
+        #batch-print-area, #batch-print-area * { visibility: visible; }
         
-        /* Pin to Top Left */
         #printable-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
-        
         .no-print { display: none !important; }
         
-        /* 1. Force Landscape & Zero Browser Margins */
-        @page { size: letter landscape; margin: 0 !important; }
+        /* 1. Strict Landscape with minimal margins to guarantee 1-page fit */
+        @page { size: letter landscape; margin: 0.15in !important; }
         
-        /* 2. EXACT PAPER DIMENSIONS to prevent squishing */
         .print-sheet {
             width: 11in !important;
-            height: 8.5in !important;
+            height: 8.2in !important;
             display: flex !important;
             flex-direction: row !important;
             page-break-after: always !important;
             overflow: hidden !important;
             background: white;
+            box-sizing: border-box;
         }
         
-        /* 3. EXACT HALF-PAGE DIMENSIONS for each student */
         .print-card {
-            width: 5.5in !important;
-            height: 8.5in !important;
-            padding: 0.3in 0.4in !important;
+            width: 5.4in !important;
+            height: 8.2in !important;
+            padding: 0.15in 0.25in !important;
             box-sizing: border-box !important;
             display: flex !important;
             flex-direction: column !important;
-            border-right: 1px dashed #ccc;
+            justify-content: space-between;
+            border-right: 1px dashed #999;
         }
         .print-card:last-child { border-right: none; }
-
-        /* 4. Compress vertical spacing to guarantee it doesn't spill to page 2 */
-        .deped-table { margin-bottom: 6px !important; }
-        .deped-table th, .deped-table td { padding: 2px !important; font-size: 8px !important; height: auto !important; }
-        .print-compress { margin-bottom: 2px !important; }
     }
 </style>
 
@@ -70,13 +63,9 @@
         </button>
     </div>
 
-    <!-- START OF PRINTABLE AREA -->
     <div id="printable-area" class="w-full text-black">
-        
         @foreach($students->chunk(2) as $chunk)
-            <!-- A single 11x8.5 sheet of paper -->
-            <div class="print-sheet mb-10 print:mb-0 w-full flex bg-white shadow-xl print:shadow-none">
-                
+            <div class="print-sheet mb-10 print:mb-0 w-full flex bg-white shadow-xl print:shadow-none mx-auto">
                 @foreach($chunk as $student)
                     @php
                         $studentGrades = isset($grades[$student->student_id]) ? $grades[$student->student_id]->keyBy('subject_name') : collect();
@@ -85,21 +74,20 @@
                         $cleanGrade = str_replace('GRADE', '', strtoupper($section->grade_level));
                     @endphp
                     
-                    <!-- Exactly half the paper -->
-                    <div class="print-card w-1/2 p-6 border-r border-dashed border-gray-300 last:border-r-0">
+                    <div class="print-card w-1/2 p-4">
                         
                         <!-- HEADER -->
-                        <div class="print-compress mb-4">
-                            <div class="flex items-center justify-center gap-3 mb-2">
-                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 object-contain">
-                                <div class="text-center leading-none">
-                                    <h1 class="text-[13px] font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
-                                    <h2 class="text-[10px] font-semibold mt-1">Temporary Learner’s Performance Report</h2>
-                                    <p class="text-[8px] font-bold mt-1">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
+                        <div>
+                            <div class="flex items-center justify-center gap-2 mb-1">
+                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-8 h-8 object-contain">
+                                <div class="text-center leading-tight">
+                                    <h1 class="text-[11px] font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
+                                    <h2 class="text-[9px] font-semibold">Temporary Learner’s Performance Report</h2>
+                                    <p class="text-[7px] font-bold">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
                                 </div>
                             </div>
                             
-                            <div class="text-[9px] font-semibold space-y-1 mt-2">
+                            <div class="text-[9px] font-semibold space-y-0.5 border-b border-black pb-1 mb-1">
                                 <div class="flex items-end">
                                     <span class="w-10">Name:</span>
                                     <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ strtoupper($student->last_name . ', ' . $student->first_name) }}</span>
@@ -126,47 +114,49 @@
                         </div>
 
                         <!-- GRADES TABLE -->
-                        <h4 class="text-center font-bold text-[8px] print-compress uppercase mt-2">Report on Learning Progress and Achievement</h4>
-                        <table class="w-full deped-table mb-2">
-                            <thead>
-                                <tr>
-                                    <th rowspan="2" class="w-1/3">Learning Areas</th>
-                                    <th colspan="3">Term</th>
-                                    <th rowspan="2" class="w-8">Final<br>Grade</th>
-                                    <th rowspan="2">Remarks</th>
-                                </tr>
-                                <tr><th class="w-6">1</th><th class="w-6">2</th><th class="w-6">3</th></tr>
-                            </thead>
-                            <tbody class="text-center font-bold">
-                                @foreach($subjects as $subj)
-                                    @php
-                                        $g = $studentGrades[$subj] ?? null;
-                                        $t1 = $g->term1 ?? ''; $t2 = $g->term2 ?? ''; $t3 = $g->term3 ?? '';
-                                        $final = $g->final_grade ?? ''; $rem = $g->remarks ?? '';
-                                        if(is_numeric($final)) { $totalScore += $final; $count++; }
-                                    @endphp
+                        <div>
+                            <h4 class="text-center font-bold text-[8px] mb-0.5 uppercase">Report on Learning Progress and Achievement</h4>
+                            <table class="w-full deped-table mb-1">
+                                <thead>
                                     <tr>
-                                        <td class="text-left">{{ $subj }}</td>
-                                        <td>{{ $gradeNum == 1 ? getDescriptor($t1) : $t1 }}</td>
-                                        <td>{{ $gradeNum == 1 ? getDescriptor($t2) : $t2 }}</td>
-                                        <td>{{ $gradeNum == 1 ? getDescriptor($t3) : $t3 }}</td>
-                                        <td>{{ $gradeNum == 1 ? getDescriptor($final) : $final }}</td>
-                                        <td>{{ $rem }}</td>
+                                        <th rowspan="2" class="w-1/3">Learning Areas</th>
+                                        <th colspan="3">Term</th>
+                                        <th rowspan="2" class="w-6">Final<br>Grade</th>
+                                        <th rowspan="2" class="w-10">Remarks</th>
                                     </tr>
-                                @endforeach
-                                <tr>
-                                    <td colspan="4" class="text-right pr-2">General Average</td>
-                                    @php $genAve = $count > 0 ? round($totalScore/$count) : ''; @endphp
-                                    <td>{{ $gradeNum == 1 ? getDescriptor($genAve) : $genAve }}</td>
-                                    <td>{{ $genAve ? ($genAve >= 65 ? 'Promoted' : 'Retained') : '' }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                    <tr><th class="w-5">1</th><th class="w-5">2</th><th class="w-5">3</th></tr>
+                                </thead>
+                                <tbody class="text-center font-bold">
+                                    @foreach($subjects as $subj)
+                                        @php
+                                            $g = $studentGrades[$subj] ?? null;
+                                            $t1 = $g->term1 ?? ''; $t2 = $g->term2 ?? ''; $t3 = $g->term3 ?? '';
+                                            $final = $g->final_grade ?? ''; $rem = $g->remarks ?? '';
+                                            if(is_numeric($final)) { $totalScore += $final; $count++; }
+                                        @endphp
+                                        <tr>
+                                            <td class="text-left">{{ $subj }}</td>
+                                            <td>{{ $gradeNum == 1 ? getDescriptor($t1) : $t1 }}</td>
+                                            <td>{{ $gradeNum == 1 ? getDescriptor($t2) : $t2 }}</td>
+                                            <td>{{ $gradeNum == 1 ? getDescriptor($t3) : $t3 }}</td>
+                                            <td>{{ $gradeNum == 1 ? getDescriptor($final) : $final }}</td>
+                                            <td>{{ $rem }}</td>
+                                        </tr>
+                                    @endforeach
+                                    <tr>
+                                        <td colspan="4" class="text-right pr-2">General Average</td>
+                                        @php $genAve = $count > 0 ? round($totalScore/$count) : ''; @endphp
+                                        <td>{{ $gradeNum == 1 ? getDescriptor($genAve) : $genAve }}</td>
+                                        <td>{{ $genAve ? ($genAve >= 65 ? 'Promoted' : 'Retained') : '' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
 
                         <!-- LEGEND -->
                         @if($gradeNum == 1)
-                        <div class="mb-2 text-[8px]">
-                            <h4 class="text-center font-bold print-compress">Performance Descriptors</h4>
+                        <div class="text-[7px] my-0.5">
+                            <h4 class="text-center font-bold mb-0.5">Performance Descriptors</h4>
                             <table class="w-full deped-table text-center font-semibold">
                                 <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
                                 <tbody>
@@ -181,22 +171,24 @@
                         @endif
 
                         <!-- REMARKS -->
-                        <table class="w-full deped-table mb-2 text-[8px] mt-auto">
-                            <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
-                            <tbody>
-                                <tr><td class="w-12 font-bold text-center">Term 1</td><td class="text-left h-4">{{ $studentRemark->term1 ?? '' }}</td></tr>
-                                <tr><td class="font-bold text-center">Term 2</td><td class="text-left h-4">{{ $studentRemark->term2 ?? '' }}</td></tr>
-                                <tr><td class="font-bold text-center">Term 3</td><td class="text-left h-4">{{ $studentRemark->term3 ?? '' }}</td></tr>
-                            </tbody>
-                        </table>
+                        <div>
+                            <table class="w-full deped-table text-[7px] mb-1">
+                                <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
+                                <tbody>
+                                    <tr><td class="w-10 font-bold text-center py-0.5">Term 1</td><td class="text-left h-3 px-1">{{ $studentRemark->term1 ?? '' }}</td></tr>
+                                    <tr><td class="font-bold text-center py-0.5">Term 2</td><td class="text-left h-3 px-1">{{ $studentRemark->term2 ?? '' }}</td></tr>
+                                    <tr><td class="font-bold text-center py-0.5">Term 3</td><td class="text-left h-3 px-1">{{ $studentRemark->term3 ?? '' }}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
 
                         <!-- SIGNATURE -->
-                        <div class="mt-2">
-                            <h4 class="font-bold text-center uppercase mb-3 text-[9px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
-                            <div class="space-y-1.5 text-[9px] font-semibold max-w-[200px] mx-auto">
-                                <div class="flex items-end gap-2"><span class="w-10">Term 1</span><div class="flex-1 border-b border-black"></div></div>
-                                <div class="flex items-end gap-2"><span class="w-10">Term 2</span><div class="flex-1 border-b border-black"></div></div>
-                                <div class="flex items-end gap-2"><span class="w-10">Term 3</span><div class="flex-1 border-b border-black"></div></div>
+                        <div class="border-t border-black pt-1">
+                            <h4 class="font-bold text-center uppercase mb-1 text-[8px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
+                            <div class="space-y-1 text-[8px] font-semibold max-w-[180px] mx-auto">
+                                <div class="flex items-end gap-1"><span class="w-8">Term 1</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-1"><span class="w-8">Term 2</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-1"><span class="w-8">Term 3</span><div class="flex-1 border-b border-black"></div></div>
                             </div>
                         </div>
 
