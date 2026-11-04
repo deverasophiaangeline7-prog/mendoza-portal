@@ -3,10 +3,12 @@
 @section('title', 'Messages - Mendoza Academy')
 
 @section('content')
-@if(request()->query('deleted') == 1)
+@if(request()->query('deleted') == 1 || session('success'))
     <div id="brutal-toast" style="position: fixed; bottom: 40px; right: 40px; z-index: 99999; background-color: #43e276; color: black; border: 4px solid black; border-radius: 12px; box-shadow: 8px 8px 0px 0px black; padding: 16px 28px; font-family: system-ui, sans-serif; font-weight: 900; font-size: 16px; text-transform: uppercase; display: flex; align-items: center; gap: 12px; letter-spacing: 0.5px; transition: opacity 0.4s ease;">
         <i class="fa-solid fa-circle-check" style="font-size: 22px;"></i>
-        <span>Group Deleted!</span>
+        <span>
+            {{ session('success') ?? 'Group Deleted!' }}
+        </span>
     </div>
     
     <script>
@@ -18,12 +20,36 @@
             }
         }, 4000);
 
-        
         if(window.history.replaceState) {
-            window.history.replaceState({}, document.title, window.location.pathname);
+            const url = new URL(window.location);
+            if (url.searchParams.has('deleted')) {
+                url.searchParams.delete('deleted');
+                window.history.replaceState({}, document.title, url.pathname + url.search);
+            }
         }
     </script>
 @endif
+
+<!-- ERROR TOAST -->
+@if($errors->any())
+    <div id="brutal-toast-error" style="position: fixed; bottom: 40px; right: 40px; z-index: 99999; background-color: #ff4747; color: white; border: 4px solid black; border-radius: 12px; box-shadow: 8px 8px 0px 0px black; padding: 16px 28px; font-family: system-ui, sans-serif; font-weight: 900; font-size: 16px; display: flex; align-items: center; gap: 12px; letter-spacing: 0.5px; transition: opacity 0.4s ease;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 22px;"></i>
+        <span>
+            {{ $errors->first() }}
+        </span>
+    </div>
+    
+    <script>
+        setTimeout(() => {
+            let errorToast = document.getElementById('brutal-toast-error');
+            if (errorToast) {
+                errorToast.style.opacity = '0';
+                setTimeout(() => { errorToast.style.display = 'none'; }, 400); 
+            }
+        }, 4000);
+    </script>
+@endif
+
 <style>
     .typing-indicator {
         display: inline-flex;
@@ -376,8 +402,7 @@
 
     <!-- Create Group Chat Modal -->
     <div x-show="createGroupModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-transition.opacity>
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col" @click.away="createGroupModal = false">
-            <div class="p-4 border-b bg-[#6d0101] text-white flex justify-between items-center">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col" @click.away="createGroupModal = false">            <div class="p-4 border-b bg-[#6d0101] text-white flex justify-between items-center">
                 <h3 class="font-bold text-lg">Create Group Chat</h3>
                 <button @click="createGroupModal = false" class="hover:text-gray-300 transition text-xl">
                     <i class="fa-solid fa-xmark"></i>
@@ -431,33 +456,76 @@
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Select Members</label>
                     
                     <!-- Scrollable Contact List -->
-                    <div class="max-h-52 overflow-y-auto border-2 border-gray-100 rounded-xl divide-y divide-gray-100 mb-6 shadow-inner bg-gray-50">
+                    <div class="max-h-64 overflow-y-auto border-2 border-gray-100 rounded-xl divide-y divide-gray-100 mb-6 shadow-inner bg-gray-50 relative">
                         @if(isset($contacts) && count($contacts) > 0)
-                            @foreach ($contacts as $contact)
-                                <label class="flex items-center p-3 hover:bg-red-50 cursor-pointer transition-colors bg-white"
+                            @php
+                                $contactCollection = collect($contacts);
+                                $parents = $contactCollection->filter(fn($c) => strtolower($c->role) === 'parent');
+                                $staff = $contactCollection->filter(fn($c) => strtolower($c->role) !== 'parent');
+                            @endphp
+
+                            <!-- Staff & Admin Section -->
+                            @if($staff->count() > 0)
+                                <div class="bg-gray-200/90 backdrop-blur-sm px-3 py-1.5 text-[10px] font-black text-gray-500 uppercase tracking-wider sticky top-0 z-10 shadow-sm" x-show="groupSearch === '' || {{ $staff->toJson() }}.some(c => (c.name + ' ' + c.role).toLowerCase().includes(groupSearch.toLowerCase()))">
+                                    Staff & Admins
+                                </div>
+                                @foreach ($staff as $contact)
+                                    <label class="flex items-center p-3 hover:bg-red-50 cursor-pointer transition-colors bg-white"
                                         x-show="groupSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(groupSearch.toLowerCase())">
-                                    
-                                    <input type="checkbox" name="members[]" value="{{ $contact->user_id }}" x-model="selectedMembers" class="rounded text-[#6d0101] border-gray-300 focus:ring-[#6d0101] w-4 h-4 mr-3">
-                                    
-                                    <!-- 👇 ADDED THE PHP CUSTOM PHOTO LOGIC HERE 👇 -->
-                                    @php
-                                        $groupPhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($contact->name) . '&background=f3f4f6&color=374151';
-                                        if ($contact->profile_photo_path) {
-                                            $groupPhotoUrl = str_starts_with($contact->profile_photo_path, 'profile_photos') 
-                                                ? asset('storage/' . $contact->profile_photo_path) 
-                                                : asset($contact->profile_photo_path);
-                                        }
-                                    @endphp
-                                    <img src="{{ $groupPhotoUrl }}" class="w-9 h-9 rounded-full mr-3 border object-cover" alt="User">
-                                    
-                                    <div>
-                                        <h4 class="font-bold text-gray-800 text-sm leading-tight">{{ $contact->name }}</h4>
-                                        <span class="text-[10px] font-black uppercase tracking-wider {{ $contact->role === 'admin' ? 'text-blue-600' : ($contact->role === 'teacher' ? 'text-amber-600' : 'text-gray-500') }}">
-                                            {{ $contact->role }}
-                                        </span>
-                                    </div>
-                                </label>
-                            @endforeach
+                                        
+                                        <input type="checkbox" name="members[]" value="{{ $contact->user_id }}" x-model="selectedMembers" class="rounded text-[#6d0101] border-gray-300 focus:ring-[#6d0101] w-4 h-4 mr-3">
+                                        
+                                        @php
+                                            $groupPhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($contact->name) . '&background=f3f4f6&color=374151';
+                                            if ($contact->profile_photo_path) {
+                                                $groupPhotoUrl = str_starts_with($contact->profile_photo_path, 'profile_photos') 
+                                                    ? asset('storage/' . $contact->profile_photo_path) 
+                                                    : asset($contact->profile_photo_path);
+                                            }
+                                        @endphp
+                                        <img src="{{ $groupPhotoUrl }}" class="w-9 h-9 rounded-full mr-3 border object-cover" alt="User">
+                                        
+                                        <div>
+                                            <h4 class="font-bold text-gray-800 text-sm leading-tight">{{ $contact->name }}</h4>
+                                            <span class="text-[10px] font-black uppercase tracking-wider {{ $contact->role === 'admin' ? 'text-blue-600' : 'text-amber-600' }}">
+                                                {{ $contact->role }}
+                                            </span>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            @endif
+
+                            <!-- Parents Section -->
+                            @if($parents->count() > 0)
+                                <div class="bg-gray-200/90 backdrop-blur-sm px-3 py-1.5 text-[10px] font-black text-gray-500 uppercase tracking-wider sticky top-0 z-10 shadow-sm" x-show="groupSearch === '' || {{ $parents->toJson() }}.some(c => (c.name + ' ' + c.role).toLowerCase().includes(groupSearch.toLowerCase()))">
+                                    Parents
+                                </div>
+                                @foreach ($parents as $contact)
+                                    <label class="flex items-center p-3 hover:bg-red-50 cursor-pointer transition-colors bg-white"
+                                        x-show="groupSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(groupSearch.toLowerCase())">
+                                        
+                                        <input type="checkbox" name="members[]" value="{{ $contact->user_id }}" x-model="selectedMembers" class="rounded text-[#6d0101] border-gray-300 focus:ring-[#6d0101] w-4 h-4 mr-3">
+                                        
+                                        @php
+                                            $groupPhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($contact->name) . '&background=f3f4f6&color=374151';
+                                            if ($contact->profile_photo_path) {
+                                                $groupPhotoUrl = str_starts_with($contact->profile_photo_path, 'profile_photos') 
+                                                    ? asset('storage/' . $contact->profile_photo_path) 
+                                                    : asset($contact->profile_photo_path);
+                                            }
+                                        @endphp
+                                        <img src="{{ $groupPhotoUrl }}" class="w-9 h-9 rounded-full mr-3 border object-cover" alt="User">
+                                        
+                                        <div>
+                                            <h4 class="font-bold text-gray-800 text-sm leading-tight">{{ $contact->name }}</h4>
+                                            <span class="text-[10px] font-black uppercase tracking-wider text-green-600">
+                                                {{ $contact->role }}
+                                            </span>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            @endif
+
                         @else
                             <div class="p-6 text-center text-gray-500 text-sm font-bold">No contacts available.</div>
                         @endif
