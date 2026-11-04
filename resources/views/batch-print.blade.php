@@ -10,21 +10,43 @@
     @media print {
         body { background-color: white; margin: 0; padding: 0; }
         body * { visibility: hidden; }
-        #batch-print-area, #batch-print-area * { visibility: visible; }
+        #printable-area, #printable-area * { visibility: visible; }
         
-        /* Force container to 100% of the physical paper width */
-        #batch-print-area { position: absolute; left: 0; top: 0; width: 100% !important; max-width: 100% !important; margin: 0; padding: 0; }
+        /* Pin to Top Left */
+        #printable-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
         
         .no-print { display: none !important; }
         
-        /* 1. Force Landscape & tight margins */
-        @page { size: letter landscape; margin: 0.2in; }
+        /* 1. Force Landscape & Zero Browser Margins */
+        @page { size: letter landscape; margin: 0 !important; }
         
-        /* 2. Break pages only after 2 students */
-        .page-break { page-break-after: always; }
+        /* 2. EXACT PAPER DIMENSIONS to prevent squishing */
+        .print-sheet {
+            width: 11in !important;
+            height: 8.5in !important;
+            display: flex !important;
+            flex-direction: row !important;
+            page-break-after: always !important;
+            overflow: hidden !important;
+            background: white;
+        }
         
-        /* 3. STRICT FIT: Keep elements contained */
-        .student-card { page-break-inside: avoid; overflow: hidden; }
+        /* 3. EXACT HALF-PAGE DIMENSIONS for each student */
+        .print-card {
+            width: 5.5in !important;
+            height: 8.5in !important;
+            padding: 0.3in 0.4in !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            flex-direction: column !important;
+            border-right: 1px dashed #ccc;
+        }
+        .print-card:last-child { border-right: none; }
+
+        /* 4. Compress vertical spacing to guarantee it doesn't spill to page 2 */
+        .deped-table { margin-bottom: 6px !important; }
+        .deped-table th, .deped-table td { padding: 2px !important; font-size: 8px !important; height: auto !important; }
+        .print-compress { margin-bottom: 2px !important; }
     }
 </style>
 
@@ -48,12 +70,12 @@
         </button>
     </div>
 
-    <!-- FULL WIDTH BATCH PRINT AREA -->
-    <div id="batch-print-area" class="w-full text-black">
+    <!-- START OF PRINTABLE AREA -->
+    <div id="printable-area" class="w-full text-black">
         
         @foreach($students->chunk(2) as $chunk)
-            <!-- Use Flexbox to push the two cards apart to the edges of the page -->
-            <div class="flex justify-between w-full {{ !$loop->last ? 'page-break' : '' }} mb-10 print:mb-0 print:pt-4">
+            <!-- A single 11x8.5 sheet of paper -->
+            <div class="print-sheet mb-10 print:mb-0 w-full flex bg-white shadow-xl print:shadow-none">
                 
                 @foreach($chunk as $student)
                     @php
@@ -63,21 +85,21 @@
                         $cleanGrade = str_replace('GRADE', '', strtoupper($section->grade_level));
                     @endphp
                     
-                    <!-- Exactly 49% width so two fit perfectly side-by-side without squishing -->
-                    <div class="w-[49%] bg-white print:bg-transparent p-4 print:p-0 border-2 border-black print:border-0 rounded-xl print:rounded-none student-card">
+                    <!-- Exactly half the paper -->
+                    <div class="print-card w-1/2 p-6 border-r border-dashed border-gray-300 last:border-r-0">
                         
                         <!-- HEADER -->
-                        <div class="mb-2 print:mb-1">
-                            <div class="flex items-center justify-center gap-2 mb-2 print:mb-1">
-                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 print:w-8 print:h-8 object-contain">
+                        <div class="print-compress mb-4">
+                            <div class="flex items-center justify-center gap-3 mb-2">
+                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 object-contain">
                                 <div class="text-center leading-none">
                                     <h1 class="text-[13px] font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
                                     <h2 class="text-[10px] font-semibold mt-1">Temporary Learner’s Performance Report</h2>
-                                    <p class="text-[8px] font-bold mt-0.5">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
+                                    <p class="text-[8px] font-bold mt-1">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
                                 </div>
                             </div>
                             
-                            <div class="text-[10px] font-semibold space-y-1">
+                            <div class="text-[9px] font-semibold space-y-1 mt-2">
                                 <div class="flex items-end">
                                     <span class="w-10">Name:</span>
                                     <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ strtoupper($student->last_name . ', ' . $student->first_name) }}</span>
@@ -104,8 +126,8 @@
                         </div>
 
                         <!-- GRADES TABLE -->
-                        <h4 class="text-center font-bold text-[8px] mb-0.5 uppercase">Report on Learning Progress and Achievement</h4>
-                        <table class="w-full deped-table mb-1">
+                        <h4 class="text-center font-bold text-[8px] print-compress uppercase mt-2">Report on Learning Progress and Achievement</h4>
+                        <table class="w-full deped-table mb-2">
                             <thead>
                                 <tr>
                                     <th rowspan="2" class="w-1/3">Learning Areas</th>
@@ -143,8 +165,8 @@
 
                         <!-- LEGEND -->
                         @if($gradeNum == 1)
-                        <div class="mb-1 text-[8px]">
-                            <h4 class="text-center font-bold mb-0.5">Performance Descriptors</h4>
+                        <div class="mb-2 text-[8px]">
+                            <h4 class="text-center font-bold print-compress">Performance Descriptors</h4>
                             <table class="w-full deped-table text-center font-semibold">
                                 <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
                                 <tbody>
@@ -159,7 +181,7 @@
                         @endif
 
                         <!-- REMARKS -->
-                        <table class="w-full deped-table mb-2 text-[8px]">
+                        <table class="w-full deped-table mb-2 text-[8px] mt-auto">
                             <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
                             <tbody>
                                 <tr><td class="w-12 font-bold text-center">Term 1</td><td class="text-left h-4">{{ $studentRemark->term1 ?? '' }}</td></tr>
@@ -169,8 +191,8 @@
                         </table>
 
                         <!-- SIGNATURE -->
-                        <div class="mt-1 print:mt-0">
-                            <h4 class="font-bold text-center uppercase mb-2 text-[9px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
+                        <div class="mt-2">
+                            <h4 class="font-bold text-center uppercase mb-3 text-[9px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
                             <div class="space-y-1.5 text-[9px] font-semibold max-w-[200px] mx-auto">
                                 <div class="flex items-end gap-2"><span class="w-10">Term 1</span><div class="flex-1 border-b border-black"></div></div>
                                 <div class="flex items-end gap-2"><span class="w-10">Term 2</span><div class="flex-1 border-b border-black"></div></div>
@@ -184,7 +206,6 @@
         @endforeach
     </div>
 </main>
-
 <script>
     window.onload = function() {
         setTimeout(() => window.print(), 500);

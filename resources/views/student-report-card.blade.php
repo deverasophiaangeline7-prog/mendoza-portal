@@ -7,45 +7,58 @@
     .form-input-pill { border: 1px solid #ccc; height: 100%; width: 100%; text-align: center; font-weight: 900; font-size: 1.1rem; outline: none; background: transparent; }
     .form-select-pill { border: 1px solid #ccc; height: 100%; width: 100%; text-align: center; font-weight: bold; font-size: 0.9rem; outline: none; background: transparent; cursor: pointer; }
     .form-input-pill:focus, .form-select-pill:focus { background: white; border-color: #3b82f6; }
-    
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
 
     .deped-table th, .deped-table td { border: 1px solid black; padding: 0.25rem 0.5rem; }
     .deped-table th { text-align: center; font-weight: bold; }
     .deped-table td.input-cell { padding: 0; height: 35px; }
 
-    /* PRINT STYLES */
     .print-only { display: none; }
     
+    @media screen {
+        /* Prevents wrappers from breaking screen layout */
+        .print-sheet, .print-card { width: 100%; display: block; }
+    }
+
     @media print {
-        body { background-color: white; }
-        body * { visibility: hidden; }
-        #printable-area, #printable-area * { visibility: visible; }
-        #printable-area { position: absolute; left: 0; top: 0; width: 100%; }
-        .print-only { display: block !important; }
-        .no-print { display: none !important; }
-        
-        @page { size: letter landscape; margin: 0.5in; }
-        #printable-area { width: 48%; padding-right: 0.2in; font-size: 12px; } 
-    }/* PRINT STYLES */
-    .print-only { display: none; }
-    
-    @media print {
-        body { background-color: white; }
+        body { background-color: white; margin: 0; padding: 0; }
         body * { visibility: hidden; }
         #printable-area, #printable-area * { visibility: visible; }
         
+        #printable-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
         .print-only { display: block !important; }
         .no-print { display: none !important; }
         
-        /* 1. Force Landscape */
-        @page { size: letter landscape; margin: 0.2in; }
+        /* 1. Force Landscape & Zero Browser Margins */
+        @page { size: letter landscape; margin: 0 !important; }
         
-        /* 2. Force exactly half-width (49%) pinned to the top left so it stretches perfectly */
-        #printable-area { position: absolute; left: 0; top: 0; width: 49% !important; max-width: 49% !important; margin: 0; padding: 0; }
-        .deped-table th, .deped-table td { padding: 0.15rem !important; font-size: 9px !important; }
+        /* 2. EXACT PAPER DIMENSIONS to prevent squishing */
+        .print-sheet {
+            width: 11in !important;
+            height: 8.5in !important;
+            display: flex !important;
+            flex-direction: row !important;
+            page-break-after: always !important;
+            overflow: hidden !important;
+            background: white;
+        }
+        
+        /* 3. EXACT HALF-PAGE DIMENSIONS (Forces left alignment) */
+        .print-card {
+            width: 5.5in !important;
+            height: 8.5in !important;
+            padding: 0.3in 0.4in !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        /* 4. Compress vertical spacing to guarantee it doesn't spill to page 2 */
+        .deped-table { margin-bottom: 6px !important; }
+        .deped-table th, .deped-table td { padding: 2px !important; font-size: 8px !important; height: auto !important; }
+        .input-cell { padding: 2px !important; height: auto !important; }
+        .print-compress { margin-bottom: 2px !important; }
     }
 </style>
 
@@ -84,157 +97,163 @@
             </div>
         </div>
 
+        @php
+            $studentObj = \App\Models\Student::with('section.teacher')->find($student_id);
+            $teacherObj = $studentObj->section->teacher ?? null;
+            $resolvedTeacherName = $teacherObj ? strtoupper($teacherObj->first_name . ' ' . $teacherObj->last_name) : '_________________';
+        @endphp
+
         <!-- START OF PRINTABLE AREA -->
         <div id="printable-area" class="w-full">
-            
-            <!-- 1. HIDDEN PRINT HEADER -->
-            <div class="print-only text-black mb-6">
-                <div class="flex items-center justify-center gap-4 mb-4">
-                    <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-12 h-12 object-contain">
-                    <div class="text-center leading-none">
-                        <h1 class="text-lg font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
-                        <h2 class="text-[13px] font-semibold mt-1">Temporary Learner’s Performance Report</h2>
-                        <p class="text-[11px] font-bold mt-1">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
-                    </div>
-                </div>
-                
-                <div class="text-[12px] font-semibold space-y-2">
-                    <div class="flex items-end">
-                        <span class="w-12">Name:</span>
-                        <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-0.5">{{ $studentName }}</span>
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <div class="flex items-end w-1/4">
-                            <span class="mr-2">Grade:</span>
-                            @php $cleanGrade = str_replace('GRADE', '', strtoupper($sectionName ?? '')); @endphp
-                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ explode("\n", trim($cleanGrade))[0] }}</span>
+            <div class="print-sheet">
+                <div class="print-card">
+                    
+                    <!-- 1. HIDDEN PRINT HEADER -->
+                    <div class="print-only text-black print-compress mb-4">
+                        <div class="flex items-center justify-center gap-3 mb-2">
+                            <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 object-contain">
+                            <div class="text-center leading-none">
+                                <h1 class="text-[13px] font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
+                                <h2 class="text-[10px] font-semibold mt-1">Temporary Learner’s Performance Report</h2>
+                                <p class="text-[8px] font-bold mt-1">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
+                            </div>
                         </div>
-                        <div class="flex items-end w-1/3">
-                            <span class="mr-2">Section:</span>
-                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ explode("\n", $sectionName ?? '')[1] ?? '' }}</span>
-                        </div>
-                        <div class="flex items-end flex-1">
-                            <span class="mr-2">LRN:</span>
-                            <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ \App\Models\Student::find($student_id)->lrn ?? 'N/A' }}</span>
+                        
+                        <div class="text-[9px] font-semibold space-y-1 mt-2">
+                            <div class="flex items-end">
+                                <span class="w-10">Name:</span>
+                                <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $studentName }}</span>
+                            </div>
+                            <div class="flex items-end gap-2">
+                                <div class="flex items-end w-1/4">
+                                    <span class="mr-1">Grade:</span>
+                                    @php $cleanGrade = str_replace('GRADE', '', strtoupper($sectionName ?? '')); @endphp
+                                    <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ explode("\n", trim($cleanGrade))[0] }}</span>
+                                </div>
+                                <div class="flex items-end w-1/3">
+                                    <span class="mr-1">Section:</span>
+                                    <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ explode("\n", $sectionName ?? '')[1] ?? '' }}</span>
+                                </div>
+                                <div class="flex items-end flex-1">
+                                    <span class="mr-1">LRN:</span>
+                                    <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ $studentObj->lrn ?? 'N/A' }}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-end">
+                                <span class="w-12">Teacher:</span>
+                                <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $resolvedTeacherName }}</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex items-end">
-                        <span class="w-14">Teacher:</span>
-                        <span class="flex-1 border-b border-black font-normal px-2 leading-none pb-0.5">_________________</span>
-                    </div>
+
+                    <!-- VISIBLE TABLES (Displays properly on screen and in print) -->
+                    <div class="flex flex-col space-y-10 print:space-y-0 w-full mt-4 print:mt-2">
+                        
+                        <!-- GRADES TABLE -->
+                        <div class="w-full print-compress">
+                            <h4 class="text-center font-bold text-lg mb-2 uppercase print:text-[8px] print:mb-0.5">Report on Learning Progress and Achievement</h4>
+                            <table class="w-full text-sm deped-table bg-white">
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2" class="w-1/3">Learning Areas</th>
+                                        <th colspan="3">Term</th>
+                                        <th rowspan="2" class="w-16 print:w-8">Final<br>Grade</th>
+                                        <th rowspan="2" class="w-20">Remarks</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="w-12 print:w-6">1</th>
+                                        <th class="w-12 print:w-6">2</th>
+                                        <th class="w-12 print:w-6">3</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-center font-bold">
+                                    @foreach($subjects as $subject)
+                                    <tr>
+                                        <td class="text-left font-bold">{{ $subject }}</td>
+                                        @for($t = 1; $t <= 3; $t++)
+                                        <td class="input-cell text-center">
+                                            <input x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}') && canGradeSubject('{{ $subject }}')" type="number" min="0" max="100" step="0.01" 
+                                                   oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" 
+                                                   x-model="grades['{{ $subject }}'].term{{ $t }}" @input="calculateGrades()" 
+                                                   class="form-input-pill">
+                                            <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}') || !canGradeSubject('{{ $subject }}')" 
+                                            x-text="gradeLevelNum === 1 ? getDescriptor(grades['{{ $subject }}'].term{{ $t }}) : grades['{{ $subject }}'].term{{ $t }}"></span>
+                                        </td>
+                                        @endfor
+                                        <td class="text-center font-bold" 
+                                        x-text="gradeLevelNum === 1 ? getDescriptor(grades['{{ $subject }}'].final_grade) : grades['{{ $subject }}'].final_grade"></td>
+                                        <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
+                                    </tr>
+                                    @endforeach
+
+                                    <tr>
+                                        <td colspan="4" class="text-right font-bold pr-4 print:pr-2">General Average</td>
+                                        <td class="text-center font-bold text-lg print:text-[9px]" 
+                                        x-text="gradeLevelNum === 1 ? getDescriptor(generalAverage) : generalAverage"></td>
+                                        <td class="text-center font-bold" x-text="finalStatus"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- LEGEND (Grade 1 Only) -->
+                        <div x-show="gradeLevelNum === 1" x-cloak class="w-full print-compress mt-4 print:mt-1">
+                            <h4 class="text-center font-bold text-lg print:text-[8px] mb-2 print:mb-0.5">Performance Descriptors</h4>
+                            <div class="max-w-3xl mx-auto print:max-w-full">
+                                <table class="w-full text-sm deped-table bg-white font-semibold">
+                                    <thead>
+                                        <tr><th class="w-1/3">Scale</th><th class="w-1/3">Descriptors</th><th class="w-1/3">Remarks</th></tr>
+                                    </thead>
+                                    <tbody class="text-center">
+                                        <tr><td>90 - 100</td><td>Advancing</td><td>Passed</td></tr>
+                                        <tr><td>80 - 89</td><td>Benchmarking</td><td>Passed</td></tr>
+                                        <tr><td>75 - 79</td><td>Connecting</td><td>Passed</td></tr>
+                                        <tr><td>65 - 74</td><td>Developing</td><td>Passed</td></tr>
+                                        <tr><td>0 - 64</td><td>Emerging</td><td>Failed</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- TEACHER REMARKS -->
+                        <div class="w-full mt-4 print:mt-auto">
+                            <h4 class="text-center font-bold text-lg uppercase print:text-[8px] mb-2 print:mb-0.5">Teacher's Comments/Remarks</h4>
+                            <table class="w-full text-sm deped-table bg-white">
+                                <tbody>
+                                    @for($t = 1; $t <= 3; $t++)
+                                    <tr>
+                                        <td class="w-32 font-bold align-middle px-3 py-2 text-center print:w-12 print:p-0">Term {{ $t }}</td>
+                                        <td class="p-0 align-top relative">
+                                            <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
+                                                      x-model="teacherRemarks.term{{ $t }}" 
+                                                      @input="teacherRemarks.term{{ $t }} = $event.target.value.replace(/[^a-zA-Z\s.,\-']/g, '')"
+                                                      rows="2"
+                                                      class="w-full min-h-[3rem] px-3 py-2 outline-none resize-y focus:bg-white focus:ring-2 focus:ring-blue-500 bg-transparent border-none"
+                                                      placeholder="Enter comments/remarks..."></textarea>
+                                                      
+                                            <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
+                                                 class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left print:min-h-0 print:py-0 print:px-1" 
+                                                 x-text="teacherRemarks.term{{ $t }}"></div>
+                                        </td>
+                                    </tr>
+                                    @endfor
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 2. HIDDEN PRINT FOOTER -->
+                        <div class="print-only mt-4">
+                            <h4 class="font-bold text-center uppercase mb-3 text-sm print:text-[9px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
+                            <div class="space-y-4 text-sm font-semibold max-w-[280px] mx-auto print:text-[9px] print:space-y-1.5 print:max-w-[200px]">
+                                <div class="flex items-end gap-2"><span class="w-16 print:w-10">Term 1</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-2"><span class="w-16 print:w-10">Term 2</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-2"><span class="w-16 print:w-10">Term 3</span><div class="flex-1 border-b border-black"></div></div>
+                            </div>
+                        </div>
+
+                    </div> <!-- End of inner flex column -->
                 </div>
             </div>
-
-            <!-- VISIBLE TABLES (Displays properly on screen and in print) -->
-            <div class="flex flex-col space-y-10 mb-8 w-full">
-                
-                <!-- GRADES TABLE -->
-                <div class="w-full">
-                    <h4 class="text-center font-bold text-lg mb-2 uppercase print:text-[11px]">Report on Learning Progress and Achievement</h4>
-                    <table class="w-full text-sm deped-table bg-white">
-                        <thead>
-                            <tr>
-                                <th rowspan="2" class="w-1/3">Learning Areas</th>
-                                <th colspan="3">Term</th>
-                                <th rowspan="2" class="w-16">Final<br>Grade</th>
-                                <th rowspan="2" class="w-20">Remarks</th>
-                            </tr>
-                            <tr>
-                                <th class="w-12">1</th>
-                                <th class="w-12">2</th>
-                                <th class="w-12">3</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-center font-bold">
-                            @foreach($subjects as $subject)
-                            <tr>
-                                <td class="text-left font-bold">{{ $subject }}</td>
-                                @for($t = 1; $t <= 3; $t++)
-                                <td class="input-cell text-center">
-                                    <input x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}') && canGradeSubject('{{ $subject }}')" type="number" min="0" max="100" step="0.01" 
-                                           oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" 
-                                           x-model="grades['{{ $subject }}'].term{{ $t }}" @input="calculateGrades()" 
-                                           class="form-input-pill">
-                                    <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}') || !canGradeSubject('{{ $subject }}')" 
-                                    x-text="gradeLevelNum === 1 ? getDescriptor(grades['{{ $subject }}'].term{{ $t }}) : grades['{{ $subject }}'].term{{ $t }}"></span>
-                                </td>
-                                @endfor
-                                <td class="text-center font-bold" 
-                                x-text="gradeLevelNum === 1 ? getDescriptor(grades['{{ $subject }}'].final_grade) : grades['{{ $subject }}'].final_grade"></td>
-                                <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
-                            </tr>
-                            @endforeach
-
-                            <tr>
-                                <td colspan="4" class="text-right font-bold pr-4">General Average</td>
-                                <td class="text-center font-bold text-lg print:text-sm" 
-                                x-text="gradeLevelNum === 1 ? getDescriptor(generalAverage) : generalAverage"></td>
-                                <td class="text-center font-bold" x-text="finalStatus"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- LEGEND (Grade 1 Only) -->
-                <div x-show="gradeLevelNum === 1" x-cloak class="w-full print:mb-2">
-                    <h4 class="text-center font-bold text-lg mb-2 print:text-[11px]">Performance Descriptors</h4>
-                    <div class="max-w-3xl mx-auto print:max-w-full">
-                        <table class="w-full text-sm deped-table bg-white print:text-[9px]">
-                            <thead>
-                                <tr>
-                                    <th class="w-1/3">Grading Scale</th>
-                                    <th class="w-1/3">Descriptors</th>
-                                    <th class="w-1/3">Remarks</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-center font-semibold">
-                                <tr><td>90 - 100</td><td>Advancing</td><td>Passed</td></tr>
-                                <tr><td>80 - 89</td><td>Benchmarking</td><td>Passed</td></tr>
-                                <tr><td>75 - 79</td><td>Connecting</td><td>Passed</td></tr>
-                                <tr><td>65 - 74</td><td>Developing</td><td>Passed</td></tr>
-                                <tr><td>0 - 64</td><td>Emerging</td><td>Failed</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- TEACHER REMARKS -->
-                <div class="w-full">
-                    <h4 class="text-center font-bold text-lg mb-2 uppercase print:text-[11px]">Teacher's Comments/Remarks</h4>
-                    <table class="w-full text-sm deped-table bg-white print:text-[9px]">
-                        <tbody>
-                            @for($t = 1; $t <= 3; $t++)
-                            <tr>
-                                <td class="w-32 font-bold align-middle px-3 py-2 text-center print:w-16">Term {{ $t }}</td>
-                                <td class="p-0 align-top relative">
-                                    <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
-                                              x-model="teacherRemarks.term{{ $t }}" 
-                                              @input="teacherRemarks.term{{ $t }} = $event.target.value.replace(/[^a-zA-Z\s.,\-']/g, '')"
-                                              rows="2"
-                                              class="w-full min-h-[3rem] px-3 py-2 outline-none resize-y focus:bg-white focus:ring-2 focus:ring-blue-500 bg-transparent border-none"
-                                              placeholder="Enter comments/remarks..."></textarea>
-                                              
-                                    <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
-                                         class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left print:min-h-0 print:py-1" 
-                                         x-text="teacherRemarks.term{{ $t }}"></div>
-                                </td>
-                            </tr>
-                            @endfor
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- 2. HIDDEN PRINT FOOTER -->
-                <div class="print-only mt-4">
-                    <h4 class="font-bold text-center uppercase mb-6 text-sm print:text-[11px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
-                    <div class="space-y-4 text-sm font-semibold max-w-[280px] mx-auto print:text-[11px] print:space-y-2">
-                        <div class="flex items-end gap-2"><span class="w-16">Term 1</span><div class="flex-1 border-b border-black"></div></div>
-                        <div class="flex items-end gap-2"><span class="w-16">Term 2</span><div class="flex-1 border-b border-black"></div></div>
-                        <div class="flex items-end gap-2"><span class="w-16">Term 3</span><div class="flex-1 border-b border-black"></div></div>
-                    </div>
-                </div>
-
-            </div> <!-- End of inner flex column -->
         </div> <!-- End of Printable Area -->
 
         <!-- MODALS (Keep outside of printable area) -->
@@ -374,23 +393,16 @@
                 this.activeTerm = this.determineActiveTerm();
                 this.calculateGrades();
 
-                // ==========================================
-                // NEW: REAL-TIME BACKGROUND SYNC
-                // ==========================================
-                // STRICT CHECK: Never run sync on an Archived page, regardless of database status
                 @if(!str_contains($sectionName ?? '', 'ARCHIVED'))
                 setInterval(() => {
-                    // CRITICAL: Only sync if the user is NOT actively editing.
-                    // If we sync while they type, it will erase their unsaved numbers!
                     if (!this.isManaging) {
                         fetch(`/fetch-grades/${this.studentId}?t=` + Date.now())
                             .then(res => res.json())
                             .then(data => {
                                 let freshGrades = data.grades || {};
                                 let freshBehaviors = data.behaviors || {};
-                                let freshRemarks = data.remarks || {}; // Assume API sends this back
+                                let freshRemarks = data.remarks || {};
 
-                                // Carefully inject the fresh data into the Alpine objects
                                 this.subjects.forEach(sub => { 
                                     this.grades[sub] = freshGrades[sub] || { term1: '', term2: '', term3: '', final_grade: '', remarks: '' };
                                 });
@@ -400,8 +412,6 @@
                                 });
 
                                 this.teacherRemarks = Object.assign(this.teacherRemarks, freshRemarks);
-
-                                // Recalculate the General Average immediately
                                 this.calculateGrades(); 
                             })
                             .catch(err => console.error('Error syncing grades:', err));
@@ -411,30 +421,23 @@
             },
 
             determineActiveTerm() {
-                // Get the current date formatted as YYYY-MM-DD
                 const tzOffset = (new Date()).getTimezoneOffset() * 60000;
                 const today = (new Date(Date.now() - tzOffset)).toISOString().split("T")[0];
 
-                // 1. Check the date first! Loop through terms 1, 2, and 3 to see where today fits
                 for (let t = 1; t <= 3; t++) {
                     const term = this.termDates['term' + t];
                     if (term && term.start && term.end) {
                         const startDate = term.start.split(' ')[0];
                         const endDate = term.end.split(' ')[0];
-                        
-                        // If today is inside this term's scheduled dates, activate this term
-                        if (today >= startDate && today <= endDate) {
-                            return String(t);
-                        }
+                        if (today >= startDate && today <= endDate) return String(t);
                     }
                 }
 
-                // 2. Fallback: If no dates are set or today is outside the schedule, fallback to completion logic
                 const isComplete = (t) => this.subjects.every(s => String(this.grades[s]['term'+t] || '').trim() !== '');
                 if (isComplete(1) && isComplete(2)) return '3';
                 if (isComplete(1)) return '2';
                 
-                return '1'; // Absolute default
+                return '1';
             },
 
             isTermUnlocked(termNumber) {
@@ -472,7 +475,6 @@
             async saveGrades(forceSave = false) {
                 let currentTermNum = parseInt(this.activeTerm);
                 
-                // 1. STRICT PREVIOUS TERM CHECK (Keeps past terms locked)
                 if (currentTermNum > 1) {
                     for (let pastTerm = 1; pastTerm < currentTermNum; pastTerm++) {
                         let pastMissing = this.subjects.filter(s => {
@@ -490,10 +492,8 @@
                     }
                 }
 
-                // 2. CURRENT TERM CHECK (Soft Warning)
                 if (!forceSave) {
                     let tKey = 'term' + this.activeTerm;
-                    
                     this.missingSubjects = this.subjects.filter(s => {
                         let canGrade = this.assignedString.toUpperCase().includes('ALL') || this.assignedString.toUpperCase().includes(s.toUpperCase());
                         let isEmpty = String(this.grades[s][tKey] || '').trim() === '';
@@ -501,15 +501,13 @@
                     });
 
                     if (this.missingSubjects.length > 0) {
-                        this.showErrorModal = true; // Show confirmation dialog
-                        return; // Stop here and wait for user to click Proceed
+                        this.showErrorModal = true;
+                        return;
                     }
                 }
 
-                // Hide modal if it was open
                 this.showErrorModal = false;
 
-                // 3. EXECUTE SAVE
                 try {
                     const response = await fetch('{{ route('reportcard.store') }}', {
                         method: 'POST', 
