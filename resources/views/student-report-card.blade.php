@@ -21,45 +21,57 @@
     }
 
     @media print {
-        body { background-color: white; margin: 0; padding: 0; }
+        body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; }
+        
+        /* 1. HIDE THE GHOST SIDEBAR */
         body * { visibility: hidden; }
         #printable-area, #printable-area * { visibility: visible; }
         
-        #printable-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+        /* 2. BREAK OUT OF DASHBOARD CONTAINER */
+        #printable-area { 
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            width: 11in !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+        }
+
         .print-only { display: block !important; }
         .no-print { display: none !important; }
         
-        /* 1. Strict PORTRAIT */
-        @page { size: letter portrait; margin: 0.25in !important; }
+        /* 3. ZERO BROWSER MARGINS */
+        @page { size: letter landscape; margin: 0 !important; }
         
-        /* 2. Container matches 11" paper */
+        /* 4. EXACT 11x8.5 PAPER BOX WITH EQUAL PADDING MARGINS (Matches Batch Print perfectly) */
         .print-sheet {
-            width: 100% !important;
-            height: 10.5in !important;
-            display: flex !important;
-            flex-direction: column !important;
-            page-break-after: always !important;
-            overflow: hidden !important;
-            background: white;
-            box-sizing: border-box;
-        }
-        
-        /* 3. The card takes exactly the top half of the portrait paper */
-        .print-card {
-            width: 100% !important;
-            height: 50% !important;
-            padding: 0.2in 0.4in !important;
+            width: 11in !important;
+            height: 8.5in !important;
+            padding: 0.75in 0.5in !important; /* 0.75in Top/Bottom, 0.5in Left/Right */
             box-sizing: border-box !important;
             display: flex !important;
+            flex-direction: row !important;
+            justify-content: flex-start !important; /* Pins the single card to the left side */
+            align-items: center !important; /* PERFECT VERTICAL CENTERING */
+            page-break-after: always !important;
+            page-break-inside: avoid !important;
+            overflow: hidden !important;
+            background: white !important;
+        }
+        
+        /* 5. INDIVIDUAL CARD SIZING */
+        .print-card {
+            width: 48% !important; /* Exact same physical width as Batch Print */
+            height: auto !important; 
+            display: flex !important;
             flex-direction: column !important;
-            justify-content: space-between;
+            justify-content: flex-start !important;
         }
 
-        /* 4. Compress tables for print */
-        .deped-table { margin-bottom: 4px !important; }
-        .deped-table th, .deped-table td { padding: 2px 4px !important; font-size: 9px !important; height: auto !important; }
-        .input-cell { padding: 2px !important; height: auto !important; }
-        .print-compress { margin-bottom: 2px !important; }
+        /* 6. COMPRESS TABLES TO MATCH BATCH PRINT EXACTLY */
+        .deped-table { margin-bottom: 6px !important; }
+        .deped-table th, .deped-table td { padding: 2px 3px !important; font-size: 8.5px !important; height: auto !important; }
+        .input-cell { padding: 2px 3px !important; height: auto !important; }
     }
 </style>
 
@@ -109,20 +121,20 @@
             <div class="print-sheet">
                 <div class="print-card">
                     
-                    <!-- 1. HIDDEN PRINT HEADER -->
-                    <div class="print-only text-black print-compress mb-4">
-                        <div class="flex items-center justify-center gap-3 mb-2">
+                    <!-- 1. HIDDEN PRINT HEADER (Identical to batch-print) -->
+                    <div class="print-only text-black mb-3">
+                        <div class="flex items-center justify-center gap-2 mb-2">
                             <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 object-contain">
-                            <div class="text-center leading-none">
-                                <h1 class="text-[13px] font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
-                                <h2 class="text-[10px] font-semibold mt-1">Temporary Learner’s Performance Report</h2>
-                                <p class="text-[8px] font-bold mt-1">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
+                            <div class="text-center leading-tight">
+                                <h1 class="text-[12px] font-bold tracking-wide print:text-[13px]">MENDOZA ACADEMY, INC.</h1>
+                                <h2 class="text-[10px] font-semibold print:text-[11px]">Temporary Learner’s Performance Report</h2>
+                                <p class="text-[8px] font-bold mt-0.5 print:text-[9px]">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
                             </div>
                         </div>
                         
-                        <div class="text-[9px] font-semibold space-y-1 mt-2">
+                        <div class="text-[10px] font-semibold space-y-1.5 mb-2 border-b border-black pb-2 print:text-[11px]">
                             <div class="flex items-end">
-                                <span class="w-10">Name:</span>
+                                <span class="w-10 print:w-12">Name:</span>
                                 <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $studentName }}</span>
                             </div>
                             <div class="flex items-end gap-2">
@@ -141,18 +153,18 @@
                                 </div>
                             </div>
                             <div class="flex items-end">
-                                <span class="w-12">Teacher:</span>
+                                <span class="w-12 print:w-14">Teacher:</span>
                                 <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $resolvedTeacherName }}</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- VISIBLE TABLES (Displays properly on screen and in print) -->
-                    <div class="flex flex-col space-y-10 print:space-y-0 w-full mt-4 print:mt-2">
+                    <div class="flex flex-col space-y-10 print:space-y-0 w-full mt-4 print:mt-0">
                         
-                        <!-- GRADES TABLE -->
-                        <div class="w-full print-compress">
-                            <h4 class="text-center font-bold text-lg mb-2 uppercase print:text-[8px] print:mb-0.5">Report on Learning Progress and Achievement</h4>
+                        <!-- 2. GRADES TABLE -->
+                        <div class="w-full mb-3 print:mb-3">
+                            <h4 class="text-center font-bold text-lg mb-2 uppercase print:text-[10px] print:mb-1">Report on Learning Progress and Achievement</h4>
                             <table class="w-full text-sm deped-table bg-white">
                                 <thead>
                                     <tr>
@@ -188,7 +200,7 @@
                                     @endforeach
 
                                     <tr>
-                                        <td colspan="4" class="text-right font-bold pr-4 print:pr-2">General Average</td>
+                                        <td colspan="4" class="text-right font-bold pr-4 print:pr-2 uppercase">General Average</td>
                                         <td class="text-center font-bold text-lg print:text-[9px]" 
                                         x-text="gradeLevelNum === 1 ? getDescriptor(generalAverage) : generalAverage"></td>
                                         <td class="text-center font-bold" x-text="finalStatus"></td>
@@ -197,9 +209,9 @@
                             </table>
                         </div>
 
-                        <!-- LEGEND (Grade 1 Only) -->
-                        <div x-show="gradeLevelNum === 1" x-cloak class="w-full print-compress mt-4 print:mt-1">
-                            <h4 class="text-center font-bold text-lg print:text-[8px] mb-2 print:mb-0.5">Performance Descriptors</h4>
+                        <!-- 3. LEGEND (Grade 1 Only) -->
+                        <div x-show="gradeLevelNum === 1" x-cloak class="w-full mb-3 print:mb-3">
+                            <h4 class="text-center font-bold text-lg print:text-[10px] mb-2 print:mb-1">Performance Descriptors</h4>
                             <div class="max-w-3xl mx-auto print:max-w-full">
                                 <table class="w-full text-sm deped-table bg-white font-semibold">
                                     <thead>
@@ -216,14 +228,14 @@
                             </div>
                         </div>
 
-                        <!-- TEACHER REMARKS -->
-                        <div class="w-full mt-4 print:mt-auto">
-                            <h4 class="text-center font-bold text-lg uppercase print:text-[8px] mb-2 print:mb-0.5">Teacher's Comments/Remarks</h4>
+                        <!-- 4. TEACHER REMARKS -->
+                        <div class="w-full mb-3 print:mb-3">
+                            <h4 class="text-center font-bold text-lg uppercase print:text-[10px] mb-2 print:mb-1">Teacher's Comments/Remarks</h4>
                             <table class="w-full text-sm deped-table bg-white">
                                 <tbody>
                                     @for($t = 1; $t <= 3; $t++)
                                     <tr>
-                                        <td class="w-32 font-bold align-middle px-3 py-2 text-center print:w-12 print:p-0">Term {{ $t }}</td>
+                                        <td class="w-32 font-bold align-middle px-3 py-2 text-center print:w-16 print:p-0 print:py-1">Term {{ $t }}</td>
                                         <td class="p-0 align-top relative">
                                             <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
                                                       x-model="teacherRemarks.term{{ $t }}" 
@@ -233,7 +245,7 @@
                                                       placeholder="Enter comments/remarks..."></textarea>
                                                       
                                             <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
-                                                 class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left print:min-h-0 print:py-0 print:px-1" 
+                                                 class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left print:min-h-[20px] print:h-5 print:py-0 print:px-1" 
                                                  x-text="teacherRemarks.term{{ $t }}"></div>
                                         </td>
                                     </tr>
@@ -242,13 +254,13 @@
                             </table>
                         </div>
 
-                        <!-- 2. HIDDEN PRINT FOOTER -->
-                        <div class="print-only mt-4">
-                            <h4 class="font-bold text-center uppercase mb-3 text-sm print:text-[9px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
-                            <div class="space-y-4 text-sm font-semibold max-w-[280px] mx-auto print:text-[9px] print:space-y-1.5 print:max-w-[200px]">
-                                <div class="flex items-end gap-2"><span class="w-16 print:w-10">Term 1</span><div class="flex-1 border-b border-black"></div></div>
-                                <div class="flex items-end gap-2"><span class="w-16 print:w-10">Term 2</span><div class="flex-1 border-b border-black"></div></div>
-                                <div class="flex items-end gap-2"><span class="w-16 print:w-10">Term 3</span><div class="flex-1 border-b border-black"></div></div>
+                        <!-- 5. HIDDEN PRINT FOOTER -->
+                        <div class="print-only border-t border-black pt-3 mt-1">
+                            <h4 class="font-bold text-center uppercase mb-3 text-sm print:text-[10px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
+                            <div class="space-y-4 text-sm font-semibold max-w-[280px] mx-auto print:text-[10px] print:space-y-3 print:max-w-[200px]">
+                                <div class="flex items-end gap-2"><span class="w-16 print:w-12">Term 1</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-2"><span class="w-16 print:w-12">Term 2</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-2"><span class="w-16 print:w-12">Term 3</span><div class="flex-1 border-b border-black"></div></div>
                             </div>
                         </div>
 
