@@ -4,33 +4,49 @@
 
 @section('content')
 <style>
+    /* Standard Table Styling */
     .deped-table th, .deped-table td { border: 1px solid black; padding: 0.15rem 0.25rem; font-size: 0.65rem; }
     .deped-table th { text-align: center; font-weight: bold; background-color: #f9fafb !important; }
     
     @media print {
-        body { background-color: white; }
-        body * { visibility: hidden; }
-        #batch-print-area, #batch-print-area * { visibility: visible; }
+        /* 1. Kill the Sidebar and Navigation completely so they don't take up ghost space */
+        nav, aside, header, footer { display: none !important; }
         
-        /* 1. OVERRIDE TAILWIND CENTERING: Force it to stretch to the physical paper edges */
-        #batch-print-area { 
+        /* 2. Rip the main content out of the dashboard layout and pull it to the top-left edge */
+        main { 
             position: absolute !important; 
-            left: 0 !important; 
             top: 0 !important; 
-            width: 100vw !important; 
-            max-width: none !important; 
+            left: 0 !important; 
+            width: 100% !important; 
+            max-width: 100% !important;
             margin: 0 !important; 
             padding: 0 !important; 
+            background-color: white !important;
         }
-        
+
         .no-print { display: none !important; }
         
-        /* 2. UNLOCKED ORIENTATION: You select Landscape or Portrait in the dialog */
-        @page { margin: 0.25in; }
+        /* 3. Set standard Landscape with clean margins */
+        @page { size: landscape; margin: 0.25in; }
         
-        /* 3. Keep cards on one page */
-        .page-break { page-break-after: always; }
-        .student-card { page-break-inside: avoid; }
+        /* 4. Force Row layout for 2 students per page */
+        .print-row {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            page-break-after: always !important;
+        }
+        
+        /* 5. Give each student exactly 48.5% of the paper */
+        .print-card { 
+            width: 48.5% !important; 
+            page-break-inside: avoid !important; 
+        }
+
+        /* 6. Tighten margins to prevent vertical spilling to a blank second page */
+        .deped-table { margin-bottom: 2px !important; }
+        .deped-table th, .deped-table td { padding: 1px 2px !important; font-size: 8px !important; }
     }
 </style>
 
@@ -54,11 +70,12 @@
         </button>
     </div>
 
+    <!-- MAIN PRINT CONTAINER -->
     <div id="batch-print-area" class="w-full text-black">
         
         @foreach($students->chunk(2) as $chunk)
-            <!-- FLEX ROW: Pushes the two cards to the extreme left and right margins -->
-            <div class="flex flex-row justify-between w-full max-w-none {{ !$loop->last ? 'page-break' : '' }} mb-10 print:mb-0">
+            <!-- The Row containing exactly 2 students -->
+            <div class="print-row flex flex-col md:flex-row justify-between w-full {{ !$loop->last ? 'mb-10 print:mb-0' : '' }}">
                 
                 @foreach($chunk as $student)
                     @php
@@ -68,8 +85,8 @@
                         $cleanGrade = str_replace('GRADE', '', strtoupper($section->grade_level));
                     @endphp
                     
-                    <!-- EXACTLY 48% WIDTH: Leaves a clean gap in the middle and pins to edges -->
-                    <div class="w-[48%] bg-white print:bg-transparent p-4 print:p-0 border-2 border-black print:border-0 student-card flex flex-col justify-between">
+                    <!-- The 48.5% Card -->
+                    <div class="print-card w-full md:w-[48.5%] bg-white p-4 print:p-0 border-2 border-black print:border-0 mb-6 md:mb-0 flex flex-col">
                         
                         <!-- HEADER -->
                         <div>
