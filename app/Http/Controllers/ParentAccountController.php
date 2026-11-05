@@ -82,6 +82,8 @@ class ParentAccountController extends Controller
             'description' => Auth::user()->username . ' created a new Parent/Student account for LRN: ' . $request->lrn
         ]);
 
+        \App\Models\Section::syncGC($request->section_id);
+        
         return redirect()->route('account.management')->with('success', 'Parent account and Student record created successfully!');
     }
 

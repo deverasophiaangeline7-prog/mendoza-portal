@@ -109,6 +109,8 @@ class TeacherAccountController extends Controller
             foreach ($nkpSections as $section) {
                 $section->teacher_id = $user->user_id;
                 $section->save();
+
+                \App\Models\Section::syncGC($section->section_id);
             }
         } else {
             if (is_numeric($request->advisory)) {
@@ -116,6 +118,8 @@ class TeacherAccountController extends Controller
                 if ($section) {
                     $section->teacher_id = $user->user_id;
                     $section->save();
+
+                    \App\Models\Section::syncGC($section->section_id);
                 }
             }
         }
@@ -216,6 +220,8 @@ class TeacherAccountController extends Controller
         // DYNAMIC UPDATE FOR NKP IDs
         $targetAdvisory = $request->advisory;
         $nkpSections = collect();
+
+        $oldSectionIds = \App\Models\Section::where('teacher_id', $id)->pluck('section_id')->toArray();
         
         if ($request->advisory === 'NKP') {
             $nkpSections = Section::whereIn(DB::raw('UPPER(grade_level)'), ['NURSERY', 'KINDERGARTEN', 'KINDER', 'PREPARATORY', 'PREP', 'NKP'])->get();
@@ -277,6 +283,19 @@ class TeacherAccountController extends Controller
                 ]);
             }
         });
+
+        foreach ($oldSectionIds as $oldSecId) {
+            \App\Models\Section::syncGC($oldSecId);
+        }
+
+        
+        if ($request->advisory === 'NKP') {
+            foreach ($nkpSections as $section) {
+                \App\Models\Section::syncGC($section->section_id);
+            }
+        } elseif (is_numeric($request->advisory)) {
+            \App\Models\Section::syncGC($request->advisory);
+        }
 
         AuditLog::create([
             'user_id'     => \Illuminate\Support\Facades\Auth::id(),

@@ -189,6 +189,8 @@ class StudentController extends Controller
             'description' => auth()->user()->username . ' registered a new student: ' . strtoupper($request->first_name . ' ' . $request->last_name)
         ]);
 
+        \App\Models\Section::syncGC($request->section_id);
+
         return redirect()->back()->with('success', 'Student registered successfully!');
     }
 
@@ -207,6 +209,8 @@ class StudentController extends Controller
         ]);
 
         $student = Student::findOrFail($id);
+
+        $oldSectionId = $student->section_id;
         
         $student->update([
             'first_name'  => strtoupper($request->first_name),
@@ -226,6 +230,13 @@ class StudentController extends Controller
             'action' => 'Edit Student',
             'description' => auth()->user()->username . ' updated profile for: ' . $student->first_name . ' ' . $student->last_name
         ]);
+
+        \App\Models\Section::syncGC($request->section_id);
+      
+        
+        if ($oldSectionId != $request->section_id && $oldSectionId) {
+            \App\Models\Section::syncGC($oldSectionId);
+        }
 
         return redirect()->back()->with('success', 'Student profile updated successfully!');
     }

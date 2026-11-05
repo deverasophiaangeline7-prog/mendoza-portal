@@ -274,21 +274,64 @@
                                 </div>
                             @else
                                 <!-- Normal Chat Bubble Styling -->
-                                <div class="mb-4 w-full {{ $message->sender_id === auth()->user()->user_id ? 'text-right' : 'text-left' }}">
-                                    <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm {{ $message->sender_id === auth()->user()->user_id ? 'bg-[#6d0101] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none' }}">
-                                        {{ $message->content }}
-                                    </span>
+                                <div class="mb-4 w-full {{ $message->sender_id === auth()->user()->user_id ? 'text-right flex flex-col items-end' : 'text-left flex items-end gap-2' }}">
                                     
-                                    <!-- Added 'js-sent-msg-seen-container' class -->
-                                    <div class="text-[10px] text-gray-400 mt-1 {{ $message->sender_id === auth()->user()->user_id ? 'js-sent-msg-seen-container' : '' }}">
-                                        {{ $message->created_at->format('g:i A') }}
+                                    @if($message->sender_id !== auth()->user()->user_id)
+                                        <!-- Ipakita ang Sender Picture para sa Group Chat (Kung hindi ikaw ang nag-send) -->
+                                        @php
+                                            $sender = \App\Models\User::find($message->sender_id);
+                                            $senderPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($sender->name ?? 'User') . '&background=f3f4f6&color=374151';
+                                            if ($sender && $sender->profile_photo_path) {
+                                                $senderPhoto = str_starts_with($sender->profile_photo_path, 'profile_photos') ? asset('storage/' . $sender->profile_photo_path) : asset($sender->profile_photo_path);
+                                            }
+                                        @endphp
+                                        <img src="{{ $senderPhoto }}" title="{{ $sender->name ?? 'User' }}" class="w-8 h-8 rounded-full border object-cover mb-1 shadow-sm flex-shrink-0 cursor-default">
+                                    @endif
+
+                                    <div class="flex flex-col {{ $message->sender_id === auth()->user()->user_id ? 'items-end' : 'items-start' }} max-w-[85%]">
                                         
-                                        <!-- Added 'js-realtime-seen-text' span wrapper -->
-                                        <span class="js-realtime-seen-text">
-                                            @if($message->sender_id === auth()->user()->user_id && $message->is_read)
-                                                <span class="font-bold ml-1 text-gray-500">· Seen</span>
-                                            @endif
+                                        @if($message->sender_id !== auth()->user()->user_id && !is_null($selectedUser->custom_name))
+                                            <!-- Sender Name on top of bubble for Group Chats -->
+                                            <div class="flex items-center gap-1.5 ml-1 mb-1">
+                                                <span class="text-[11px] font-bold text-gray-600">{{ $sender->name ?? 'User' }}</span>
+                                                <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full {{ ($sender->role ?? '') === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700' }}">
+                                                    {{ $sender->role ?? 'User' }}
+                                                </span>
+                                            </div>
+                                        @endif
+
+                                        <!-- 🕒 HOVER TIMESTAMP ADDED HERE via 'title' attribute -->
+                                        <span title="{{ $message->created_at->format('M d, Y g:i A') }}" 
+                                            class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm cursor-default {{ $message->sender_id === auth()->user()->user_id ? 'bg-[#6d0101] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none' }}">
+                                            {{ $message->content }}
                                         </span>
+                                        
+                                        <div class="text-[10px] text-gray-400 mt-1 {{ $message->sender_id === auth()->user()->user_id ? 'js-sent-msg-seen-container flex items-center justify-end gap-1' : '' }}">
+                                            <span>{{ $message->created_at->format('g:i A') }}</span>
+                                            
+                                            <!-- 👁️ MESSENGER-STYLE SEEN LOGIC -->
+                                            <span class="js-realtime-seen-text flex items-center gap-0.5 mt-0.5">
+                                                @if(!is_null($selectedUser->custom_name))
+                                                    <!-- GROUP CHAT: Loop sa lahat ng nag-seen ng message na ito -->
+                                                    @foreach($message->readers as $read)
+                                                        @if($read->user_id !== $message->sender_id)
+                                                            @php
+                                                                $seenPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
+                                                                if ($read->user->profile_photo_path) {
+                                                                    $seenPhoto = str_starts_with($read->user->profile_photo_path, 'profile_photos') ? asset('storage/' . $read->user->profile_photo_path) : asset($read->user->profile_photo_path);
+                                                                }
+                                                            @endphp
+                                                            <img src="{{ $seenPhoto }}" title="Seen by {{ $read->user->name }} at {{ \Carbon\Carbon::parse($read->created_at)->format('M d, g:i A') }}" class="w-4 h-4 rounded-full border border-gray-300 ml-0.5 object-cover cursor-default shadow-sm hover:scale-125 transition-transform z-10">
+                                                        @endif
+                                                    @endforeach
+                                                @else
+                                                    <!-- 1-ON-1: Normal text lang na 'Seen' -->
+                                                    @if($message->sender_id === auth()->user()->user_id && $message->is_read)
+                                                        <span class="font-bold ml-1 text-gray-500">· Seen</span>
+                                                    @endif
+                                                @endif
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             @endif
@@ -777,7 +820,22 @@
                     const newMessagesData = data.messages || [];
                     
                     // 👇 NEW: Update the DOM if the other person read our messages
-                    if (data.last_sent_read) {
+                    if (this.isGroupChat && data.gc_latest_readers && data.gc_latest_readers.length > 0) {
+                        // Para sa GC: I-display ang maraming maliit na profile pics!
+                        const unreadStatusSpans = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
+                        if (unreadStatusSpans.length > 0) {
+                            const lastSpan = unreadStatusSpans[unreadStatusSpans.length - 1]; // Sa pinakahuling chat bubble lang ilalagay
+                            let avatarsHtml = '';
+                            data.gc_latest_readers.forEach(reader => {
+                                avatarsHtml += `<img src="${reader.photo}" title="Seen by ${reader.name}" class="w-4 h-4 rounded-full border border-gray-300 ml-0.5 object-cover cursor-default shadow-sm hover:scale-125 transition-transform z-10">`;
+                            });
+                            // Gamitin ang Set para walang duplicate pics na mag-render
+                            if (lastSpan.innerHTML !== avatarsHtml) {
+                                lastSpan.innerHTML = avatarsHtml;
+                            }
+                        }
+                    } else if (data.last_sent_read && !this.isGroupChat) {
+                        // Para sa 1-on-1 Chat (Normal Text)
                         const unreadStatusSpans = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
                         unreadStatusSpans.forEach(statusSpan => {
                             if (statusSpan.innerHTML.trim() === '') {

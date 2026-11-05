@@ -48,10 +48,29 @@ class MessageController extends Controller
 
         // SMART QUERY: Check if we are loading a Group Chat or a 1-on-1 Chat
         if (!is_null($selectedUser->custom_name)) {
-            // Fetch ALL messages sent to this group
-            $messages = Message::where('receiver_id', $id)
+            // Fetch ALL messages sent to this group (KASAMA NA ANG READERS PARA HINDI MAG-LAG)
+            $messages = Message::with('readers.user')
+                                ->where('receiver_id', $id)
                                 ->orderBy('created_at', 'asc')
                                 ->orderBy('id', 'asc')->get();
+            $unreadMessageIds = $messages->pluck('id')->diff(
+                \App\Models\MessageRead::where('user_id', $authId)
+                    ->whereIn('message_id', $messages->pluck('id'))
+                    ->pluck('message_id')
+            );
+            
+            $readsToInsert = [];
+            foreach ($unreadMessageIds as $msgId) {
+                $readsToInsert[] = [
+                    'message_id' => $msgId,
+                    'user_id' => $authId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+            if (!empty($readsToInsert)) {
+                \Illuminate\Support\Facades\DB::table('message_reads')->insert($readsToInsert);
+            }
         } else {
             // Fetch strict 1-on-1 chat
             $messages = Message::where(function($query) use ($id, $authId) {
@@ -523,18 +542,33 @@ class MessageController extends Controller
     public function markMessagesRead($conversationId)
     {
         $authId = Auth::id();
+        $receiver = User::find($conversationId);
         
-        // Find strictly 1-on-1 messages sent FROM the other person TO me that are still unread.
-        $messagesToUpdate = Message::where('sender_id', $conversationId)
-                                    ->where('receiver_id', $authId)
-                                    ->where('is_read', false);
-
-        if ($messagesToUpdate->count() > 0) {
-            $messagesToUpdate->update(['is_read' => true]);
+        if ($receiver && !is_null($receiver->custom_name)) {
+            // 👇 GC: Save GC reads dynamically using the Pivot Table
+            $messages = Message::where('receiver_id', $conversationId)->pluck('id');
+            $seenMessages = \App\Models\MessageRead::where('user_id', $authId)->whereIn('message_id', $messages)->pluck('message_id');
+            
+            $unseenMessageIds = $messages->diff($seenMessages);
+            $readsToInsert = [];
+            foreach ($unseenMessageIds as $msgId) {
+                $readsToInsert[] = ['message_id' => $msgId, 'user_id' => $authId, 'created_at' => now(), 'updated_at' => now()];
+            }
+            if (!empty($readsToInsert)) {
+                \Illuminate\Support\Facades\DB::table('message_reads')->insert($readsToInsert);
+            }
             return response()->json(['success' => true]);
-        }
+        } else {
+            // 1-on-1: Normal is_read status update
+            $messagesToUpdate = Message::where('sender_id', $conversationId)
+                                        ->where('receiver_id', $authId)
+                                        ->where('is_read', false);
 
-        // NOTE: Group chat dynamic seen is complex (needs per-user tracking table), so we stick to whispers UI-only seen there.
+            if ($messagesToUpdate->count() > 0) {
+                $messagesToUpdate->update(['is_read' => true]);
+                return response()->json(['success' => true]);
+            }
+        }
 
         return response()->json(['success' => false, 'message' => 'No messages to update.']);
     }
@@ -579,23 +613,35 @@ class MessageController extends Controller
             ];
         });
 
-        // 👇 NEW: Check if the last message I sent has been read by them!
+        // 👇 Check if the last message I sent has been read by them!
         $lastSentMessageRead = false;
-        if (!$isGroup) {
-            $lastMsg = Message::where('sender_id', $authId)
-                              ->where('receiver_id', $conversationId)
-                              ->orderBy('id', 'desc')
-                              ->first();
-            
-            if ($lastMsg && $lastMsg->is_read) {
+        $gcLatestReaders = []; // Para sa maliit na avatars ng GC
+        
+        $lastMsg = Message::where('sender_id', $authId)->where('receiver_id', $conversationId)->orderBy('id', 'desc')->first();
+
+        if ($lastMsg) {
+            if (!$isGroup && $lastMsg->is_read) {
                 $lastSentMessageRead = true;
+            } elseif ($isGroup) {
+                // Kunin lahat ng readers (Profile pic & name) ng pinakahuling chat na sinend ko sa GC
+                foreach ($lastMsg->readers as $read) {
+                    if ($read->user_id !== $authId) {
+                        $photoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
+                        if ($read->user->profile_photo_path) {
+                            $photoUrl = str_starts_with($read->user->profile_photo_path, 'profile_photos') 
+                                ? asset('storage/' . $read->user->profile_photo_path) : asset($read->user->profile_photo_path);
+                        }
+                        $gcLatestReaders[] = ['name' => $read->user->name, 'photo' => $photoUrl];
+                    }
+                }
             }
         }
 
-        // Return structured JSON with both the messages AND the seen status
+        // Return structured JSON
         return response()->json([
             'messages' => $formattedMessages,
-            'last_sent_read' => $lastSentMessageRead
+            'last_sent_read' => $lastSentMessageRead,
+            'gc_latest_readers' => $gcLatestReaders
         ]);
     }
 }

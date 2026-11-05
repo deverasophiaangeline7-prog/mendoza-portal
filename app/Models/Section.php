@@ -28,4 +28,71 @@ class Section extends Model
     {
         return $this->hasOne(Teacher::class, 'advisory', 'section_id');
     }
+
+    /**
+     * Sync the Group Chat for this Section
+     */
+
+    public static function syncGC($section_id)
+    {
+        $section = self::find($section_id);
+        if (!$section) return;
+
+        $groupUsername = 'gc_section_' . $section_id;
+
+        
+        $groupUser = \App\Models\User::firstOrCreate(
+            ['username' => $groupUsername],
+            [
+                'email' => $groupUsername . '@mendoza.edu',
+                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                'role' => 'admin', // Bypass rules
+                'custom_name' => strtoupper($section->grade_level . ' - ' . $section->section_name . ' (Official)'),
+                'status' => 'active',
+            ]
+        );
+
+        
+        $memberIds = [];
+
+        
+        $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->pluck('user_id')->toArray();
+        $memberIds = array_merge($memberIds, $admins);
+
+        
+        if ($section->teacher_id) {
+            $memberIds[] = $section->teacher_id;
+        }
+
+        
+        $parents = \App\Models\User::where('role', 'parent')
+            ->whereHas('student', function($q) use ($section_id) {
+                $q->where('section_id', $section_id);
+            })->pluck('user_id')->toArray();
+        $memberIds = array_merge($memberIds, $parents);
+
+        $memberIds = array_unique($memberIds); 
+
+       
+        $existingMembers = \Illuminate\Support\Facades\DB::table('group_members')
+            ->where('group_id', $groupUser->user_id)
+            ->pluck('is_archived', 'user_id')->toArray();
+
+        \Illuminate\Support\Facades\DB::table('group_members')->where('group_id', $groupUser->user_id)->delete();
+
+        $insertData = [];
+        foreach ($memberIds as $uid) {
+            $insertData[] = [
+                'group_id' => $groupUser->user_id,
+                'user_id' => $uid,
+                'is_archived' => $existingMembers[$uid] ?? 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        if (!empty($insertData)) {
+            \Illuminate\Support\Facades\DB::table('group_members')->insert($insertData);
+        }
+    }
 }
