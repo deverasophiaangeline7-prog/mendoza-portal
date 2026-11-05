@@ -12,16 +12,24 @@
         body * { visibility: hidden; }
         #batch-print-area, #batch-print-area * { visibility: visible; }
         
-        #batch-print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+        /* 1. OVERRIDE TAILWIND CENTERING: Force it to stretch to the physical paper edges */
+        #batch-print-area { 
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            width: 100vw !important; 
+            max-width: none !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+        }
+        
         .no-print { display: none !important; }
         
-        /* UNLOCKED ORIENTATION: You can now freely choose Landscape in the dialog */
+        /* 2. UNLOCKED ORIENTATION: You select Landscape or Portrait in the dialog */
         @page { margin: 0.25in; }
         
-        /* Break pages only after every 2 students */
+        /* 3. Keep cards on one page */
         .page-break { page-break-after: always; }
-        
-        /* Prevent the card from spilling its contents to the next page */
         .student-card { page-break-inside: avoid; }
     }
 </style>
@@ -49,8 +57,8 @@
     <div id="batch-print-area" class="w-full text-black">
         
         @foreach($students->chunk(2) as $chunk)
-            <!-- Grid setup: 2 columns. Will sit perfectly side-by-side in Landscape -->
-            <div class="grid grid-cols-2 gap-8 w-full {{ !$loop->last ? 'page-break' : '' }} mb-10 print:mb-0">
+            <!-- FLEX ROW: Pushes the two cards to the extreme left and right margins -->
+            <div class="flex flex-row justify-between w-full max-w-none {{ !$loop->last ? 'page-break' : '' }} mb-10 print:mb-0">
                 
                 @foreach($chunk as $student)
                     @php
@@ -60,7 +68,8 @@
                         $cleanGrade = str_replace('GRADE', '', strtoupper($section->grade_level));
                     @endphp
                     
-                    <div class="w-full bg-white print:bg-transparent p-4 print:p-2 border-2 border-black print:border-0 print:border-r print:border-dashed print:border-gray-400 print:last:border-r-0 student-card flex flex-col justify-between">
+                    <!-- EXACTLY 48% WIDTH: Leaves a clean gap in the middle and pins to edges -->
+                    <div class="w-[48%] bg-white print:bg-transparent p-4 print:p-0 border-2 border-black print:border-0 student-card flex flex-col justify-between">
                         
                         <!-- HEADER -->
                         <div>
