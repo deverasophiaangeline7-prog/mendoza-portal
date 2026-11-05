@@ -110,6 +110,18 @@
             </div>
         </div>
 
+        @php
+            // FIXED TEACHER QUERY: Checks for controller variable first, fallback to relationship
+            $studentObj = \App\Models\Student::with('section.teacher')->find($student_id);
+            if (isset($teacherName) && trim($teacherName) !== '') {
+                $finalTeacher = strtoupper($teacherName);
+            } elseif ($studentObj && $studentObj->section && $studentObj->section->teacher) {
+                $finalTeacher = strtoupper($studentObj->section->teacher->first_name . ' ' . $studentObj->section->teacher->last_name);
+            } else {
+                $finalTeacher = '_________________';
+            }
+        @endphp
+
         <!-- START OF PRINTABLE AREA -->
         <div id="printable-area" class="w-full">
             <div class="print-sheet">
@@ -143,13 +155,12 @@
                                 </div>
                                 <div class="flex items-end flex-1">
                                     <span class="mr-1">LRN:</span>
-                                    <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ \App\Models\Student::find($student_id)->lrn ?? 'N/A' }}</span>
+                                    <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ $studentObj->lrn ?? 'N/A' }}</span>
                                 </div>
                             </div>
-                            <!-- FIXED TEACHER VARIABLE TO MATCH BATCH PRINT -->
                             <div class="flex items-end">
                                 <span class="w-12 print:w-14">Teacher:</span>
-                                <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $teacherName ?? '_________________' }}</span>
+                                <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $finalTeacher }}</span>
                             </div>
                         </div>
                     </div>
