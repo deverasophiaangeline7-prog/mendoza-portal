@@ -119,17 +119,20 @@
         </div>
 
         @php
-            // BULLETPROOF TEACHER RESOLUTION: Checks 4 different possible variable/relationship structures
-            $studentObj = \App\Models\Student::with('section.teacher')->find($student_id);
+            // DIRECT TEACHER RESOLUTION: Handles controller variables or looks up teacher directly via advisory/section
+            $studentObj = \App\Models\Student::find($student_id);
             
             $finalTeacherName = '_________________';
             if (isset($teacherName) && trim($teacherName) !== '') {
                 $finalTeacherName = strtoupper($teacherName);
-            } elseif (isset($teacher) && trim($teacher) !== '') {
-                $finalTeacherName = strtoupper($teacher);
-            } elseif ($studentObj && $studentObj->section && $studentObj->section->teacher) {
-                $tObj = $studentObj->section->teacher;
-                $finalTeacherName = strtoupper($tObj->first_name . ' ' . $tObj->last_name);
+            } else {
+                // Fallback: Query the teacher table directly using the section name or advisory
+                $secNameStr = explode("\n", $sectionName ?? '')[1] ?? ($sectionName ?? '');
+                $matchedTeacher = \App\Models\Teacher::where('advisory', 'like', '%' . trim($secNameStr) . '%')->first();
+                
+                if ($matchedTeacher) {
+                    $finalTeacherName = strtoupper($matchedTeacher->first_name . ' ' . $matchedTeacher->last_name);
+                }
             }
         @endphp
 
