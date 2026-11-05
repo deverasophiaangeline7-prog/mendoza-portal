@@ -4,48 +4,25 @@
 
 @section('content')
 <style>
-    .deped-table th, .deped-table td { border: 1px solid black; padding: 0.1rem 0.3rem; font-size: 0.65rem; }
+    .deped-table th, .deped-table td { border: 1px solid black; padding: 0.15rem 0.25rem; font-size: 0.65rem; }
     .deped-table th { text-align: center; font-weight: bold; background-color: #f9fafb !important; }
     
     @media print {
-        body { background-color: white; margin: 0; padding: 0; }
+        body { background-color: white; }
         body * { visibility: hidden; }
-        #printable-area, #printable-area * { visibility: visible; }
+        #batch-print-area, #batch-print-area * { visibility: visible; }
         
-        #printable-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+        #batch-print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
         .no-print { display: none !important; }
         
-        /* 1. Strict PORTRAIT with tight margins */
-        @page { size: letter portrait; margin: 0.25in !important; }
+        /* UNLOCKED ORIENTATION: You can now freely choose Landscape in the dialog */
+        @page { margin: 0.25in; }
         
-        /* 2. One physical sheet of paper (8in wide x 10.5in tall printable area) */
-        .print-sheet {
-            width: 100% !important;
-            height: 10.5in !important;
-            display: flex !important;
-            flex-direction: column !important; /* Stack vertically */
-            page-break-after: always !important;
-            overflow: hidden !important;
-            background: white;
-            box-sizing: border-box;
-        }
+        /* Break pages only after every 2 students */
+        .page-break { page-break-after: always; }
         
-        /* 3. Exactly half the page per student */
-        .print-card {
-            width: 100% !important;
-            height: 50% !important;
-            padding: 0.2in 0.4in !important;
-            box-sizing: border-box !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between;
-            border-bottom: 1px dashed #999;
-        }
-        .print-card:last-child { border-bottom: none; }
-        
-        /* 4. Tightly pack tables so they fit in the 5-inch height limit */
-        .deped-table { margin-bottom: 4px !important; }
-        .deped-table th, .deped-table td { padding: 2px 4px !important; font-size: 9px !important; }
+        /* Prevent the card from spilling its contents to the next page */
+        .student-card { page-break-inside: avoid; }
     }
 </style>
 
@@ -69,10 +46,11 @@
         </button>
     </div>
 
-    <div id="printable-area" class="w-full text-black">
+    <div id="batch-print-area" class="w-full text-black">
+        
         @foreach($students->chunk(2) as $chunk)
-            <!-- A single Portrait Sheet -->
-            <div class="print-sheet mb-10 print:mb-0 w-full max-w-3xl mx-auto flex flex-col bg-white shadow-xl print:shadow-none border-[3px] border-black print:border-0">
+            <!-- Grid setup: 2 columns. Will sit perfectly side-by-side in Landscape -->
+            <div class="grid grid-cols-2 gap-8 w-full {{ !$loop->last ? 'page-break' : '' }} mb-10 print:mb-0">
                 
                 @foreach($chunk as $student)
                     @php
@@ -82,26 +60,25 @@
                         $cleanGrade = str_replace('GRADE', '', strtoupper($section->grade_level));
                     @endphp
                     
-                    <!-- Exactly Half the Page (Top or Bottom) -->
-                    <div class="print-card w-full p-6 border-b-[3px] border-dashed border-gray-400 print:border-b last:border-b-0">
+                    <div class="w-full bg-white print:bg-transparent p-4 print:p-2 border-2 border-black print:border-0 print:border-r print:border-dashed print:border-gray-400 print:last:border-r-0 student-card flex flex-col justify-between">
                         
                         <!-- HEADER -->
                         <div>
-                            <div class="flex items-center justify-center gap-3 mb-2">
+                            <div class="flex items-center justify-center gap-2 mb-2">
                                 <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 print:w-8 print:h-8 object-contain">
                                 <div class="text-center leading-tight">
-                                    <h1 class="text-[14px] font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
-                                    <h2 class="text-[11px] font-semibold">Temporary Learner’s Performance Report</h2>
-                                    <p class="text-[9px] font-bold">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
+                                    <h1 class="text-[12px] font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
+                                    <h2 class="text-[10px] font-semibold">Temporary Learner’s Performance Report</h2>
+                                    <p class="text-[8px] font-bold mt-0.5">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
                                 </div>
                             </div>
                             
-                            <div class="text-[10px] font-semibold space-y-1 mb-2">
+                            <div class="text-[10px] font-semibold space-y-1 mb-2 border-b border-black pb-1">
                                 <div class="flex items-end">
-                                    <span class="w-12">Name:</span>
+                                    <span class="w-10">Name:</span>
                                     <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ strtoupper($student->last_name . ', ' . $student->first_name) }}</span>
                                 </div>
-                                <div class="flex items-end gap-4">
+                                <div class="flex items-end gap-2">
                                     <div class="flex items-end w-1/4">
                                         <span class="mr-1">Grade:</span>
                                         <span class="flex-1 border-b border-black text-center font-normal leading-none pb-0.5">{{ trim($cleanGrade) }}</span>
@@ -130,10 +107,10 @@
                                     <tr>
                                         <th rowspan="2" class="w-1/3">Learning Areas</th>
                                         <th colspan="3">Term</th>
-                                        <th rowspan="2" class="w-12">Final Grade</th>
-                                        <th rowspan="2" class="w-20">Remarks</th>
+                                        <th rowspan="2" class="w-8">Final<br>Grade</th>
+                                        <th rowspan="2">Remarks</th>
                                     </tr>
-                                    <tr><th class="w-8">1</th><th class="w-8">2</th><th class="w-8">3</th></tr>
+                                    <tr><th class="w-6">1</th><th class="w-6">2</th><th class="w-6">3</th></tr>
                                 </thead>
                                 <tbody class="text-center font-bold">
                                     @foreach($subjects as $subj)
@@ -164,29 +141,27 @@
 
                         <!-- LEGEND -->
                         @if($gradeNum == 1)
-                        <div class="mb-2">
-                            <h4 class="text-center font-bold text-[8px] mb-0.5">Performance Descriptors</h4>
-                            <div class="max-w-xs mx-auto">
-                                <table class="w-full deped-table text-center font-semibold text-[7px]">
-                                    <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
-                                    <tbody>
-                                        <tr><td>90-100</td><td>Advancing</td><td>Passed</td></tr>
-                                        <tr><td>80-89</td><td>Benchmarking</td><td>Passed</td></tr>
-                                        <tr><td>75-79</td><td>Connecting</td><td>Passed</td></tr>
-                                        <tr><td>65-74</td><td>Developing</td><td>Passed</td></tr>
-                                        <tr><td>0-64</td><td>Emerging</td><td>Failed</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="mb-2 text-[8px]">
+                            <h4 class="text-center font-bold mb-0.5">Performance Descriptors</h4>
+                            <table class="w-full deped-table text-center font-semibold">
+                                <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
+                                <tbody>
+                                    <tr><td>90-100</td><td>Advancing</td><td>Passed</td></tr>
+                                    <tr><td>80-89</td><td>Benchmarking</td><td>Passed</td></tr>
+                                    <tr><td>75-79</td><td>Connecting</td><td>Passed</td></tr>
+                                    <tr><td>65-74</td><td>Developing</td><td>Passed</td></tr>
+                                    <tr><td>0-64</td><td>Emerging</td><td>Failed</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                         @endif
 
                         <!-- REMARKS -->
                         <div>
-                            <table class="w-full deped-table text-[8px] mb-2">
+                            <table class="w-full deped-table mb-2 text-[8px]">
                                 <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
                                 <tbody>
-                                    <tr><td class="w-16 font-bold text-center py-1">Term 1</td><td class="text-left h-4 px-1">{{ $studentRemark->term1 ?? '' }}</td></tr>
+                                    <tr><td class="w-12 font-bold text-center py-1">Term 1</td><td class="text-left h-4 px-1">{{ $studentRemark->term1 ?? '' }}</td></tr>
                                     <tr><td class="font-bold text-center py-1">Term 2</td><td class="text-left h-4 px-1">{{ $studentRemark->term2 ?? '' }}</td></tr>
                                     <tr><td class="font-bold text-center py-1">Term 3</td><td class="text-left h-4 px-1">{{ $studentRemark->term3 ?? '' }}</td></tr>
                                 </tbody>
@@ -194,7 +169,7 @@
                         </div>
 
                         <!-- SIGNATURE -->
-                        <div class="mt-auto pt-2 border-t border-black">
+                        <div class="mt-2 border-t border-black pt-2">
                             <h4 class="font-bold text-center uppercase mb-2 text-[9px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
                             <div class="space-y-1.5 text-[9px] font-semibold max-w-[200px] mx-auto">
                                 <div class="flex items-end gap-2"><span class="w-12">Term 1</span><div class="flex-1 border-b border-black"></div></div>
@@ -209,6 +184,7 @@
         @endforeach
     </div>
 </main>
+
 <script>
     window.onload = function() {
         setTimeout(() => window.print(), 500);
