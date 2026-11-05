@@ -21,45 +21,53 @@
     }
 
     @media print {
-        body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; }
+        /* STRICTLY 1 PAGE: Locks height to exactly 8.5 inches and prevents any bleeding */
+        body, html { 
+            background-color: white !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            width: 11in !important;
+            height: 8.5in !important;
+            overflow: hidden !important; 
+        }
         
-        /* 1. HIDE THE GHOST SIDEBAR */
+        /* HIDE THE GHOST SIDEBAR */
         body * { visibility: hidden; }
         #printable-area, #printable-area * { visibility: visible; }
         
-        /* 2. BREAK OUT OF DASHBOARD CONTAINER */
+        /* ESCAPE DASHBOARD: Fixed positioning forces the print to the true edge of the paper */
         #printable-area { 
-            position: absolute !important; 
+            position: fixed !important; 
             left: 0 !important; 
             top: 0 !important; 
-            width: 11in !important; 
+            width: 11in !important;
+            height: 8.5in !important; 
             margin: 0 !important; 
-            padding: 0 !important; 
+            padding: 0 !important;
+            z-index: 9999 !important;
         }
 
         .print-only { display: block !important; }
-        .no-print { display: none !important; }
+        nav, header, aside, footer, .no-print { display: none !important; }
         
-        /* 3. ZERO BROWSER MARGINS */
+        /* ZERO BROWSER MARGINS */
         @page { size: letter landscape; margin: 0 !important; }
         
-        /* 4. EXACT 11x8.5 PAPER BOX WITH EQUAL PADDING MARGINS (Matches Batch Print perfectly) */
+        /* EXACT 11x8.5 PAPER BOX WITH EQUAL TOP/BOTTOM PADDING */
         .print-sheet {
             width: 11in !important;
             height: 8.5in !important;
-            padding: 0.75in 0.5in !important; /* 0.75in Top/Bottom, 0.5in Left/Right */
+            padding: 0.75in 0.5in !important; /* 0.75in EXACT equal Top and Bottom space */
             box-sizing: border-box !important;
             display: flex !important;
             flex-direction: row !important;
-            justify-content: flex-start !important; /* Pins the single card to the left side */
+            justify-content: flex-start !important; /* Pins the single card to the LEFT side */
             align-items: center !important; /* PERFECT VERTICAL CENTERING */
-            page-break-after: always !important;
-            page-break-inside: avoid !important;
-            overflow: hidden !important;
+            overflow: hidden !important; /* Stops the 2nd page */
             background: white !important;
         }
         
-        /* 5. INDIVIDUAL CARD SIZING */
+        /* INDIVIDUAL CARD SIZING */
         .print-card {
             width: 48% !important; /* Exact same physical width as Batch Print */
             height: auto !important; 
@@ -68,7 +76,7 @@
             justify-content: flex-start !important;
         }
 
-        /* 6. COMPRESS TABLES TO MATCH BATCH PRINT EXACTLY */
+        /* COMPRESS TABLES TO MATCH BATCH PRINT EXACTLY */
         .deped-table { margin-bottom: 6px !important; }
         .deped-table th, .deped-table td { padding: 2px 3px !important; font-size: 8.5px !important; height: auto !important; }
         .input-cell { padding: 2px 3px !important; height: auto !important; }
@@ -111,15 +119,9 @@
         </div>
 
         @php
-            // FIXED TEACHER QUERY: Checks for controller variable first, fallback to relationship
-            $studentObj = \App\Models\Student::with('section.teacher')->find($student_id);
-            if (isset($teacherName) && trim($teacherName) !== '') {
-                $finalTeacher = strtoupper($teacherName);
-            } elseif ($studentObj && $studentObj->section && $studentObj->section->teacher) {
-                $finalTeacher = strtoupper($studentObj->section->teacher->first_name . ' ' . $studentObj->section->teacher->last_name);
-            } else {
-                $finalTeacher = '_________________';
-            }
+            // FIXED TEACHER QUERY: Identical to how Batch Print handles it perfectly.
+            $studentObj = \App\Models\Student::find($student_id);
+            $finalTeacherName = (isset($teacherName) && trim($teacherName) !== '') ? strtoupper($teacherName) : '_________________';
         @endphp
 
         <!-- START OF PRINTABLE AREA -->
@@ -160,12 +162,12 @@
                             </div>
                             <div class="flex items-end">
                                 <span class="w-12 print:w-14">Teacher:</span>
-                                <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $finalTeacher }}</span>
+                                <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $finalTeacherName }}</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- VISIBLE TABLES (Displays properly on screen and in print) -->
+                    <!-- VISIBLE TABLES -->
                     <div class="flex flex-col space-y-10 print:space-y-0 w-full mt-4 print:mt-0">
                         
                         <!-- 2. GRADES TABLE -->
@@ -270,12 +272,12 @@
                             </div>
                         </div>
 
-                    </div> <!-- End of inner flex column -->
+                    </div>
                 </div>
             </div>
-        </div> <!-- End of Printable Area -->
+        </div>
 
-        <!-- MODALS (Keep outside of printable area) -->
+        <!-- MODALS -->
         <!-- STRICT LOCK MODAL -->
         <div x-show="showStrictLockModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition.opacity>
             <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showStrictLockModal = false"></div>
