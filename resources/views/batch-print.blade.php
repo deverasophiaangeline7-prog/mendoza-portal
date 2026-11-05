@@ -6,41 +6,44 @@
     <title>Batch Print - {{ $section->grade_level }} {{ $section->section_name }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .deped-table th, .deped-table td { border: 1px solid black; padding: 0.2rem 0.25rem; font-size: 0.7rem; }
+        .deped-table th, .deped-table td { border: 1px solid black; padding: 0.15rem 0.25rem; font-size: 0.65rem; }
         .deped-table th { text-align: center; font-weight: bold; background-color: #f9fafb !important; }
         
         @media print {
-            body { background-color: white; margin: 0; padding: 0; }
+            body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; }
             .no-print { display: none !important; }
             
-            /* 
-             * THE MAGIC TRICK FOR PERFECT CENTERING:
-             * Top Margin: 1.2in (Pushes everything down exactly to the middle)
-             * Right Margin: 0.5in
-             * Bottom Margin: 0.5in
-             * Left Margin: 0.5in
-             */
-            @page { size: letter landscape; margin: 1.2in 0.5in 0.5in 0.5in !important; }
+            /* 1. ZERO BROWSER MARGINS: Stop the browser from ignoring our spacing */
+            @page { size: letter landscape; margin: 0 !important; }
             
-            /* No explicit inches on the containers! Let the browser handle the layout natively. */
+            /* 2. THE PHYSICAL PAPER: Exactly 11x8.5 inches. 
+               The padding creates the unbreakable white space on all 4 sides! */
             .print-page-container {
+                width: 11in !important;
+                height: 8.5in !important;
+                padding: 0.75in 0.5in !important; /* 0.75in Top/Bottom, 0.5in Left/Right */
+                box-sizing: border-box !important;
                 display: flex !important;
                 flex-direction: row !important;
-                justify-content: space-between !important; /* Pushes cards cleanly to left and right */
+                justify-content: space-between !important;
+                align-items: center !important; /* PERFECT VERTICAL CENTERING */
                 page-break-after: always !important;
                 page-break-inside: avoid !important;
+                overflow: hidden !important;
             }
             
-            /* 48% width ensures 2 students fit side-by-side with a perfectly even 4% gap in the middle */
+            /* 3. THE STUDENT CARD: Auto-height so it wraps tightly and doesn't create weird internal gaps */
             .print-card {
                 width: 48% !important; 
+                height: auto !important; 
                 display: flex !important;
                 flex-direction: column !important;
+                justify-content: flex-start !important;
             }
             
-            /* Restored comfortable spacing inside the cards */
+            /* Tighten table spacing so it fits safely inside the padding */
             .deped-table { margin-bottom: 6px !important; }
-            .deped-table th, .deped-table td { padding: 3px !important; font-size: 9px !important; }
+            .deped-table th, .deped-table td { padding: 2px 3px !important; font-size: 8.5px !important; }
         }
     </style>
 </head>
@@ -66,10 +69,10 @@
     </div>
 
     <!-- MAIN PRINT CONTAINER -->
-    <div class="w-full max-w-none p-6 print:p-0">
+    <div class="w-full max-w-none print:p-0">
         
         @foreach($students->chunk(2) as $chunk)
-            <!-- The Row -->
+            <!-- The physical 11x8.5 container -->
             <div class="print-page-container w-full {{ !$loop->last ? 'mb-10 print:mb-0' : '' }}">
                 
                 @foreach($chunk as $student)
@@ -84,7 +87,7 @@
                     <div class="print-card bg-white print:bg-transparent p-4 print:p-0 border-2 border-black print:border-0 mb-6 print:mb-0">
                         
                         <!-- 1. HEADER -->
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <div class="flex items-center justify-center gap-2 mb-2">
                                 <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 object-contain">
                                 <div class="text-center leading-tight">
@@ -121,7 +124,7 @@
                         </div>
 
                         <!-- 2. GRADES TABLE -->
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <h4 class="text-center font-bold text-[9px] print:text-[10px] mb-1 uppercase">Report on Learning Progress and Achievement</h4>
                             <table class="w-full deped-table">
                                 <thead>
@@ -162,7 +165,7 @@
 
                         <!-- 3. LEGEND (If Grade 1) -->
                         @if($gradeNum == 1)
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <h4 class="text-center font-bold text-[9px] print:text-[10px] mb-1">Performance Descriptors</h4>
                             <table class="w-full deped-table text-center font-semibold">
                                 <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
@@ -178,7 +181,7 @@
                         @endif
 
                         <!-- 4. REMARKS -->
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <table class="w-full deped-table text-[8px] print:text-[9px]">
                                 <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
                                 <tbody>
@@ -190,7 +193,7 @@
                         </div>
 
                         <!-- 5. SIGNATURE -->
-                        <div class="border-t border-black pt-4">
+                        <div class="border-t border-black pt-3 mt-1">
                             <h4 class="font-bold text-center uppercase mb-3 text-[9px] print:text-[10px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
                             <div class="space-y-3 text-[9px] print:text-[10px] font-semibold max-w-[200px] mx-auto">
                                 <div class="flex items-end gap-2"><span class="w-12">Term 1</span><div class="flex-1 border-b border-black"></div></div>
