@@ -13,29 +13,33 @@
             body { background-color: white; margin: 0; padding: 0; }
             .no-print { display: none !important; }
             
-            /* 1. EQUAL MARGINS: 0.75 inches of blank space on ALL FOUR SIDES */
-            @page { size: letter landscape; margin: 0.75in !important; }
+            /* 
+             * THE MAGIC TRICK FOR PERFECT CENTERING:
+             * Top Margin: 1.2in (Pushes everything down exactly to the middle)
+             * Right Margin: 0.5in
+             * Bottom Margin: 0.5in
+             * Left Margin: 0.5in
+             */
+            @page { size: letter landscape; margin: 1.2in 0.5in 0.5in 0.5in !important; }
             
-            /* 2. THE PAGE WRAPPER: Takes exactly the printable height remaining (7 inches) */
+            /* No explicit inches on the containers! Let the browser handle the layout natively. */
             .print-page-container {
-                height: 7in !important; 
                 display: flex !important;
                 flex-direction: row !important;
-                justify-content: space-between !important; /* Pushes to left and right margins */
-                align-items: center !important; /* THE FIX: Vertically centers the whole report card! */
+                justify-content: space-between !important; /* Pushes cards cleanly to left and right */
                 page-break-after: always !important;
+                page-break-inside: avoid !important;
             }
             
-            /* 3. THE CARD: Auto-height so it wraps the tables and can float in the middle */
+            /* 48% width ensures 2 students fit side-by-side with a perfectly even 4% gap in the middle */
             .print-card {
-                width: 48% !important; /* Leaves a perfect 4% gap in the middle */
-                height: auto !important; 
+                width: 48% !important; 
                 display: flex !important;
                 flex-direction: column !important;
             }
             
-            /* Standard spacing inside tables */
-            .deped-table { margin-bottom: 0 !important; }
+            /* Restored comfortable spacing inside the cards */
+            .deped-table { margin-bottom: 6px !important; }
             .deped-table th, .deped-table td { padding: 3px !important; font-size: 9px !important; }
         }
     </style>
@@ -65,6 +69,7 @@
     <div class="w-full max-w-none p-6 print:p-0">
         
         @foreach($students->chunk(2) as $chunk)
+            <!-- The Row -->
             <div class="print-page-container w-full {{ !$loop->last ? 'mb-10 print:mb-0' : '' }}">
                 
                 @foreach($chunk as $student)
@@ -75,6 +80,7 @@
                         $cleanGrade = str_replace('GRADE', '', strtoupper($section->grade_level));
                     @endphp
                     
+                    <!-- The Individual Student Card -->
                     <div class="print-card bg-white print:bg-transparent p-4 print:p-0 border-2 border-black print:border-0 mb-6 print:mb-0">
                         
                         <!-- 1. HEADER -->
