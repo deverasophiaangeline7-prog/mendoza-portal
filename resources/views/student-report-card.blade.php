@@ -23,10 +23,11 @@
     @media print {
         body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; }
         
-        /* 1. COMPLETELY DESTROY DASHBOARD SPACE: Don't just make it invisible, remove it! */
-        nav, header, aside, footer, .no-print { display: none !important; }
-        main { min-height: 0 !important; padding: 0 !important; margin: 0 !important; }
+        /* 1. HIDE THE GHOST SIDEBAR */
+        body * { visibility: hidden; }
+        #printable-area, #printable-area * { visibility: visible; }
         
+        /* 2. BREAK OUT OF DASHBOARD CONTAINER */
         #printable-area { 
             position: absolute !important; 
             left: 0 !important; 
@@ -37,36 +38,37 @@
         }
 
         .print-only { display: block !important; }
+        .no-print { display: none !important; }
         
-        /* 2. ZERO BROWSER MARGINS */
+        /* 3. ZERO BROWSER MARGINS */
         @page { size: letter landscape; margin: 0 !important; }
         
-        /* 3. EXACT 11x8.5 PAPER BOX */
+        /* 4. EXACT 11x8.5 PAPER BOX WITH EQUAL PADDING MARGINS (Matches Batch Print perfectly) */
         .print-sheet {
             width: 11in !important;
             height: 8.5in !important;
-            padding: 0.75in 0.5in !important; /* Equal top/bottom space */
+            padding: 0.75in 0.5in !important; /* 0.75in Top/Bottom, 0.5in Left/Right */
             box-sizing: border-box !important;
             display: flex !important;
             flex-direction: row !important;
-            justify-content: flex-start !important; 
-            align-items: center !important;
-            /* REMOVED: page-break-after: always; -> This stops the 2nd page! */
+            justify-content: flex-start !important; /* Pins the single card to the left side */
+            align-items: center !important; /* PERFECT VERTICAL CENTERING */
+            page-break-after: always !important;
             page-break-inside: avoid !important;
             overflow: hidden !important;
             background: white !important;
         }
         
-        /* 4. INDIVIDUAL CARD SIZING */
+        /* 5. INDIVIDUAL CARD SIZING */
         .print-card {
-            width: 48% !important; 
+            width: 48% !important; /* Exact same physical width as Batch Print */
             height: auto !important; 
             display: flex !important;
             flex-direction: column !important;
             justify-content: flex-start !important;
         }
 
-        /* 5. COMPRESS TABLES */
+        /* 6. COMPRESS TABLES TO MATCH BATCH PRINT EXACTLY */
         .deped-table { margin-bottom: 6px !important; }
         .deped-table th, .deped-table td { padding: 2px 3px !important; font-size: 8.5px !important; height: auto !important; }
         .input-cell { padding: 2px 3px !important; height: auto !important; }
@@ -108,12 +110,6 @@
             </div>
         </div>
 
-        @php
-            $studentObj = \App\Models\Student::with('section.teacher')->find($student_id);
-            $teacherObj = $studentObj->section->teacher ?? null;
-            $resolvedTeacherName = $teacherObj ? strtoupper($teacherObj->first_name . ' ' . $teacherObj->last_name) : '_________________';
-        @endphp
-
         <!-- START OF PRINTABLE AREA -->
         <div id="printable-area" class="w-full">
             <div class="print-sheet">
@@ -147,12 +143,13 @@
                                 </div>
                                 <div class="flex items-end flex-1">
                                     <span class="mr-1">LRN:</span>
-                                    <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ $studentObj->lrn ?? 'N/A' }}</span>
+                                    <span class="flex-1 border-b border-black text-center font-normal px-1 leading-none pb-0.5">{{ \App\Models\Student::find($student_id)->lrn ?? 'N/A' }}</span>
                                 </div>
                             </div>
+                            <!-- FIXED TEACHER VARIABLE TO MATCH BATCH PRINT -->
                             <div class="flex items-end">
                                 <span class="w-12 print:w-14">Teacher:</span>
-                                <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $resolvedTeacherName }}</span>
+                                <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $teacherName ?? '_________________' }}</span>
                             </div>
                         </div>
                     </div>
@@ -243,7 +240,7 @@
                                                       placeholder="Enter comments/remarks..."></textarea>
                                                       
                                             <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
-                                                 class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left print:min-h-0 print:py-0 print:px-1" 
+                                                 class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left print:min-h-[20px] print:h-5 print:py-0 print:px-1" 
                                                  x-text="teacherRemarks.term{{ $t }}"></div>
                                         </td>
                                     </tr>
