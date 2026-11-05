@@ -13,29 +13,33 @@
             body { background-color: white; margin: 0; padding: 0; }
             .no-print { display: none !important; }
             
-            /* Half-inch margins on all sides */
+            /* Half-inch margins on the physical paper */
             @page { size: landscape; margin: 0.5in; }
             
-            /* 1. FORCE HEIGHT: 8.5in paper minus 1in margins = 7.5in printable height. We use 7.4in to be safe. */
+            /* The overall sheet container */
             .print-page-container {
                 height: 7.4in !important; 
                 display: flex !important;
                 flex-direction: row !important;
                 justify-content: space-between !important;
                 page-break-after: always !important;
-                align-items: stretch !important;
             }
             
-            /* 2. SPREAD OUT: justify-between pushes the signature to the absolute bottom */
+            /* 
+             * THE FIX: 
+             * Changed justify-between to flex-start so elements stick together naturally.
+             * Added padding-top to push the entire report card down from the top edge.
+             */
             .print-card {
                 width: 48% !important;
                 height: 100% !important; 
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: space-between !important; 
+                justify-content: flex-start !important; 
+                padding-top: 0.4in !important; 
             }
             
-            /* Give the tables slightly more breathing room now that we have the space */
+            /* Standard spacing inside tables */
             .deped-table { margin-bottom: 0 !important; }
             .deped-table th, .deped-table td { padding: 3px !important; font-size: 9px !important; }
         }
@@ -66,7 +70,6 @@
     <div class="w-full max-w-none p-6 print:p-0">
         
         @foreach($students->chunk(2) as $chunk)
-            <!-- Applies the 7.4inch height and forces the cards to the edges -->
             <div class="print-page-container w-full {{ !$loop->last ? 'mb-10 print:mb-0' : '' }}">
                 
                 @foreach($chunk as $student)
@@ -77,11 +80,10 @@
                         $cleanGrade = str_replace('GRADE', '', strtoupper($section->grade_level));
                     @endphp
                     
-                    <!-- Applies the 100% height and justify-between to spread the inner content -->
                     <div class="print-card bg-white print:bg-transparent p-4 print:p-0 border-2 border-black print:border-0 mb-6 print:mb-0">
                         
                         <!-- 1. HEADER -->
-                        <div>
+                        <div class="mb-4 print:mb-4">
                             <div class="flex items-center justify-center gap-2 mb-2">
                                 <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 object-contain">
                                 <div class="text-center leading-tight">
@@ -118,7 +120,7 @@
                         </div>
 
                         <!-- 2. GRADES TABLE -->
-                        <div>
+                        <div class="mb-4 print:mb-4">
                             <h4 class="text-center font-bold text-[9px] print:text-[10px] mb-1 uppercase">Report on Learning Progress and Achievement</h4>
                             <table class="w-full deped-table">
                                 <thead>
@@ -159,7 +161,7 @@
 
                         <!-- 3. LEGEND (If Grade 1) -->
                         @if($gradeNum == 1)
-                        <div>
+                        <div class="mb-4 print:mb-4">
                             <h4 class="text-center font-bold text-[9px] print:text-[10px] mb-1">Performance Descriptors</h4>
                             <table class="w-full deped-table text-center font-semibold">
                                 <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
@@ -175,7 +177,7 @@
                         @endif
 
                         <!-- 4. REMARKS -->
-                        <div>
+                        <div class="mb-4 print:mb-6">
                             <table class="w-full deped-table text-[8px] print:text-[9px]">
                                 <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
                                 <tbody>
@@ -186,8 +188,8 @@
                             </table>
                         </div>
 
-                        <!-- 5. SIGNATURE (Forced to bottom by flexbox) -->
-                        <div class="border-t border-black pt-3">
+                        <!-- 5. SIGNATURE -->
+                        <div class="border-t border-black pt-4">
                             <h4 class="font-bold text-center uppercase mb-3 text-[9px] print:text-[10px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
                             <div class="space-y-3 text-[9px] print:text-[10px] font-semibold max-w-[200px] mx-auto">
                                 <div class="flex items-end gap-2"><span class="w-12">Term 1</span><div class="flex-1 border-b border-black"></div></div>
