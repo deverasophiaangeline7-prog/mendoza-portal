@@ -119,9 +119,18 @@
         </div>
 
         @php
-            // FIXED TEACHER QUERY: Identical to how Batch Print handles it perfectly.
-            $studentObj = \App\Models\Student::find($student_id);
-            $finalTeacherName = (isset($teacherName) && trim($teacherName) !== '') ? strtoupper($teacherName) : '_________________';
+            // BULLETPROOF TEACHER RESOLUTION: Checks 4 different possible variable/relationship structures
+            $studentObj = \App\Models\Student::with('section.teacher')->find($student_id);
+            
+            $finalTeacherName = '_________________';
+            if (isset($teacherName) && trim($teacherName) !== '') {
+                $finalTeacherName = strtoupper($teacherName);
+            } elseif (isset($teacher) && trim($teacher) !== '') {
+                $finalTeacherName = strtoupper($teacher);
+            } elseif ($studentObj && $studentObj->section && $studentObj->section->teacher) {
+                $tObj = $studentObj->section->teacher;
+                $finalTeacherName = strtoupper($tObj->first_name . ' ' . $tObj->last_name);
+            }
         @endphp
 
         <!-- START OF PRINTABLE AREA -->
