@@ -13,16 +13,15 @@
             body { background-color: white; margin: 0; padding: 0; }
             .no-print { display: none !important; }
             
-            /* Unlocked orientation with clean margins */
-            @page { size: landscape; margin: 0.25in; }
+            /* ADDED TOP MARGIN: 0.5 inches of space at the top and bottom, 0.3 at the sides */
+            @page { size: landscape; margin: 0.5in 0.3in; }
             
-            /* Break pages only after every 2 students */
             .page-break { page-break-after: always; }
             .student-card { page-break-inside: avoid; }
             
-            /* Tighten table padding to prevent spilling to a second page */
-            .deped-table { margin-bottom: 2px !important; }
-            .deped-table th, .deped-table td { padding: 1px 2px !important; font-size: 8px !important; }
+            /* Relaxed the compression slightly since we have empty space at the bottom */
+            .deped-table { margin-bottom: 8px !important; }
+            .deped-table th, .deped-table td { padding: 3px !important; font-size: 9px !important; }
         }
     </style>
 </head>
@@ -64,22 +63,22 @@
                     @endphp
                     
                     <!-- 48.5% width leaves exactly a 3% gap in the middle of the paper -->
-                    <div class="w-[48.5%] bg-white print:bg-transparent p-4 print:p-0 border-2 border-black print:border-0 student-card flex flex-col justify-between">
+                    <div class="w-[48.5%] bg-white print:bg-transparent p-4 print:py-2 print:px-0 border-2 border-black print:border-0 student-card flex flex-col justify-start">
                         
                         <!-- HEADER -->
-                        <div>
+                        <div class="mb-3">
                             <div class="flex items-center justify-center gap-2 mb-2">
-                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 print:w-8 print:h-8 object-contain">
+                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 print:w-10 print:h-10 object-contain">
                                 <div class="text-center leading-tight">
-                                    <h1 class="text-[12px] font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
-                                    <h2 class="text-[10px] font-semibold">Temporary Learner’s Performance Report</h2>
-                                    <p class="text-[8px] font-bold mt-0.5">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
+                                    <h1 class="text-[12px] font-bold tracking-wide print:text-[13px]">MENDOZA ACADEMY, INC.</h1>
+                                    <h2 class="text-[10px] font-semibold print:text-[11px]">Temporary Learner’s Performance Report</h2>
+                                    <p class="text-[8px] font-bold mt-0.5 print:text-[9px]">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
                                 </div>
                             </div>
                             
-                            <div class="text-[10px] font-semibold space-y-1 mb-2 border-b border-black pb-1">
+                            <div class="text-[10px] font-semibold space-y-1.5 mb-2 border-b border-black pb-2 print:text-[11px]">
                                 <div class="flex items-end">
-                                    <span class="w-10">Name:</span>
+                                    <span class="w-10 print:w-12">Name:</span>
                                     <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ strtoupper($student->last_name . ', ' . $student->first_name) }}</span>
                                 </div>
                                 <div class="flex items-end gap-2">
@@ -97,16 +96,16 @@
                                     </div>
                                 </div>
                                 <div class="flex items-end">
-                                    <span class="w-12">Teacher:</span>
+                                    <span class="w-12 print:w-14">Teacher:</span>
                                     <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $teacherName }}</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- GRADES TABLE -->
-                        <div>
-                            <h4 class="text-center font-bold text-[9px] mb-1 uppercase">Report on Learning Progress and Achievement</h4>
-                            <table class="w-full deped-table mb-2">
+                        <div class="mb-2">
+                            <h4 class="text-center font-bold text-[9px] print:text-[10px] mb-1 uppercase">Report on Learning Progress and Achievement</h4>
+                            <table class="w-full deped-table">
                                 <thead>
                                     <tr>
                                         <th rowspan="2" class="w-1/3">Learning Areas</th>
@@ -145,8 +144,8 @@
 
                         <!-- LEGEND -->
                         @if($gradeNum == 1)
-                        <div class="mb-2 text-[8px]">
-                            <h4 class="text-center font-bold mb-0.5">Performance Descriptors</h4>
+                        <div class="mb-3 text-[8px] print:text-[9px]">
+                            <h4 class="text-center font-bold mb-1">Performance Descriptors</h4>
                             <table class="w-full deped-table text-center font-semibold">
                                 <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
                                 <tbody>
@@ -161,21 +160,21 @@
                         @endif
 
                         <!-- REMARKS -->
-                        <div>
-                            <table class="w-full deped-table mb-2 text-[8px]">
+                        <div class="mb-4">
+                            <table class="w-full deped-table text-[8px] print:text-[9px]">
                                 <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
                                 <tbody>
-                                    <tr><td class="w-12 font-bold text-center py-1">Term 1</td><td class="text-left h-4 px-1">{{ $studentRemark->term1 ?? '' }}</td></tr>
-                                    <tr><td class="font-bold text-center py-1">Term 2</td><td class="text-left h-4 px-1">{{ $studentRemark->term2 ?? '' }}</td></tr>
-                                    <tr><td class="font-bold text-center py-1">Term 3</td><td class="text-left h-4 px-1">{{ $studentRemark->term3 ?? '' }}</td></tr>
+                                    <tr><td class="w-16 font-bold text-center py-1">Term 1</td><td class="text-left h-5 px-1">{{ $studentRemark->term1 ?? '' }}</td></tr>
+                                    <tr><td class="w-16 font-bold text-center py-1">Term 2</td><td class="text-left h-5 px-1">{{ $studentRemark->term2 ?? '' }}</td></tr>
+                                    <tr><td class="w-16 font-bold text-center py-1">Term 3</td><td class="text-left h-5 px-1">{{ $studentRemark->term3 ?? '' }}</td></tr>
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- SIGNATURE -->
-                        <div class="mt-2 border-t border-black pt-2">
-                            <h4 class="font-bold text-center uppercase mb-2 text-[9px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
-                            <div class="space-y-1.5 text-[9px] font-semibold max-w-[200px] mx-auto">
+                        <div class="mt-auto border-t border-black pt-3">
+                            <h4 class="font-bold text-center uppercase mb-3 text-[9px] print:text-[10px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
+                            <div class="space-y-2 text-[9px] print:text-[10px] font-semibold max-w-[200px] mx-auto">
                                 <div class="flex items-end gap-2"><span class="w-12">Term 1</span><div class="flex-1 border-b border-black"></div></div>
                                 <div class="flex items-end gap-2"><span class="w-12">Term 2</span><div class="flex-1 border-b border-black"></div></div>
                                 <div class="flex items-end gap-2"><span class="w-12">Term 3</span><div class="flex-1 border-b border-black"></div></div>
