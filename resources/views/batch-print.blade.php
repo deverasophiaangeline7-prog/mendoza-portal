@@ -13,30 +13,25 @@
             body { background-color: white; margin: 0; padding: 0; }
             .no-print { display: none !important; }
             
-            /* Half-inch margins on the physical paper */
-            @page { size: landscape; margin: 0.5in; }
+            /* 1. EQUAL MARGINS: 0.75 inches of blank space on ALL FOUR SIDES */
+            @page { size: letter landscape; margin: 0.75in !important; }
             
-            /* The overall sheet container */
+            /* 2. THE PAGE WRAPPER: Takes exactly the printable height remaining (7 inches) */
             .print-page-container {
-                height: 7.4in !important; 
+                height: 7in !important; 
                 display: flex !important;
                 flex-direction: row !important;
-                justify-content: space-between !important;
+                justify-content: space-between !important; /* Pushes to left and right margins */
+                align-items: center !important; /* THE FIX: Vertically centers the whole report card! */
                 page-break-after: always !important;
             }
             
-            /* 
-             * THE FIX: 
-             * Changed justify-between to flex-start so elements stick together naturally.
-             * Added padding-top to push the entire report card down from the top edge.
-             */
+            /* 3. THE CARD: Auto-height so it wraps the tables and can float in the middle */
             .print-card {
-                width: 48% !important;
-                height: 100% !important; 
+                width: 48% !important; /* Leaves a perfect 4% gap in the middle */
+                height: auto !important; 
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: flex-start !important; 
-                padding-top: 0.4in !important; 
             }
             
             /* Standard spacing inside tables */
@@ -83,7 +78,7 @@
                     <div class="print-card bg-white print:bg-transparent p-4 print:p-0 border-2 border-black print:border-0 mb-6 print:mb-0">
                         
                         <!-- 1. HEADER -->
-                        <div class="mb-4 print:mb-4">
+                        <div class="mb-4">
                             <div class="flex items-center justify-center gap-2 mb-2">
                                 <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 object-contain">
                                 <div class="text-center leading-tight">
@@ -120,7 +115,7 @@
                         </div>
 
                         <!-- 2. GRADES TABLE -->
-                        <div class="mb-4 print:mb-4">
+                        <div class="mb-4">
                             <h4 class="text-center font-bold text-[9px] print:text-[10px] mb-1 uppercase">Report on Learning Progress and Achievement</h4>
                             <table class="w-full deped-table">
                                 <thead>
@@ -161,7 +156,7 @@
 
                         <!-- 3. LEGEND (If Grade 1) -->
                         @if($gradeNum == 1)
-                        <div class="mb-4 print:mb-4">
+                        <div class="mb-4">
                             <h4 class="text-center font-bold text-[9px] print:text-[10px] mb-1">Performance Descriptors</h4>
                             <table class="w-full deped-table text-center font-semibold">
                                 <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
@@ -177,7 +172,7 @@
                         @endif
 
                         <!-- 4. REMARKS -->
-                        <div class="mb-4 print:mb-6">
+                        <div class="mb-4">
                             <table class="w-full deped-table text-[8px] print:text-[9px]">
                                 <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
                                 <tbody>
