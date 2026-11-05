@@ -91,6 +91,16 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // 1. Log the action BEFORE destroying the session
+        if (Auth::check()) {
+            \App\Models\AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'User Logout',
+                'description' => auth()->user()->username . ' logged out of the system.'
+            ]);
+        }
+
+        // 2. Standard Laravel logout execution
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
