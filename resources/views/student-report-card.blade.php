@@ -23,18 +23,21 @@
     @media print {
         body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; }
         
-        /* 1. HIDE THE GHOST SIDEBAR */
+        /* 1. HIDE EVERYTHING ELSE */
         body * { visibility: hidden; }
         #printable-area, #printable-area * { visibility: visible; }
         
-        /* 2. BREAK OUT OF DASHBOARD CONTAINER */
+        /* 2. THE FIX: POSITION FIXED rips it out of the mx-auto dashboard wrapper */
         #printable-area { 
-            position: absolute !important; 
+            position: fixed !important; 
             left: 0 !important; 
             top: 0 !important; 
             width: 11in !important; 
+            height: 8.5in !important; 
             margin: 0 !important; 
             padding: 0 !important; 
+            z-index: 9999 !important;
+            background: white !important;
         }
 
         .print-only { display: block !important; }
@@ -47,30 +50,28 @@
         .print-sheet {
             width: 11in !important;
             height: 8.5in !important;
-            padding: 0.75in 0.5in !important; /* 0.75in Top/Bottom, 0.5in Left/Right */
+            padding: 0.75in 0.5in !important; /* Exactly 0.75in Top/Bottom, 0.5in Left/Right */
             box-sizing: border-box !important;
             display: flex !important;
             flex-direction: row !important;
-            justify-content: flex-start !important; /* Pins the single card to the left side */
+            justify-content: flex-start !important; /* Pins the single card perfectly to the left */
             align-items: center !important; /* PERFECT VERTICAL CENTERING */
-            page-break-after: always !important;
-            page-break-inside: avoid !important;
-            overflow: hidden !important;
-            background: white !important;
+            overflow: hidden !important; /* IMPOSSIBLE TO SPILL TO PAGE 2 */
         }
         
         /* 5. INDIVIDUAL CARD SIZING */
         .print-card {
             width: 48% !important; /* Exact same physical width as Batch Print */
             height: auto !important; 
+            max-height: 7in !important; /* Strict height boundary (8.5 - 1.5 padding) */
             display: flex !important;
             flex-direction: column !important;
             justify-content: flex-start !important;
         }
 
-        /* 6. COMPRESS TABLES TO MATCH BATCH PRINT EXACTLY */
+        /* 6. COMPRESS TABLES SO THEY FIT IN THE 1-PAGE LIMIT */
         .deped-table { margin-bottom: 6px !important; }
-        .deped-table th, .deped-table td { padding: 2px 3px !important; font-size: 8.5px !important; height: auto !important; }
+        .deped-table th, .deped-table td { padding: 2px 3px !important; font-size: 8px !important; height: auto !important; }
         .input-cell { padding: 2px 3px !important; height: auto !important; }
     }
 </style>
@@ -121,7 +122,7 @@
             <div class="print-sheet">
                 <div class="print-card">
                     
-                    <!-- 1. HIDDEN PRINT HEADER (Identical to batch-print) -->
+                    <!-- 1. HIDDEN PRINT HEADER -->
                     <div class="print-only text-black mb-3">
                         <div class="flex items-center justify-center gap-2 mb-2">
                             <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 object-contain">
@@ -245,7 +246,7 @@
                                                       placeholder="Enter comments/remarks..."></textarea>
                                                       
                                             <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
-                                                 class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left print:min-h-[20px] print:h-5 print:py-0 print:px-1" 
+                                                 class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left print:min-h-0 print:py-0 print:px-1" 
                                                  x-text="teacherRemarks.term{{ $t }}"></div>
                                         </td>
                                     </tr>
