@@ -1,56 +1,33 @@
-@extends('layouts.navigation')
-
-@section('title', 'Batch Print')
-
-@section('content')
-<style>
-    /* Standard Table Styling */
-    .deped-table th, .deped-table td { border: 1px solid black; padding: 0.15rem 0.25rem; font-size: 0.65rem; }
-    .deped-table th { text-align: center; font-weight: bold; background-color: #f9fafb !important; }
-    
-    @media print {
-        /* 1. Kill the Sidebar and Navigation completely so they don't take up ghost space */
-        nav, aside, header, footer { display: none !important; }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Print - {{ $section->grade_level }} {{ $section->section_name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .deped-table th, .deped-table td { border: 1px solid black; padding: 0.15rem 0.25rem; font-size: 0.65rem; }
+        .deped-table th { text-align: center; font-weight: bold; background-color: #f9fafb !important; }
         
-        /* 2. Rip the main content out of the dashboard layout and pull it to the top-left edge */
-        main { 
-            position: absolute !important; 
-            top: 0 !important; 
-            left: 0 !important; 
-            width: 100% !important; 
-            max-width: 100% !important;
-            margin: 0 !important; 
-            padding: 0 !important; 
-            background-color: white !important;
+        @media print {
+            body { background-color: white; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            
+            /* Unlocked orientation with clean margins */
+            @page { size: landscape; margin: 0.25in; }
+            
+            /* Break pages only after every 2 students */
+            .page-break { page-break-after: always; }
+            .student-card { page-break-inside: avoid; }
+            
+            /* Tighten table padding to prevent spilling to a second page */
+            .deped-table { margin-bottom: 2px !important; }
+            .deped-table th, .deped-table td { padding: 1px 2px !important; font-size: 8px !important; }
         }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-black">
 
-        .no-print { display: none !important; }
-        
-        /* 3. Set standard Landscape with clean margins */
-        @page { size: landscape; margin: 0.25in; }
-        
-        /* 4. Force Row layout for 2 students per page */
-        .print-row {
-            display: flex !important;
-            flex-direction: row !important;
-            justify-content: space-between !important;
-            width: 100% !important;
-            page-break-after: always !important;
-        }
-        
-        /* 5. Give each student exactly 48.5% of the paper */
-        .print-card { 
-            width: 48.5% !important; 
-            page-break-inside: avoid !important; 
-        }
-
-        /* 6. Tighten margins to prevent vertical spilling to a blank second page */
-        .deped-table { margin-bottom: 2px !important; }
-        .deped-table th, .deped-table td { padding: 1px 2px !important; font-size: 8px !important; }
-    }
-</style>
-
-<main class="flex-1 p-6 bg-gray-100 min-h-screen">
     @php
         if (!function_exists('getDescriptor')) {
             function getDescriptor($score) {
@@ -61,6 +38,7 @@
         }
     @endphp
 
+    <!-- FLOATING BUTTONS (Hidden during print) -->
     <div class="fixed top-6 right-6 no-print z-50 flex gap-4">
         <button onclick="window.close()" class="bg-gray-200 text-black font-black px-6 py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-300 transition-all uppercase tracking-wider text-sm">
             Close Tab
@@ -71,11 +49,11 @@
     </div>
 
     <!-- MAIN PRINT CONTAINER -->
-    <div id="batch-print-area" class="w-full text-black">
+    <div class="w-full max-w-none p-6 print:p-0">
         
         @foreach($students->chunk(2) as $chunk)
-            <!-- The Row containing exactly 2 students -->
-            <div class="print-row flex flex-col md:flex-row justify-between w-full {{ !$loop->last ? 'mb-10 print:mb-0' : '' }}">
+            <!-- A flexible row that naturally pushes the two cards to the edges -->
+            <div class="flex flex-row justify-between w-full {{ !$loop->last ? 'page-break' : '' }} mb-10 print:mb-0">
                 
                 @foreach($chunk as $student)
                     @php
@@ -85,8 +63,8 @@
                         $cleanGrade = str_replace('GRADE', '', strtoupper($section->grade_level));
                     @endphp
                     
-                    <!-- The 48.5% Card -->
-                    <div class="print-card w-full md:w-[48.5%] bg-white p-4 print:p-0 border-2 border-black print:border-0 mb-6 md:mb-0 flex flex-col">
+                    <!-- 48.5% width leaves exactly a 3% gap in the middle of the paper -->
+                    <div class="w-[48.5%] bg-white print:bg-transparent p-4 print:p-0 border-2 border-black print:border-0 student-card flex flex-col justify-between">
                         
                         <!-- HEADER -->
                         <div>
@@ -209,11 +187,11 @@
             </div>
         @endforeach
     </div>
-</main>
 
-<script>
-    window.onload = function() {
-        setTimeout(() => window.print(), 500);
-    };
-</script>
-@endsection
+    <script>
+        window.onload = function() {
+            setTimeout(() => window.print(), 500);
+        };
+    </script>
+</body>
+</html>
