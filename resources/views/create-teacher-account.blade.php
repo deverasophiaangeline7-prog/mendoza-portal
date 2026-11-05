@@ -15,12 +15,22 @@
 </style>
 
 @php
-    $filteredSections = $sections->reject(function($sec) {
-        return in_array(strtoupper(trim($sec->grade_level)), ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREPARATORY', 'PREP', 'NKP']);
+    $nkpLevels = ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREPARATORY', 'PREP', 'NKP'];
+
+    
+    $nonNkpSections = $sections->reject(function($sec) use ($nkpLevels) {
+        return in_array(strtoupper(trim($sec->grade_level)), $nkpLevels);
     });
 
-    $alpineSections =$filteredSections->map(function($sec) {$gradeNum = '1';
-        if (preg_match('/\d+/', $sec->grade_level,$matches)) {
+    $availableHomerooms = $nonNkpSections->whereNull('teacher_id');
+
+    $isNkpTaken = $sections->filter(function($sec) use ($nkpLevels) {
+        return in_array(strtoupper(trim($sec->grade_level)), $nkpLevels) && !is_null($sec->teacher_id);
+    })->isNotEmpty();
+
+    $alpineSections = $nonNkpSections->map(function($sec) {
+        $gradeNum = '1';
+        if (preg_match('/\d+/', $sec->grade_level, $matches)) {
             $gradeNum = (string)$matches[0];
         }
         return [
@@ -105,8 +115,10 @@
                             <label class="w-full md:w-32 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0">Homeroom: <span class="text-red-600">*</span></label>
                             <select name="advisory" x-model="selectedHomeroom" class="form-input-pill bg-white cursor-pointer focus:outline-none" required>
                                 <option value="" disabled selected>Select Advisory Section</option>
-                                <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
-                                @foreach($filteredSections as $section)
+                                @if(!$isNkpTaken)
+                                    <option value="NKP">NKP (Nursery, Kinder, Prep)</option>
+                                @endif
+                                @foreach($availableHomerooms as $section)
                                     <option value="{{ $section->section_id }}">{{ strtoupper($section->grade_level . ' - ' .$section->section_name) }}</option>
                                 @endforeach
                             </select>
