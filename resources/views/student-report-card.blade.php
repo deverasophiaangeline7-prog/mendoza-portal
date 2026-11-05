@@ -23,55 +23,52 @@
     @media print {
         body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; }
         
-        /* 1. HIDE EVERYTHING ELSE */
-        body * { visibility: hidden; }
-        #printable-area, #printable-area * { visibility: visible; }
+        /* 1. COMPLETELY DESTROY DASHBOARD SPACE: Don't just make it invisible, remove it! */
+        nav, header, aside, footer, .no-print { display: none !important; }
+        main { min-height: 0 !important; padding: 0 !important; margin: 0 !important; }
         
-        /* 2. THE FIX: POSITION FIXED rips it out of the mx-auto dashboard wrapper */
         #printable-area { 
-            position: fixed !important; 
+            position: absolute !important; 
             left: 0 !important; 
             top: 0 !important; 
             width: 11in !important; 
-            height: 8.5in !important; 
             margin: 0 !important; 
             padding: 0 !important; 
-            z-index: 9999 !important;
-            background: white !important;
         }
 
         .print-only { display: block !important; }
-        .no-print { display: none !important; }
         
-        /* 3. ZERO BROWSER MARGINS */
+        /* 2. ZERO BROWSER MARGINS */
         @page { size: letter landscape; margin: 0 !important; }
         
-        /* 4. EXACT 11x8.5 PAPER BOX WITH EQUAL PADDING MARGINS (Matches Batch Print perfectly) */
+        /* 3. EXACT 11x8.5 PAPER BOX */
         .print-sheet {
             width: 11in !important;
             height: 8.5in !important;
-            padding: 0.75in 0.5in !important; /* Exactly 0.75in Top/Bottom, 0.5in Left/Right */
+            padding: 0.75in 0.5in !important; /* Equal top/bottom space */
             box-sizing: border-box !important;
             display: flex !important;
             flex-direction: row !important;
-            justify-content: flex-start !important; /* Pins the single card perfectly to the left */
-            align-items: center !important; /* PERFECT VERTICAL CENTERING */
-            overflow: hidden !important; /* IMPOSSIBLE TO SPILL TO PAGE 2 */
+            justify-content: flex-start !important; 
+            align-items: center !important;
+            /* REMOVED: page-break-after: always; -> This stops the 2nd page! */
+            page-break-inside: avoid !important;
+            overflow: hidden !important;
+            background: white !important;
         }
         
-        /* 5. INDIVIDUAL CARD SIZING */
+        /* 4. INDIVIDUAL CARD SIZING */
         .print-card {
-            width: 48% !important; /* Exact same physical width as Batch Print */
+            width: 48% !important; 
             height: auto !important; 
-            max-height: 7in !important; /* Strict height boundary (8.5 - 1.5 padding) */
             display: flex !important;
             flex-direction: column !important;
             justify-content: flex-start !important;
         }
 
-        /* 6. COMPRESS TABLES SO THEY FIT IN THE 1-PAGE LIMIT */
+        /* 5. COMPRESS TABLES */
         .deped-table { margin-bottom: 6px !important; }
-        .deped-table th, .deped-table td { padding: 2px 3px !important; font-size: 8px !important; height: auto !important; }
+        .deped-table th, .deped-table td { padding: 2px 3px !important; font-size: 8.5px !important; height: auto !important; }
         .input-cell { padding: 2px 3px !important; height: auto !important; }
     }
 </style>
