@@ -6,21 +6,37 @@
     <title>Batch Print - {{ $section->grade_level }} {{ $section->section_name }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .deped-table th, .deped-table td { border: 1px solid black; padding: 0.15rem 0.25rem; font-size: 0.65rem; }
+        .deped-table th, .deped-table td { border: 1px solid black; padding: 0.2rem 0.25rem; font-size: 0.7rem; }
         .deped-table th { text-align: center; font-weight: bold; background-color: #f9fafb !important; }
         
         @media print {
             body { background-color: white; margin: 0; padding: 0; }
             .no-print { display: none !important; }
             
-            /* ADDED TOP MARGIN: 0.5 inches of space at the top and bottom, 0.3 at the sides */
-            @page { size: landscape; margin: 0.5in 0.3in; }
+            /* Half-inch margins on all sides */
+            @page { size: landscape; margin: 0.5in; }
             
-            .page-break { page-break-after: always; }
-            .student-card { page-break-inside: avoid; }
+            /* 1. FORCE HEIGHT: 8.5in paper minus 1in margins = 7.5in printable height. We use 7.4in to be safe. */
+            .print-page-container {
+                height: 7.4in !important; 
+                display: flex !important;
+                flex-direction: row !important;
+                justify-content: space-between !important;
+                page-break-after: always !important;
+                align-items: stretch !important;
+            }
             
-            /* Relaxed the compression slightly since we have empty space at the bottom */
-            .deped-table { margin-bottom: 8px !important; }
+            /* 2. SPREAD OUT: justify-between pushes the signature to the absolute bottom */
+            .print-card {
+                width: 48% !important;
+                height: 100% !important; 
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important; 
+            }
+            
+            /* Give the tables slightly more breathing room now that we have the space */
+            .deped-table { margin-bottom: 0 !important; }
             .deped-table th, .deped-table td { padding: 3px !important; font-size: 9px !important; }
         }
     </style>
@@ -37,7 +53,6 @@
         }
     @endphp
 
-    <!-- FLOATING BUTTONS (Hidden during print) -->
     <div class="fixed top-6 right-6 no-print z-50 flex gap-4">
         <button onclick="window.close()" class="bg-gray-200 text-black font-black px-6 py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-300 transition-all uppercase tracking-wider text-sm">
             Close Tab
@@ -51,8 +66,8 @@
     <div class="w-full max-w-none p-6 print:p-0">
         
         @foreach($students->chunk(2) as $chunk)
-            <!-- A flexible row that naturally pushes the two cards to the edges -->
-            <div class="flex flex-row justify-between w-full {{ !$loop->last ? 'page-break' : '' }} mb-10 print:mb-0">
+            <!-- Applies the 7.4inch height and forces the cards to the edges -->
+            <div class="print-page-container w-full {{ !$loop->last ? 'mb-10 print:mb-0' : '' }}">
                 
                 @foreach($chunk as $student)
                     @php
@@ -62,13 +77,13 @@
                         $cleanGrade = str_replace('GRADE', '', strtoupper($section->grade_level));
                     @endphp
                     
-                    <!-- 48.5% width leaves exactly a 3% gap in the middle of the paper -->
-                    <div class="w-[48.5%] bg-white print:bg-transparent p-4 print:py-2 print:px-0 border-2 border-black print:border-0 student-card flex flex-col justify-start">
+                    <!-- Applies the 100% height and justify-between to spread the inner content -->
+                    <div class="print-card bg-white print:bg-transparent p-4 print:p-0 border-2 border-black print:border-0 mb-6 print:mb-0">
                         
-                        <!-- HEADER -->
-                        <div class="mb-3">
+                        <!-- 1. HEADER -->
+                        <div>
                             <div class="flex items-center justify-center gap-2 mb-2">
-                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 print:w-10 print:h-10 object-contain">
+                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 object-contain">
                                 <div class="text-center leading-tight">
                                     <h1 class="text-[12px] font-bold tracking-wide print:text-[13px]">MENDOZA ACADEMY, INC.</h1>
                                     <h2 class="text-[10px] font-semibold print:text-[11px]">Temporary Learner’s Performance Report</h2>
@@ -102,8 +117,8 @@
                             </div>
                         </div>
 
-                        <!-- GRADES TABLE -->
-                        <div class="mb-2">
+                        <!-- 2. GRADES TABLE -->
+                        <div>
                             <h4 class="text-center font-bold text-[9px] print:text-[10px] mb-1 uppercase">Report on Learning Progress and Achievement</h4>
                             <table class="w-full deped-table">
                                 <thead>
@@ -142,10 +157,10 @@
                             </table>
                         </div>
 
-                        <!-- LEGEND -->
+                        <!-- 3. LEGEND (If Grade 1) -->
                         @if($gradeNum == 1)
-                        <div class="mb-3 text-[8px] print:text-[9px]">
-                            <h4 class="text-center font-bold mb-1">Performance Descriptors</h4>
+                        <div>
+                            <h4 class="text-center font-bold text-[9px] print:text-[10px] mb-1">Performance Descriptors</h4>
                             <table class="w-full deped-table text-center font-semibold">
                                 <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
                                 <tbody>
@@ -159,8 +174,8 @@
                         </div>
                         @endif
 
-                        <!-- REMARKS -->
-                        <div class="mb-4">
+                        <!-- 4. REMARKS -->
+                        <div>
                             <table class="w-full deped-table text-[8px] print:text-[9px]">
                                 <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
                                 <tbody>
@@ -171,10 +186,10 @@
                             </table>
                         </div>
 
-                        <!-- SIGNATURE -->
-                        <div class="mt-auto border-t border-black pt-3">
+                        <!-- 5. SIGNATURE (Forced to bottom by flexbox) -->
+                        <div class="border-t border-black pt-3">
                             <h4 class="font-bold text-center uppercase mb-3 text-[9px] print:text-[10px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
-                            <div class="space-y-2 text-[9px] print:text-[10px] font-semibold max-w-[200px] mx-auto">
+                            <div class="space-y-3 text-[9px] print:text-[10px] font-semibold max-w-[200px] mx-auto">
                                 <div class="flex items-end gap-2"><span class="w-12">Term 1</span><div class="flex-1 border-b border-black"></div></div>
                                 <div class="flex items-end gap-2"><span class="w-12">Term 2</span><div class="flex-1 border-b border-black"></div></div>
                                 <div class="flex items-end gap-2"><span class="w-12">Term 3</span><div class="flex-1 border-b border-black"></div></div>
