@@ -17,7 +17,6 @@
     .print-only { display: none; }
     
     @media screen {
-        /* Prevents wrappers from breaking screen layout */
         .print-sheet, .print-card { width: 100%; display: block; }
     }
 
@@ -30,33 +29,35 @@
         .print-only { display: block !important; }
         .no-print { display: none !important; }
         
-        /* 1. Force Landscape & Zero Browser Margins */
-        @page { size: letter landscape; margin: 0 !important; }
+        /* 1. Strict PORTRAIT */
+        @page { size: letter portrait; margin: 0.25in !important; }
         
-        /* 2. EXACT PAPER DIMENSIONS to prevent squishing */
+        /* 2. Container matches 11" paper */
         .print-sheet {
-            width: 11in !important;
-            height: 8.5in !important;
+            width: 100% !important;
+            height: 10.5in !important;
             display: flex !important;
-            flex-direction: row !important;
+            flex-direction: column !important;
             page-break-after: always !important;
             overflow: hidden !important;
             background: white;
+            box-sizing: border-box;
         }
         
-        /* 3. EXACT HALF-PAGE DIMENSIONS (Forces left alignment) */
+        /* 3. The card takes exactly the top half of the portrait paper */
         .print-card {
-            width: 5.5in !important;
-            height: 8.5in !important;
-            padding: 0.3in 0.4in !important;
+            width: 100% !important;
+            height: 50% !important;
+            padding: 0.2in 0.4in !important;
             box-sizing: border-box !important;
             display: flex !important;
             flex-direction: column !important;
+            justify-content: space-between;
         }
 
-        /* 4. Compress vertical spacing to guarantee it doesn't spill to page 2 */
-        .deped-table { margin-bottom: 6px !important; }
-        .deped-table th, .deped-table td { padding: 2px !important; font-size: 8px !important; height: auto !important; }
+        /* 4. Compress tables for print */
+        .deped-table { margin-bottom: 4px !important; }
+        .deped-table th, .deped-table td { padding: 2px 4px !important; font-size: 9px !important; height: auto !important; }
         .input-cell { padding: 2px !important; height: auto !important; }
         .print-compress { margin-bottom: 2px !important; }
     }

@@ -4,44 +4,48 @@
 
 @section('content')
 <style>
-    .deped-table th, .deped-table td { border: 1px solid black; padding: 0.1rem 0.2rem; font-size: 0.6rem; }
+    .deped-table th, .deped-table td { border: 1px solid black; padding: 0.1rem 0.3rem; font-size: 0.65rem; }
     .deped-table th { text-align: center; font-weight: bold; background-color: #f9fafb !important; }
     
     @media print {
         body { background-color: white; margin: 0; padding: 0; }
         body * { visibility: hidden; }
+        #printable-area, #printable-area * { visibility: visible; }
         
-        /* FIXED: Target the correct ID matching our container below */
-        #batch-print-area, #batch-print-area * { visibility: visible; }
-        
-        #batch-print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+        #printable-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
         .no-print { display: none !important; }
         
-        /* 1. Strict Landscape */
-        @page { size: letter landscape; margin: 0.15in !important; }
+        /* 1. Strict PORTRAIT with tight margins */
+        @page { size: letter portrait; margin: 0.25in !important; }
         
+        /* 2. One physical sheet of paper (8in wide x 10.5in tall printable area) */
         .print-sheet {
-            width: 11in !important;
-            height: 8.2in !important;
+            width: 100% !important;
+            height: 10.5in !important;
             display: flex !important;
-            flex-direction: row !important;
+            flex-direction: column !important; /* Stack vertically */
             page-break-after: always !important;
             overflow: hidden !important;
             background: white;
             box-sizing: border-box;
         }
         
+        /* 3. Exactly half the page per student */
         .print-card {
-            width: 5.4in !important;
-            height: 8.2in !important;
-            padding: 0.15in 0.25in !important;
+            width: 100% !important;
+            height: 50% !important;
+            padding: 0.2in 0.4in !important;
             box-sizing: border-box !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between;
-            border-right: 1px dashed #999;
+            border-bottom: 1px dashed #999;
         }
-        .print-card:last-child { border-right: none; }
+        .print-card:last-child { border-bottom: none; }
+        
+        /* 4. Tightly pack tables so they fit in the 5-inch height limit */
+        .deped-table { margin-bottom: 4px !important; }
+        .deped-table th, .deped-table td { padding: 2px 4px !important; font-size: 9px !important; }
     }
 </style>
 
@@ -65,10 +69,11 @@
         </button>
     </div>
 
-    <!-- MATCHED ID SELECTOR: batch-print-area -->
-    <div id="batch-print-area" class="w-full text-black">
+    <div id="printable-area" class="w-full text-black">
         @foreach($students->chunk(2) as $chunk)
-            <div class="print-sheet mb-10 print:mb-0 w-full flex bg-white shadow-xl print:shadow-none mx-auto">
+            <!-- A single Portrait Sheet -->
+            <div class="print-sheet mb-10 print:mb-0 w-full max-w-3xl mx-auto flex flex-col bg-white shadow-xl print:shadow-none border-[3px] border-black print:border-0">
+                
                 @foreach($chunk as $student)
                     @php
                         $studentGrades = isset($grades[$student->student_id]) ? $grades[$student->student_id]->keyBy('subject_name') : collect();
@@ -77,25 +82,26 @@
                         $cleanGrade = str_replace('GRADE', '', strtoupper($section->grade_level));
                     @endphp
                     
-                    <div class="print-card w-1/2 p-4">
+                    <!-- Exactly Half the Page (Top or Bottom) -->
+                    <div class="print-card w-full p-6 border-b-[3px] border-dashed border-gray-400 print:border-b last:border-b-0">
                         
                         <!-- HEADER -->
                         <div>
-                            <div class="flex items-center justify-center gap-2 mb-1">
-                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-8 h-8 object-contain">
+                            <div class="flex items-center justify-center gap-3 mb-2">
+                                <img src="{{ asset('images/MAILogo.png') }}" alt="Logo" class="w-10 h-10 print:w-8 print:h-8 object-contain">
                                 <div class="text-center leading-tight">
-                                    <h1 class="text-[11px] font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
-                                    <h2 class="text-[9px] font-semibold">Temporary Learner’s Performance Report</h2>
-                                    <p class="text-[7px] font-bold">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
+                                    <h1 class="text-[14px] font-bold tracking-wide">MENDOZA ACADEMY, INC.</h1>
+                                    <h2 class="text-[11px] font-semibold">Temporary Learner’s Performance Report</h2>
+                                    <p class="text-[9px] font-bold">School Year {{ $activeYear->school_year ?? '2026-2027' }}</p>
                                 </div>
                             </div>
                             
-                            <div class="text-[9px] font-semibold space-y-0.5 border-b border-black pb-1 mb-1">
+                            <div class="text-[10px] font-semibold space-y-1 mb-2">
                                 <div class="flex items-end">
-                                    <span class="w-10">Name:</span>
+                                    <span class="w-12">Name:</span>
                                     <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ strtoupper($student->last_name . ', ' . $student->first_name) }}</span>
                                 </div>
-                                <div class="flex items-end gap-2">
+                                <div class="flex items-end gap-4">
                                     <div class="flex items-end w-1/4">
                                         <span class="mr-1">Grade:</span>
                                         <span class="flex-1 border-b border-black text-center font-normal leading-none pb-0.5">{{ trim($cleanGrade) }}</span>
@@ -118,16 +124,16 @@
 
                         <!-- GRADES TABLE -->
                         <div>
-                            <h4 class="text-center font-bold text-[8px] mb-0.5 uppercase">Report on Learning Progress and Achievement</h4>
-                            <table class="w-full deped-table mb-1">
+                            <h4 class="text-center font-bold text-[9px] mb-1 uppercase">Report on Learning Progress and Achievement</h4>
+                            <table class="w-full deped-table mb-2">
                                 <thead>
                                     <tr>
                                         <th rowspan="2" class="w-1/3">Learning Areas</th>
                                         <th colspan="3">Term</th>
-                                        <th rowspan="2" class="w-6">Final<br>Grade</th>
-                                        <th rowspan="2" class="w-10">Remarks</th>
+                                        <th rowspan="2" class="w-12">Final Grade</th>
+                                        <th rowspan="2" class="w-20">Remarks</th>
                                     </tr>
-                                    <tr><th class="w-5">1</th><th class="w-5">2</th><th class="w-5">3</th></tr>
+                                    <tr><th class="w-8">1</th><th class="w-8">2</th><th class="w-8">3</th></tr>
                                 </thead>
                                 <tbody class="text-center font-bold">
                                     @foreach($subjects as $subj)
@@ -147,7 +153,7 @@
                                         </tr>
                                     @endforeach
                                     <tr>
-                                        <td colspan="4" class="text-right pr-2">General Average</td>
+                                        <td colspan="4" class="text-right pr-2 uppercase">General Average</td>
                                         @php $genAve = $count > 0 ? round($totalScore/$count) : ''; @endphp
                                         <td>{{ $gradeNum == 1 ? getDescriptor($genAve) : $genAve }}</td>
                                         <td>{{ $genAve ? ($genAve >= 65 ? 'Promoted' : 'Retained') : '' }}</td>
@@ -158,38 +164,42 @@
 
                         <!-- LEGEND -->
                         @if($gradeNum == 1)
-                        <div class="mb-2 text-[8px]">
-                            <h4 class="text-center font-bold mb-0.5">Performance Descriptors</h4>
-                            <table class="w-full deped-table text-center font-semibold">
-                                <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
-                                <tbody>
-                                    <tr><td>90-100</td><td>Advancing</td><td>Passed</td></tr>
-                                    <tr><td>80-89</td><td>Benchmarking</td><td>Passed</td></tr>
-                                    <tr><td>75-79</td><td>Connecting</td><td>Passed</td></tr>
-                                    <tr><td>65-74</td><td>Developing</td><td>Passed</td></tr>
-                                    <tr><td>0-64</td><td>Emerging</td><td>Failed</td></tr>
-                                </tbody>
-                            </table>
+                        <div class="mb-2">
+                            <h4 class="text-center font-bold text-[8px] mb-0.5">Performance Descriptors</h4>
+                            <div class="max-w-xs mx-auto">
+                                <table class="w-full deped-table text-center font-semibold text-[7px]">
+                                    <thead><tr><th>Scale</th><th>Descriptors</th><th>Remarks</th></tr></thead>
+                                    <tbody>
+                                        <tr><td>90-100</td><td>Advancing</td><td>Passed</td></tr>
+                                        <tr><td>80-89</td><td>Benchmarking</td><td>Passed</td></tr>
+                                        <tr><td>75-79</td><td>Connecting</td><td>Passed</td></tr>
+                                        <tr><td>65-74</td><td>Developing</td><td>Passed</td></tr>
+                                        <tr><td>0-64</td><td>Emerging</td><td>Failed</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         @endif
 
                         <!-- REMARKS -->
-                        <table class="w-full deped-table text-[8px] mb-1">
-                            <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
-                            <tbody>
-                                <tr><td class="w-12 font-bold text-center py-0.5">Term 1</td><td class="text-left h-3 px-1">{{ $studentRemark->term1 ?? '' }}</td></tr>
-                                <tr><td class="font-bold text-center py-0.5">Term 2</td><td class="text-left h-3 px-1">{{ $studentRemark->term2 ?? '' }}</td></tr>
-                                <tr><td class="font-bold text-center py-0.5">Term 3</td><td class="text-left h-3 px-1">{{ $studentRemark->term3 ?? '' }}</td></tr>
-                            </tbody>
-                        </table>
+                        <div>
+                            <table class="w-full deped-table text-[8px] mb-2">
+                                <thead><tr><th colspan="2">Teacher's Comments/Remarks</th></tr></thead>
+                                <tbody>
+                                    <tr><td class="w-16 font-bold text-center py-1">Term 1</td><td class="text-left h-4 px-1">{{ $studentRemark->term1 ?? '' }}</td></tr>
+                                    <tr><td class="font-bold text-center py-1">Term 2</td><td class="text-left h-4 px-1">{{ $studentRemark->term2 ?? '' }}</td></tr>
+                                    <tr><td class="font-bold text-center py-1">Term 3</td><td class="text-left h-4 px-1">{{ $studentRemark->term3 ?? '' }}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
 
                         <!-- SIGNATURE -->
-                        <div class="border-t border-black pt-1">
-                            <h4 class="font-bold text-center uppercase mb-1 text-[8px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
-                            <div class="space-y-1 text-[8px] font-semibold max-w-[180px] mx-auto">
-                                <div class="flex items-end gap-1"><span class="w-8">Term 1</span><div class="flex-1 border-b border-black"></div></div>
-                                <div class="flex items-end gap-1"><span class="w-8">Term 2</span><div class="flex-1 border-b border-black"></div></div>
-                                <div class="flex items-end gap-1"><span class="w-8">Term 3</span><div class="flex-1 border-b border-black"></div></div>
+                        <div class="mt-auto pt-2 border-t border-black">
+                            <h4 class="font-bold text-center uppercase mb-2 text-[9px]">PARENT'S/GUARDIAN'S SIGNATURE</h4>
+                            <div class="space-y-1.5 text-[9px] font-semibold max-w-[200px] mx-auto">
+                                <div class="flex items-end gap-2"><span class="w-12">Term 1</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-2"><span class="w-12">Term 2</span><div class="flex-1 border-b border-black"></div></div>
+                                <div class="flex items-end gap-2"><span class="w-12">Term 3</span><div class="flex-1 border-b border-black"></div></div>
                             </div>
                         </div>
 
