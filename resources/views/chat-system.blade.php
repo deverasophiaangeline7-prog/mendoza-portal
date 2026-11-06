@@ -558,12 +558,16 @@
                                         if ($isAdminA && !$isAdminB) return -1;
                                         if (!$isAdminA && $isAdminB) return 1;
 
-                                        // If both are teachers, sort by their advisory section grade level
+                                        // If both are teachers, sort by their lowest advisory section grade level
                                         $getTeacherGradeWeight = function($teacher) use ($getGradeWeight) {
-                                            $tSec = \App\Models\Section::where('teacher_id', $teacher->user_id)->first();
-                                            if ($tSec) {
-                                                $tGradeStr = trim(($tSec->grade_level ?? '') . ' ' . ($tSec->section_name ?? $tSec->name ?? ''));
-                                                return $getGradeWeight($tGradeStr);
+                                            $tSections = \App\Models\Section::where('teacher_id', $teacher->user_id)->get();
+                                            if ($tSections->count() > 0) {
+                                                $weights = [];
+                                                foreach($tSections as $tSec) {
+                                                    $tGradeStr = trim(($tSec->grade_level ?? '') . ' ' . ($tSec->section_name ?? $tSec->name ?? ''));
+                                                    $weights[] = $getGradeWeight($tGradeStr);
+                                                }
+                                                return min($weights); // Sorts them based on their lowest assigned grade
                                             }
                                             return 999; // Teachers without advisory go to the bottom
                                         };
@@ -580,11 +584,32 @@
                                     @php
                                         $advisoryText = '';
                                         if (in_array(strtolower($contact->role), ['teacher', 'adviser', 'faculty', 'instructor'])) {
-                                            $teacherSection = \App\Models\Section::where('teacher_id', $contact->user_id)->first();
-                                            if ($teacherSection) {
-                                                $tGrade = $teacherSection->grade_level ?? '';
-                                                $tSec = $teacherSection->section_name ?? $teacherSection->name ?? '';
-                                                $advisoryText = 'Adviser: ' . trim($tGrade . ' - ' . $tSec, ' -');
+                                            $teacherSections = \App\Models\Section::where('teacher_id', $contact->user_id)->get();
+                                            if ($teacherSections->count() > 0) {
+                                                $hasNKP = false;
+                                                $sectionStrings = [];
+                                                
+                                                foreach($teacherSections as $tSec) {
+                                                    $tGradeStr = strtolower($tSec->grade_level ?? '');
+                                                    // Detect if any of the assigned sections belong to the NKP cluster
+                                                    if (str_contains($tGradeStr, 'nursery') || str_contains($tGradeStr, 'kinder') || str_contains($tGradeStr, 'prep')) {
+                                                        $hasNKP = true;
+                                                    } else {
+                                                        $tGrade = $tSec->grade_level ?? '';
+                                                        $tSecName = $tSec->section_name ?? $tSec->name ?? '';
+                                                        $sectionStrings[] = trim($tGrade . ' - ' . $tSecName, ' -');
+                                                    }
+                                                }
+                                                
+                                                $finalSections = [];
+                                                // Group all early childhood into a single NKP tag
+                                                if ($hasNKP) {
+                                                    $finalSections[] = 'NKP';
+                                                }
+                                                // Append any older grades they might also advise (e.g., Grade 1)
+                                                $finalSections = array_merge($finalSections, $sectionStrings);
+                                                
+                                                $advisoryText = 'Adviser: ' . implode(', ', $finalSections);
                                             }
                                         }
                                     @endphp
@@ -610,7 +635,7 @@
                                                     {{ $contact->role }}
                                                 </span>
                                                 @if($advisoryText)
-                                                    <span class="text-[10px] font-semibold text-gray-500 truncate">· {{ $advisoryText }}</span>
+                                                    <span class="text-[10px] font-semibold text-gray-500 truncate" title="{{ $advisoryText }}">· {{ $advisoryText }}</span>
                                                 @endif
                                             </div>
                                         </div>
