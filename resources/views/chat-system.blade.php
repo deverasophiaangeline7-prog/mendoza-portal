@@ -120,8 +120,9 @@
                     $latestMsg = $user->latestMessageWithAuthUser();
                 @endphp
                 <a href="{{ route('messages.show', ['id' => $user->user_id]) }}" 
-                    x-show="searchQuery === '' || '{{ strtolower(addslashes($user->custom_name ?? $user->name)) }}'.includes(searchQuery.toLowerCase())"
-                    class="block p-4 border-b border-gray-200 transition {{ $hasUnread ? 'bg-blue-50/70' : 'bg-white hover:bg-gray-50' }} {{ (isset($selectedUser) && $selectedUser->user_id == $user->user_id) ? 'border-l-4 border-[#6d0101] bg-gray-50' : 'border-l-4 border-transparent' }}">
+                   id="sidebar-item-{{ $user->user_id }}"
+                   x-show="searchQuery === '' || '{{ strtolower(addslashes($user->custom_name ?? $user->name)) }}'.includes(searchQuery.toLowerCase())"
+                   class="block p-4 border-b border-gray-200 transition {{ $hasUnread ? 'bg-blue-50/70' : 'bg-white hover:bg-gray-50' }} {{ (isset($selectedUser) && $selectedUser->user_id == $user->user_id) ? 'border-l-4 border-[#6d0101] bg-gray-50' : 'border-l-4 border-transparent' }}">
                     <div class="flex items-center">
                         @php
                             $photoName = $user->custom_name ?? $user->name;
@@ -138,7 +139,7 @@
                                 <span class="truncate flex items-center gap-1 min-w-0 {{ $hasUnread ? 'font-bold text-black' : 'font-bold text-gray-900' }}">
                                     @if(isset($user->type) && $user->type === 'announcement') 📌 
                                     @elseif(isset($user->type) && $user->type === 'advisory') 🎓 
-                                    @endif    
+                                    @endif   
                                     <span class="truncate">{{ $user->custom_name ?? $user->name }}</span>
                                     @if($hasUnread)
                                         <span class="bg-red-600 text-white rounded-full px-2 py-0.5 text-[10px] font-bold ml-1 flex-shrink-0">{{ $user->unreadMessagesCount() }}</span>
@@ -803,8 +804,8 @@
                     window.Echo.private(`sidebar.${this.myId}`)
                         .listen('RealtimeSidebarUpdate', (e) => {
                             // The backend payload 'e' should include senderId, messageContent, and time.
-                            const sidebarMessageElement = document.getElementById(`latest-msg-text-${e.senderId}`);
-                            const sidebarContainer = document.getElementById(`user-sidebar-container-${e.senderId}`);
+                            const sidebarMessageElement = document.getElementById(`sidebar-text-${e.senderId}`);
+                            const sidebarContainer = document.getElementById(`sidebar-item-${e.senderId}`);
                             
                             if (sidebarMessageElement && sidebarContainer) {
                                 // 1. Real-time update the message preview text

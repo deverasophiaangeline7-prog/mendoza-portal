@@ -159,15 +159,23 @@ class User extends Authenticatable
     }
 
     public function latestMessageWithAuthUser()
-    {
-        return Message::where(function($query) {
-            $query->where('sender_id', auth()->id())
-                  ->where('receiver_id', $this->user_id);
-        })->orWhere(function($query) {
-            $query->where('sender_id', $this->user_id)
-                  ->where('receiver_id', auth()->id());
-        })->latest('created_at')->first();
+{
+    // SMART QUERY: Check if this user is actually a virtual Group Chat
+    if (!is_null($this->custom_name)) {
+        return \App\Models\Message::where('receiver_id', $this->user_id)
+                                  ->latest()
+                                  ->first();
     }
+
+    // Standard 1-on-1 Chat Query
+    return \App\Models\Message::where(function($query) {
+        $query->where('sender_id', auth()->id())
+              ->where('receiver_id', $this->user_id);
+    })->orWhere(function($query) {
+        $query->where('sender_id', $this->user_id)
+              ->where('receiver_id', auth()->id());
+    })->latest()->first();
+}
 
     public function unreadMessagesCount()
     {
