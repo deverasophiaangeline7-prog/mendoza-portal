@@ -539,8 +539,10 @@ class MessageController extends Controller
             $groupChats = User::whereIn('user_id', $groupUserIds)->get();
         }
 
-        return $individualChats->merge($groupChats)->sortBy(function($user) {
-            return $user->custom_name ?? $user->name;
+        // Sort by the timestamp of the latest message, descending
+        return $individualChats->merge($groupChats)->sortByDesc(function($user) {
+            $latestMsg = $user->latestMessageWithAuthUser();
+            return $latestMsg ? $latestMsg->created_at->timestamp : 0;
         })->values();
 
     }

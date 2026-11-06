@@ -922,9 +922,15 @@
                             sidebarText.classList.remove('text-gray-500');
                             sidebarText.classList.add('text-gray-900', 'font-semibold');
                         }
+                        
                         if (sidebarItem && needsMarkRead && !this.isGroupChat) {
                              sidebarItem.classList.add('bg-blue-50/70');
                              sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
+                        }
+
+                        // MOVES CHAT TO THE TOP OF THE LIST
+                        if (sidebarItem && newMessagesData.length > 0) {
+                            sidebarItem.parentNode.prepend(sidebarItem); 
                         }
 
                         this.$nextTick(() => { 

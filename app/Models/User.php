@@ -159,29 +159,39 @@ class User extends Authenticatable
     }
 
     public function latestMessageWithAuthUser()
-{
-    // SMART QUERY: Check if this user is actually a virtual Group Chat
-    if (!is_null($this->custom_name)) {
-        return \App\Models\Message::where('receiver_id', $this->user_id)
-                                  ->latest()
-                                  ->first();
-    }
+    {
+        // SMART QUERY: Check if this user is actually a virtual Group Chat
+        if (!is_null($this->custom_name)) {
+            return \App\Models\Message::where('receiver_id', $this->user_id)
+                                      ->latest('id') // Fixed!
+                                      ->first();
+        }
 
-    // Standard 1-on-1 Chat Query
-    return \App\Models\Message::where(function($query) {
-        $query->where('sender_id', auth()->id())
-              ->where('receiver_id', $this->user_id);
-    })->orWhere(function($query) {
-        $query->where('sender_id', $this->user_id)
-              ->where('receiver_id', auth()->id());
-    })->latest()->first();
-}
+        // Standard 1-on-1 Chat Query
+        return \App\Models\Message::where(function($query) {
+            $query->where('sender_id', auth()->id())
+                  ->where('receiver_id', $this->user_id);
+        })->orWhere(function($query) {
+            $query->where('sender_id', $this->user_id)
+                  ->where('receiver_id', auth()->id());
+        })->latest('id')->first();
+    }
 
     public function unreadMessagesCount()
     {
+        // GROUP CHAT UNREAD LOGIC
+        if (!is_null($this->custom_name)) {
+            $allMessageIds = \App\Models\Message::where('receiver_id', $this->user_id)->pluck('id');
+            $readCount = \App\Models\MessageRead::where('user_id', auth()->id())
+                                                ->whereIn('message_id', $allMessageIds)
+                                                ->count();
+            return max(0, $allMessageIds->count() - $readCount); 
+        }
+
+        // 1-ON-1 CHAT UNREAD LOGIC
         return \App\Models\Message::where('sender_id', $this->user_id)
             ->where('receiver_id', auth()->id())
-            ->where('is_read', false) // assuming you have a boolean 'is_read' column
+            ->where('is_read', false)
             ->count();
     }
 
