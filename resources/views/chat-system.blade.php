@@ -275,7 +275,7 @@
                                 </div>
                             @else
                                 <!-- Normal Chat Bubble Styling -->
-                                <div class="mb-4 w-full {{ $message->sender_id === auth()->user()->user_id ? 'text-right flex flex-col items-end' : 'text-left flex items-end gap-2' }}">
+<div id="msg-bubble-{{ $message->id }}" class="mb-4 w-full {{ $message->sender_id === auth()->user()->user_id ? 'text-right flex flex-col items-end' : 'text-left flex items-end gap-2' }}">
                                     
                                     @if($message->sender_id !== auth()->user()->user_id)
                                         <!-- Ipakita ang Sender Picture para sa Group Chat (Kung hindi ikaw ang nag-send) -->
@@ -899,12 +899,16 @@
                                 const avatarHtml = this.isGroupChat ? `<img src="${msg.sender_photo}" title="${msg.sender_name}" class="w-8 h-8 rounded-full border object-cover mb-1 shadow-sm flex-shrink-0 cursor-default">` : '';
 
                                 chatMessagesWrapper.insertAdjacentHTML('beforeend', `
-                                    <div id="msg-bubble-${msg.id}" class="mb-4 w-full text-left js-dynamically-fetched-bubble">
-                                        <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-gray-100 text-gray-800 rounded-bl-none">
-                                            ${msg.content}
-                                        </span>
-                                        <div class="text-[10px] text-gray-400 mt-1">
-                                            ${msg.time_formatted}
+                                    <div id="msg-bubble-${msg.id}" class="mb-4 w-full text-left flex items-end gap-2 js-dynamically-fetched-bubble">
+                                        ${avatarHtml}
+                                        <div class="flex flex-col items-start max-w-[85%]">
+                                            ${senderInfoHtml}
+                                            <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-gray-100 text-gray-800 rounded-bl-none">
+                                                ${msg.content}
+                                            </span>
+                                            <div class="text-[10px] text-gray-400 mt-1">
+                                                <span>${msg.time_formatted}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 `);
