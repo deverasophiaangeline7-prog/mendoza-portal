@@ -511,6 +511,20 @@ class MessageController extends Controller
 
     private function getChatHistoryUsers($authId)
     {
+
+        $groupChatsToFix = User::where('username', 'like', 'gc_section_%')->get();
+        foreach ($groupChatsToFix as $gc) {
+            $secId = str_replace('gc_section_', '', $gc->username);
+            $section = \App\Models\Section::find($secId);
+            if ($section) {
+                $properName = strtoupper($section->grade_level . ' - ' . $section->section_name . ' (Official)');
+                if ($gc->custom_name !== $properName) {
+                    $gc->custom_name = $properName;
+                    $gc->save(); // Ise-save na niya ang "4 - GRACE (Official)" sa database!
+                }
+            }
+        }
+
         $individualChats = User::where('user_id', '!=', $authId)->whereNull('custom_name')
             ->where(function ($query) use ($authId) {
                 $query->whereHas('sentMessages', function ($q) use ($authId) { $q->where('receiver_id', $authId); })
@@ -605,11 +619,31 @@ class MessageController extends Controller
 
         // Map the results for frontend rendering
         $formattedMessages = $newMessages->map(function($msg) use ($isGroup) {
+            $senderName = '';
+            $senderRole = '';
+            $senderPhoto = '';
+            
+           
+            if ($isGroup) {
+                $sender = User::find($msg->sender_id);
+                if ($sender) {
+                    $senderName = $sender->name;
+                    $senderRole = $sender->role;
+                    $senderPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($sender->name) . '&background=f3f4f6&color=374151';
+                    if ($sender->profile_photo_path) {
+                        $senderPhoto = str_starts_with($sender->profile_photo_path, 'profile_photos') 
+                            ? asset('storage/' . $sender->profile_photo_path) : asset($sender->profile_photo_path);
+                    }
+                }
+            }
             return [
                 'id' => $msg->id,
                 'content' => $msg->content,
                 'sender_id' => $msg->sender_id,
                 'time_formatted' => $msg->created_at->setTimezone('Asia/Manila')->format('g:i A'),
+                'sender_name' => $senderName,
+                'sender_role' => $senderRole,
+                'sender_photo' => $senderPhoto,
             ];
         });
 

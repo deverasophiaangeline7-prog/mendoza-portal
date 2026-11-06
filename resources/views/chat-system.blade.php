@@ -881,6 +881,21 @@
                             const existingMsgBubble = document.getElementById(`msg-bubble-${msg.id}`);
                             if (!existingMsgBubble) {
                                 needsMarkRead = true; // DB seen needed
+                                
+                                let senderInfoHtml = '';
+                                if (this.isGroupChat) {
+                                    const roleBadgeClass = msg.sender_role === 'admin' ? 'bg-blue-100 text-blue-700' : (msg.sender_role === 'teacher' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500');
+                                    senderInfoHtml = `
+                                        <div class="flex items-center gap-1.5 ml-1 mb-1">
+                                            <span class="text-[11px] font-bold text-gray-600">${msg.sender_name}</span>
+                                            <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${roleBadgeClass}">
+                                                ${msg.sender_role}
+                                            </span>
+                                        </div>
+                                    `;
+                                }
+
+                                const avatarHtml = this.isGroupChat ? `<img src="${msg.sender_photo}" title="${msg.sender_name}" class="w-8 h-8 rounded-full border object-cover mb-1 shadow-sm flex-shrink-0 cursor-default">` : '';
 
                                 chatMessagesWrapper.insertAdjacentHTML('beforeend', `
                                     <div id="msg-bubble-${msg.id}" class="mb-4 w-full text-left js-dynamically-fetched-bubble">

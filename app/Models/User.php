@@ -25,6 +25,7 @@ class User extends Authenticatable
         'role',
         'profile_photo_path',
         'section_id',
+        'customer_name',
     ];
 
     /**
@@ -179,5 +180,17 @@ class User extends Authenticatable
     public function isOnline()
     {
         return \Illuminate\Support\Facades\Cache::has('user-is-online-' . $this->user_id);
+    }
+
+    public function getCustomNameAttribute($value)
+    {
+        if (\Illuminate\Support\Str::startsWith($this->username, 'gc_section_') && $this->section_id) {
+            $section = \App\Models\Section::find($this->section_id);
+            if ($section) {
+                return strtoupper($section->grade_level . ' - ' . $section->section_name . ' (Official)');
+            }
+        }
+        
+        return $value;
     }
 }

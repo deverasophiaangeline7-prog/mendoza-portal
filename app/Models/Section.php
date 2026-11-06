@@ -47,11 +47,15 @@ class Section extends Model
                 'email' => $groupUsername . '@mendoza.edu',
                 'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
                 'role' => 'admin', // Bypass rules
-                'custom_name' => strtoupper($section->grade_level . ' - ' . $section->section_name . ' (Official)'),
+                'section_id' => $section_id,
+                'customer_name' => 'SECTION_GC',
                 'status' => 'active',
             ]
         );
 
+        $groupUser->section_id = $section_id;
+        $groupUser->custom_name = 'SECTION_GC';
+        $groupUser->save();
         
         $memberIds = [];
 
