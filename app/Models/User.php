@@ -25,7 +25,7 @@ class User extends Authenticatable
         'role',
         'profile_photo_path',
         'section_id',
-        'customer_name',
+        'custom_name',
     ];
 
     /**

@@ -39,7 +39,9 @@ class MessageController extends Controller
         $selectedUser = User::where('user_id', $id)->firstOrFail();
 
         // On initial page load, mark strictly 1-on-1 chats sent FROM them TO me as read (DB update)
-        if (is_null($selectedUser->custom_name)) {
+        $isGroup = \Illuminate\Support\Str::startsWith($selectedUser->username, ['group_', 'gc_section_']);
+        
+        if (!$isGroup) {
             Message::where('sender_id', $id)
                    ->where('receiver_id', $authId)
                    ->where('is_read', false) // Only update if necessary
@@ -47,7 +49,7 @@ class MessageController extends Controller
         }
 
         // SMART QUERY: Check if we are loading a Group Chat or a 1-on-1 Chat
-        if (!is_null($selectedUser->custom_name)) {
+        if ($isGroup) {
             // Fetch ALL messages sent to this group (KASAMA NA ANG READERS PARA HINDI MAG-LAG)
             $messages = Message::with('readers.user')
                                 ->where('receiver_id', $id)
@@ -85,7 +87,7 @@ class MessageController extends Controller
 
         // NEW: Check if the current user has archived this group
         $isGroupArchived = false;
-        if (!is_null($selectedUser->custom_name)) {
+        if ($isGroup) {
             $pivot = DB::table('group_members')->where('group_id', $id)->where('user_id', $authId)->first();
             if ($pivot && $pivot->is_archived) {
                 $isGroupArchived = true;
@@ -238,7 +240,9 @@ class MessageController extends Controller
         $aiShouldRespond = (in_array($receiverRole, ['admin', 'superadmin'])) || ($senderRole === 'parent' && in_array($receiverRole, $teacherRoles));
 
         // STRICT CHECK: Run AI only if conditions are met AND it is NOT a Group Chat
-        if ($apiKey && $aiShouldRespond && $receiver && is_null($receiver->custom_name)) {
+        $isReceiverGroup = \Illuminate\Support\Str::startsWith($receiver->username, ['group_', 'gc_section_']);
+        
+        if ($apiKey && $aiShouldRespond && $receiver && !$isReceiverGroup) {
             
             $upcomingEvents = SchoolCalendar::orderBy('start_date', 'asc')->limit(10)->get();
             $eventsKnowledge = "";
@@ -560,7 +564,7 @@ class MessageController extends Controller
         $authId = Auth::id();
         $receiver = User::find($conversationId);
         
-        if ($receiver && !is_null($receiver->custom_name)) {
+        if ($receiver && \Illuminate\Support\Str::startsWith($receiver->username, ['group_', 'gc_section_'])) {
             // 👇 GC: Save GC reads dynamically using the Pivot Table
             $messages = Message::where('receiver_id', $conversationId)->pluck('id');
             $seenMessages = \App\Models\MessageRead::where('user_id', $authId)->whereIn('message_id', $messages)->pluck('message_id');
@@ -601,8 +605,7 @@ class MessageController extends Controller
         if (!$receiver) return response()->json(['messages' => [], 'last_sent_read' => false]);
 
         // Are we polling a strict 1-on-1 conversation?
-        $isGroup = !is_null($receiver->custom_name);
-
+        $isGroup = \Illuminate\Support\Str::startsWith($receiver->username, ['group_', 'gc_section_']);
         if ($isGroup) {
             // Fetch messages sent TO this group since initial load
             $newMessages = Message::where('receiver_id', $conversationId)
