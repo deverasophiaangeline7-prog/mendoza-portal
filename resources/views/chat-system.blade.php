@@ -346,8 +346,7 @@
                                                 @if(!is_null($selectedUser->custom_name))
                                                     <!-- GROUP CHAT: Show avatar only if this is the absolute LAST message this specific person read -->
                                                     @foreach($message->readers as $read)
-                                                        @if($read->user_id !== auth()->id() && isset($latestReadPerUser[$read->user_id]) && $latestReadPerUser[$read->user_id] === $message->id)
-                                                            @php
+                                                            @if($read->user_id !== auth()->id() && $read->user_id !== $message->sender_id && isset($latestReadPerUser[$read->user_id]) && $latestReadPerUser[$read->user_id] === $message->id)                                                            @php
                                                                 $seenPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
                                                                 if ($read->user->profile_photo_path) {
                                                                     $seenPhoto = str_starts_with($read->user->profile_photo_path, 'profile_photos') ? asset('storage/' . $read->user->profile_photo_path) : asset($read->user->profile_photo_path);
