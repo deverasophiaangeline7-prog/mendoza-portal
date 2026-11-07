@@ -306,10 +306,9 @@
                                 </div>
                             @else
                                 <!-- Normal Chat Bubble Styling -->
-<div id="msg-bubble-{{ $message->id }}" class="mb-4 w-full {{ $message->sender_id === auth()->user()->user_id ? 'text-right flex flex-col items-end' : 'text-left flex items-end gap-2' }}">
+                                <div id="msg-bubble-{{ $message->id }}" class="mb-6 w-full relative {{ $message->sender_id === auth()->user()->user_id ? 'text-right flex flex-col items-end' : 'text-left flex items-end gap-2' }}">
                                     
                                     @if($message->sender_id !== auth()->user()->user_id)
-                                        <!-- Ipakita ang Sender Picture para sa Group Chat (Kung hindi ikaw ang nag-send) -->
                                         @php
                                             $sender = \App\Models\User::find($message->sender_id);
                                             $senderPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($sender->name ?? 'User') . '&background=f3f4f6&color=374151';
@@ -323,7 +322,6 @@
                                     <div class="flex flex-col {{ $message->sender_id === auth()->user()->user_id ? 'items-end' : 'items-start' }} max-w-[85%]">
                                         
                                         @if($message->sender_id !== auth()->user()->user_id && !is_null($selectedUser->custom_name))
-                                            <!-- Sender Name on top of bubble for Group Chats -->
                                             <div class="flex items-center gap-1.5 ml-1 mb-1">
                                                 <span class="text-[11px] font-bold text-gray-600">{{ $sender->name ?? 'User' }}</span>
                                                 <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full {{ ($sender->role ?? '') === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700' }}">
@@ -332,36 +330,35 @@
                                             </div>
                                         @endif
 
-                                        <!-- 🕒 HOVER TIMESTAMP ADDED HERE via 'title' attribute -->
                                         <span title="{{ $message->created_at->format('M d, Y g:i A') }}" 
                                             class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm cursor-default {{ $message->sender_id === auth()->user()->user_id ? 'bg-[#6d0101] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none' }}">
                                             {{ $message->content }}
                                         </span>
                                         
-                                        <div class="text-[10px] text-gray-400 mt-1 {{ $message->sender_id === auth()->user()->user_id ? 'js-sent-msg-seen-container flex items-center justify-end gap-1' : '' }}">
+                                        <div class="text-[10px] text-gray-400 mt-1">
                                             <span>{{ $message->created_at->format('g:i A') }}</span>
-                                            
-                                            <!-- 👁️ MESSENGER-STYLE SEEN LOGIC -->
-                                            <span class="js-realtime-seen-text flex items-center gap-0.5 mt-0.5">
-                                                @if(!is_null($selectedUser->custom_name))
-                                                    <!-- GROUP CHAT: Show avatar only if this is the absolute LAST message this specific person read -->
-                                                    @foreach($message->readers as $read)
-                                                                @if($read->user_id !== auth()->id() && $read->user_id !== $message->sender_id && isset($latestReadPerUser[$read->user_id]) && $latestReadPerUser[$read->user_id] === $message->id)                                                                $seenPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
-                                                                if ($read->user->profile_photo_path) {
-                                                                    $seenPhoto = str_starts_with($read->user->profile_photo_path, 'profile_photos') ? asset('storage/' . $read->user->profile_photo_path) : asset($read->user->profile_photo_path);
-                                                                }
-                                                            @endphp
-                                                            <img src="{{ $seenPhoto }}" title="Seen by {{ $read->user->name }} at {{ \Carbon\Carbon::parse($read->created_at)->format('M d, g:i A') }}" class="w-4 h-4 rounded-full border border-gray-300 ml-0.5 object-cover cursor-default shadow-sm hover:scale-125 transition-transform z-10">
-                                                        @endif
-                                                    @endforeach
-                                                @else
-                                                    <!-- 1-ON-1: Only show 'Seen' if MY message is the absolute last message in the chat, and they read it -->
-                                                    @if($message->id === $absoluteLastMsgId && $message->sender_id === auth()->id() && $message->is_read)
-                                                        <span class="font-bold ml-1 text-gray-500">· Seen</span>
-                                                    @endif
-                                                @endif
-                                            </span>
                                         </div>
+                                    </div>
+
+                                    <!-- 👁️ MESSENGER-STYLE SEEN LOGIC (PINNED TO ABSOLUTE RIGHT) -->
+                                    <div class="absolute -bottom-4 right-2 js-realtime-seen-text flex items-center gap-0.5 justify-end">
+                                        @if(!is_null($selectedUser->custom_name))
+                                            @foreach($message->readers as $read)
+                                                @if($read->user_id !== auth()->id() && $read->user_id !== $message->sender_id && isset($latestReadPerUser[$read->user_id]) && $latestReadPerUser[$read->user_id] === $message->id)
+                                                    @php
+                                                        $seenPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
+                                                        if ($read->user->profile_photo_path) {
+                                                            $seenPhoto = str_starts_with($read->user->profile_photo_path, 'profile_photos') ? asset('storage/' . $read->user->profile_photo_path) : asset($read->user->profile_photo_path);
+                                                        }
+                                                    @endphp
+                                                    <img src="{{ $seenPhoto }}" title="Seen by {{ $read->user->name }} at {{ \Carbon\Carbon::parse($read->created_at)->format('M d, g:i A') }}" class="w-4 h-4 rounded-full border border-gray-300 ml-0.5 object-cover cursor-default shadow-sm hover:scale-125 transition-transform z-10">
+                                                @endif
+                                            @endforeach
+                                        @else
+                                            @if($message->id === $absoluteLastMsgId && $message->sender_id === auth()->id() && $message->is_read)
+                                                <span class="font-bold ml-1 text-gray-500 text-[10px]">· Seen</span>
+                                            @endif
+                                        @endif
                                     </div>
                                 </div>
                             @endif
@@ -915,54 +912,37 @@
             isGroupChat: '{{ is_null($selectedUser->custom_name ?? null) ? "false" : "true" }}' === 'true',
             
             otherUserTypingTimer: null,
-            pollingInterval: null, // Timer reference for the polling loop
+            pollingInterval: null, 
 
             init() {
                 const container = document.getElementById('message-container');
-                // 1. Instant scroll to bottom on load
                 if (container) container.scrollTop = container.scrollHeight;
 
                 if (this.selectedUserId && this.myId) {
-                    // ==========================================
-                    // 1. CORE SYNC & SEEN WIRING (HYBRID LOOP)
-                    // ==========================================
-                    
-                    // --- DB SEEN INITIALIZER ---
-                    // On initial load, tell the DB I've seen their messages in this 1-on-1 chat.
                     this.dynamicallyMarkRead();
 
-                    // --- WebSocket Seen Whisper (UI-only Seen Text) ---
                     if (window.Echo) {
-                        // Tell them I opened this chat (adds dynamic seen text to their open screen instantly)
                         window.Echo.private(`chat.${this.selectedUserId}`).whisper('read', { senderId: this.myId });
 
-                        // Listen for when THEY open my chat. Dynamically add dynamic 'Seen' text to MY open screen.
                         window.Echo.private(`chat.${this.myId}`).listenForWhisper('read', (e) => {
                             if (e.senderId == this.selectedUserId) {
-                                const unreadStatusSpans = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
+                                // Updated Selector to find the new absolute containers
+                                const unreadStatusSpans = document.querySelectorAll('.js-realtime-seen-text');
                                 if (unreadStatusSpans.length > 0) {
-                                    // Clear older seens to prevent duplicates
                                     unreadStatusSpans.forEach(span => span.innerHTML = '');
-                                    // Set only the newest one
                                     const lastSpan = unreadStatusSpans[unreadStatusSpans.length - 1];
-                                    lastSpan.innerHTML = '<span class="font-bold ml-1 text-gray-500">· Seen</span>';
+                                    lastSpan.innerHTML = '<span class="font-bold text-gray-500 text-[10px]">· Seen</span>';
                                 }
                             }
                         });
                     }
 
-                    // --- THE POLLING LOOP (Heartbeat of Sync) ---
-                    // Run this loop every 4 seconds while this conversation is open.
                     this.pollingInterval = setInterval(() => {
                         this.pollNewMessages();
                     }, 4000); 
-
                 }
 
                 if (window.Echo && this.myId) {
-                    // ==========================================
-                    // 2. TYPING INDICATOR LOGIC (RECEIVE ONLY)
-                    // ==========================================
                     window.Echo.private(`chat.${this.myId}`)
                         .listenForWhisper('typing', (e) => {
                             if (e.senderId == this.selectedUserId) {
@@ -974,56 +954,37 @@
                             }
                         });
 
-                    // Ensure your backend broadcasts 'RealtimeSidebarUpdate' when saving messages.
                     window.Echo.private(`sidebar.${this.myId}`)
                         .listen('RealtimeSidebarUpdate', (e) => {
-                            // The backend payload 'e' should include senderId, messageContent, and time.
                             const sidebarMessageElement = document.getElementById(`sidebar-text-${e.senderId}`);
                             const sidebarContainer = document.getElementById(`sidebar-item-${e.senderId}`);
                             
                             if (sidebarMessageElement && sidebarContainer) {
-                                // 1. Real-time update the message preview text
                                 sidebarMessageElement.innerText = e.messageContent;
 
-                                // 2. Add unread visual cues to the entire sidebar item (e.g., set blue-50 and bold).
                                 sidebarContainer.classList.add('bg-blue-50/70', 'font-bold', 'text-black');
                                 sidebarContainer.classList.remove('bg-white', 'hover:bg-gray-50');
 
-                                // 3. Also update the message text styling to be unread
                                 sidebarMessageElement.classList.add('text-gray-900', 'font-semibold');
                                 sidebarMessageElement.classList.remove('text-gray-500');
                             }
                         });
-
                 }
             },
 
-            // ==========================================
-            // 3. CORE SYNCING METHODS
-            // ==========================================
-
-            /**
-             * Polling Loop Logic: Fetches new unread messages Dynamically.
-             */
-            /**
-             * Polling Loop Logic: Fetches new unread messages AND checks "Seen" status.
-             */
             async pollNewMessages() {
                 if (!this.selectedUserId) return;
                 
                 try {
-                    // Call the backend poll endpoint
                     const response = await fetch(`/messages/${this.selectedUserId}/poll`);
                     if (!response.ok) return;
                     
                     const data = await response.json();
                     const newMessagesData = data.messages || [];
                     
-                    // 👇 NEW: Update the DOM if the other person read our messages
                     if (this.isGroupChat && data.gc_latest_readers && data.gc_latest_readers.length > 0) {
                         const unreadStatusSpans = document.querySelectorAll('.js-realtime-seen-text');
                         if (unreadStatusSpans.length > 0) {
-                            // 👇 FIX: Instantly erase all old avatars from previous messages
                             unreadStatusSpans.forEach(span => span.innerHTML = '');
                             
                             const lastSpan = unreadStatusSpans[unreadStatusSpans.length - 1]; 
@@ -1032,24 +993,19 @@
                                 avatarsHtml += `<img src="${reader.photo}" title="Seen by ${reader.name}" class="w-4 h-4 rounded-full border border-gray-300 ml-0.5 object-cover cursor-default shadow-sm hover:scale-125 transition-transform z-10">`;
                             });
                             
-                            // Attach the new avatars to the absolute bottom message
                             lastSpan.innerHTML = avatarsHtml;
                         }
                     } else if (data.last_sent_read && !this.isGroupChat) {
-                        // Para sa 1-on-1 Chat (Normal Text)
-                        const unreadStatusSpans = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
+                        const unreadStatusSpans = document.querySelectorAll('.js-realtime-seen-text');
                         if (unreadStatusSpans.length > 0) {
-                            // Clear seen from all older messages
                             unreadStatusSpans.forEach(span => span.innerHTML = '');
-                            // Only apply seen to the absolute newest message
                             const lastSpan = unreadStatusSpans[unreadStatusSpans.length - 1];
-                            lastSpan.innerHTML = '<span class="font-bold ml-1 text-gray-500">· Seen</span>';
+                            lastSpan.innerHTML = '<span class="font-bold text-gray-500 text-[10px]">· Seen</span>';
                         }
                     }
 
                     if (newMessagesData.length > 0) {
                         const chatMessagesWrapper = document.getElementById('chat-messages');
-                        
                         const emptyState = document.getElementById('empty-chat-state');
                         if (emptyState) emptyState.remove();
 
@@ -1058,7 +1014,7 @@
                         newMessagesData.forEach(msg => {
                             const existingMsgBubble = document.getElementById(`msg-bubble-${msg.id}`);
                             if (!existingMsgBubble) {
-                                needsMarkRead = true; // DB seen needed
+                                needsMarkRead = true; 
                                 
                                 let senderInfoHtml = '';
                                 if (this.isGroupChat) {
@@ -1076,7 +1032,7 @@
                                 const avatarHtml = this.isGroupChat ? `<img src="${msg.sender_photo}" title="${msg.sender_name}" class="w-8 h-8 rounded-full border object-cover mb-1 shadow-sm flex-shrink-0 cursor-default">` : '';
 
                                 chatMessagesWrapper.insertAdjacentHTML('beforeend', `
-                                    <div id="msg-bubble-${msg.id}" class="mb-4 w-full text-left flex items-end gap-2 js-dynamically-fetched-bubble">
+                                    <div id="msg-bubble-${msg.id}" class="mb-6 w-full relative text-left flex items-end gap-2 js-dynamically-fetched-bubble">
                                         ${avatarHtml}
                                         <div class="flex flex-col items-start max-w-[85%]">
                                             ${senderInfoHtml}
@@ -1087,6 +1043,7 @@
                                                 <span>${msg.time_formatted}</span>
                                             </div>
                                         </div>
+                                        <div class="absolute -bottom-4 right-2 js-realtime-seen-text flex items-center gap-0.5 justify-end"></div>
                                     </div>
                                 `);
                             }
@@ -1102,14 +1059,13 @@
                             if (latestNewMsg.sender_id == this.myId) {
                                 prefix = "You: ";
                             } else {
-                                // Determine role and name from the new message payload
                                 let sRole = latestNewMsg.sender_role || '{{ strtolower($selectedUser->role ?? "") }}';
                                 let sName = latestNewMsg.sender_name || this.selectedUserName;
                                 
                                 if (sRole === 'admin' || sRole === 'superadmin') {
                                     prefix = "Admin: ";
                                 } else if (sName) {
-                                    prefix = sName.split(' ')[0] + ": "; // Grabs just their first name
+                                    prefix = sName.split(' ')[0] + ": "; 
                                 }
                             }
                             
@@ -1123,7 +1079,6 @@
                              sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
                         }
 
-                        // MOVES CHAT TO THE TOP OF THE LIST
                         if (sidebarItem && newMessagesData.length > 0) {
                             sidebarItem.parentNode.prepend(sidebarItem); 
                         }
@@ -1143,14 +1098,9 @@
                 }
             },
 
-            /**
-             * DB Seen Logic: Explicitly updates the 'is_read' status via AJAX.
-             */
             async dynamicallyMarkRead() {
                 if (!this.selectedUserId) return;
-                
                 try {
-                    // Call new markAsRead endpoint
                     await fetch(`/messages/${this.selectedUserId}/mark-as-read`, {
                         method: 'POST',
                         headers: {
@@ -1158,38 +1108,29 @@
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         }
                     });
-                    
-                    // NOTE: There's no need to update dynamic seen text here. whispers handle dynamic UI seen text dynamicly.
-                    // This method strictly synchronizes the backend database so 'seen' is correct on page reloads.
-                    
-                } catch (err) {
-                    console.error("Failed to dynamically mark DB seen:", err);
-                }
+                } catch (err) {}
             },
-
-            // ==========================================
-            // 4. MESSAGE SENDING (Optimistic & Dynamic)
-            // ==========================================
 
             async sendMessage(receiverId) {
                 if (!this.messageInput.trim()) return;
                 
                 const text = this.messageInput;
                 this.messageInput = ''; 
-                this.thisUserIsTyping = true; // Sender-side 'Sending...' lock
+                this.thisUserIsTyping = true; 
 
                 const chatMessages = document.getElementById('chat-messages');
                 
-                // Optimistically insert your new bubble to the DOM instantly
-                // augmented optimism bubble HTML to support perfect 'Seen' status dynamic tracing
                 chatMessages.insertAdjacentHTML('beforeend', `
-                    <div class="text-right mb-4 w-full js-optimistic-my-bubble">
-                        <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
-                            ${text}
-                        </span>
-                        <div class="text-[10px] text-gray-400 mt-1 js-sent-msg-seen-container">
-                            Just now <span class="js-realtime-seen-text"></span>
+                    <div class="text-right mb-6 w-full relative js-optimistic-my-bubble">
+                        <div class="flex flex-col items-end w-full">
+                            <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
+                                ${text}
+                            </span>
+                            <div class="text-[10px] text-gray-400 mt-1">
+                                <span>Just now</span>
+                            </div>
                         </div>
+                        <div class="absolute -bottom-4 right-2 js-realtime-seen-text flex items-center gap-0.5 justify-end"></div>
                     </div>
                 `);
 
@@ -1200,13 +1141,11 @@
                     sidebarText.classList.add('text-gray-500');
                 }
 
-                // Immediately scroll down
                 this.$nextTick(() => { 
                     const container = document.getElementById('message-container');
                     if(container) container.scrollTop = container.scrollHeight; 
                 });
 
-                // --- SMART Front-end AI Dots ---
                 const lowercaseText = text.toLowerCase();
                 const aiKeywords = ['tuition', 'fee', 'password', 'schedule', 'term', 'when', 'how much', 'date', 'event', 'start', 'end'];
                 const complexKeywords = ['concern', 'grade', 'bully', 'problem', 'help', 'anak', 'absent', 'sick'];
@@ -1219,16 +1158,13 @@
                 const teacherRoles = ['teacher', 'adviser', 'faculty', 'instructor'];
                 const aiShouldRespond = (receiverRole === 'admin') || (senderRole === 'parent' && teacherRoles.includes(receiverRole));
                 
-                // Only show dots if it's the right role, NOT a group chat, HAS keywords, and is NOT complex.
                 if (aiShouldRespond && !this.isGroupChat && triggersAI && !isComplex) {
                     this.otherUserIsTyping = true;  
-                    this.isSending = true; // Lock the send button
-                    
-                    // CRITICAL: Force browser to draw dots before freezing for the API call
+                    this.isSending = true; 
                     await this.$nextTick(); 
                 } else {
                     this.otherUserIsTyping = false;
-                    this.isSending = true; // Lock the send button
+                    this.isSending = true; 
                 }
 
                 try {
@@ -1237,7 +1173,7 @@
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json' // Crucial: Expect JSON back
+                            'Accept': 'application/json' 
                         },
                         body: JSON.stringify({
                             receiver_id: receiverId,
@@ -1246,24 +1182,9 @@
                     });
 
                     if (response.ok) {
-                        const jsonRes = await response.json();
-                        
-                        // RESTORE NORMAL CONVERSATION FLOW - NO RELOAD!
-                        
-                        // 👇 FIXED: GUARANTEED RESET (Lines 460-466) 👇
-                        // We successfully sent. Unlock everything immediately.
                         this.isSending = false;
                         this.thisUserIsTyping = false; 
-                        
-                        // We set this to false every time the fetch call completes, 
-                        // whether the AI answered or not. This forces the fake AI 
-                        // dots to disappear. The polling loop HEARTBEAT (every 4s) 
-                        // will pick up the real AI bubble naturellement.
                         this.otherUserIsTyping = false; 
-
-                        // The code block `if (jsonRes.ai_responded) { ... } else { this.otherUserIsTyping = false; }` 
-                        // was removed. This single line replacement guarantees the fix.
-
                     } else {
                         console.error("Message failed to send", response);
                         this.isSending = false;
