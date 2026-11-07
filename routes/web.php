@@ -97,6 +97,7 @@ Route::middleware(['auth', \App\Http\Middleware\ForcePasswordChange::class])->gr
         
         return response()->json(['unreadTotal' => $unreadTotal]);
     })->name('messages.unread-count');
+    Route::get('/messages/unread-count', [MessageController::class, 'getUnreadCount'])->name('messages.unread-count');
     
     // Report Card Views
     Route::get('/report-card', [ReportCardController::class, 'index'])->name('reportcard.index');

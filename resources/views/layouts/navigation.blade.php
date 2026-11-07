@@ -185,7 +185,7 @@
                 <a href="{{ route('messages.index') }}" 
                 title="Messages" 
                 x-data="{ 
-                    unreadTotal: {{ $unreadTotal ?? 0 }},
+                    unreadTotal: {{ auth()->check() ? auth()->user()->totalUnreadMessagesCount() : 0 }},
                     init() {
                         setInterval(() => {
                             fetch('{{ route('messages.unread-count') }}?t=' + Date.now())

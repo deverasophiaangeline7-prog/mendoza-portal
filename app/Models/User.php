@@ -33,13 +33,13 @@ class User extends Authenticatable
      * These allow you to do things like $user->student->lrn
      */
 
-    // Link to Student 
-    
+    // Link to Admin
     public function admin()
     {
         return $this->hasOne(Admin::class, 'user_id', 'user_id');
     }
 
+    // Link to Student
     public function student()
     {
         return $this->hasOne(\App\Models\Student::class, 'user_id', 'user_id');
@@ -147,7 +147,7 @@ class User extends Authenticatable
     {
         // If the user is a student and has a section assigned
         if ($this->student && $this->student->section) {
-            return $this->student->section->grade_level . ' - ' . $this->student->section->section_name;
+            return $this->student->section->grade_level . ' ' . $this->student->section->section_name;
         }
 
         // If the user is a teacher, you can pull their advisory section if applicable
@@ -181,10 +181,15 @@ class User extends Authenticatable
     {
         // GROUP CHAT UNREAD LOGIC
         if (!is_null($this->custom_name)) {
-            $allMessageIds = \App\Models\Message::where('receiver_id', $this->user_id)->pluck('id');
+            // Exclude messages sent by the logged-in user
+            $allMessageIds = \App\Models\Message::where('receiver_id', $this->user_id)
+                                                ->where('sender_id', '!=', auth()->id())
+                                                ->pluck('id');
+                                                
             $readCount = \App\Models\MessageRead::where('user_id', auth()->id())
                                                 ->whereIn('message_id', $allMessageIds)
                                                 ->count();
+                                                
             return max(0, $allMessageIds->count() - $readCount); 
         }
 
@@ -205,10 +210,54 @@ class User extends Authenticatable
         if (\Illuminate\Support\Str::startsWith($this->username, 'gc_section_') && $this->section_id) {
             $section = \App\Models\Section::find($this->section_id);
             if ($section) {
-                return strtoupper($section->grade_level . ' - ' . $section->section_name . ' (Official)');
+                return strtoupper($section->grade_level . ' ' . $section->section_name . ' (Official)');
             }
         }
         
         return $value;
+    }
+
+    /**
+     * Calculates the total unread messages across ALL conversations (1-on-1 & Groups)
+     */
+    public function totalUnreadMessagesCount()
+    {
+        $userId = $this->user_id;
+
+        // 1. Count unread 1-on-1 messages sent TO this user
+        $directUnreadCount = \App\Models\Message::where('receiver_id', $userId)
+                                                ->where('is_read', false)
+                                                ->count();
+
+        // 2. Count unread Group Chat messages
+        $groupUnreadCount = 0;
+        
+        // Find all active groups this user is a member of
+        $myGroupIds = \Illuminate\Support\Facades\DB::table('group_members')
+                                                    ->where('user_id', $userId)
+                                                    ->where('is_archived', false)
+                                                    ->pluck('group_id');
+
+        if ($myGroupIds->isNotEmpty()) {
+            foreach ($myGroupIds as $groupId) {
+                // Total messages sent to this specific group by OTHER people
+                $totalGroupMessages = \App\Models\Message::where('receiver_id', $groupId)
+                                                         ->where('sender_id', '!=', $userId)
+                                                         ->count();
+                
+                // How many of those messages has this user explicitly read?
+                $readGroupMessages = \App\Models\MessageRead::where('user_id', $userId)
+                    ->whereIn('message_id', function($query) use ($groupId, $userId) {
+                        $query->select('id')
+                              ->from('messages')
+                              ->where('receiver_id', $groupId)
+                              ->where('sender_id', '!=', $userId);
+                    })->count();
+
+                $groupUnreadCount += max(0, $totalGroupMessages - $readGroupMessages);
+            }
+        }
+
+        return $directUnreadCount + $groupUnreadCount;
     }
 }

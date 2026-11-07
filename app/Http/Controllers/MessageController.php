@@ -593,6 +593,15 @@ class MessageController extends Controller
         return response()->json(['success' => false, 'message' => 'No messages to update.']);
     }
 
+    public function getUnreadCount()
+{
+    $unreadTotal = \Illuminate\Support\Facades\Auth::check() 
+        ? \Illuminate\Support\Facades\Auth::user()->totalUnreadMessagesCount() 
+        : 0;
+
+    return response()->json(['unreadTotal' => $unreadTotal]);
+}
+
     /**
      * AJAX Endpoint: Poll for any new unread messages since the page loaded.
      */
