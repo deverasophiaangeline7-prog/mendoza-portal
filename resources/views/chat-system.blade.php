@@ -346,8 +346,7 @@
                                                 @if(!is_null($selectedUser->custom_name))
                                                     <!-- GROUP CHAT: Show avatar only if this is the absolute LAST message this specific person read -->
                                                     @foreach($message->readers as $read)
-                                                            @if($read->user_id !== auth()->id() && $read->user_id !== $message->sender_id && isset($latestReadPerUser[$read->user_id]) && $latestReadPerUser[$read->user_id] === $message->id)                                                            @php
-                                                                $seenPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
+                                                                @if($read->user_id !== auth()->id() && $read->user_id !== $message->sender_id && isset($latestReadPerUser[$read->user_id]) && $latestReadPerUser[$read->user_id] === $message->id)                                                                $seenPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
                                                                 if ($read->user->profile_photo_path) {
                                                                     $seenPhoto = str_starts_with($read->user->profile_photo_path, 'profile_photos') ? asset('storage/' . $read->user->profile_photo_path) : asset($read->user->profile_photo_path);
                                                                 }
@@ -1134,7 +1133,7 @@
                             if(container) container.scrollTop = container.scrollHeight; 
                         });
 
-                        if (needsMarkRead && !this.isGroupChat) {
+                        if (needsMarkRead) {
                             this.dynamicallyMarkRead();
                         }
                     }
@@ -1148,8 +1147,7 @@
              * DB Seen Logic: Explicitly updates the 'is_read' status via AJAX.
              */
             async dynamicallyMarkRead() {
-                // DB synchronization is strictly for 1-on-1 direct messages to keep seen status accurate.
-                if (!this.selectedUserId || this.isGroupChat) return;
+                if (!this.selectedUserId) return;
                 
                 try {
                     // Call new markAsRead endpoint
