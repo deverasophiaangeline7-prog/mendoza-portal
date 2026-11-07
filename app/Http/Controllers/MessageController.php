@@ -168,6 +168,10 @@ class MessageController extends Controller
             'is_read'     => false,
         ]);
 
+        foreach ($request->members as $memberId) {
+            broadcast(new \App\Events\RealtimeSidebarUpdate($memberId, $groupUser->user_id, 'New Group Chat Created'));
+        }
+
         return back()->with('success', 'Group created successfully!');
     }
 
@@ -222,6 +226,22 @@ class MessageController extends Controller
             'content' => $request->message,
             'is_read' => false,
         ]);
+
+        $receiver = User::find($request->receiver_id);
+        $isReceiverGroup = \Illuminate\Support\Str::startsWith($receiver->username, ['group_', 'gc_section_']);
+        
+        if ($isReceiverGroup) {
+            // Kung GC, i-broadcast sa lahat ng members (maliban sa sarili) para mag-update ang sidebar nila
+            $members = DB::table('group_members')->where('group_id', $request->receiver_id)->pluck('user_id');
+            foreach ($members as $memberId) {
+                if ($memberId != Auth::id()) {
+                    broadcast(new \App\Events\RealtimeSidebarUpdate($memberId, $request->receiver_id, Auth::user()->name . ': ' . $request->message));
+                }
+            }
+        } else {
+            // Kung 1-on-1, i-broadcast direkta sa ka-chat
+            broadcast(new \App\Events\RealtimeSidebarUpdate($request->receiver_id, Auth::id(), $request->message));
+        }
 
         // ==========================================
         // 2. AI INTERCEPTOR LOGIC (Kept as provided)

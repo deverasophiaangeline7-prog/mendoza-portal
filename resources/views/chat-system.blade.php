@@ -960,13 +960,16 @@
                             const sidebarContainer = document.getElementById(`sidebar-item-${e.senderId}`);
                             
                             if (sidebarMessageElement && sidebarContainer) {
+                                
                                 sidebarMessageElement.innerText = e.messageContent;
-
                                 sidebarContainer.classList.add('bg-blue-50/70', 'font-bold', 'text-black');
                                 sidebarContainer.classList.remove('bg-white', 'hover:bg-gray-50');
-
                                 sidebarMessageElement.classList.add('text-gray-900', 'font-semibold');
                                 sidebarMessageElement.classList.remove('text-gray-500');
+                                sidebarContainer.parentNode.prepend(sidebarContainer); 
+                            } else {
+                               
+                                window.location.reload();
                             }
                         });
                 }
