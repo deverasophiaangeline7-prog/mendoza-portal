@@ -275,6 +275,11 @@
                 <!-- Dedicated chat messages wrapper -->
                 <div id="chat-messages" class="space-y-4 flex-1">
                     @if(isset($messages) && count($messages) > 0)
+                        @php
+                            // NEW: Find the very last message sent by ME to prevent duplicate seen icons
+                            $lastMyMsg = collect($messages)->where('sender_id', auth()->id())->last();
+                            $lastMyMsgId = $lastMyMsg ? $lastMyMsg->id : null;
+                        @endphp
                         @foreach($messages as $message)
                             @if(str_contains($message->content, 'created the group:'))
                                 <!-- System Alert Styling -->
@@ -328,23 +333,25 @@
                                             
                                             <!-- 👁️ MESSENGER-STYLE SEEN LOGIC -->
                                             <span class="js-realtime-seen-text flex items-center gap-0.5 mt-0.5">
-                                                @if(!is_null($selectedUser->custom_name))
-                                                    <!-- GROUP CHAT: Loop sa lahat ng nag-seen ng message na ito -->
-                                                    @foreach($message->readers as $read)
-                                                        @if($read->user_id !== $message->sender_id)
-                                                            @php
-                                                                $seenPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
-                                                                if ($read->user->profile_photo_path) {
-                                                                    $seenPhoto = str_starts_with($read->user->profile_photo_path, 'profile_photos') ? asset('storage/' . $read->user->profile_photo_path) : asset($read->user->profile_photo_path);
-                                                                }
-                                                            @endphp
-                                                            <img src="{{ $seenPhoto }}" title="Seen by {{ $read->user->name }} at {{ \Carbon\Carbon::parse($read->created_at)->format('M d, g:i A') }}" class="w-4 h-4 rounded-full border border-gray-300 ml-0.5 object-cover cursor-default shadow-sm hover:scale-125 transition-transform z-10">
+                                                @if($message->id === $lastMyMsgId)
+                                                    @if(!is_null($selectedUser->custom_name))
+                                                        <!-- GROUP CHAT: Loop sa lahat ng nag-seen ng message na ito -->
+                                                        @foreach($message->readers as $read)
+                                                            @if($read->user_id !== $message->sender_id)
+                                                                @php
+                                                                    $seenPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
+                                                                    if ($read->user->profile_photo_path) {
+                                                                        $seenPhoto = str_starts_with($read->user->profile_photo_path, 'profile_photos') ? asset('storage/' . $read->user->profile_photo_path) : asset($read->user->profile_photo_path);
+                                                                    }
+                                                                @endphp
+                                                                <img src="{{ $seenPhoto }}" title="Seen by {{ $read->user->name }} at {{ \Carbon\Carbon::parse($read->created_at)->format('M d, g:i A') }}" class="w-4 h-4 rounded-full border border-gray-300 ml-0.5 object-cover cursor-default shadow-sm hover:scale-125 transition-transform z-10">
+                                                            @endif
+                                                        @endforeach
+                                                    @else
+                                                        <!-- 1-ON-1: Normal text lang na 'Seen' -->
+                                                        @if($message->sender_id === auth()->user()->user_id && $message->is_read)
+                                                            <span class="font-bold ml-1 text-gray-500">· Seen</span>
                                                         @endif
-                                                    @endforeach
-                                                @else
-                                                    <!-- 1-ON-1: Normal text lang na 'Seen' -->
-                                                    @if($message->sender_id === auth()->user()->user_id && $message->is_read)
-                                                        <span class="font-bold ml-1 text-gray-500">· Seen</span>
                                                     @endif
                                                 @endif
                                             </span>
@@ -926,13 +933,14 @@
                         // Listen for when THEY open my chat. Dynamically add dynamic 'Seen' text to MY open screen.
                         window.Echo.private(`chat.${this.myId}`).listenForWhisper('read', (e) => {
                             if (e.senderId == this.selectedUserId) {
-                                // Find ALL my currently unread status containers on screen and mark seen.
                                 const unreadStatusSpans = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
-                                unreadStatusSpans.forEach(statusSpan => {
-                                    if (statusSpan.innerHTML.trim() === '') {
-                                        statusSpan.innerHTML = '<span class="font-bold ml-1 text-gray-500">· Seen</span>';
-                                    }
-                                });
+                                if (unreadStatusSpans.length > 0) {
+                                    // Clear older seens to prevent duplicates
+                                    unreadStatusSpans.forEach(span => span.innerHTML = '');
+                                    // Set only the newest one
+                                    const lastSpan = unreadStatusSpans[unreadStatusSpans.length - 1];
+                                    lastSpan.innerHTML = '<span class="font-bold ml-1 text-gray-500">· Seen</span>';
+                                }
                             }
                         });
                     }
@@ -1023,11 +1031,13 @@
                     } else if (data.last_sent_read && !this.isGroupChat) {
                         // Para sa 1-on-1 Chat (Normal Text)
                         const unreadStatusSpans = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
-                        unreadStatusSpans.forEach(statusSpan => {
-                            if (statusSpan.innerHTML.trim() === '') {
-                                statusSpan.innerHTML = '<span class="font-bold ml-1 text-gray-500">· Seen</span>';
-                            }
-                        });
+                        if (unreadStatusSpans.length > 0) {
+                            // Clear seen from all older messages
+                            unreadStatusSpans.forEach(span => span.innerHTML = '');
+                            // Only apply seen to the absolute newest message
+                            const lastSpan = unreadStatusSpans[unreadStatusSpans.length - 1];
+                            lastSpan.innerHTML = '<span class="font-bold ml-1 text-gray-500">· Seen</span>';
+                        }
                     }
 
                     if (newMessagesData.length > 0) {
