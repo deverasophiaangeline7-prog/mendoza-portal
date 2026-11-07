@@ -554,21 +554,23 @@ class UserController extends Controller
         }
 
         // ==========================================
-        // BULLETPROOF SECURITY ROLE ENFORCEMENT
+        // SECURITY ROLE ENFORCEMENT & DEBUGGING
         // ==========================================
         $currentUser = auth()->user();
         
-        // Force lowercase and trim spaces to ensure exact matching
         $currentRole = strtolower(trim($currentUser->role));
         $targetRole  = strtolower(trim($user->role));
         
-        // If the logged-in user is a regular admin...
-        if ($currentRole === 'admin') {
-            // Block them if the target is an admin or superadmin AND it is not their own account
-            if (in_array($targetRole, ['admin', 'superadmin']) && $currentUser->id !== $user->id) {
-                return back()->with('error', 'Action Blocked: You do not have permission to modify another Admin or Superadmin.');
-            }
-        }
+        // Temporarily stop execution to see the EXACT values
+        dd([
+            'Logged-in User ID' => $currentUser->id,
+            'Logged-in Role' => $currentRole,
+            'Target User ID' => $user->id,
+            'Target Role' => $targetRole,
+            'Is Logged-in User an Admin?' => $currentRole === 'admin',
+            'Is Target an Admin/Superadmin?' => in_array($targetRole, ['admin', 'superadmin']),
+            'Are they different users?' => $currentUser->id !== $user->id,
+        ]);
         // ==========================================
 
         $actions = [];
