@@ -554,14 +554,19 @@ class UserController extends Controller
         }
 
         // ==========================================
-        // NEW: SECURITY ROLE ENFORCEMENT
+        // BULLETPROOF SECURITY ROLE ENFORCEMENT
         // ==========================================
         $currentUser = auth()->user();
         
-        if ($currentUser->role === 'admin') {
-        // Block if the target is an admin/superadmin AND it's NOT their own account
-            if (in_array($user->role, ['admin', 'superadmin']) && $currentUser->id !== $user->id) {
-                return back()->with('error', 'Unauthorized: You can only modify Teacher and Parent credentials, or your own account.');
+        // Force lowercase and trim spaces to ensure exact matching
+        $currentRole = strtolower(trim($currentUser->role));
+        $targetRole  = strtolower(trim($user->role));
+        
+        // If the logged-in user is a regular admin...
+        if ($currentRole === 'admin') {
+            // Block them if the target is an admin or superadmin AND it is not their own account
+            if (in_array($targetRole, ['admin', 'superadmin']) && $currentUser->id !== $user->id) {
+                return back()->with('error', 'Action Blocked: You do not have permission to modify another Admin or Superadmin.');
             }
         }
         // ==========================================
