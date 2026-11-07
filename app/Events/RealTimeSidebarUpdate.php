@@ -12,9 +12,9 @@ class RealtimeSidebarUpdate implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $receiverId;    
-    public $senderId;       
-    public $messageContent; 
+    public $receiverId;
+    public $senderId;
+    public $messageContent;
 
     public function __construct($receiverId, $senderId, $messageContent)
     {
@@ -25,12 +25,20 @@ class RealtimeSidebarUpdate implements ShouldBroadcastNow
 
     public function broadcastOn()
     {
-        // I-broadcast ito sa mismong private sidebar channel ng makakatanggap
         return new PrivateChannel('sidebar.' . $this->receiverId);
     }
 
     public function broadcastAs()
     {
         return 'RealtimeSidebarUpdate';
+    }
+
+    // 👇 ITO YUNG IDINAGDAG NI COPILOT PARA SURE NA MABABASA NG JS 👇
+    public function broadcastWith()
+    {
+        return [
+            'senderId' => $this->senderId,
+            'messageContent' => $this->messageContent,
+        ];
     }
 }
