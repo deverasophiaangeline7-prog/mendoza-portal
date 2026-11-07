@@ -1,3 +1,7 @@
+@php
+    $loginHeading = \App\Models\SiteContent::where('page', 'login')->where('key', 'heading')->value('value') ?? 'STUDENT MONITORING<br><span class="text-white">SYSTEM</span>';
+@endphp
+
 <x-guest-layout>
     <div class="relative flex-1 bg-cover bg-center flex flex-col items-center justify-center overflow-hidden w-full py-12" 
          style="background-image: url('{{ asset('images/MAIDinosaur.png') }}');">
@@ -8,7 +12,7 @@
             
             <div class="text-center mb-8">
                 <h2 class="text-white text-4xl md:text-7xl font-black uppercase leading-none drop-shadow-2xl italic tracking-tighter">
-                    STUDENT MONITORING<br><span class="text-white">SYSTEM</span>
+                    {!! $loginHeading !!}
                 </h2>
             </div>
 

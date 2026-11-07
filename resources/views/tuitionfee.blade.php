@@ -1,3 +1,9 @@
+@php
+    $preElemText = \App\Models\SiteContent::where('page', 'courses')->where('key', 'pre_elementary')->value('value') ?? 'Nursery | Kindergarten | Preparatory';
+    
+    $elemText = \App\Models\SiteContent::where('page', 'courses')->where('key', 'elementary')->value('value') ?? 'Grades 1 - 6';
+@endphp
+
 <x-guest-layout>
 
     <main class="relative flex-grow flex items-center justify-center py-16 bg-cover bg-center w-full" 
@@ -22,7 +28,7 @@
                     </h3>
                     
                     <div class="text-base md:text-lg font-bold text-slate-700 whitespace-nowrap">
-                        Nursery <span class="text-gray-400 mx-2">|</span> Kindergarten <span class="text-gray-400 mx-2">|</span> Preparatory
+                        {!! str_replace('|', '<span class="text-gray-400 mx-2">|</span>', e($preElemText)) !!}
                     </div>
                 </div>
 
@@ -33,7 +39,7 @@
                     </h3>
                     
                     <div class="text-base md:text-lg font-bold text-slate-700">
-                        Grades 1 - 6
+                        {{ $elemText }}
                     </div>
                 </div>
 

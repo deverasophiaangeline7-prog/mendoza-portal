@@ -392,12 +392,11 @@
                 @else
                     <form @submit.prevent="sendMessage('{{ $selectedUser->user_id }}')" class="flex gap-2">
                         <input type="text" 
-                               x-model="messageInput" 
-                               @input="sendTypingWhisper()"
-                               :disabled="thisUserIsTyping || isSending"
-                               class="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:border-[#6d0101] focus:ring-1 focus:ring-[#6d0101] transition-all disabled:opacity-50" 
-                               placeholder="Type your message here..." 
-                               required>
+                               x-model="messageInput"  
+                                    :disabled="thisUserIsTyping || isSending"
+                                    class="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:border-[#6d0101] focus:ring-1 focus:ring-[#6d0101] transition-all disabled:opacity-50" 
+                                    placeholder="Type your message here..." 
+                                    required>
                         <button type="submit" :disabled="thisUserIsTyping || isSending" x-text="isSending ? 'Sending...' : 'Send'" class="bg-[#6d0101] text-white px-6 py-2 rounded-full hover:bg-red-900 transition disabled:opacity-50">
                             Send
                         </button>
@@ -913,6 +912,7 @@
             
             otherUserTypingTimer: null,
             pollingInterval: null, 
+            sidebarPollingInterval: null,
 
             init() {
                 const container = document.getElementById('message-container');
@@ -921,59 +921,17 @@
                 if (this.selectedUserId && this.myId) {
                     this.dynamicallyMarkRead();
 
-                    if (window.Echo) {
-                        window.Echo.private(`chat.${this.selectedUserId}`).whisper('read', { senderId: this.myId });
-
-                        window.Echo.private(`chat.${this.myId}`).listenForWhisper('read', (e) => {
-                            if (e.senderId == this.selectedUserId) {
-                                // Updated Selector to find the new absolute containers
-                                const unreadStatusSpans = document.querySelectorAll('.js-realtime-seen-text');
-                                if (unreadStatusSpans.length > 0) {
-                                    unreadStatusSpans.forEach(span => span.innerHTML = '');
-                                    const lastSpan = unreadStatusSpans[unreadStatusSpans.length - 1];
-                                    lastSpan.innerHTML = '<span class="font-bold text-gray-500 text-[10px]">· Seen</span>';
-                                }
-                            }
-                        });
-                    }
+                    
 
                     this.pollingInterval = setInterval(() => {
                         this.pollNewMessages();
                     }, 4000); 
                 }
 
-                if (window.Echo && this.myId) {
-                    window.Echo.private(`chat.${this.myId}`)
-                        .listenForWhisper('typing', (e) => {
-                            if (e.senderId == this.selectedUserId) {
-                                this.otherUserIsTyping = true;
-                                clearTimeout(this.otherUserTypingTimer);
-                                this.otherUserTypingTimer = setTimeout(() => {
-                                    this.otherUserIsTyping = false;
-                                }, 2000);
-                            }
-                        });
-
-                    window.Echo.private(`sidebar.${this.myId}`)
-                        .listen('.RealtimeSidebarUpdate', (e) => {
-                            const sidebarMessageElement = document.getElementById(`sidebar-text-${e.senderId}`);
-                            const sidebarContainer = document.getElementById(`sidebar-item-${e.senderId}`);
-                            
-                            if (sidebarMessageElement && sidebarContainer) {
-                                
-                                sidebarMessageElement.innerText = e.messageContent;
-                                sidebarContainer.classList.add('bg-blue-50/70', 'font-bold', 'text-black');
-                                sidebarContainer.classList.remove('bg-white', 'hover:bg-gray-50');
-                                sidebarMessageElement.classList.add('text-gray-900', 'font-semibold');
-                                sidebarMessageElement.classList.remove('text-gray-500');
-                                sidebarContainer.parentNode.prepend(sidebarContainer); 
-                            } else {
-                               
-                                window.location.reload();
-                            }
-                        });
-                }
-            },
+                    this.sidebarPollingInterval = setInterval(() => {
+                        this.pollSidebarUpdates();
+                    }, 4000);
+                },
 
             async pollNewMessages() {
                 if (!this.selectedUserId) return;
@@ -1101,6 +1059,49 @@
                 }
             },
 
+            async pollSidebarUpdates() {
+                try {
+                    const response = await fetch('/messages/sidebar/poll');
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    
+                    let needsReload = false;
+
+                    data.sidebar.forEach(chat => {
+                        const sidebarItem = document.getElementById(`sidebar-item-${chat.user_id}`);
+                        const sidebarText = document.getElementById(`sidebar-text-${chat.user_id}`);
+                        
+                        if (sidebarItem && sidebarText) {
+                            if (sidebarText.innerText !== chat.latest_message) {
+                                sidebarText.innerText = chat.latest_message;
+                                sidebarItem.parentNode.prepend(sidebarItem); 
+                            }
+                            
+                            if (this.selectedUserId != chat.user_id) {
+                                if (chat.unread_count > 0) {
+                                    sidebarItem.classList.add('bg-blue-50/70');
+                                    sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
+                                    sidebarText.classList.add('text-gray-900', 'font-semibold');
+                                    sidebarText.classList.remove('text-gray-500');
+                                } else {
+                                    sidebarItem.classList.remove('bg-blue-50/70');
+                                    sidebarItem.classList.add('bg-white', 'hover:bg-gray-50');
+                                    sidebarText.classList.remove('text-gray-900', 'font-semibold');
+                                    sidebarText.classList.add('text-gray-500');
+                                }
+                            }
+                        } else if (chat.latest_message !== 'No messages yet...') {
+                            needsReload = true;
+                        }
+                    });
+
+                    if (needsReload) window.location.reload();
+
+                } catch (err) {
+                    console.error("Sidebar polling error:", err);
+                }
+            },
+
             async dynamicallyMarkRead() {
                 if (!this.selectedUserId) return;
                 try {
@@ -1202,14 +1203,7 @@
                 }
             },
 
-            sendTypingWhisper() {
-                if (window.Echo && this.selectedUserId) {
-                    window.Echo.private(`chat.${this.selectedUserId}`)
-                        .whisper('typing', {
-                            senderId: this.myId
-                        });
-                }
-            },
+
         }));
     });
 </script>

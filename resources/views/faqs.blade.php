@@ -1,3 +1,16 @@
+@php
+    $faqQ1 = \App\Models\SiteContent::where('page', 'faqs')->where('key', 'q1')->value('value') ?? 'What grade levels do you offer?';
+    $faqA1 = \App\Models\SiteContent::where('page', 'faqs')->where('key', 'a1')->value('value') ?? 'Pre-elementary (Nursery, Kinder, and Preparatory) to Elementary (Grades 1-6)';
+
+    $faqQ2 = \App\Models\SiteContent::where('page', 'faqs')->where('key', 'q2')->value('value') ?? 'Where is the school located?';
+    $faqA2 = \App\Models\SiteContent::where('page', 'faqs')->where('key', 'a2')->value('value') ?? 'Blk. 9 Lot 88 Mapagkawanggawa St. Purok 4, Lupang Arenda, Sta. Ana, Taytay, Rizal';
+
+    $faqQ3 = \App\Models\SiteContent::where('page', 'faqs')->where('key', 'q3')->value('value') ?? 'What are your office hours?';
+    $faqA3 = \App\Models\SiteContent::where('page', 'faqs')->where('key', 'a3')->value('value') ?? 'Monday to Friday (8:00AM - 5:00PM)';
+
+    $faqQ4 = \App\Models\SiteContent::where('page', 'faqs')->where('key', 'q4')->value('value') ?? 'What are the admission requirements?';
+@endphp
+
 <x-guest-layout>
 
     <main class="relative flex-grow flex items-center justify-center py-12 bg-cover bg-center w-full" 
@@ -14,24 +27,24 @@
 
                 <div class="space-y-12">
                     <div class="text-left">
-                        <h3 class="text-2xl font-bold text-red-700">1. What grade levels do you offer?</h3>
-                        <p class="text-xl font-semibold text-black mt-2">Pre-elementary (Nursery, Kinder, and Preparatory) to Elementary (Grades 1-6)</p>
+                        <h3 class="text-2xl font-bold text-red-700">1. {{ $faqQ1 }}</h3>
+                        <p class="text-xl font-semibold text-black mt-2">{{ $faqA1 }}</p>
                     </div>
 
                     <div class="text-left">
-                        <h3 class="text-2xl font-bold text-red-700">2. Where is the school located?</h3>
+                        <h3 class="text-2xl font-bold text-red-700">2. {{ $faqQ2 }}</h3>
                         <p class="text-xl font-semibold text-black mt-2">
-                            Blk. 9 Lot 88 Mapagkawanggawa St. Purok 4, Lupang Arenda, Sta. Ana, Taytay, Rizal
+                            {{ $faqA2 }}
                         </p>
                     </div>
 
                     <div class="text-left">
-                        <h3 class="text-2xl font-bold text-red-700">3. What are your office hours?</h3>
-                        <p class="text-xl font-semibold text-black mt-2">Monday to Friday (8:00AM - 5:00PM)</p>
+                        <h3 class="text-2xl font-bold text-red-700">3. {{ $faqQ3 }}</h3>
+                        <p class="text-xl font-semibold text-black mt-2">{{ $faqA3 }}</p>
                     </div>
 
                     <div class="mt-12">
-                        <h3 class="text-2xl font-bold text-red-700 mb-8 text-left uppercase tracking-tight">4. What are the admission requirements?</h3>
+                        <h3 class="text-2xl font-bold text-red-700 mb-8 text-left uppercase tracking-tight">4. {{ $faqQ4 }}</h3>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-4xl mx-auto px-2">
                             

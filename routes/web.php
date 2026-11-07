@@ -20,6 +20,7 @@ use App\Http\Controllers\ClassroomAnnouncementController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\SectionController;
+use App\Http\Controllers\AdminSiteContentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -87,6 +88,8 @@ Route::middleware(['auth', \App\Http\Middleware\ForcePasswordChange::class])->gr
     Route::get('/messages/{conversation_id}/poll', [MessageController::class, 'pollForMessages'])->name('messages.poll');
     // 2. Seen endpoint to dynamically mark unread messages from other user as read (DB update).
     Route::post('/messages/{conversation_id}/mark-as-read', [MessageController::class, 'markMessagesRead'])->name('messages.markAsRead');
+    // 3. Poll endpoint to fetch updated sidebar list.
+    Route::get('/messages/sidebar/poll', [MessageController::class, 'pollSidebar'])->name('messages.sidebar.poll');
 
     // 💡 ADD THE UNREAD COUNT JSON ROUTE HERE:
     Route::get('/messages/unread-count', function () {
@@ -171,6 +174,10 @@ Route::middleware(['auth', 'verified', 'role:admin,superadmin'])->group(function
         $archivedYears = \App\Models\SchoolYear::where('status', 'archived')->orderBy('id', 'desc')->get();
         return view('accountmanagement', compact('activeYear' , 'archivedYears')); 
     })->name('account.management');
+
+    Route::get('/admin/website-content', [AdminSiteContentController::class, 'edit'])->name('admin.content.edit');
+    Route::post('/admin/website-content', [AdminSiteContentController::class, 'update'])->name('admin.content.update');
+    
     Route::get('/admin/audit-logs', [App\Http\Controllers\Admin\UserController::class, 'logs'])->name('admin.audit_logs');
 
     // Teacher Management
