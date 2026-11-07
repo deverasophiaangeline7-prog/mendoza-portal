@@ -6,7 +6,7 @@
 <div class="flex-1 bg-white relative p-4 md:p-8 flex flex-col items-center min-h-screen w-full pt-16 md:pt-8"
      x-data="{ 
          finalizeModal: {{ $errors->has('admin_password') ? 'true' : 'false' }}, 
-         passwordModal: false, 
+         passwordModal: {{ $errors->hasAny(['login_id', 'email', 'password']) ? 'true' : 'false' }},
          termScheduleModal: {{ $errors->hasAny(['term1_start', 'term1_end', 'term2_start', 'term2_end', 'term3_start', 'term3_end']) ? 'true' : 'false' }},
          blockedModal: false 
      }">
@@ -275,11 +275,21 @@
             <h2 class="text-2xl md:text-3xl font-black mb-6 uppercase tracking-tight text-center text-black italic">Update Credentials</h2>
 
             <form action="{{ route('admin.password.reset') }}" method="POST" 
-                  @submit.prevent="if(newPassword === confirmPassword && (newPassword === '' || strength() === 'Strong')) $el.submit()">
+                @submit.prevent="if(newPassword === confirmPassword && (newPassword === '' || strength() === 'Strong')) $el.submit()">
                 @csrf
                 @method('PUT')
                 
                 <div class="space-y-4 mb-6">
+                    
+                    <!-- START: Role Restriction Warning -->
+                    @if(auth()->user()->role !== 'superadmin')
+                        <div class="p-3 bg-yellow-100 border-[3px] border-black rounded-xl text-sm font-bold text-yellow-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-start gap-2">
+                            <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                            <p><strong>Restricted Access:</strong> You only have permission to update Teacher and Parent accounts. Modifying Admin or Superadmin credentials will be blocked.</p>
+                        </div>
+                    @endif
+                    <!-- END: Role Restriction Warning -->
+
                     <div>
                         <label class="block font-bold uppercase text-gray-600 text-sm mb-1.5 tracking-widest">
                             User Email/LRN <span class="text-red-600">*</span>

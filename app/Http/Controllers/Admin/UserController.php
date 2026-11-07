@@ -553,6 +553,19 @@ class UserController extends Controller
             return back()->with('error', 'User not found in the system. Please check the LRN, Email, or Username.');
         }
 
+        // ==========================================
+        // NEW: SECURITY ROLE ENFORCEMENT
+        // ==========================================
+        $currentUser = auth()->user();
+        
+        if ($currentUser->role === 'admin') {
+        // Block if the target is an admin/superadmin AND it's NOT their own account
+            if (in_array($user->role, ['admin', 'superadmin']) && $currentUser->id !== $user->id) {
+                return back()->with('error', 'Unauthorized: You can only modify Teacher and Parent credentials, or your own account.');
+            }
+        }
+        // ==========================================
+
         $actions = [];
         $updateData = [];
 
