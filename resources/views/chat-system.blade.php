@@ -1022,18 +1022,19 @@
                     
                     // 👇 NEW: Update the DOM if the other person read our messages
                     if (this.isGroupChat && data.gc_latest_readers && data.gc_latest_readers.length > 0) {
-                        // Para sa GC: I-display ang maraming maliit na profile pics!
-                        const unreadStatusSpans = document.querySelectorAll('.js-sent-msg-seen-container .js-realtime-seen-text');
+                        const unreadStatusSpans = document.querySelectorAll('.js-realtime-seen-text');
                         if (unreadStatusSpans.length > 0) {
-                            const lastSpan = unreadStatusSpans[unreadStatusSpans.length - 1]; // Sa pinakahuling chat bubble lang ilalagay
+                            // 👇 FIX: Instantly erase all old avatars from previous messages
+                            unreadStatusSpans.forEach(span => span.innerHTML = '');
+                            
+                            const lastSpan = unreadStatusSpans[unreadStatusSpans.length - 1]; 
                             let avatarsHtml = '';
                             data.gc_latest_readers.forEach(reader => {
                                 avatarsHtml += `<img src="${reader.photo}" title="Seen by ${reader.name}" class="w-4 h-4 rounded-full border border-gray-300 ml-0.5 object-cover cursor-default shadow-sm hover:scale-125 transition-transform z-10">`;
                             });
-                            // Gamitin ang Set para walang duplicate pics na mag-render
-                            if (lastSpan.innerHTML !== avatarsHtml) {
-                                lastSpan.innerHTML = avatarsHtml;
-                            }
+                            
+                            // Attach the new avatars to the absolute bottom message
+                            lastSpan.innerHTML = avatarsHtml;
                         }
                     } else if (data.last_sent_read && !this.isGroupChat) {
                         // Para sa 1-on-1 Chat (Normal Text)
