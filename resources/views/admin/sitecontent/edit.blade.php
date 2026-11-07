@@ -29,7 +29,7 @@
                         <div class="mb-4">
                             <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">Hero Title</label>
                             <input type="text" name="content[home][hero_title]" 
-                                value="{{ optional($contents->get('home')?->where('key', 'hero_title')->first())->value ?? 'Welcome to Mendoza Academy, Inc.' }}" 
+                                value="{{ $contents->get('home')?->where('key', 'hero_title')?->first()?->value ?? 'Welcome to Mendoza Academy, Inc.' }}" 
                                 class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">
                         </div>
 
@@ -49,12 +49,12 @@
                         
                         <div class="mb-4">
                             <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">Mission Text</label>
-                            <textarea name="content[about][mission]" rows="3" class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">{{ optional($contents->get('about')?->where('key', 'mission')->first())->value ?? 'Mendoza Academy, Inc. aims to develop the inner potentials of individuals and mold them into young adults who are intellectually and academically competent appreciative of the cultural heritage of their environment, disciplined and determined to contribute their best effort as future leaders to the community with a well-bred conscience to distinguish what is right and wrong and their righteous commitment to the Lord Almighty.' }}</textarea>
+                            <textarea name="content[about][mission]" rows="3" class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">{{ $contents->get('about')?->where('key', 'mission')?->first()?->value ?? 'Mendoza Academy, Inc. aims to develop the inner potentials of individuals and mold them into young adults who are intellectually and academically competent appreciative of the cultural heritage of their environment, disciplined and determined to contribute their best effort as future leaders to the community with a well-bred conscience to distinguish what is right and wrong and their righteous commitment to the Lord Almighty.' }}</textarea>
                         </div>
 
                         <div class="mb-4">
                             <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">Vision Text</label>
-                            <textarea name="content[about][vision]" rows="3" class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">{{ optional($contents->get('about')?->where('key', 'vision')->first())->value ?? 'As a private institution, Mendoza Academy, Inc. perceives itself that through competency in imparting discipline, quality education, full understanding of the individual differences among learners and honing them for their total development to be physically, mentally, socially, emotionally and spiritually fit, is conclusive of producing holistic graduates who are God-fearing aware of their worth and dignity.' }}</textarea>
+                            <textarea name="content[about][vision]" rows="3" class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">{{ $contents->get('about')?->where('key', 'vision')?->first()?->value ?? 'As a private institution, Mendoza Academy, Inc. perceives itself that through competency in imparting discipline, quality education, full understanding of the individual differences among learners and honing them for their total development to be physically, mentally, socially, emotionally and spiritually fit, is conclusive of producing holistic graduates who are God-fearing aware of their worth and dignity.' }}</textarea>
                         </div>
                     </div>
 
@@ -65,14 +65,14 @@
                         <div class="mb-4">
                             <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">Pre-Elementary Sub-text (separate with |)</label>
                             <input type="text" name="content[courses][pre_elementary]" 
-                                value="{{ optional($contents->get('courses')?->where('key', 'pre_elementary')->first())->value ?? 'Nursery | Kindergarten | Preparatory' }}" 
+                                value="{{ $contents->get('courses')?->where('key', 'pre_elementary')?->first()?->value ?? 'Nursery | Kindergarten | Preparatory' }}" 
                                 class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">
                         </div>
 
                         <div class="mb-4">
                             <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">Elementary Sub-text</label>
                             <input type="text" name="content[courses][elementary]" 
-                                value="{{ optional($contents->get('courses')?->where('key', 'elementary')->first())->value ?? 'Grades 1 - 6' }}" 
+                                value="{{ $contents->get('courses')?->where('key', 'elementary')?->first()?->value ?? 'Grades 1 - 6' }}" 
                                 class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">
                         </div>
                     </div>
@@ -97,7 +97,7 @@
                                 <div>
                                     <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">{{ strtoupper($key) }} Text / Heading</label>
                                     <input type="text" name="content[faqs][{{ $key }}]" 
-                                        value="{{ optional($contents->get('faqs')?->where('key', $key)->first())->value ?? $defaultVal }}" 
+                                        value="{{ $contents->get('faqs')?->where('key', $key)?->first()?->value ?? $defaultVal }}" 
                                         class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">
                                 </div>
                             @endforeach
@@ -111,7 +111,7 @@
                         <div class="mb-4">
                             <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">Main Banner Heading HTML</label>
                             <input type="text" name="content[login][heading]" 
-                                value="{{ optional($contents->get('login')?->where('key', 'heading')->first())->value ?? 'STUDENT MONITORING<br><span class=\"text-white\">SYSTEM</span>' }}" 
+                                value="{{ $contents->get('login')?->where('key', 'heading')?->first()?->value ?? 'STUDENT MONITORING<br><span class=\"text-white\">SYSTEM</span>' }}" 
                                 class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">
                         </div>
                     </div>
