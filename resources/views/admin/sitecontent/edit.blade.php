@@ -108,10 +108,67 @@
                     </div>
 
                     <!-- Admission Requirements HTML Answer -->
+                    @php
+                    $defaultA4Html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-4xl mx-auto px-2">
+                    <div class="space-y-6">
+                        <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
+                            <h4 class="font-black text-white text-lg mb-3 uppercase">For incoming Kindergarten:</h4>
+                            <div class="flex items-start gap-3 text-white font-bold">
+                                <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center left-center mt-1 text-xs font-black">✔</span>
+                                <p class="text-sm text-left">Must be five (5) years old on or before August 31, 2026. (Reference: DepEd Order No. 47 s. 2016/ DepEd Order No. 20, s. 2018)</p>
+                            </div>
+                        </div>
+                        <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
+                            <h4 class="font-black text-white text-lg mb-3 uppercase">Document to be submitted:</h4>
+                            <div class="flex items-start gap-3 text-white font-bold">
+                                <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center left-center mt-1 text-xs font-black">✔</span>
+                                <p class="text-sm text-left">Photocopy of Birth Certificate [In the absence of PSA/NSO Birth Certificate, submit a photocopy of Baptismal or Barangay Certificate.]</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
+                            <h4 class="font-black text-white text-lg mb-3 uppercase">For incoming Grade 1:</h4>
+                            <div class="flex items-start gap-3 text-white font-bold">
+                                <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center left-center mt-1 text-xs font-black">✔</span>
+                                <p class="text-sm text-left">Must be Kindergarten Completer</p>
+                            </div>
+                        </div>
+                        <div class="bg-[#b26905] rounded-3xl p-6 shadow-md border-2 border-black">
+                            <h4 class="font-black text-white text-lg mb-3 uppercase">For more information:</h4>
+                            <div class="space-y-4 text-white font-bold text-sm text-left">
+                                <div class="flex items-start gap-3">
+                                    <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center left-center text-xs font-black">✔</span>
+                                    <span>Visit our school or send a message to our official FB Page.</span>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <span class="bg-white text-green-600 rounded-full h-5 w-5 flex-shrink-0 flex items-center left-center text-xs font-black">✔</span>
+                                    <span>Contact the following persons:</span>
+                                </div>
+                                <div class="pl-8 space-y-3 border-l-2 border-white/30 ml-2">
+                                    <div>
+                                        <p>Jocelyn A. Mendoza - 09452415916</p>
+                                        <p class="text-xs font-normal opacity-90 italic uppercase">Guidance Coordinator</p>
+                                    </div>
+                                    <div>
+                                        <p>Shanel Faith A. Mendoza - 09271647081</p>
+                                        <p class="text-xs font-normal opacity-90 italic uppercase">School Coordinator</p>
+                                    </div>
+                                    <div>
+                                        <p>Sonny T. Mendoza - 09150310777</p>
+                                        <p class="text-xs font-normal opacity-90 italic uppercase">School Director</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>';
+                    @endphp
+
                     <div>
                         <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">A4 HTML Content (Admission Requirements)</label>
                         <p class="text-[10px] text-red-600 font-bold mb-2 uppercase">Warning: This contains raw HTML for the styled cards. Edit text carefully!</p>
-                        <textarea name="content[faqs][a4]" rows="8" class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm text-xs font-mono">{{ $contents->get('faqs')?->where('key', 'a4')?->first()?->value ?? '<!-- Default HTML is loaded in the public blade file until saved here -->' }}</textarea>
+                        <textarea name="content[faqs][a4]" rows="12" class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm text-xs font-mono leading-tight whitespace-pre-wrap">{{ $contents->get('faqs')?->where('key', 'a4')?->first()?->value ?? $defaultA4Html }}</textarea>
                     </div>
                 </div>
 

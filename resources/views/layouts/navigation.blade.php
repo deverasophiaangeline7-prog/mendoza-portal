@@ -320,8 +320,9 @@
                             'grade.show', 
                             'account.*', 
                             'admin.list', 
-                            'admin.archived', 
-                            'admin.create'
+                            'admin.archived',
+                            'admin.create', 
+                            'admin.content*'
                         ])">
                         Account Management
                     </x-sidebar-link>
