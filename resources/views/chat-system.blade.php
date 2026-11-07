@@ -1080,8 +1080,8 @@
                         
                         if (sidebarItem && sidebarText) {
                             // 2. Idinagdag ang .trim() para hindi malito sa spaces ang JS at hindi mag-glitch ang images!
-                            if (sidebarText.innerText.trim() !== chat.latest_message.trim()) {
-                                sidebarText.innerText = chat.latest_message;
+                            if (sidebarText.textContent.trim() !== chat.latest_message.trim()) {
+                                sidebarText.textContent = chat.latest_message;
                                 sidebarItem.parentNode.prepend(sidebarItem); 
                             }
                             
@@ -1169,9 +1169,9 @@
 
                 const sidebarText = document.getElementById(`sidebar-text-${this.selectedUserId}`);
                 if (sidebarText) {
-                    sidebarText.innerText = "You: " + text;
-                    sidebarText.classList.remove('font-semibold', 'text-gray-900');
-                    sidebarText.classList.add('text-gray-500');
+                    sidebarText.textContent = prefix + latestNewMsg.content;
+                    sidebarText.classList.remove('text-gray-500');
+                    sidebarText.classList.add('text-gray-900', 'font-semibold');
                 }
 
                 this.$nextTick(() => { 
