@@ -105,8 +105,7 @@
                         <div class="mb-4">
                             <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">Main Banner Heading HTML</label>
                             <input type="text" name="content[login][heading]" 
-                                value="{{ optional($contents->get('login')?->where('key', 'heading')->value('value')) ?? 'STUDENT MONITORING<br><span class=\"text-white\">SYSTEM</span>' }}" 
-                                class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">
+                            value="{{ optional($contents->get('login')?->where('key', 'heading')->first())->value ?? 'STUDENT MONITORING<br><span class=\"text-white\">SYSTEM</span>' }}"                                class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">
                         </div>
                     </div>
 
