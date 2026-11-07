@@ -85,7 +85,7 @@
                 <div class="border-b pb-6">
                     <h3 class="text-lg font-black text-[#6D0101] uppercase mb-4">4. FAQs Page</h3>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         @php
                             $faqDefaults = [
                                 'q1' => 'What grade levels do you offer?',
@@ -105,6 +105,13 @@
                                     class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">
                             </div>
                         @endforeach
+                    </div>
+
+                    <!-- Admission Requirements HTML Answer -->
+                    <div>
+                        <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">A4 HTML Content (Admission Requirements)</label>
+                        <p class="text-[10px] text-red-600 font-bold mb-2 uppercase">Warning: This contains raw HTML for the styled cards. Edit text carefully!</p>
+                        <textarea name="content[faqs][a4]" rows="8" class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm text-xs font-mono">{{ $contents->get('faqs')?->where('key', 'a4')?->first()?->value ?? '<!-- Default HTML is loaded in the public blade file until saved here -->' }}</textarea>
                     </div>
                 </div>
 
