@@ -12,7 +12,7 @@ class AdminSiteContentController extends Controller
     {
         // Group content by page so it's easy to loop through in the view
         $contents = SiteContent::all()->groupBy('page');
-        return view('admin.site-content.edit', compact('contents'));
+        return view('admin.sitecontent.edit', compact('contents'));
     }
 
     public function update(Request $request)

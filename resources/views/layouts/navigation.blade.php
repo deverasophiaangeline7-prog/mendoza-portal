@@ -184,27 +184,17 @@
                 
                 <a href="{{ route('messages.index') }}" 
                 title="Messages" 
-                x-data="{ 
-                    unreadTotal: {{ auth()->check() ? auth()->user()->totalUnreadMessagesCount() : 0 }},
-                    init() {
-                        setInterval(() => {
-                            fetch('{{ route('messages.unread-count') }}?t=' + Date.now())
-                                .then(res => res.json())
-                                .then(data => { this.unreadTotal = data.unreadTotal; })
-                                .catch(err => console.error('Error fetching unread messages:', err));
-                        }, 5000);
-                    }
-                }"
                 class="relative hover:scale-110 transition inline-flex items-center justify-center {{ request()->routeIs('messages*') ? 'text-orange-400' : 'text-white hover:text-gray-200' }}">
                     
                     <i class="fa-solid fa-comment-dots text-2xl"></i>
                     
-                    <!-- Dynamic Badge -->
-                    <template x-if="unreadTotal > 0">
-                        <span class="absolute -top-2 -right-2.5 bg-[#facc15] text-[#b91c1c] font-black text-[10px] min-w-[20px] h-5 px-1 flex items-center justify-center rounded-full border-[2px] border-black leading-none" 
-                            x-text="unreadTotal > 99 ? '99+' : unreadTotal">
-                        </span>
-                    </template>
+                    @php $initialTotalUnread = auth()->check() ? auth()->user()->totalUnreadMessagesCount() : 0; @endphp
+                    
+                    <!-- DYNAMIC AJAX BADGE -->
+                    <span id="nav-chat-badge" 
+                          class="absolute -top-2 -right-2.5 bg-[#facc15] text-[#b91c1c] font-black text-[10px] min-w-[20px] h-5 px-1 flex items-center justify-center rounded-full border-[2px] border-black leading-none {{ $initialTotalUnread > 0 ? '' : 'hidden' }}">
+                        {{ $initialTotalUnread > 99 ? '99+' : $initialTotalUnread }}
+                    </span>
                 </a>
                 
                 @include('components.notification-bell')

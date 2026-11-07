@@ -141,9 +141,11 @@
                                     @elseif(isset($user->type) && $user->type === 'advisory') 🎓 
                                     @endif   
                                     <span class="truncate">{{ $user->custom_name ?? $user->name }}</span>
-                                    @if($hasUnread)
-                                        <span class="bg-red-600 text-white rounded-full px-2 py-0.5 text-[10px] font-bold ml-1 flex-shrink-0">{{ $user->unreadMessagesCount() }}</span>
-                                    @endif
+                                    
+                                    <span id="sidebar-badge-{{ $user->user_id }}" 
+                                          class="bg-red-600 text-white rounded-full px-2 py-0.5 text-[10px] font-bold ml-1 flex-shrink-0 {{ $hasUnread ? '' : 'hidden' }}">
+                                        {{ $user->unreadMessagesCount() }}
+                                    </span>
                                 </span>
                             </div>
                             <p id="sidebar-text-{{ $user->user_id }}" class="text-xs block mt-0.5 {{ $hasUnread ? 'text-gray-900 font-semibold' : 'text-gray-500' }}" style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; max-height: 1.15em; line-height: 1.15em;">
@@ -1066,10 +1068,12 @@
                     const data = await response.json();
                     
                     let needsReload = false;
+                    let totalUnread = 0; // Para mabilang natin lahat
 
                     data.sidebar.forEach(chat => {
                         const sidebarItem = document.getElementById(`sidebar-item-${chat.user_id}`);
                         const sidebarText = document.getElementById(`sidebar-text-${chat.user_id}`);
+                        const badgeContainer = document.getElementById(`sidebar-badge-${chat.user_id}`);
                         
                         if (sidebarItem && sidebarText) {
                             if (sidebarText.innerText !== chat.latest_message) {
@@ -1079,21 +1083,43 @@
                             
                             if (this.selectedUserId != chat.user_id) {
                                 if (chat.unread_count > 0) {
+                                    totalUnread += chat.unread_count; // I-add sa total
+                                    
                                     sidebarItem.classList.add('bg-blue-50/70');
                                     sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
                                     sidebarText.classList.add('text-gray-900', 'font-semibold');
                                     sidebarText.classList.remove('text-gray-500');
+                                    
+                                    if (badgeContainer) {
+                                        badgeContainer.innerText = chat.unread_count;
+                                        badgeContainer.classList.remove('hidden');
+                                    }
                                 } else {
                                     sidebarItem.classList.remove('bg-blue-50/70');
                                     sidebarItem.classList.add('bg-white', 'hover:bg-gray-50');
                                     sidebarText.classList.remove('text-gray-900', 'font-semibold');
                                     sidebarText.classList.add('text-gray-500');
+                                    
+                                    if (badgeContainer) {
+                                        badgeContainer.classList.add('hidden');
+                                    }
                                 }
                             }
                         } else if (chat.latest_message !== 'No messages yet...') {
                             needsReload = true;
                         }
                     });
+
+                    // Update yung dilaw na badge sa Nav Bar!
+                    const navBadge = document.getElementById('nav-chat-badge');
+                    if (navBadge) {
+                        if (totalUnread > 0) {
+                            navBadge.innerText = totalUnread > 99 ? '99+' : totalUnread;
+                            navBadge.classList.remove('hidden');
+                        } else {
+                            navBadge.classList.add('hidden');
+                        }
+                    }
 
                     if (needsReload) window.location.reload();
 
