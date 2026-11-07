@@ -12,8 +12,10 @@
                 <h2 class="text-2xl font-black text-gray-900 uppercase tracking-wide">
                     Edit Homepage & Public Content
                 </h2>
-                <a href="{{ route('account.management') }}" class="bg-gray-500 text-white font-bold px-4 py-2 rounded-full text-xs uppercase tracking-widest hover:bg-gray-600 transition">
-                    Back to Account Management
+                <a href="{{ route('account.management') }}" 
+                title="Close and go back"
+                class="bg-red-600 text-white h-10 w-10 flex items-center justify-center rounded-full shadow-md hover:bg-red-800 hover:scale-110 transition-all">
+                    <i class="fa-solid fa-xmark text-xl"></i>
                 </a>
             </div>
 
