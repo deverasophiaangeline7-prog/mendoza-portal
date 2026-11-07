@@ -421,29 +421,173 @@
                 </div>
 
                 <!-- Scrollable Contact List -->
-                <div class="max-h-60 overflow-y-auto border-2 border-gray-100 rounded-xl divide-y divide-gray-100">
+                <div class="max-h-60 overflow-y-auto border-2 border-gray-100 rounded-xl divide-y divide-gray-100 relative shadow-inner bg-gray-50">
                     @if(isset($contacts) && count($contacts) > 0)
-                        @foreach($contacts as $contact)
-                            <a href="{{ route('messages.show', $contact->user_id) }}" 
-                               class="flex items-center p-3 hover:bg-red-50 transition-colors"
-                               x-show="userSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(userSearch.toLowerCase())">
+                        @php
+                            $contactCollection = collect($contacts);
+                            $staff = $contactCollection->filter(fn($c) => strtolower($c->role) !== 'parent');
+                            $parents = $contactCollection->filter(fn($c) => strtolower($c->role) === 'parent');
+
+                            // Strict numerical grading weight to force correct display order
+                            $nm_getGradeWeight = function($name) {
+                                $lower = strtolower($name);
+                                if (str_contains($lower, 'nursery')) return 1;
+                                if (str_contains($lower, 'kinder')) return 2;
+                                if (str_contains($lower, 'prep')) return 3;
                                 
-                @php
-                    $photoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($contact->name) . '&background=f3f4f6&color=374151';
-                    if ($contact->profile_photo_path) {
-                        $photoUrl = str_starts_with($contact->profile_photo_path, 'profile_photos') 
-                            ? asset('storage/' . $contact->profile_photo_path) 
-                            : asset($contact->profile_photo_path);
-                    }
-                @endphp
-                <img src="{{ $photoUrl }}" class="w-10 h-10 rounded-full mr-3 border object-cover" alt="User">                                
-                                <div>
-                                    <h4 class="font-bold text-gray-800 text-sm leading-tight">{{ $contact->name }}</h4>
-                                    <span class="text-[10px] font-black uppercase tracking-wider {{ $contact->role === 'admin' ? 'text-blue-600' : ($contact->role === 'teacher' ? 'text-amber-600' : 'text-gray-500') }}">
-                                        {{ $contact->role }}
-                                    </span>
-                                </div>
-                            </a>
+                                preg_match('/(\d+)/', $lower, $matches);
+                                if (isset($matches[1])) {
+                                    return 10 + (int)$matches[1];
+                                }
+                                return 99; // Fallback
+                            };
+
+                            // Group parents by their school section
+                            $parentsBySection = $parents->groupBy(function($parent) {
+                                if ($parent->student && $parent->student->section) {
+                                    $grade = $parent->student->section->grade_level ?? '';
+                                    $secName = $parent->student->section->section_name ?? $parent->student->section->name ?? '';
+                                    return trim($grade . ' - ' . $secName, ' -');
+                                }
+                                if ($parent->section_id) {
+                                    $section = \App\Models\Section::where('section_id', $parent->section_id)->first();
+                                    if ($section) {
+                                        $grade = $section->grade_level ?? '';
+                                        $secName = $section->section_name ?? $section->name ?? '';
+                                        return trim($grade . ' - ' . $secName, ' -');
+                                    }
+                                }
+                                return 'Other Parents';
+                            })->sortBy(function($group, $sectionName) use ($nm_getGradeWeight) {
+                                return $nm_getGradeWeight($sectionName);
+                            });
+                        @endphp
+
+                        <!-- Staff & Admin Section -->
+                        @if($staff->count() > 0)
+                            @php
+                                // Sort staff: Admins first, then teachers ordered by grade level
+                                $sortedStaff = $staff->sort(function($a, $b) use ($nm_getGradeWeight) {
+                                    $roleA = strtolower($a->role);
+                                    $roleB = strtolower($b->role);
+
+                                    $isAdminA = in_array($roleA, ['admin', 'superadmin']);
+                                    $isAdminB = in_array($roleB, ['admin', 'superadmin']);
+
+                                    if ($isAdminA && !$isAdminB) return -1;
+                                    if (!$isAdminA && $isAdminB) return 1;
+
+                                    $getTeacherGradeWeight = function($teacher) use ($nm_getGradeWeight) {
+                                        $tSections = \App\Models\Section::where('teacher_id', $teacher->user_id)->get();
+                                        if ($tSections->count() > 0) {
+                                            $weights = [];
+                                            foreach($tSections as $tSec) {
+                                                $tGradeStr = trim(($tSec->grade_level ?? '') . ' ' . ($tSec->section_name ?? $tSec->name ?? ''));
+                                                $weights[] = $nm_getGradeWeight($tGradeStr);
+                                            }
+                                            return min($weights); 
+                                        }
+                                        return 999; 
+                                    };
+
+                                    return $getTeacherGradeWeight($a) <=> $getTeacherGradeWeight($b);
+                                });
+                            @endphp
+
+                            <div class="bg-gray-200/90 backdrop-blur-sm px-3 py-1.5 text-[10px] font-black text-gray-500 uppercase tracking-wider sticky top-0 z-10 shadow-sm" 
+                                x-show="userSearch === '' || {{ json_encode($sortedStaff->values()) }}.some(c => (c.name + ' ' + c.role).toLowerCase().includes(userSearch.toLowerCase()))">
+                                Staff & Admins
+                            </div>
+                            
+                            @foreach ($sortedStaff as $contact)
+                                @php
+                                    $advisoryText = '';
+                                    if (in_array(strtolower($contact->role), ['teacher', 'adviser', 'faculty', 'instructor'])) {
+                                        $teacherSections = \App\Models\Section::where('teacher_id', $contact->user_id)->get();
+                                        if ($teacherSections->count() > 0) {
+                                            $hasNKP = false;
+                                            $sectionStrings = [];
+                                            
+                                            foreach($teacherSections as $tSec) {
+                                                $tGradeStr = strtolower($tSec->grade_level ?? '');
+                                                if (str_contains($tGradeStr, 'nursery') || str_contains($tGradeStr, 'kinder') || str_contains($tGradeStr, 'prep')) {
+                                                    $hasNKP = true;
+                                                } else {
+                                                    $tGrade = $tSec->grade_level ?? '';
+                                                    $tSecName = $tSec->section_name ?? $tSec->name ?? '';
+                                                    $sectionStrings[] = trim($tGrade . ' - ' . $tSecName, ' -');
+                                                }
+                                            }
+                                            
+                                            $finalSections = [];
+                                            if ($hasNKP) $finalSections[] = 'NKP';
+                                            $finalSections = array_merge($finalSections, $sectionStrings);
+                                            
+                                            $advisoryText = 'Adviser: ' . implode(', ', $finalSections);
+                                        }
+                                    }
+                                @endphp
+                                <a href="{{ route('messages.show', $contact->user_id) }}" 
+                                   class="flex items-center p-3 hover:bg-red-50 transition-colors bg-white"
+                                   x-show="userSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' . $contact->role . ' ' . $advisoryText)) }}'.includes(userSearch.toLowerCase())">
+                                    
+                                    @php
+                                        $photoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($contact->name) . '&background=f3f4f6&color=374151';
+                                        if ($contact->profile_photo_path) {
+                                            $photoUrl = str_starts_with($contact->profile_photo_path, 'profile_photos') 
+                                                ? asset('storage/' . $contact->profile_photo_path) 
+                                                : asset($contact->profile_photo_path);
+                                        }
+                                    @endphp
+                                    <img src="{{ $photoUrl }}" class="w-10 h-10 rounded-full mr-3 border object-cover flex-shrink-0" alt="User">                                
+                                    
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="font-bold text-gray-800 text-sm leading-tight truncate">{{ $contact->name }}</h4>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[10px] font-black uppercase tracking-wider {{ in_array(strtolower($contact->role), ['admin', 'superadmin']) ? 'text-blue-600' : 'text-amber-600' }}">
+                                                {{ $contact->role }}
+                                            </span>
+                                            @if($advisoryText)
+                                                <span class="text-[10px] font-semibold text-gray-500 truncate" title="{{ $advisoryText }}">· {{ $advisoryText }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </a>
+                            @endforeach
+                        @endif
+
+                        <!-- Parents Grouped by School Section -->
+                        @foreach($parentsBySection as $sectionName => $sectionParents)
+                            <div class="bg-gray-200/90 backdrop-blur-sm px-3 py-1.5 text-[10px] font-black text-gray-500 uppercase tracking-wider sticky top-0 z-10 shadow-sm" 
+                                x-show="userSearch === '' || {{ json_encode($sectionParents->values()) }}.some(c => (c.name + ' ' + c.role).toLowerCase().includes(userSearch.toLowerCase()))">
+                                {{ $sectionName }}
+                            </div>
+                            
+                            @foreach ($sectionParents as $contact)
+                                <a href="{{ route('messages.show', $contact->user_id) }}" 
+                                   class="flex items-center p-3 hover:bg-red-50 transition-colors bg-white"
+                                   x-show="userSearch === '' || '{{ strtolower(addslashes($contact->name . ' ' .$contact->role)) }}'.includes(userSearch.toLowerCase())">
+                                    
+                                    @php
+                                        $photoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($contact->name) . '&background=f3f4f6&color=374151';
+                                        if ($contact->profile_photo_path) {
+                                            $photoUrl = str_starts_with($contact->profile_photo_path, 'profile_photos') 
+                                                ? asset('storage/' . $contact->profile_photo_path) 
+                                                : asset($contact->profile_photo_path);
+                                        }
+                                    @endphp
+                                    <img src="{{ $photoUrl }}" class="w-10 h-10 rounded-full mr-3 border object-cover flex-shrink-0" alt="User">
+                                    
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="font-bold text-gray-800 text-sm leading-tight truncate">{{ $contact->name }}</h4>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[10px] font-black uppercase tracking-wider text-green-600">
+                                                {{ $contact->role }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            @endforeach
                         @endforeach
                     @else
                         <div class="p-6 text-center text-gray-500 text-sm font-bold">
