@@ -955,7 +955,7 @@
                         });
 
                     window.Echo.private(`sidebar.${this.myId}`)
-                        .listen('RealtimeSidebarUpdate', (e) => {
+                        .listen('.RealtimeSidebarUpdate', (e) => {
                             const sidebarMessageElement = document.getElementById(`sidebar-text-${e.senderId}`);
                             const sidebarContainer = document.getElementById(`sidebar-item-${e.senderId}`);
                             

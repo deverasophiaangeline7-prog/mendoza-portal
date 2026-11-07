@@ -28,4 +28,9 @@ class RealtimeSidebarUpdate implements ShouldBroadcastNow
         // I-broadcast ito sa mismong private sidebar channel ng makakatanggap
         return new PrivateChannel('sidebar.' . $this->receiverId);
     }
+
+    public function broadcastAs()
+    {
+        return 'RealtimeSidebarUpdate';
+    }
 }

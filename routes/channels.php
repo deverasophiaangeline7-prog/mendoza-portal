@@ -9,3 +9,7 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 Broadcast::channel('chat.{receiverId}', function ($user, $receiverId) {
     return (int) $user->user_id === (int) $receiverId || (int) $user->user_id === (int) auth()->id();
 });
+
+Broadcast::channel('sidebar.{receiverId}', function ($user, $receiverId) {
+    return (int) $user->user_id === (int) $receiverId;
+});
