@@ -276,9 +276,19 @@
                 <div id="chat-messages" class="space-y-4 flex-1">
                     @if(isset($messages) && count($messages) > 0)
                         @php
-                            // NEW: Find the very last message sent by ME to prevent duplicate seen icons
-                            $lastMyMsg = collect($messages)->where('sender_id', auth()->id())->last();
-                            $lastMyMsgId = $lastMyMsg ? $lastMyMsg->id : null;
+                            // GROUP CHAT: Find the absolute latest message ID read by EACH user
+                            $latestReadPerUser = [];
+                            if (isset($selectedUser) && !is_null($selectedUser->custom_name)) {
+                                foreach($messages as $m) {
+                                    foreach($m->readers as $r) {
+                                        if (!isset($latestReadPerUser[$r->user_id]) || $m->id > $latestReadPerUser[$r->user_id]) {
+                                            $latestReadPerUser[$r->user_id] = $m->id;
+                                        }
+                                    }
+                                }
+                            }
+                            // 1-ON-1: Find the absolute last message in the entire conversation
+                            $absoluteLastMsgId = collect($messages)->last()->id ?? null;
                         @endphp
                         @foreach($messages as $message)
                             @if(str_contains($message->content, 'created the group:'))
@@ -333,25 +343,23 @@
                                             
                                             <!-- 👁️ MESSENGER-STYLE SEEN LOGIC -->
                                             <span class="js-realtime-seen-text flex items-center gap-0.5 mt-0.5">
-                                                @if($message->id === $lastMyMsgId)
-                                                    @if(!is_null($selectedUser->custom_name))
-                                                        <!-- GROUP CHAT: Loop sa lahat ng nag-seen ng message na ito -->
-                                                        @foreach($message->readers as $read)
-                                                            @if($read->user_id !== $message->sender_id)
-                                                                @php
-                                                                    $seenPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
-                                                                    if ($read->user->profile_photo_path) {
-                                                                        $seenPhoto = str_starts_with($read->user->profile_photo_path, 'profile_photos') ? asset('storage/' . $read->user->profile_photo_path) : asset($read->user->profile_photo_path);
-                                                                    }
-                                                                @endphp
-                                                                <img src="{{ $seenPhoto }}" title="Seen by {{ $read->user->name }} at {{ \Carbon\Carbon::parse($read->created_at)->format('M d, g:i A') }}" class="w-4 h-4 rounded-full border border-gray-300 ml-0.5 object-cover cursor-default shadow-sm hover:scale-125 transition-transform z-10">
-                                                            @endif
-                                                        @endforeach
-                                                    @else
-                                                        <!-- 1-ON-1: Normal text lang na 'Seen' -->
-                                                        @if($message->sender_id === auth()->user()->user_id && $message->is_read)
-                                                            <span class="font-bold ml-1 text-gray-500">· Seen</span>
+                                                @if(!is_null($selectedUser->custom_name))
+                                                    <!-- GROUP CHAT: Show avatar only if this is the absolute LAST message this specific person read -->
+                                                    @foreach($message->readers as $read)
+                                                        @if($read->user_id !== auth()->id() && isset($latestReadPerUser[$read->user_id]) && $latestReadPerUser[$read->user_id] === $message->id)
+                                                            @php
+                                                                $seenPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
+                                                                if ($read->user->profile_photo_path) {
+                                                                    $seenPhoto = str_starts_with($read->user->profile_photo_path, 'profile_photos') ? asset('storage/' . $read->user->profile_photo_path) : asset($read->user->profile_photo_path);
+                                                                }
+                                                            @endphp
+                                                            <img src="{{ $seenPhoto }}" title="Seen by {{ $read->user->name }} at {{ \Carbon\Carbon::parse($read->created_at)->format('M d, g:i A') }}" class="w-4 h-4 rounded-full border border-gray-300 ml-0.5 object-cover cursor-default shadow-sm hover:scale-125 transition-transform z-10">
                                                         @endif
+                                                    @endforeach
+                                                @else
+                                                    <!-- 1-ON-1: Only show 'Seen' if MY message is the absolute last message in the chat, and they read it -->
+                                                    @if($message->id === $absoluteLastMsgId && $message->sender_id === auth()->id() && $message->is_read)
+                                                        <span class="font-bold ml-1 text-gray-500">· Seen</span>
                                                     @endif
                                                 @endif
                                             </span>
