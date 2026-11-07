@@ -80,6 +80,7 @@ Route::middleware(['auth', \App\Http\Middleware\ForcePasswordChange::class])->gr
     Route::post('/messages/group/{id}/restore', [MessageController::class, 'restoreGroup'])->name('messages.group.restore'); // <-- NEW ARCHIVE ROUTE
     Route::delete('/messages/group/{id}/delete', [MessageController::class, 'deleteGroup'])->name('messages.group.delete');
     
+    Route::get('/messages/sidebar/poll', [MessageController::class, 'pollSidebar'])->name('messages.sidebar.poll');
     Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
 
@@ -88,8 +89,8 @@ Route::middleware(['auth', \App\Http\Middleware\ForcePasswordChange::class])->gr
     Route::get('/messages/{conversation_id}/poll', [MessageController::class, 'pollForMessages'])->name('messages.poll');
     // 2. Seen endpoint to dynamically mark unread messages from other user as read (DB update).
     Route::post('/messages/{conversation_id}/mark-as-read', [MessageController::class, 'markMessagesRead'])->name('messages.markAsRead');
-    // 3. Poll endpoint to fetch updated sidebar list.
-    Route::get('/messages/sidebar/poll', [MessageController::class, 'pollSidebar'])->name('messages.sidebar.poll');
+    
+    
 
     // 💡 ADD THE UNREAD COUNT JSON ROUTE HERE:
     Route::get('/messages/unread-count', function () {
