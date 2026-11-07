@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\SiteContent;
 use Illuminate\Support\Facades\Storage;
 
-class AdminSiteContentController extends App\Http\Controllers\Controller
+class AdminSiteContentController extends Controller
 {
     public function edit()
     {

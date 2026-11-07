@@ -471,8 +471,8 @@
     <!-- END: Term Schedule Modal -->
 
     <a href="{{ route('admin.content.edit') }}" 
-   class="inline-flex items-center px-5 py-3 bg-[#6D0101] border border-transparent rounded-md font-black text-xs text-white uppercase tracking-widest hover:bg-red-900 focus:outline-none transition ease-in-out duration-150 shadow-md">
-    <i class="fas fa-globe mr-2"></i> Edit Website Content
+   class="flex items-center justify-center w-full max-w-md mx-auto bg-[#6D0101] text-white font-black py-4 px-6 rounded-full shadow-[0px_6px_0px_0px_#3a0000] hover:bg-red-900 transition-all uppercase text-sm tracking-widest border-2 border-black active:translate-y-1 active:shadow-[0px_2px_0px_0px_#3a0000]">
+    <i class="fas fa-globe mr-2"></i> Edit Homepage
 </a>
 
 </div>
