@@ -1068,22 +1068,26 @@
                     const data = await response.json();
                     
                     let needsReload = false;
-                    let totalUnread = 0; // Para mabilang natin lahat
+                    let totalUnread = 0; 
 
-                    data.sidebar.forEach(chat => {
+                    // 1. Binaligtad ang array bago i-loop para laging nasa ibabaw ang pinakabago at hindi masira ang pagkakasunod-sunod
+                    const reversedSidebar = [...data.sidebar].reverse();
+
+                    reversedSidebar.forEach(chat => {
                         const sidebarItem = document.getElementById(`sidebar-item-${chat.user_id}`);
                         const sidebarText = document.getElementById(`sidebar-text-${chat.user_id}`);
                         const badgeContainer = document.getElementById(`sidebar-badge-${chat.user_id}`);
                         
                         if (sidebarItem && sidebarText) {
-                            if (sidebarText.innerText !== chat.latest_message) {
+                            // 2. Idinagdag ang .trim() para hindi malito sa spaces ang JS at hindi mag-glitch ang images!
+                            if (sidebarText.innerText.trim() !== chat.latest_message.trim()) {
                                 sidebarText.innerText = chat.latest_message;
                                 sidebarItem.parentNode.prepend(sidebarItem); 
                             }
                             
                             if (this.selectedUserId != chat.user_id) {
                                 if (chat.unread_count > 0) {
-                                    totalUnread += chat.unread_count; // I-add sa total
+                                    totalUnread += chat.unread_count; 
                                     
                                     sidebarItem.classList.add('bg-blue-50/70');
                                     sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
@@ -1110,7 +1114,6 @@
                         }
                     });
 
-                    // Update yung dilaw na badge sa Nav Bar!
                     const navBadge = document.getElementById('nav-chat-badge');
                     if (navBadge) {
                         if (totalUnread > 0) {

@@ -49,12 +49,12 @@
                         
                         <div class="mb-4">
                             <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">Mission Text</label>
-                            <textarea name="content[about][mission]" rows="3" class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">{{ optional($contents->get('about')?->where('key', 'mission')->first())->value }}</textarea>
+                            <textarea name="content[about][mission]" rows="3" class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">{{ optional($contents->get('about')?->where('key', 'mission')->first())->value ?? 'Mendoza Academy, Inc. aims to develop the inner potentials of individuals and mold them into young adults who are intellectually and academically competent appreciative of the cultural heritage of their environment, disciplined and determined to contribute their best effort as future leaders to the community with a well-bred conscience to distinguish what is right and wrong and their righteous commitment to the Lord Almighty.' }}</textarea>
                         </div>
 
                         <div class="mb-4">
                             <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">Vision Text</label>
-                            <textarea name="content[about][vision]" rows="3" class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">{{ optional($contents->get('about')?->where('key', 'vision')->first())->value }}</textarea>
+                            <textarea name="content[about][vision]" rows="3" class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">{{ optional($contents->get('about')?->where('key', 'vision')->first())->value ?? 'As a private institution, Mendoza Academy, Inc. perceives itself that through competency in imparting discipline, quality education, full understanding of the individual differences among learners and honing them for their total development to be physically, mentally, socially, emotionally and spiritually fit, is conclusive of producing holistic graduates who are God-fearing aware of their worth and dignity.' }}</textarea>
                         </div>
                     </div>
 
@@ -82,16 +82,22 @@
                         <h3 class="text-lg font-black text-[#6D0101] uppercase mb-4">4. FAQs Page</h3>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            @foreach([
-                                'q1' => 'Question 1 Heading', 'a1' => 'Answer 1 Text',
-                                'q2' => 'Question 2 Heading', 'a2' => 'Answer 2 Text',
-                                'q3' => 'Question 3 Heading', 'a3' => 'Answer 3 Text',
-                                'q4' => 'Question 4 Heading'
-                            ] as $key => $label)
-                                <div class="{{ str_starts_with($key, 'a') ? 'md:col-span-1' : '' }}">
-                                    <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">{{ $label }}</label>
+                            @php
+                                $faqDefaults = [
+                                    'q1' => 'What grade levels do you offer?',
+                                    'a1' => 'Pre-elementary (Nursery, Kinder, and Preparatory) to Elementary (Grades 1-6)',
+                                    'q2' => 'Where is the school located?',
+                                    'a2' => 'Blk. 9 Lot 88 Mapagkawanggawa St. Purok 4, Lupang Arenda, Sta. Ana, Taytay, Rizal',
+                                    'q3' => 'What are your office hours?',
+                                    'a3' => 'Monday to Friday (8:00AM - 5:00PM)',
+                                    'q4' => 'What are the admission requirements?'
+                                ];
+                            @endphp
+                            @foreach($faqDefaults as $key => $defaultVal)
+                                <div>
+                                    <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">{{ strtoupper($key) }} Text / Heading</label>
                                     <input type="text" name="content[faqs][{{ $key }}]" 
-                                        value="{{ optional($contents->get('faqs')?->where('key', $key)->first())->value }}" 
+                                        value="{{ optional($contents->get('faqs')?->where('key', $key)->first())->value ?? $defaultVal }}" 
                                         class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">
                                 </div>
                             @endforeach
@@ -105,7 +111,8 @@
                         <div class="mb-4">
                             <label class="block font-black text-xs text-gray-700 uppercase tracking-widest mb-1">Main Banner Heading HTML</label>
                             <input type="text" name="content[login][heading]" 
-                            value="{{ optional($contents->get('login')?->where('key', 'heading')->first())->value ?? 'STUDENT MONITORING<br><span class=\"text-white\">SYSTEM</span>' }}"                                class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">
+                                value="{{ optional($contents->get('login')?->where('key', 'heading')->first())->value ?? 'STUDENT MONITORING<br><span class=\"text-white\">SYSTEM</span>' }}" 
+                                class="w-full border-gray-300 focus:border-[#6D0101] focus:ring-[#6D0101] rounded-md shadow-sm">
                         </div>
                     </div>
 
