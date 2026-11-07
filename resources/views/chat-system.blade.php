@@ -147,8 +147,24 @@
                                 </span>
                             </div>
                             <p id="sidebar-text-{{ $user->user_id }}" class="text-xs block mt-0.5 {{ $hasUnread ? 'text-gray-900 font-semibold' : 'text-gray-500' }}" style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; max-height: 1.15em; line-height: 1.15em;">
-                                {{ $latestMsg ? $latestMsg->content : 'No messages yet...' }}
-                            </p>
+                            @if($latestMsg)
+                                @if($latestMsg->sender_id == auth()->id())
+                                    You: {{ $latestMsg->content }}
+                                @else
+                                    @php 
+                                        $msgSender = \App\Models\User::find($latestMsg->sender_id);
+                                        $prefixName = '';
+                                        if ($msgSender) {
+                                            // If they are an admin, say 'Admin:', otherwise use their first name
+                                            $prefixName = in_array(strtolower($msgSender->role), ['admin', 'superadmin']) ? 'Admin' : strtok($msgSender->name, " ");
+                                        }
+                                    @endphp
+                                    {{ $prefixName ? $prefixName . ': ' : '' }}{{ $latestMsg->content }}
+                                @endif
+                            @else
+                                No messages yet...
+                            @endif
+                        </p>
                         </div>
                     </div>
                 </a>
@@ -917,8 +933,26 @@
 
                         const sidebarText = document.getElementById(`sidebar-text-${this.selectedUserId}`);
                         const sidebarItem = document.getElementById(`sidebar-item-${this.selectedUserId}`);
+
                         if (sidebarText && newMessagesData.length > 0) {
-                            sidebarText.innerText = newMessagesData[newMessagesData.length - 1].content;
+                            const latestNewMsg = newMessagesData[newMessagesData.length - 1];
+                            let prefix = "";
+                            
+                            if (latestNewMsg.sender_id == this.myId) {
+                                prefix = "You: ";
+                            } else {
+                                // Determine role and name from the new message payload
+                                let sRole = latestNewMsg.sender_role || '{{ strtolower($selectedUser->role ?? "") }}';
+                                let sName = latestNewMsg.sender_name || this.selectedUserName;
+                                
+                                if (sRole === 'admin' || sRole === 'superadmin') {
+                                    prefix = "Admin: ";
+                                } else if (sName) {
+                                    prefix = sName.split(' ')[0] + ": "; // Grabs just their first name
+                                }
+                            }
+                            
+                            sidebarText.innerText = prefix + latestNewMsg.content;
                             sidebarText.classList.remove('text-gray-500');
                             sidebarText.classList.add('text-gray-900', 'font-semibold');
                         }
