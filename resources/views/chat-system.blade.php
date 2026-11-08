@@ -103,11 +103,9 @@
                         <button  @click="dropdownOpen = false; newMsgModal = true" class="w-full text-left block px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-100 border-b border-gray-100 transition-colors">
                             <i class="fa-solid fa-pen-to-square mr-2 text-[#6d0101]"></i> New Message
                         </button>
-                        @if(auth()->user()->role !== 'parent')
                         <button @click="dropdownOpen = false; createGroupModal = true" class="w-full text-left block px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-100 transition-colors">
                             <i class="fa-solid fa-users mr-2 text-[#6d0101]"></i> Create a group chat
                         </button>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -223,12 +221,18 @@
                         <h3 class="font-bold text-gray-800 flex items-center gap-2">
                             {{ $selectedUser->custom_name ?? $selectedUser->name }}
                         </h3>
-                        @if(isset($isGroupArchived) && $isGroupArchived)
-                            <span class="text-xs text-orange-500 flex items-center mt-0.5"><span class="w-2 h-2 bg-orange-500 rounded-full mr-1"></span> Archived Group</span>
-                        @elseif($selectedUser->isOnline())
-                            <span class="text-xs text-green-500 flex items-center mt-0.5"><span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Active Now</span>
+                        @if(!is_null($selectedUser->custom_name))
+                            @if(isset($isGroupArchived) && $isGroupArchived)
+                                <span class="text-xs text-orange-500 flex items-center mt-0.5"><span class="w-2 h-2 bg-orange-500 rounded-full mr-1"></span> Archived Group</span>
+                            @else
+                                <span class="text-xs text-blue-500 flex items-center mt-0.5"><span class="w-2 h-2 bg-blue-500 rounded-full mr-1"></span> Group Chat</span>
+                            @endif
                         @else
-                            <span class="text-xs text-gray-400 flex items-center mt-0.5"><span class="w-2 h-2 bg-gray-400 rounded-full mr-1"></span> Offline</span>
+                            @if($selectedUser->isOnline())
+                                <span class="text-xs text-green-500 flex items-center mt-0.5"><span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Active Now</span>
+                            @else
+                                <span class="text-xs text-gray-400 flex items-center mt-0.5"><span class="w-2 h-2 bg-gray-400 rounded-full mr-1"></span> Offline</span>
+                            @endif
                         @endif
                     </div>
                 </div>
