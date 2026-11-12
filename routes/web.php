@@ -166,6 +166,7 @@ Route::middleware(['auth', 'teacher'])->group(function () {
 Route::middleware(['auth', 'verified', 'role:admin,superadmin'])->group(function () {
     
     Route::get('/check-username', [App\Http\Controllers\Admin\UserController::class, 'checkUsername'])->name('check.username');
+    Route::get('/check-lrn', [App\Http\Controllers\Admin\UserController::class, 'checkLrn'])->name('check.lrn');
     Route::get('/admin/student-participation', [StudentCalendarController::class, 'index'])->name('admin.student.participation');
     Route::get('/students/view/{id}', [App\Http\Controllers\Admin\StudentController::class, 'showStudent'])->name('students.showStudent');
     Route::get('/archives/report-cards/{school_year_id}', [ReportCardController::class, 'archivedIndex'])->name('archives.reportcards');

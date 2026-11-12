@@ -26,11 +26,28 @@
                 
                 {{-- LEFT COLUMN --}}
                 <div class="space-y-5">
+                    <!-- LIVE LRN CHECKER FIELD -->
                     <div class="flex flex-col">
                         <div class="flex flex-col md:flex-row md:items-center">
                             <label class="w-full md:w-40 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0">LRN: <span class="text-red-600">*</span></label>
-                            <input type="text" name="lrn" class="form-input-pill @error('lrn') border-red-600 @enderror" value="{{ old('lrn') }}" required maxlength="12" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 12)">
+                            <input type="text" name="lrn" 
+                                   class="form-input-pill @error('lrn') border-red-600 @enderror" 
+                                   x-model="lrn"
+                                   @input.debounce.500ms="checkLrn"
+                                   required maxlength="12" inputmode="numeric" 
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 12)">
                         </div>
+                        
+                        <template x-if="isCheckingLrn">
+                            <span class="text-gray-500 text-sm ml-0 md:ml-40 mt-1 font-bold italic">Checking LRN...</span>
+                        </template>
+                        <template x-if="!isCheckingLrn && lrnTaken">
+                            <span class="text-red-600 text-sm ml-0 md:ml-40 mt-1 font-bold italic"><i class="fa-solid fa-circle-exclamation"></i> This LRN is already registered!</span>
+                        </template>
+                        <template x-if="!isCheckingLrn && lrn !== '' && !lrnTaken && lrn.length === 12">
+                            <span class="text-[#34C759] text-sm ml-0 md:ml-40 mt-1 font-bold italic"><i class="fa-solid fa-circle-check"></i> LRN is valid!</span>
+                        </template>
+
                         @error('lrn') <span class="text-red-600 text-sm ml-0 md:ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                     </div>
 
@@ -185,13 +202,14 @@
                         </div>
                     </div>
 
+                    {{-- UPDATED SUBMIT BUTTON (CHECKS BOTH USERNAME AND LRN) --}}
                     <div class="flex flex-col md:flex-row justify-end gap-4 md:gap-6 pt-10">
                         <a href="{{ route('account.management') }}" class="w-full md:w-auto justify-center bg-[#FF3B30] text-white px-10 py-3 md:py-2 rounded-xl font-bold text-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] border-2 border-black hover:brightness-90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center">
                             Cancel
                         </a>
                         <button type="submit" 
-                                :disabled="pw === '' || pw !== pw_confirm || strength() !== 'Strong' || usernameTaken || isChecking"
-                                :class="(pw === '' || pw !== pw_confirm || strength() !== 'Strong' || usernameTaken || isChecking) ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
+                                :disabled="pw === '' || pw !== pw_confirm || strength() !== 'Strong' || usernameTaken || isChecking || lrnTaken || isCheckingLrn"
+                                :class="(pw === '' || pw !== pw_confirm || strength() !== 'Strong' || usernameTaken || isChecking || lrnTaken || isCheckingLrn) ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
                                 class="w-full md:w-auto justify-center bg-[#34C759] text-white px-10 py-3 md:py-2 rounded-xl font-bold text-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] border-2 border-black transition-all">
                             Create
                         </button>
@@ -205,9 +223,17 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('parentForm', () => ({
+        // Username variables
         username: '{!! old('username') !!}',
         usernameTaken: false,
         isChecking: false,
+
+        // LRN variables
+        lrn: '{!! old('lrn') !!}',
+        lrnTaken: false,
+        isCheckingLrn: false,
+
+        // Password variables
         pw: '', 
         pw_confirm: '',
         strength() {
@@ -220,6 +246,8 @@ document.addEventListener('alpine:init', () => {
             if((l&&n)||(l&&s)||(n&&s)) return 'Mid';
             return 'Weak';
         },
+
+        // Username Check Function
         async checkUsername() {
             if (this.username.length < 3) {
                 this.usernameTaken = false;
@@ -238,6 +266,27 @@ document.addEventListener('alpine:init', () => {
             }
             
             this.isChecking = false;
+        },
+
+        // LRN Check Function (only checks if it's 12 digits)
+        async checkLrn() {
+            if (this.lrn.length < 12) {
+                this.lrnTaken = false;
+                this.isCheckingLrn = false;
+                return;
+            }
+            
+            this.isCheckingLrn = true;
+            
+            try {
+                let response = await fetch(`/check-lrn?lrn=${this.lrn}`);
+                let data = await response.json();
+                this.lrnTaken = data.taken;
+            } catch (error) {
+                console.error("Error checking LRN:", error);
+            }
+            
+            this.isCheckingLrn = false;
         }
     }));
 });

@@ -637,17 +637,30 @@ class UserController extends Controller
     }
 
     public function checkUsername(Request $request)
-{
-    $username = $request->query('username');
-    
-    if (!$username) {
-        return response()->json(['taken' => false]);
+    {
+        $username = $request->query('username');
+        
+        if (!$username) {
+            return response()->json(['taken' => false]);
+        }
+
+        $exists = \App\Models\User::where('username', $username)->exists();
+
+        return response()->json(['taken' => $exists]);
     }
 
-    $exists = \App\Models\User::where('username', $username)->exists();
+    public function checkLrn(Request $request)
+    {
+        $lrn =$request->query('lrn');
+        
+        if (!$lrn) {
+            return response()->json(['taken' => false]);
+        }
 
-    return response()->json(['taken' => $exists]);
-}
+        $exists = \App\Models\User::where('lrn',$lrn)->exists();
+
+        return response()->json(['taken' => $exists]);
+    }
 
     public function updateTerms(Request $request)
     {

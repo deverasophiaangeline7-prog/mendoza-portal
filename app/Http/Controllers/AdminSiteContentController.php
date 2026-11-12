@@ -24,12 +24,15 @@ class AdminSiteContentController extends Controller
         // Handle text fields
         if ($request->has('content')) {
             foreach ($request->content as $page => $items) {
-                $updatedPages[] = $page;
                 foreach ($items as $key => $value) {
-                    SiteContent::updateOrCreate(
+                    $record = SiteContent::updateOrCreate(
                         ['page' => $page, 'key' => $key],
                         ['value' => $value]
                     );
+
+                    if ($record->wasChanged() || $record->wasRecentlyCreated) {
+                            $updatedPages[] = $page;
+                        }
                 }
             }
         }
@@ -37,13 +40,16 @@ class AdminSiteContentController extends Controller
         // Handle image file uploads (sliders, backgrounds)
         if ($request->hasFile('images')) {
             foreach ($request->images as $page => $files) {
-                $updatedPages[] = $page;
                 foreach ($files as $key => $file) {
                     $path = $file->store('images', 'public');
-                    SiteContent::updateOrCreate(
+                    $record = SiteContent::updateOrCreate(
                         ['page' => $page, 'key' => $key],
                         ['value' => $path]
                     );
+
+                    if ($record->wasChanged() || $record->wasRecentlyCreated) {
+                        $updatedPages[] = $page;
+                    }
                 }
             }
         }
