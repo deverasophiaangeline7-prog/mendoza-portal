@@ -105,7 +105,7 @@
         </nav>
 
         <!-- unique content -->
-        <main class="flex-grow flex flex-col relative z-10">
+        <main id="dynamic-public-content" class="flex-grow flex flex-col relative z-10">
             {{ $slot }}
         </main>
 
@@ -127,6 +127,34 @@
                 </div>
             </div>
         </footer>
+        <script>
+                setInterval(function() {
+                    fetch(window.location.href)
+                        .then(response => response.text())
+                        .then(html => {
+                            let parser = new DOMParser();
+                            let doc = parser.parseFromString(html, 'text/html');
+                            
+                            let newMain = doc.querySelector('#dynamic-public-content');
+                            let currentMain = document.querySelector('#dynamic-public-content');
 
+                            if (newMain && currentMain) {
+                                if (newMain.innerHTML !== currentMain.innerHTML) {
+                                    currentMain.innerHTML = newMain.innerHTML;
+                                    
+                                    // Rerun scripts inside the updated content (para sa image slider)
+                                    let scripts = currentMain.querySelectorAll('script');
+                                    scripts.forEach(oldScript => {
+                                        let newScript = document.createElement('script');
+                                        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                                        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                                    });
+                                }
+                            }
+                        })
+                        .catch(error => console.error('Error fetching updates:', error));
+                }, 1000);
+            </script>
     </body>
 </html>

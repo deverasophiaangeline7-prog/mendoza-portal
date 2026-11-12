@@ -51,15 +51,16 @@ class AdminSiteContentController extends Controller
         // --- ACTIVITY LOGGING SCRIPT ---
     if (!empty($updatedPages)) {
         $uniquePages = array_unique($updatedPages);
-        $pagesString = implode(', ', $uniquePages);
-
+        
+        foreach ($uniquePages as $pageName) {
         AuditLog::create([
             'user_id' => Auth::id(), 
             'action' => 'Update Content',
-            'description' => "Updated the system content for page(s): " . $pagesString
+            'description' => "Updated the system content for page: " . ucfirst($pageName)
         ]);
     }
 
         return redirect()->back()->with('status', 'Website content updated successfully!');
     }
+}
 }

@@ -636,6 +636,19 @@ class UserController extends Controller
         return back()->with('success', ucfirst(implode(' and ', $actions)) . ' successfully updated.');
     }
 
+    public function checkUsername(Request $request)
+{
+    $username = $request->query('username');
+    
+    if (!$username) {
+        return response()->json(['taken' => false]);
+    }
+
+    $exists = \App\Models\User::where('username', $username)->exists();
+
+    return response()->json(['taken' => $exists]);
+}
+
     public function updateTerms(Request $request)
     {
         // Validate the dates

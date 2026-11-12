@@ -22,21 +22,7 @@
 
         <form action="{{ route('account.parent.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-6" 
-                 x-data="{ 
-                     pw: '', 
-                     pw_confirm: '',
-                     strength() {
-                         if(!this.pw) return '';
-                         if(this.pw.length < 8) return 'Weak';
-                         let l = /[a-zA-Z]/.test(this.pw);
-                         let n = /\d/.test(this.pw);
-                         let s = /[^a-zA-Z0-9]/.test(this.pw);
-                         if(l && n && s) return 'Strong';
-                         if((l&&n)||(l&&s)||(n&&s)) return 'Mid';
-                         return 'Weak';
-                     }
-                 }">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-6" x-data="parentForm()">
                 
                 {{-- LEFT COLUMN --}}
                 <div class="space-y-5">
@@ -135,11 +121,27 @@
                         @error('section_id') <span class="text-red-600 text-sm ml-0 md:ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                     </div>
 
+                    <!-- LIVE USERNAME CHECKER FIELD -->
                     <div class="flex flex-col">
                         <div class="flex flex-col md:flex-row md:items-center">
                             <label class="w-full md:w-40 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0">Username: <span class="text-red-600">*</span></label>
-                            <input type="text" name="username" class="form-input-pill @error('username') border-red-600 @enderror" value="{{ old('username') }}" required>
+                            <input type="text" name="username" 
+                                   class="form-input-pill @error('username') border-red-600 @enderror" 
+                                   x-model="username" 
+                                   @input.debounce.500ms="checkUsername"
+                                   required>
                         </div>
+
+                        <template x-if="isChecking">
+                            <span class="text-gray-500 text-sm ml-0 md:ml-40 mt-1 font-bold italic">Checking...</span>
+                        </template>
+                        <template x-if="!isChecking && usernameTaken">
+                            <span class="text-red-600 text-sm ml-0 md:ml-40 mt-1 font-bold italic"><i class="fa-solid fa-circle-exclamation"></i> Username is already taken!</span>
+                        </template>
+                        <template x-if="!isChecking && username !== '' && !usernameTaken && username.length >= 3">
+                            <span class="text-[#34C759] text-sm ml-0 md:ml-40 mt-1 font-bold italic"><i class="fa-solid fa-circle-check"></i> Username is available!</span>
+                        </template>
+
                         @error('username') <span class="text-red-600 text-sm ml-0 md:ml-40 mt-1 font-bold italic">{{ $message }}</span> @enderror
                     </div>
 
@@ -188,8 +190,8 @@
                             Cancel
                         </a>
                         <button type="submit" 
-                                :disabled="pw === '' || pw !== pw_confirm || strength() !== 'Strong'"
-                                :class="(pw === '' || pw !== pw_confirm || strength() !== 'Strong') ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
+                                :disabled="pw === '' || pw !== pw_confirm || strength() !== 'Strong' || usernameTaken || isChecking"
+                                :class="(pw === '' || pw !== pw_confirm || strength() !== 'Strong' || usernameTaken || isChecking) ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
                                 class="w-full md:w-auto justify-center bg-[#34C759] text-white px-10 py-3 md:py-2 rounded-xl font-bold text-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] border-2 border-black transition-all">
                             Create
                         </button>
@@ -199,4 +201,45 @@
         </form>
     </div>
 </main>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('parentForm', () => ({
+        username: '{!! old('username') !!}',
+        usernameTaken: false,
+        isChecking: false,
+        pw: '', 
+        pw_confirm: '',
+        strength() {
+            if(!this.pw) return '';
+            if(this.pw.length < 8) return 'Weak';
+            let l = /[a-zA-Z]/.test(this.pw);
+            let n = /\d/.test(this.pw);
+            let s = /[^a-zA-Z0-9]/.test(this.pw);
+            if(l && n && s) return 'Strong';
+            if((l&&n)||(l&&s)||(n&&s)) return 'Mid';
+            return 'Weak';
+        },
+        async checkUsername() {
+            if (this.username.length < 3) {
+                this.usernameTaken = false;
+                this.isChecking = false;
+                return;
+            }
+            
+            this.isChecking = true;
+            
+            try {
+                let response = await fetch(`/check-username?username=${this.username}`);
+                let data = await response.json();
+                this.usernameTaken = data.taken;
+            } catch (error) {
+                console.error("Error checking username:", error);
+            }
+            
+            this.isChecking = false;
+        }
+    }));
+});
+</script>
 @endsection
