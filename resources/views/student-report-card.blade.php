@@ -106,11 +106,11 @@
                 </div>
                 @endif
 
+                @if(auth()->user()->role !== 'parent')
                 <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-lg border-[3px] border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 transition-all">
                     <i class="fa-solid fa-print mr-1"></i> PRINT
                 </button>
 
-                @if(auth()->user()->role !== 'parent')
                 <a href="javascript:history.back()" class="text-red-600 text-5xl hover:scale-110 transition leading-none ml-2">
                     <i class="fa-solid fa-circle-left"></i>
                 </a>
