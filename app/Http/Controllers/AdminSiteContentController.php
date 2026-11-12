@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\SiteContent;
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class AdminSiteContentController extends Controller
 {
@@ -17,9 +19,12 @@ class AdminSiteContentController extends Controller
 
     public function update(Request $request)
     {
+        $updatedPages = [];
+
         // Handle text fields
         if ($request->has('content')) {
             foreach ($request->content as $page => $items) {
+                $updatedPages[] = $page;
                 foreach ($items as $key => $value) {
                     SiteContent::updateOrCreate(
                         ['page' => $page, 'key' => $key],
@@ -32,6 +37,7 @@ class AdminSiteContentController extends Controller
         // Handle image file uploads (sliders, backgrounds)
         if ($request->hasFile('images')) {
             foreach ($request->images as $page => $files) {
+                $updatedPages[] = $page;
                 foreach ($files as $key => $file) {
                     $path = $file->store('images', 'public');
                     SiteContent::updateOrCreate(
@@ -41,6 +47,18 @@ class AdminSiteContentController extends Controller
                 }
             }
         }
+
+        // --- ACTIVITY LOGGING SCRIPT ---
+    if (!empty($updatedPages)) {
+        $uniquePages = array_unique($updatedPages);
+        $pagesString = implode(', ', $uniquePages);
+
+        AuditLog::create([
+            'user_id' => Auth::id(), 
+            'action' => 'Update Content',
+            'description' => "Updated the system content for page(s): " . $pagesString
+        ]);
+    }
 
         return redirect()->back()->with('status', 'Website content updated successfully!');
     }

@@ -96,11 +96,17 @@
                         <label class="block text-sm font-black text-gray-700 mb-2 uppercase tracking-wider">Confirm New Password</label>
                         <div class="relative">
                             <input :type="show3 ? 'text' : 'password'" name="password_confirmation" required 
-                                class="w-full px-4 py-3 border-2 border-black rounded-xl focus:bg-blue-50 focus:outline-none transition-colors font-bold text-lg pr-12">
+                                x-model="password_confirmation"
+                                :class="showMismatchError ? 'border-red-500' : 'border-black'"
+                                class="w-full px-4 py-3 border-2 rounded-xl focus:bg-blue-50 focus:outline-none transition-colors font-bold text-lg pr-12">
                             <button type="button" @click="show3 = !show3" class="absolute inset-y-0 right-0 px-4 flex items-center text-gray-500 hover:text-black focus:outline-none">
                                 <i class="fa-solid text-xl" :class="show3 ? 'fa-eye-slash' : 'fa-eye'"></i>
                             </button>
                         </div>
+                        <!-- Mismatch Warning -->
+                        <p x-show="showMismatchError" x-cloak class="text-red-600 text-xs font-bold mt-2 uppercase tracking-wider">
+                            <i class="fa-solid fa-circle-xmark mr-1"></i> Passwords do not match
+                        </p>
                     </div>
 
                     <!-- Actions -->
@@ -112,7 +118,10 @@
                         </a>
                         
                         <!-- Submit Button -->
-                        <button type="submit" class="w-2/3 bg-[#86efac] text-black font-black uppercase tracking-wider py-3 rounded-xl border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] transition-all flex items-center justify-center">
+                        <button type="submit" 
+                            :disabled="showMismatchError || password === ''"
+                            :class="(showMismatchError || password === '') ? 'opacity-50 cursor-not-allowed' : 'hover:translate-y-1 hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)]'"
+                            class="w-2/3 bg-[#86efac] text-black font-black uppercase tracking-wider py-3 rounded-xl border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] transition-all flex items-center justify-center">
                             <i class="fa-solid fa-check mr-2"></i> Update
                         </button>
                     </div>
@@ -131,6 +140,15 @@
                 return {
                     show1: false, show2: false, show3: false,
                     password: '',
+                    
+                    /* --- ADD THIS NEW PART --- */
+                    password_confirmation: '',
+                    
+                    get showMismatchError() {
+                        return this.password_confirmation.length > 0 && this.password !== this.password_confirmation;
+                    },
+                    /* ------------------------- */
+
                     strength: 0,
                     strengthText: 'NONE',
                     checkStrength() {

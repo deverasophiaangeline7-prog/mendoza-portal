@@ -43,10 +43,12 @@
             
             <div class="flex items-center gap-4 mt-4 md:mt-0">
                 {{-- BATCH PRINT BUTTON --}}
-                <a href="{{ route('reportcard.batch-print', $section_id) }}" target="_blank" 
-                   class="bg-blue-600 text-white font-black px-6 py-2 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all uppercase tracking-wider text-sm flex items-center">
-                    <i class="fa-solid fa-print mr-2"></i> Print All
-                </a>
+                @if(auth()->user()->role !== 'parent')
+                    <a href="{{ route('reportcard.batch-print', $section_id) }}" target="_blank" 
+                       class="bg-blue-600 text-white font-black px-6 py-2 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all uppercase tracking-wider text-sm flex items-center">
+                        <i class="fa-solid fa-print mr-2"></i> Print All
+                    </a>
+                @endif
 
                 {{-- BACK BUTTON --}}
                 @if($showBackButton)
