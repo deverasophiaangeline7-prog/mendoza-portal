@@ -651,13 +651,14 @@ class UserController extends Controller
 
     public function checkLrn(Request $request)
     {
-        $lrn =$request->query('lrn');
+        $lrn = $request->query('lrn');
         
         if (!$lrn) {
             return response()->json(['taken' => false]);
         }
 
-        $exists = \App\Models\User::where('lrn',$lrn)->exists();
+        // UPDATED: Now checks the 'students' table just like your validation rules do!
+        $exists = \App\Models\Student::where('lrn', $lrn)->exists();
 
         return response()->json(['taken' => $exists]);
     }
