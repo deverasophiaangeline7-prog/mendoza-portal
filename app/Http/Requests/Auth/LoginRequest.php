@@ -35,32 +35,33 @@ class LoginRequest extends FormRequest
     }
 
     public function authenticate(): void
-{
-    $this->ensureIsNotRateLimited();
+    {
+        $this->ensureIsNotRateLimited();
 
-    $loginId = $this->input('login_id');
-    $password = $this->input('password');
+        $loginId = $this->input('login_id');
+        $password = $this->input('password');
 
-    // 1. Look for a user where the input matches EITHER their username OR their email
-    $user = \App\Models\User::where('username', $loginId)
-        ->orWhere('email', $loginId)
-        ->first();
+        // 1. Look for a user where the input matches EITHER their username, email, OR LRN
+        $user = \App\Models\User::where('username', $loginId)
+            ->orWhere('email', $loginId)
+            ->orWhere('lrn', $loginId)
+            ->first();
 
-    // 2. Check if the user exists and their password is correct
-    if ($user && \Illuminate\Support\Facades\Hash::check($password, $user->password)) {
-        // Manually log the user in
-        \Illuminate\Support\Facades\Auth::login($user, $this->boolean('remember'));
-        \Illuminate\Support\Facades\RateLimiter::clear($this->throttleKey());
-        return;
+        // 2. Check if the user exists and their password is correct
+        if ($user && \Illuminate\Support\Facades\Hash::check($password, $user->password)) {
+            // Manually log the user in
+            \Illuminate\Support\Facades\Auth::login($user, $this->boolean('remember'));
+            \Illuminate\Support\Facades\RateLimiter::clear($this->throttleKey());
+            return;
+        }
+
+        // 3. If authentication fails, trigger rate limiting and show error
+        \Illuminate\Support\Facades\RateLimiter::hit($this->throttleKey());
+
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            'login_id' => trans('auth.failed'),
+        ]);
     }
-
-    // 3. If authentication fails, trigger rate limiting and show error
-    \Illuminate\Support\Facades\RateLimiter::hit($this->throttleKey());
-
-    throw \Illuminate\Validation\ValidationException::withMessages([
-        'login_id' => trans('auth.failed'),
-    ]);
-}
 
     /**
      * Ensure the login request is not rate limited.

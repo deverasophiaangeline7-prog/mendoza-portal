@@ -232,240 +232,228 @@ class MessageController extends Controller
         // ==========================================
         $apiKey = env('GEMINI_API_KEY');
         
-        $receiver = User::find($request->receiver_id);
-
-        $aiResponded = false; // Add flag to track AI response
-
-        $senderRole = strtolower(Auth::user()->role);
+       $senderRole = strtolower(Auth::user()->role);
         $receiverRole = $receiver ? strtolower($receiver->role) : '';
-
-        // AI triggers if ANYONE messages the Admin, OR if a PARENT messages a TEACHER
         $teacherRoles = ['teacher', 'adviser', 'faculty', 'instructor'];
-        $aiShouldRespond = (in_array($receiverRole, ['admin', 'superadmin'])) || ($senderRole === 'parent' && in_array($receiverRole, $teacherRoles));
-
-        // STRICT CHECK: Run AI only if conditions are met AND it is NOT a Group Chat
-        $isReceiverGroup = \Illuminate\Support\Str::startsWith($receiver->username, ['group_', 'gc_section_']);
         
-        if ($apiKey && $aiShouldRespond && $receiver && !$isReceiverGroup) {
-            
-            $upcomingEvents = SchoolCalendar::orderBy('start_date', 'asc')->limit(10)->get();
-            $eventsKnowledge = "";
-            
-            if ($upcomingEvents->count() > 0) {
-                foreach ($upcomingEvents as $event) {
-                    $timeStr = "";
-                    if (!empty($event->start_time) && !empty($event->end_time)) {
-                        $timeStr = " from {$event->start_time} to {$event->end_time}";
-                    } elseif (!empty($event->time)) {
-                        $timeStr = " at {$event->time}";
-                    }
-                    $descStr = !empty($event->description) ? ". Note: {$event->description}" : "";
-                    $eventsKnowledge .= "- " . $event->event_title . " on " . $event->start_date . $timeStr . $descStr . "\n";
-                }
-            } else {
-                $eventsKnowledge = "- No upcoming events scheduled.\n";
-            }
-
-            $history = Message::where(function($query) use ($request) {
-                $query->where('sender_id', Auth::id())->where('receiver_id', $request->receiver_id);
-            })->orWhere(function($query) use ($request) {
-                $query->where('sender_id', $request->receiver_id)->where('receiver_id', Auth::id());
-            })
-            ->where('id', '!=', $currentMessage->id)
-            ->orderBy('created_at', 'desc')
-            ->limit(4)
-            ->get()
-            ->reverse();
-
-            $historyContext = "";
-            foreach ($history as $msg) {
-                $sender = ($msg->sender_id == Auth::id()) ? "User" : "AI";
-                $cleanText = str_replace("🤖 AI Assistant: ", "", $msg->content);
-                $historyContext .= "{$sender}: {$cleanText}\n";
-            }
-            
-            if (empty($historyContext)) $historyContext = "No previous messages.";
-            
-            $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
-            $termInfo = "- Term schedules are not set yet.\n";
-            $lastDayOfSchool = "TBA";
-            
-            if ($activeYear) {
-                $t1s = $activeYear->term1_start ? Carbon::parse($activeYear->term1_start)->format('F d, Y') : 'TBA';
-                $t1e = $activeYear->term1_end ? Carbon::parse($activeYear->term1_end)->format('F d, Y') : 'TBA';
-                $t2s = $activeYear->term2_start ? Carbon::parse($activeYear->term2_start)->format('F d, Y') : 'TBA';
-                $t2e = $activeYear->term2_end ? Carbon::parse($activeYear->term2_end)->format('F d, Y') : 'TBA';
-                $t3s = $activeYear->term3_start ? Carbon::parse($activeYear->term3_start)->format('F d, Y') : 'TBA';
-                $t3e = $activeYear->term3_end ? Carbon::parse($activeYear->term3_end)->format('F d, Y') : 'TBA';
-                
-                $termInfo = "- Term 1: {$t1s} to {$t1e}.\n" .
-                            "- Term 2: {$t2s} to {$t2e}.\n" .
-                            "- Term 3: {$t3s} to {$t3e}.\n";
-                $lastDayOfSchool = $t3e;
-            }
-
-            $currentDateString = \Carbon\Carbon::now('Asia/Manila')->format('F j, Y');
-
-            // ==========================================
-            // DYNAMIC AI PROMPTS BASED ON RECEIVER ROLE
-            // ==========================================
-
-            if (in_array($receiverRole, ['admin', 'superadmin'])) {
-           
-                // 🛑 ADMIN PROMPT: ONLY handles Passwords and Account Settings
-                $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc.
-                IMPORTANT: You are currently responding on behalf of the Admin account.
-                TODAY'S CURRENT DATE IS: {$currentDateString}. You MUST use this date as your reference point.
-                
-                Guidelines:
-                - ALWAYS start your response with a warm, friendly, and welcoming greeting in the appropriate language (e.g., 'Hello there! 👋', 'Magandang araw po!').
-                - Maintain a polite, professional, and helpful tone.
-                - ALLOWED LANGUAGES: You may ONLY communicate in English or Tagalog (Filipino).
-                - Answer using ONLY the provided facts below. Do not invent or assume any other information.
-                - BE FORGIVING: Highly tolerate typos, incorrect spelling (e.g., 'ngayung', 'sked'), bad grammar, and very short phrases. Automatically translate Tagalog questions in your head to match the English cheat sheet facts below.
-
-                *** STRICT 'IGNORE' RULES (CRITICAL) ***
-                You MUST output exactly the word IGNORE (and nothing else) if the user's message is NOT about passwords or account settings. 
-                If they ask about tuition, events, grades, schedules, term dates, specific student concerns, or just say 'hello', 'hi', 'good morning', or 'thanks', you MUST output IGNORE.
-
-                *** ADMIN CHEAT SHEET ***
-                [PREVIOUS CHAT HISTORY FOR CONTEXT]
-                {$historyContext}
-
-                [ACCOUNT & SETTINGS]
-                - Passwords (reset, change, forgot): Users can change it in 'Student Information' or use the 'Forgot Password' link on the login page (which requires an email code for security). Alternatively, the Admin can change the password for them.
-                - Email Address: The email address is fixed and cannot be changed.";
-                
-            } else {
-                // 🏫 TEACHER PROMPT: Handles General School Facts (Tuition, Calendar, Terms)
-                $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc.
-                IMPORTANT: You are currently responding on behalf of a Teacher account.
-                TODAY'S CURRENT DATE IS: {$currentDateString}. You MUST use this date as your reference point.
-                
-                Guidelines:
-                - ALWAYS start your response with a warm, friendly, and welcoming greeting in the appropriate language (e.g., 'Hello there! 👋', 'Magandang araw po!').
-                - Maintain a polite, professional, and helpful tone.
-                - ALLOWED LANGUAGES: You may ONLY communicate in English or Tagalog (Filipino).
-                - Answer using ONLY the provided facts below. Do not invent or assume any other information.
-                - Convert dates to friendly natural language (e.g., 'September 3, 2026').
-                - BE FORGIVING: Highly tolerate typos, incorrect spelling (e.g., 'ngayung', 'sked'), bad grammar, and translate Tagalog questions automatically.
-                - TIMELINE LOGIC: Even if a term or event has already passed, you MUST answer the question accurately (e.g., 'Term 1 already ended on July 31'). DO NOT ignore questions about past events.
-
-                *** STRICT 'IGNORE' RULES (CRITICAL) ***
-                You MUST output exactly the word HANDOFF (and nothing else) if the user's message falls into ANY of these categories:
-                1. Personal, complex, or specific student concerns (e.g., 'I have a concern about my child', 'Can you check my child's grade?').
-                2. Greetings, small talk, or random nonsense without a specific question.
-                3. Any language other than English or Tagalog.
-                4. Any topic completely unrelated to the school facts provided below.
-                5. Passwords or account settings (ONLY the Admin handles this, so ignore it here).
-                (CRITICAL EXCEPTION: DO NOT output HANDOFF if the user asks about tuition, fees, term dates, calendars, or events. You must answer these).
-
-                *** TEACHER CHEAT SHEET ***
-                [PREVIOUS CHAT HISTORY FOR CONTEXT]
-                {$historyContext}
-
-                [TUITION & FEES]
-                - Tuition is 1,000 PHP per month. Miscellaneous fee is 3,500 PHP.
-                - Tuition fee payment schedule: Every second Friday of the month.
-
-                [SCHOOL YEAR & TERMS]
-                {$termInfo}
-                - Last day of classes (School year ends): {$lastDayOfSchool}.
-
-                [GRADES RELEASE & DEADLINES]
-                - Teachers receive an automated system alert exactly 1 week before the end of each term to remind them to finalize grades.
-                - Grades are released via the Report Card module 1 to 2 weeks after the end of each Term.
-
-                [UPCOMING CALENDAR EVENTS]
-                {$eventsKnowledge}";
-            }
-
-            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' . $apiKey;
-            
-            $data = [
-                "systemInstruction" => ["parts" => [["text" => $systemPrompt]]],
-                "contents" => [["parts" => [["text" => $request->message]]]],
-                "generationConfig" => [
-                    "temperature" => 0.1 // Locks the AI down so it strictly obeys the IGNORE rules
-                ],
-                "safetySettings" => [
-                    ["category" => "HARM_CATEGORY_HARASSMENT", "threshold" => "BLOCK_NONE"],
-                    ["category" => "HARM_CATEGORY_HATE_SPEECH", "threshold" => "BLOCK_NONE"],
-                    ["category" => "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold" => "BLOCK_NONE"],
-                    ["category" => "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold" => "BLOCK_NONE"]
-                ]
-            ];
-
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30); // INCREASED TO 30 SECONDS to prevent silent timeout drops
-            
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            
-            $aiText = "IGNORE";
-            
-            // NEW: Catch specific API throttling and timeout errors so they print to the screen!
-            if ($response === false) {
-                $aiText = "API ERROR: Request timed out. Google's servers took too long to respond.";
-            } elseif ($httpCode === 429) {
-                $aiText = "API ERROR: Google API Rate Limit Reached. You are sending messages too fast! Please wait a minute.";
-            } else {
-                $responseData = json_decode($response);
-                
-                if (isset($responseData->candidates[0]->content->parts[0]->text)) {
-                    $aiText = trim($responseData->candidates[0]->content->parts[0]->text);
-                } elseif (isset($responseData->error)) {
-                    $aiText = "API ERROR: " . $responseData->error->message;
-                }
-            }
-
-            $finalAiCheck = trim(strtoupper($aiText));
-
-            if ($finalAiCheck === 'IGNORE') {
-                // Do absolutely nothing
-            } elseif ($finalAiCheck === 'HANDOFF') {
-                $aiResponded = true; // Mark that AI responded
-
-                $handoffMessage = "Hi! I'm the automated assistant. 
-                Your question requires the teacher's personal attention, 
-                so I'll stop answering now and leave your message for them to read. 
-                They will reply as soon as they are available!";
-
-                Message::create([
-                    'sender_id' => $request->receiver_id,
-                    'receiver_id' => Auth::id(),          
-                    'content' => "🤖 AI Assistant: " . $handoffMessage,
-                    'is_read' => false,
-                ]);
-            } else {
-                $aiResponded = true;
-
-                Message::create([
-                    'sender_id' => $request->receiver_id,
-                    'receiver_id' => Auth::id(),          
-                    'content' => "🤖 AI Assistant: " . $aiText,
-                    'is_read' => false,
-                ]);
-            }
-        }
+        $aiShouldRespond = (in_array($receiverRole, ['admin', 'superadmin'])) || ($senderRole === 'parent' && in_array($receiverRole, $teacherRoles));
+        $triggerAi = env('GEMINI_API_KEY') && $aiShouldRespond && $receiver && !$isReceiverGroup;
 
         // PATCHED: Correctly handle JSON responses for dynamic send flow
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'current_msg' => $currentMessage, // Send back created message data
-                'ai_responded' => $aiResponded,   // Tell frontend if AI answered
+                'current_msg' => $currentMessage,
+                'trigger_ai' => $triggerAi, 
             ]);
         }
         
         return redirect()->route('messages.show', ['id' => $request->receiver_id]);
+    }
+
+    public function triggerAi(Request $request, $messageId)
+    {
+        $currentMessage = Message::find($messageId);
+        if (!$currentMessage) return response()->json(['error' => 'Message not found']);
+
+        $apiKey = env('GEMINI_API_KEY');
+        $receiver = User::find($currentMessage->receiver_id);
+        $receiverRole = strtolower($receiver->role);
+
+        $upcomingEvents = SchoolCalendar::orderBy('start_date', 'asc')->limit(10)->get();
+        $eventsKnowledge = "";
+        
+        if ($upcomingEvents->count() > 0) {
+            foreach ($upcomingEvents as $event) {
+                $timeStr = "";
+                if (!empty($event->start_time) && !empty($event->end_time)) {
+                    $timeStr = " from {$event->start_time} to {$event->end_time}";
+                } elseif (!empty($event->time)) {
+                    $timeStr = " at {$event->time}";
+                }
+                $descStr = !empty($event->description) ? ". Note: {$event->description}" : "";
+                $eventsKnowledge .= "- " . $event->event_title . " on " . $event->start_date . $timeStr . $descStr . "\n";
+            }
+        } else {
+            $eventsKnowledge = "- No upcoming events scheduled.\n";
+        }
+
+        $history = Message::where(function($query) use ($currentMessage) {
+            $query->where('sender_id', $currentMessage->sender_id)->where('receiver_id', $currentMessage->receiver_id);
+        })->orWhere(function($query) use ($currentMessage) {
+            $query->where('sender_id', $currentMessage->receiver_id)->where('receiver_id', $currentMessage->sender_id);
+        })
+        ->where('id', '!=', $currentMessage->id)
+        ->orderBy('created_at', 'desc')
+        ->limit(4)->get()->reverse();
+
+        $historyContext = "";
+        foreach ($history as $msg) {
+            $sender = ($msg->sender_id == $currentMessage->sender_id) ? "User" : "AI";
+            $cleanText = str_replace("🤖 AI Assistant: ", "", $msg->content);
+            $historyContext .= "{$sender}: {$cleanText}\n";
+        }
+        
+        if (empty($historyContext)) $historyContext = "No previous messages.";
+        
+        $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
+        $termInfo = "- Term schedules are not set yet.\n";
+        $lastDayOfSchool = "TBA";
+        
+        if ($activeYear) {
+            $t1s = $activeYear->term1_start ? Carbon::parse($activeYear->term1_start)->format('F d, Y') : 'TBA';
+            $t1e = $activeYear->term1_end ? Carbon::parse($activeYear->term1_end)->format('F d, Y') : 'TBA';
+            $t2s = $activeYear->term2_start ? Carbon::parse($activeYear->term2_start)->format('F d, Y') : 'TBA';
+            $t2e = $activeYear->term2_end ? Carbon::parse($activeYear->term2_end)->format('F d, Y') : 'TBA';
+            $t3s = $activeYear->term3_start ? Carbon::parse($activeYear->term3_start)->format('F d, Y') : 'TBA';
+            $t3e = $activeYear->term3_end ? Carbon::parse($activeYear->term3_end)->format('F d, Y') : 'TBA';
+            
+            $termInfo = "- Term 1: {$t1s} to {$t1e}.\n- Term 2: {$t2s} to {$t2e}.\n- Term 3: {$t3s} to {$t3e}.\n";
+            $lastDayOfSchool = $t3e;
+        }
+
+        $currentDateString = \Carbon\Carbon::now('Asia/Manila')->format('F j, Y');
+
+        if (in_array($receiverRole, ['admin', 'superadmin'])) {
+            $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc.
+            IMPORTANT: You are currently responding on behalf of the Admin account.
+            TODAY'S CURRENT DATE IS: {$currentDateString}. You MUST use this date as your reference point.
+            
+            Guidelines:
+            - ALWAYS start your response with a warm, friendly, and welcoming greeting in the appropriate language (e.g., 'Hello there! 👋', 'Magandang araw po!').
+            - Maintain a polite, professional, and helpful tone.
+            - ALLOWED LANGUAGES: You may ONLY communicate in English or Tagalog (Filipino).
+            - Answer using ONLY the provided facts below. Do not invent or assume any other information.
+            - BE FORGIVING: Highly tolerate typos, incorrect spelling (e.g., 'ngayung', 'sked'), bad grammar, and very short phrases. Automatically translate Tagalog questions in your head to match the English cheat sheet facts below.
+
+            *** STRICT 'IGNORE' RULES (CRITICAL) ***
+            You MUST output exactly the word IGNORE (and nothing else) if the user's message is NOT about passwords or account settings. 
+            If they ask about tuition, events, grades, schedules, term dates, specific student concerns, or just say 'hello', 'hi', 'good morning', or 'thanks', you MUST output IGNORE.
+
+            *** ADMIN CHEAT SHEET ***
+            [PREVIOUS CHAT HISTORY FOR CONTEXT]
+            {$historyContext}
+
+            [ACCOUNT & SETTINGS]
+            - Passwords (reset, change, forgot): Users can change it in 'Student Information' or use the 'Forgot Password' link on the login page (which requires an email code for security). Alternatively, the Admin can change the password for them.
+            - Email Address: The email address is fixed and cannot be changed.";
+        } else {
+            $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc.
+            IMPORTANT: You are currently responding on behalf of a Teacher account.
+            TODAY'S CURRENT DATE IS: {$currentDateString}. You MUST use this date as your reference point.
+            
+            Guidelines:
+            - ALWAYS start your response with a warm, friendly, and welcoming greeting in the appropriate language (e.g., 'Hello there! 👋', 'Magandang araw po!').
+            - Maintain a polite, professional, and helpful tone.
+            - ALLOWED LANGUAGES: You may ONLY communicate in English or Tagalog (Filipino).
+            - Answer using ONLY the provided facts below. Do not invent or assume any other information.
+            - Convert dates to friendly natural language (e.g., 'September 3, 2026').
+            - BE FORGIVING: Highly tolerate typos, incorrect spelling (e.g., 'ngayung', 'sked'), bad grammar, and translate Tagalog questions automatically.
+            - TIMELINE LOGIC: Even if a term or event has already passed, you MUST answer the question accurately (e.g., 'Term 1 already ended on July 31'). DO NOT ignore questions about past events.
+
+            *** STRICT 'IGNORE' RULES (CRITICAL) ***
+            You MUST output exactly the word HANDOFF (and nothing else) if the user's message falls into ANY of these categories:
+            1. Personal, complex, or specific student concerns (e.g., 'I have a concern about my child', 'Can you check my child's grade?').
+            2. Greetings, small talk, or random nonsense without a specific question.
+            3. Any language other than English or Tagalog.
+            4. Any topic completely unrelated to the school facts provided below.
+            5. Passwords or account settings (ONLY the Admin handles this, so ignore it here).
+            (CRITICAL EXCEPTION: DO NOT output HANDOFF if the user asks about tuition, fees, term dates, calendars, or events. You must answer these).
+
+            *** TEACHER CHEAT SHEET ***
+            [PREVIOUS CHAT HISTORY FOR CONTEXT]
+            {$historyContext}
+
+            [TUITION & FEES]
+            - Tuition fee payment schedule: Every second Friday of the month.
+
+            [SCHOOL YEAR & TERMS]
+            {$termInfo}
+            - Last day of classes (School year ends): {$lastDayOfSchool}.
+
+            [GRADES RELEASE & DEADLINES]
+            - Teachers receive an automated system alert exactly 1 week before the end of each term to remind them to finalize grades.
+            - Grades are released via the Report Card module 1 to 2 weeks after the end of each Term.
+
+            [UPCOMING CALENDAR EVENTS]
+            {$eventsKnowledge}";
+        }
+
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' . $apiKey;
+        $data = [
+            "systemInstruction" => ["parts" => [["text" => $systemPrompt]]],
+            "contents" => [["parts" => [["text" => $currentMessage->content]]]], 
+            "generationConfig" => ["temperature" => 0.1],
+            "safetySettings" => [
+                ["category" => "HARM_CATEGORY_HARASSMENT", "threshold" => "BLOCK_NONE"],
+                ["category" => "HARM_CATEGORY_HATE_SPEECH", "threshold" => "BLOCK_NONE"],
+                ["category" => "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold" => "BLOCK_NONE"],
+                ["category" => "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold" => "BLOCK_NONE"]
+            ]
+        ];
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30); 
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        $aiText = "IGNORE";
+        if ($response === false) {
+            $aiText = "API ERROR: Request timed out.";
+        } elseif ($httpCode === 429) {
+            $aiText = "API ERROR: Rate Limit Reached.";
+        } else {
+            $responseData = json_decode($response);
+            if (isset($responseData->candidates[0]->content->parts[0]->text)) {
+                $aiText = trim($responseData->candidates[0]->content->parts[0]->text);
+            } elseif (isset($responseData->error)) {
+                $aiText = "API ERROR: " . $responseData->error->message;
+            }
+        }
+
+        $finalAiCheck = trim(strtoupper($aiText));
+
+        if ($finalAiCheck === 'IGNORE') {
+            return response()->json(['success' => true, 'action' => 'ignored']);
+        } 
+        
+        // --- SMART CONTEXT-AWARE MUTE LOGIC DITO PUMASOK ---
+        if ($finalAiCheck === 'HANDOFF') {
+            $lastAiMessage = Message::where('sender_id', $currentMessage->receiver_id)
+                ->where('receiver_id', $currentMessage->sender_id)
+                ->where('content', 'LIKE', '🤖 AI Assistant:%')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($lastAiMessage && str_contains($lastAiMessage->content, "I'll stop answering now")) {
+                $hoursSinceHandoff = $lastAiMessage->created_at->diffInHours(now());
+                if ($hoursSinceHandoff < 24) {
+                    return response()->json(['success' => true, 'action' => 'silenced_waiting_for_human']);
+                }
+            }
+        }
+        // --------------------------------------------------
+
+        $content = ($finalAiCheck === 'HANDOFF') 
+            ? "🤖 AI Assistant: Hi! I'm the automated assistant. Your question requires the teacher's personal attention, so I'll stop answering now and leave your message for them to read. They will reply as soon as they are available!"
+            : "🤖 AI Assistant: " . $aiText;
+
+        Message::create([
+            'sender_id' => $currentMessage->receiver_id,
+            'receiver_id' => $currentMessage->sender_id,          
+            'content' => $content,
+            'is_read' => false,
+        ]);
+
+        return response()->json(['success' => true, 'action' => 'replied']);
     }
 
     private function getAllowedContacts($authUser)

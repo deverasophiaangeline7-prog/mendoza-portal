@@ -43,7 +43,8 @@
                     </button>
                 </div>
 
-                    <x-modal name="parent-login" :show="$errors->has('login_id') && old('login_type') !== 'admin'" maxWidth="md" focusable>                    <div class="p-8 bg-white rounded-2xl border-t-8 border-red-800 shadow-2xl text-center relative">
+                    <x-modal name="parent-login" :show="$errors->has('login_id') && old('login_type') !== 'admin'" maxWidth="md" focusable>                    
+                    <div class="p-8 bg-white rounded-2xl border-t-8 border-red-800 shadow-2xl text-center relative">
                         <button @click="$dispatch('close-modal', 'parent-login')" class="absolute top-4 right-4 text-gray-400 hover:text-red-800 transition-colors">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -100,7 +101,8 @@
                     </div>
                 </x-modal>
 
-                    <x-modal name="admin-login" :show="$errors->has('login_id') && old('login_type') === 'admin'" maxWidth="md" focusable>                    <div class="p-8 bg-gray-50 rounded-2xl border-t-8 border-gray-900 shadow-2xl text-center relative">
+                    <x-modal name="admin-login" :show="$errors->has('login_id') && old('login_type') === 'admin'" maxWidth="md" focusable>                    
+                    <div class="p-8 bg-gray-50 rounded-2xl border-t-8 border-gray-900 shadow-2xl text-center relative">
                         <button @click="$dispatch('close-modal', 'admin-login')" class="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -117,8 +119,9 @@
                             <input type="hidden" name="login_type" value="admin">
                             
                             <div class="mb-5 text-left">
-                                <x-input-label for="admin_id" class="text-gray-900 font-black uppercase text-[11px] tracking-widest mb-1" :value="__('Username')" />
-                                <x-text-input id="admin_id" class="block mt-1 w-full border-gray-400 focus:border-black focus:ring-black rounded-md shadow-sm bg-white" type="text" name="login_id" required />
+                                <!-- CHANGED: Updated label to indicate it accepts both Username and LRN -->
+                                <x-input-label for="admin_id" class="text-gray-900 font-black uppercase text-[11px] tracking-widest mb-1" :value="__('Username or LRN')" />
+                                <x-text-input id="admin_id" class="block mt-1 w-full border-gray-400 focus:border-black focus:ring-black rounded-md shadow-sm bg-white" type="text" name="login_id" placeholder="Enter username or LRN" required />
                                 <x-input-error :messages="$errors->get('login_id')" class="mt-2" />
                             </div>
 

@@ -1171,38 +1171,10 @@
                     </div>
                 `);
 
-                const sidebarText = document.getElementById(`sidebar-text-${this.selectedUserId}`);
-                if (sidebarText) {
-                    sidebarText.textContent = prefix + latestNewMsg.content;
-                    sidebarText.classList.remove('text-gray-500');
-                    sidebarText.classList.add('text-gray-900', 'font-semibold');
-                }
-
                 this.$nextTick(() => { 
                     const container = document.getElementById('message-container');
                     if(container) container.scrollTop = container.scrollHeight; 
                 });
-
-                const lowercaseText = text.toLowerCase();
-                const aiKeywords = ['tuition', 'fee', 'password', 'schedule', 'term', 'when', 'how much', 'date', 'event', 'start', 'end'];
-                const complexKeywords = ['concern', 'grade', 'bully', 'problem', 'help', 'anak', 'absent', 'sick'];
-                
-                const triggersAI = aiKeywords.some(keyword => lowercaseText.includes(keyword));
-                const isComplex = complexKeywords.some(keyword => lowercaseText.includes(keyword));
-                
-                const senderRole = '{{ strtolower(auth()->user()->role) }}';
-                const receiverRole = '{{ strtolower($selectedUser->role ?? '') }}';
-                const teacherRoles = ['teacher', 'adviser', 'faculty', 'instructor'];
-                const aiShouldRespond = (receiverRole === 'admin') || (senderRole === 'parent' && teacherRoles.includes(receiverRole));
-                
-                if (aiShouldRespond && !this.isGroupChat && triggersAI && !isComplex) {
-                    this.otherUserIsTyping = true;  
-                    this.isSending = true; 
-                    await this.$nextTick(); 
-                } else {
-                    this.otherUserIsTyping = false;
-                    this.isSending = true; 
-                }
 
                 try {
                     const response = await fetch('{{ route('messages.store') }}', {
@@ -1219,9 +1191,29 @@
                     });
 
                     if (response.ok) {
+                        const data = await response.json();
                         this.isSending = false;
                         this.thisUserIsTyping = false; 
-                        this.otherUserIsTyping = false; 
+                        
+                        // KUNG KAILANGAN SUMAGOT NI AI, I-TRIGGER NATIN SA BACKGROUND NANG HINDI NAGHIHINTAY ANG USER
+                        if (data.trigger_ai) {
+                            this.otherUserIsTyping = true;
+                            
+                            fetch(`/messages/${data.current_msg.id}/trigger-ai`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                }
+                            }).then(() => {
+                                this.otherUserIsTyping = false;
+                            }).catch(() => {
+                                this.otherUserIsTyping = false;
+                            });
+                        } else {
+                            this.otherUserIsTyping = false;
+                        }
                     } else {
                         console.error("Message failed to send", response);
                         this.isSending = false;

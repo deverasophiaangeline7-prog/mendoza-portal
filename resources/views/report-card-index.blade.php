@@ -5,16 +5,11 @@
 @section('content')
 <div class="p-4 md:p-8 flex flex-col items-center w-full min-h-screen bg-white" x-data="{ passwordModal: {{ $errors->has('current_password') || $errors->has('password') ? 'true' : 'false' }} }">
     
-    <!-- Main Title & Inline Admin Count (Matches Attendance layout structure exactly) -->
+    <!-- Main Title (Matches Attendance layout structure exactly) -->
     <div class="flex flex-col md:flex-row items-center justify-center gap-2 mb-2 md:mb-3">
         <h2 class="text-3xl md:text-5xl font-black text-black uppercase tracking-tight">
             REPORT CARD
         </h2>
-        @if(auth()->user()->role === 'admin')    
-            <span class="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full border border-black/20">
-                Total: <span class="text-[#b91c1c] font-black">{{ \App\Models\Student::count() }}</span>
-            </span>
-        @endif
     </div>
 
     <!-- Subtitle (Exact size and margin match to Attendance) -->

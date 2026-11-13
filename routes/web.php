@@ -83,7 +83,7 @@ Route::middleware(['auth', \App\Http\Middleware\ForcePasswordChange::class])->gr
     Route::get('/messages/sidebar/poll', [MessageController::class, 'pollSidebar'])->name('messages.sidebar.poll');
     Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
-
+    Route::post('/messages/{messageId}/trigger-ai', [MessageController::class, 'triggerAi']);
     // 👇 ADDED FOR DYNAMIC SYNC & DB SEEN STATUS 👇
     // 1. Poll endpoint to fetch new unread messages since last load.
     Route::get('/messages/{conversation_id}/poll', [MessageController::class, 'pollForMessages'])->name('messages.poll');

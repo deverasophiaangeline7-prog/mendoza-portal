@@ -43,7 +43,14 @@
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 w-full">
             <div>
                 <h2 class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight leading-none">List of Accounts</h2>
-                <h3 class="text-2xl md:text-4xl font-bold text-amber-700 mt-1 italic">Parents</h3>
+                <div class="flex items-center gap-3 mt-1">
+                    <h3 class="text-2xl md:text-4xl font-bold text-amber-700 italic">Parents</h3>
+                    @if(auth()->user()->role === 'admin')    
+                        <span class="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full border border-black/20">
+                            Total: <span class="text-[#b91c1c] font-black">{{ \App\Models\User::where('role', 'parent')->count() }}</span>
+                        </span>
+                    @endif
+                </div>
             </div>
             
             <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
