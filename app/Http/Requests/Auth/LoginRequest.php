@@ -41,13 +41,25 @@ class LoginRequest extends FormRequest
         $loginId = $this->input('login_id');
         $password = $this->input('password');
 
-        // 1. Look for a user where the input matches EITHER their username, email, OR LRN
+        // 1. Look for a user by username or email
         $user = \App\Models\User::where('username', $loginId)
             ->orWhere('email', $loginId)
-            ->orWhere('lrn', $loginId)
             ->first();
 
-        // 2. Check if the user exists and their password is correct
+        // 2. If no user found, check if the input is a Student's LRN
+        if (!$user) {
+            $student = \Illuminate\Support\Facades\DB::table('students')
+                ->where('lrn', $loginId)
+                ->first();
+                
+            if ($student) {
+                // Find the parent (User) linked to this student
+                // Using 'user_id' based on your foreign key structure
+                $user = \App\Models\User::where('user_id', $student->user_id)->first();
+            }
+        }
+
+        // 3. Check if the user exists and their password is correct
         if ($user && \Illuminate\Support\Facades\Hash::check($password, $user->password)) {
             // Manually log the user in
             \Illuminate\Support\Facades\Auth::login($user, $this->boolean('remember'));
@@ -55,7 +67,7 @@ class LoginRequest extends FormRequest
             return;
         }
 
-        // 3. If authentication fails, trigger rate limiting and show error
+        // 4. If authentication fails, trigger rate limiting and show error
         \Illuminate\Support\Facades\RateLimiter::hit($this->throttleKey());
 
         throw \Illuminate\Validation\ValidationException::withMessages([
