@@ -43,12 +43,18 @@
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 w-full">
             <div>
                 <h2 class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight leading-none">List of Accounts</h2>
-                <div class="flex items-center gap-3 mt-1">
-                    <h3 class="text-2xl md:text-4xl font-bold text-amber-700 italic">Parents</h3>
+                <div class="flex items-center gap-4 mt-2">
+                    <h3 class="text-2xl md:text-4xl font-bold text-amber-700 italic leading-none">Parents</h3>
                     @if(auth()->user()->role === 'admin')    
-                        <span class="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full border border-black/20">
-                            Total: <span class="text-[#b91c1c] font-black">{{ \App\Models\User::where('role', 'parent')->count() }}</span>
-                        </span>
+                        <!-- Redesigned Neobrutalist Split-Badge -->
+                        <div class="flex items-stretch border-[3px] border-black rounded-xl overflow-hidden shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] not-italic h-8 md:h-10">
+                            <div class="bg-black text-white flex items-center justify-center px-3 md:px-4 text-xs md:text-sm font-black uppercase tracking-widest">
+                                Total
+                            </div>
+                            <div class="bg-white flex items-center justify-center px-3 md:px-4 text-[#b91c1c] font-black text-sm md:text-base border-l-[3px] border-black">
+                                {{ \App\Models\User::where('role', 'parent')->count() }}
+                            </div>
+                        </div>
                     @endif
                 </div>
             </div>
