@@ -58,7 +58,6 @@ class LoginRequest extends FormRequest
                 $user = \App\Models\User::where('user_id', $student->user_id)->first();
             }
         }
-        dd($user);
 
         // 3. Check if the user exists and their password is correct
         if ($user && \Illuminate\Support\Facades\Hash::check($password, $user->password)) {
