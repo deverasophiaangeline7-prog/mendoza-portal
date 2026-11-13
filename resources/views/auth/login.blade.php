@@ -119,9 +119,8 @@
                             <input type="hidden" name="login_type" value="admin">
                             
                             <div class="mb-5 text-left">
-                                <!-- CHANGED: Updated label to indicate it accepts both Username and LRN -->
-                                <x-input-label for="admin_id" class="text-gray-900 font-black uppercase text-[11px] tracking-widest mb-1" :value="__('Username or LRN')" />
-                                <x-text-input id="admin_id" class="block mt-1 w-full border-gray-400 focus:border-black focus:ring-black rounded-md shadow-sm bg-white" type="text" name="login_id" placeholder="Enter username or LRN" required />
+                                <x-input-label for="admin_id" class="text-gray-900 font-black uppercase text-[11px] tracking-widest mb-1" :value="__('Username')" />
+                                <x-text-input id="admin_id" class="block mt-1 w-full border-gray-400 focus:border-black focus:ring-black rounded-md shadow-sm bg-white" type="text" name="login_id" required />
                                 <x-input-error :messages="$errors->get('login_id')" class="mt-2" />
                             </div>
 

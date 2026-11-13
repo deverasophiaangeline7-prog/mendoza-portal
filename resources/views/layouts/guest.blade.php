@@ -84,9 +84,9 @@
              x-cloak>
             
             <!-- Sidebar Header -->
-            <div class="p-5 border-b-[3px] border-black flex justify-between items-center bg-gray-100">
-                <span class="font-black text-lg uppercase text-black">Menu</span>
-                <button @click="sidebarOpen = false" class="text-black hover:text-red-600 transition-colors">
+            <div class="p-5 border-b-[3px] border-black flex justify-between items-center hero-gradient">
+                <span class="font-black text-lg uppercase text-white">Menu</span>
+                <button @click="sidebarOpen = false" class="text-white hover:text-gray-300 transition-colors">
                     <i class="fa-solid fa-xmark text-3xl"></i>
                 </button>
             </div>
