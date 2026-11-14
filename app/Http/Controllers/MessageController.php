@@ -597,31 +597,35 @@ class MessageController extends Controller
     /**
      * AJAX Endpoint: Poll for any new unread messages since the page loaded.
      */
-    public function pollForMessages($conversationId)
+    public function pollForMessages(Request $request, $conversationId)
     {
         $authId = Auth::id();
+        $lastId = (int) $request->query('last_id', 0); // Kukunin natin kung ano ang huling message sa screen
         
         // Find the other person (strict 1-on-1)
         $receiver = User::find($conversationId);
         if (!$receiver) return response()->json(['messages' => [], 'last_sent_read' => false]);
 
-        // Are we polling a strict 1-on-1 conversation?
         $isGroup = \Illuminate\Support\Str::startsWith($receiver->username, ['group_', 'gc_section_']);
+        
+        // BAGONG LOGIC: Kukunin lahat ng message (kahit sino pa nag-send) na mas bago kaysa sa lastId sa screen
         if ($isGroup) {
-            // Fetch messages sent TO this group since initial load
-            $newMessages = Message::where('receiver_id', $conversationId)
-                                    ->where('sender_id', '!=', $authId) // Don't pull my own sent messages
-                                    ->where('created_at', '>', now()->subSeconds(30)) 
-                                    ->orderBy('created_at', 'asc')
-                                    ->orderBy('id', 'asc')->get();
+            $query = Message::where('receiver_id', $conversationId);
         } else {
-            // Fetch strict 1-on-1 messages sent FROM them TO me, specifically unread.
-            $newMessages = Message::where('sender_id', $conversationId)
-                                    ->where('receiver_id', $authId)
-                                    ->where('is_read', false) 
-                                    ->orderBy('created_at', 'asc')
-                                    ->orderBy('id', 'asc')->get();
+            $query = Message::where(function($q) use ($authId, $conversationId) {
+                $q->where('sender_id', $authId)->where('receiver_id', $conversationId)
+                  ->orWhere('sender_id', $conversationId)->where('receiver_id', $authId);
+            });
         }
+
+        if ($lastId > 0) {
+            $query->where('id', '>', $lastId);
+        } else {
+            // Safety measure kapag walang last_id
+            $query->where('created_at', '>', now()->subSeconds(15));
+        }
+
+        $newMessages = $query->orderBy('created_at', 'asc')->orderBy('id', 'asc')->get();
 
         // Map the results for frontend rendering
         $formattedMessages = $newMessages->map(function($msg) use ($isGroup) {
@@ -629,7 +633,6 @@ class MessageController extends Controller
             $senderRole = '';
             $senderPhoto = '';
             
-           
             if ($isGroup) {
                 $sender = User::find($msg->sender_id);
                 if ($sender) {
@@ -653,9 +656,9 @@ class MessageController extends Controller
             ];
         });
 
-        // 👇 Check if the last message I sent has been read by them!
+        // Check if the last message I sent has been read by them!
         $lastSentMessageRead = false;
-        $gcLatestReaders = []; // Para sa maliit na avatars ng GC
+        $gcLatestReaders = []; 
         
         $lastMsg = Message::where('sender_id', $authId)->where('receiver_id', $conversationId)->orderBy('id', 'desc')->first();
 
@@ -663,7 +666,6 @@ class MessageController extends Controller
             if (!$isGroup && $lastMsg->is_read) {
                 $lastSentMessageRead = true;
             } elseif ($isGroup) {
-                // Kunin lahat ng readers (Profile pic & name) ng pinakahuling chat na sinend ko sa GC
                 foreach ($lastMsg->readers as $read) {
                     if ($read->user_id !== $authId) {
                         $photoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($read->user->name) . '&background=f3f4f6&color=374151';
@@ -677,7 +679,6 @@ class MessageController extends Controller
             }
         }
 
-        // Return structured JSON
         return response()->json([
             'messages' => $formattedMessages,
             'last_sent_read' => $lastSentMessageRead,

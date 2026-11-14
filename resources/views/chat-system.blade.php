@@ -604,6 +604,7 @@
                                 </a>
                             @endforeach
                         @endforeach
+
                     @else
                         <div class="p-6 text-center text-gray-500 text-sm font-bold">
                             No contacts available.
@@ -943,7 +944,18 @@
                 if (!this.selectedUserId) return;
                 
                 try {
-                    const response = await fetch(`/messages/${this.selectedUserId}/poll`);
+                    // HANAPIN ANG PINAKAMATAAS NA ID SA SCREEN
+                    let lastId = 0;
+                    const bubbles = document.querySelectorAll('[id^="msg-bubble-"]');
+                    bubbles.forEach(bubble => {
+                        const idNum = parseInt(bubble.id.replace('msg-bubble-', ''));
+                        if (!isNaN(idNum) && idNum > lastId) {
+                            lastId = idNum;
+                        }
+                    });
+
+                    // Ipasa ang last_id sa backend
+                    const response = await fetch(`/messages/${this.selectedUserId}/poll?last_id=${lastId}`);
                     if (!response.ok) return;
                     
                     const data = await response.json();
@@ -953,13 +965,11 @@
                         const unreadStatusSpans = document.querySelectorAll('.js-realtime-seen-text');
                         if (unreadStatusSpans.length > 0) {
                             unreadStatusSpans.forEach(span => span.innerHTML = '');
-                            
                             const lastSpan = unreadStatusSpans[unreadStatusSpans.length - 1]; 
                             let avatarsHtml = '';
                             data.gc_latest_readers.forEach(reader => {
                                 avatarsHtml += `<img src="${reader.photo}" title="Seen by ${reader.name}" class="w-4 h-4 rounded-full border border-gray-300 ml-0.5 object-cover cursor-default shadow-sm hover:scale-125 transition-transform z-10">`;
                             });
-                            
                             lastSpan.innerHTML = avatarsHtml;
                         }
                     } else if (data.last_sent_read && !this.isGroupChat) {
@@ -983,36 +993,58 @@
                             if (!existingMsgBubble) {
                                 needsMarkRead = true; 
                                 
-                                let senderInfoHtml = '';
-                                if (this.isGroupChat) {
-                                    const roleBadgeClass = msg.sender_role === 'admin' ? 'bg-blue-100 text-blue-700' : (msg.sender_role === 'teacher' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500');
-                                    senderInfoHtml = `
-                                        <div class="flex items-center gap-1.5 ml-1 mb-1">
-                                            <span class="text-[11px] font-bold text-gray-600">${msg.sender_name}</span>
-                                            <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${roleBadgeClass}">
-                                                ${msg.sender_role}
-                                            </span>
+                                const isMe = String(msg.sender_id) === String(this.myId);
+                                let bubbleHtml = '';
+
+                                if (isMe) {
+                                    // TAYO O SI AI ANG NAG-SEND (Red Bubble, Right aligned)
+                                    bubbleHtml = `
+                                        <div id="msg-bubble-${msg.id}" class="mb-6 w-full relative text-right flex flex-col items-end js-dynamically-fetched-bubble">
+                                            <div class="flex flex-col items-end max-w-[85%]">
+                                                <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
+                                                    ${msg.content}
+                                                </span>
+                                                <div class="text-[10px] text-gray-400 mt-1">
+                                                    <span>${msg.time_formatted}</span>
+                                                </div>
+                                            </div>
+                                            <div class="absolute -bottom-4 right-2 js-realtime-seen-text flex items-center gap-0.5 justify-end"></div>
+                                        </div>
+                                    `;
+                                } else {
+                                    // IBANG TAO ANG NAG-SEND (Gray Bubble, Left aligned)
+                                    let senderInfoHtml = '';
+                                    if (this.isGroupChat) {
+                                        const roleBadgeClass = msg.sender_role === 'admin' ? 'bg-blue-100 text-blue-700' : (msg.sender_role === 'teacher' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500');
+                                        senderInfoHtml = `
+                                            <div class="flex items-center gap-1.5 ml-1 mb-1">
+                                                <span class="text-[11px] font-bold text-gray-600">${msg.sender_name}</span>
+                                                <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${roleBadgeClass}">
+                                                    ${msg.sender_role}
+                                                </span>
+                                            </div>
+                                        `;
+                                    }
+                                    const avatarHtml = this.isGroupChat ? `<img src="${msg.sender_photo}" title="${msg.sender_name}" class="w-8 h-8 rounded-full border object-cover mb-1 shadow-sm flex-shrink-0 cursor-default">` : '';
+
+                                    bubbleHtml = `
+                                        <div id="msg-bubble-${msg.id}" class="mb-6 w-full relative text-left flex items-end gap-2 js-dynamically-fetched-bubble">
+                                            ${avatarHtml}
+                                            <div class="flex flex-col items-start max-w-[85%]">
+                                                ${senderInfoHtml}
+                                                <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-gray-100 text-gray-800 rounded-bl-none">
+                                                    ${msg.content}
+                                                </span>
+                                                <div class="text-[10px] text-gray-400 mt-1">
+                                                    <span>${msg.time_formatted}</span>
+                                                </div>
+                                            </div>
+                                            <div class="absolute -bottom-4 right-2 js-realtime-seen-text flex items-center gap-0.5 justify-end"></div>
                                         </div>
                                     `;
                                 }
 
-                                const avatarHtml = this.isGroupChat ? `<img src="${msg.sender_photo}" title="${msg.sender_name}" class="w-8 h-8 rounded-full border object-cover mb-1 shadow-sm flex-shrink-0 cursor-default">` : '';
-
-                                chatMessagesWrapper.insertAdjacentHTML('beforeend', `
-                                    <div id="msg-bubble-${msg.id}" class="mb-6 w-full relative text-left flex items-end gap-2 js-dynamically-fetched-bubble">
-                                        ${avatarHtml}
-                                        <div class="flex flex-col items-start max-w-[85%]">
-                                            ${senderInfoHtml}
-                                            <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-gray-100 text-gray-800 rounded-bl-none">
-                                                ${msg.content}
-                                            </span>
-                                            <div class="text-[10px] text-gray-400 mt-1">
-                                                <span>${msg.time_formatted}</span>
-                                            </div>
-                                        </div>
-                                        <div class="absolute -bottom-4 right-2 js-realtime-seen-text flex items-center gap-0.5 justify-end"></div>
-                                    </div>
-                                `);
+                                chatMessagesWrapper.insertAdjacentHTML('beforeend', bubbleHtml);
                             }
                         });
 
@@ -1065,89 +1097,7 @@
                 }
             },
 
-            async pollSidebarUpdates() {
-                try {
-                    const response = await fetch('/messages/sidebar/poll');
-                    if (!response.ok) return;
-                    const data = await response.json();
-                    
-                    let needsReload = false;
-                    let totalUnread = 0; 
-
-                    // 1. Binaligtad ang array bago i-loop para laging nasa ibabaw ang pinakabago at hindi masira ang pagkakasunod-sunod
-                    const reversedSidebar = [...data.sidebar].reverse();
-
-                    reversedSidebar.forEach(chat => {
-                        const sidebarItem = document.getElementById(`sidebar-item-${chat.user_id}`);
-                        const sidebarText = document.getElementById(`sidebar-text-${chat.user_id}`);
-                        const badgeContainer = document.getElementById(`sidebar-badge-${chat.user_id}`);
-                        
-                        if (sidebarItem && sidebarText) {
-                            // 2. Idinagdag ang .trim() para hindi malito sa spaces ang JS at hindi mag-glitch ang images!
-                            if (sidebarText.textContent.trim() !== chat.latest_message.trim()) {
-                                sidebarText.textContent = chat.latest_message;
-                                sidebarItem.parentNode.prepend(sidebarItem); 
-                            }
-                            
-                            if (this.selectedUserId != chat.user_id) {
-                                if (chat.unread_count > 0) {
-                                    totalUnread += chat.unread_count; 
-                                    
-                                    sidebarItem.classList.add('bg-blue-50/70');
-                                    sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
-                                    sidebarText.classList.add('text-gray-900', 'font-semibold');
-                                    sidebarText.classList.remove('text-gray-500');
-                                    
-                                    if (badgeContainer) {
-                                        badgeContainer.innerText = chat.unread_count;
-                                        badgeContainer.classList.remove('hidden');
-                                    }
-                                } else {
-                                    sidebarItem.classList.remove('bg-blue-50/70');
-                                    sidebarItem.classList.add('bg-white', 'hover:bg-gray-50');
-                                    sidebarText.classList.remove('text-gray-900', 'font-semibold');
-                                    sidebarText.classList.add('text-gray-500');
-                                    
-                                    if (badgeContainer) {
-                                        badgeContainer.classList.add('hidden');
-                                    }
-                                }
-                            }
-                        } else if (chat.latest_message !== 'No messages yet...') {
-                            needsReload = true;
-                        }
-                    });
-
-                    const navBadge = document.getElementById('nav-chat-badge');
-                    if (navBadge) {
-                        if (totalUnread > 0) {
-                            navBadge.innerText = totalUnread > 99 ? '99+' : totalUnread;
-                            navBadge.classList.remove('hidden');
-                        } else {
-                            navBadge.classList.add('hidden');
-                        }
-                    }
-
-                    if (needsReload) window.location.reload();
-
-                } catch (err) {
-                    console.error("Sidebar polling error:", err);
-                }
-            },
-
-            async dynamicallyMarkRead() {
-                if (!this.selectedUserId) return;
-                try {
-                    await fetch(`/messages/${this.selectedUserId}/mark-as-read`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        }
-                    });
-                } catch (err) {}
-            },
-
+            // --- PALITAN ANG SEND MESSAGE PARA MAGKA-ID ANG OPTIMISTIC UI ---
             async sendMessage(receiverId) {
                 if (!this.messageInput.trim()) return;
                 
@@ -1156,9 +1106,10 @@
                 this.thisUserIsTyping = true; 
 
                 const chatMessages = document.getElementById('chat-messages');
+                const tempId = 'temp-msg-' + Date.now(); // Temp ID bago mag-save sa DB
                 
                 chatMessages.insertAdjacentHTML('beforeend', `
-                    <div class="text-right mb-6 w-full relative js-optimistic-my-bubble">
+                    <div id="${tempId}" class="text-right mb-6 w-full relative js-optimistic-my-bubble">
                         <div class="flex flex-col items-end w-full">
                             <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
                                 ${text}
@@ -1194,8 +1145,13 @@
                         const data = await response.json();
                         this.isSending = false;
                         this.thisUserIsTyping = false; 
+
+                        // Update ang tempId papunta sa totoong DB ID para di mag-duplicate sa susunod na poll
+                        const tempBubble = document.getElementById(tempId);
+                        if (tempBubble) {
+                            tempBubble.id = 'msg-bubble-' + data.current_msg.id;
+                        }
                         
-                        // KUNG KAILANGAN SUMAGOT NI AI, I-TRIGGER NATIN SA BACKGROUND NANG HINDI NAGHIHINTAY ANG USER
                         if (data.trigger_ai) {
                             this.otherUserIsTyping = true;
                             
