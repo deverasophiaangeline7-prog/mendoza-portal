@@ -913,8 +913,8 @@
             otherUserIsTyping: false, 
             isSending: false,
             myId: '{{ auth()->user()->user_id }}',
-            selectedUserId: '{{ isset($selectedUser) ?$selectedUser->user_id : "" }}',
-            selectedUserName: '{{ isset($selectedUser) ? (isset($selectedUser->custom_name) ? $selectedUser->custom_name :$selectedUser->name) : "" }}',
+            selectedUserId: '{{ isset($selectedUser) ? $selectedUser->user_id : "" }}',
+            selectedUserName: '{{ isset($selectedUser) ? (isset($selectedUser->custom_name) ? $selectedUser->custom_name : $selectedUser->name) : "" }}',
             isGroupChat: '{{ is_null($selectedUser->custom_name ?? null) ? "false" : "true" }}' === 'true',
             
             otherUserTypingTimer: null,
@@ -928,17 +928,15 @@
                 if (this.selectedUserId && this.myId) {
                     this.dynamicallyMarkRead();
 
-                    
-
                     this.pollingInterval = setInterval(() => {
                         this.pollNewMessages();
                     }, 4000); 
                 }
 
-                    this.sidebarPollingInterval = setInterval(() => {
-                        this.pollSidebarUpdates();
-                    }, 4000);
-                },
+                this.sidebarPollingInterval = setInterval(() => {
+                    this.pollSidebarUpdates();
+                }, 4000);
+            },
 
             async pollNewMessages() {
                 if (!this.selectedUserId) return;
@@ -997,7 +995,6 @@
                                 let bubbleHtml = '';
 
                                 if (isMe) {
-                                    // TAYO O SI AI ANG NAG-SEND (Red Bubble, Right aligned)
                                     bubbleHtml = `
                                         <div id="msg-bubble-${msg.id}" class="mb-6 w-full relative text-right flex flex-col items-end js-dynamically-fetched-bubble">
                                             <div class="flex flex-col items-end max-w-[85%]">
@@ -1012,7 +1009,6 @@
                                         </div>
                                     `;
                                 } else {
-                                    // IBANG TAO ANG NAG-SEND (Gray Bubble, Left aligned)
                                     let senderInfoHtml = '';
                                     if (this.isGroupChat) {
                                         const roleBadgeClass = msg.sender_role === 'admin' ? 'bg-blue-100 text-blue-700' : (msg.sender_role === 'teacher' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500');
@@ -1025,7 +1021,8 @@
                                             </div>
                                         `;
                                     }
-                                    const avatarHtml = this.isGroupChat ? `<img src="${msg.sender_photo}" title="${msg.sender_name}" class="w-8 h-8 rounded-full border object-cover mb-1 shadow-sm flex-shrink-0 cursor-default">` : '';
+                                    
+                                    const avatarHtml = `<img src="${msg.sender_photo}" title="${msg.sender_name}" class="w-8 h-8 rounded-full border object-cover mb-1 shadow-sm flex-shrink-0 cursor-default">`;
 
                                     bubbleHtml = `
                                         <div id="msg-bubble-${msg.id}" class="mb-6 w-full relative text-left flex items-end gap-2 js-dynamically-fetched-bubble">
@@ -1097,7 +1094,81 @@
                 }
             },
 
-            // --- PALITAN ANG SEND MESSAGE PARA MAGKA-ID ANG OPTIMISTIC UI ---
+            async pollSidebarUpdates() {
+                try {
+                    const response = await fetch('/messages/sidebar/poll');
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    
+                    let totalUnread = 0; 
+
+                    const reversedSidebar = [...data.sidebar].reverse();
+
+                    reversedSidebar.forEach(chat => {
+                        const sidebarItem = document.getElementById(`sidebar-item-${chat.user_id}`);
+                        const sidebarText = document.getElementById(`sidebar-text-${chat.user_id}`);
+                        const badgeContainer = document.getElementById(`sidebar-badge-${chat.user_id}`);
+                        
+                        if (sidebarItem && sidebarText) {
+                            if (sidebarText.textContent.trim() !== chat.latest_message.trim()) {
+                                sidebarText.textContent = chat.latest_message;
+                                sidebarItem.parentNode.prepend(sidebarItem); 
+                            }
+                            
+                            if (this.selectedUserId != chat.user_id) {
+                                if (chat.unread_count > 0) {
+                                    totalUnread += chat.unread_count; 
+                                    
+                                    sidebarItem.classList.add('bg-blue-50/70');
+                                    sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
+                                    sidebarText.classList.add('text-gray-900', 'font-semibold');
+                                    sidebarText.classList.remove('text-gray-500');
+                                    
+                                    if (badgeContainer) {
+                                        badgeContainer.innerText = chat.unread_count;
+                                        badgeContainer.classList.remove('hidden');
+                                    }
+                                } else {
+                                    sidebarItem.classList.remove('bg-blue-50/70');
+                                    sidebarItem.classList.add('bg-white', 'hover:bg-gray-50');
+                                    sidebarText.classList.remove('text-gray-900', 'font-semibold');
+                                    sidebarText.classList.add('text-gray-500');
+                                    
+                                    if (badgeContainer) {
+                                        badgeContainer.classList.add('hidden');
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    const navBadge = document.getElementById('nav-chat-badge');
+                    if (navBadge) {
+                        if (totalUnread > 0) {
+                            navBadge.innerText = totalUnread > 99 ? '99+' : totalUnread;
+                            navBadge.classList.remove('hidden');
+                        } else {
+                            navBadge.classList.add('hidden');
+                        }
+                    }
+                } catch (err) {
+                    console.error("Sidebar polling error:", err);
+                }
+            },
+
+            async dynamicallyMarkRead() {
+                if (!this.selectedUserId) return;
+                try {
+                    await fetch(`/messages/${this.selectedUserId}/mark-as-read`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    });
+                } catch (err) {}
+            },
+
             async sendMessage(receiverId) {
                 if (!this.messageInput.trim()) return;
                 
@@ -1106,7 +1177,7 @@
                 this.thisUserIsTyping = true; 
 
                 const chatMessages = document.getElementById('chat-messages');
-                const tempId = 'temp-msg-' + Date.now(); // Temp ID bago mag-save sa DB
+                const tempId = 'temp-msg-' + Date.now();
                 
                 chatMessages.insertAdjacentHTML('beforeend', `
                     <div id="${tempId}" class="text-right mb-6 w-full relative js-optimistic-my-bubble">
@@ -1146,7 +1217,6 @@
                         this.isSending = false;
                         this.thisUserIsTyping = false; 
 
-                        // Update ang tempId papunta sa totoong DB ID para di mag-duplicate sa susunod na poll
                         const tempBubble = document.getElementById(tempId);
                         if (tempBubble) {
                             tempBubble.id = 'msg-bubble-' + data.current_msg.id;
@@ -1182,9 +1252,7 @@
                     this.thisUserIsTyping = false;
                     this.otherUserIsTyping = false;
                 }
-            },
-
-
+            }
         }));
     });
 </script>

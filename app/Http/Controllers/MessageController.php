@@ -600,7 +600,8 @@ class MessageController extends Controller
     public function pollForMessages(Request $request, $conversationId)
     {
         $authId = Auth::id();
-        $lastId = (int) $request->query('last_id', 0); // Kukunin natin kung ano ang huling message sa screen
+        // Sinasalo na natin dito yung last_id mula sa chat-system.blade.php
+        $lastId = (int) $request->query('last_id', 0); 
         
         // Find the other person (strict 1-on-1)
         $receiver = User::find($conversationId);
@@ -608,7 +609,7 @@ class MessageController extends Controller
 
         $isGroup = \Illuminate\Support\Str::startsWith($receiver->username, ['group_', 'gc_section_']);
         
-        // BAGONG LOGIC: Kukunin lahat ng message (kahit sino pa nag-send) na mas bago kaysa sa lastId sa screen
+        // Kukunin lahat ng message (kahit sino pa nag-send) na mas bago kaysa sa lastId sa screen
         if ($isGroup) {
             $query = Message::where('receiver_id', $conversationId);
         } else {
@@ -633,18 +634,18 @@ class MessageController extends Controller
             $senderRole = '';
             $senderPhoto = '';
             
-            if ($isGroup) {
-                $sender = User::find($msg->sender_id);
-                if ($sender) {
-                    $senderName = $sender->name;
-                    $senderRole = $sender->role;
-                    $senderPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($sender->name) . '&background=f3f4f6&color=374151';
-                    if ($sender->profile_photo_path) {
-                        $senderPhoto = str_starts_with($sender->profile_photo_path, 'profile_photos') 
-                            ? asset('storage/' . $sender->profile_photo_path) : asset($sender->profile_photo_path);
-                    }
+            // Palaging kunin ang user profile para sa real-time avatar
+            $sender = User::find($msg->sender_id);
+            if ($sender) {
+                $senderName = $sender->name;
+                $senderRole = $sender->role;
+                $senderPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($sender->name) . '&background=f3f4f6&color=374151';
+                if ($sender->profile_photo_path) {
+                    $senderPhoto = str_starts_with($sender->profile_photo_path, 'profile_photos') 
+                        ? asset('storage/' . $sender->profile_photo_path) : asset($sender->profile_photo_path);
                 }
             }
+            
             return [
                 'id' => $msg->id,
                 'content' => $msg->content,
@@ -656,7 +657,7 @@ class MessageController extends Controller
             ];
         });
 
-        // Check if the last message I sent has been read by them!
+        // Check if the last message I sent has been read by them
         $lastSentMessageRead = false;
         $gcLatestReaders = []; 
         
