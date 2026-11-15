@@ -282,6 +282,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
     Route::patch('/admin/{id}/restore', [App\Http\Controllers\Admin\UserController::class, 'restoreAdmin'])->name('account.admin.restore');
     Route::delete('/admin/{id}/delete', [App\Http\Controllers\Admin\UserController::class, 'destroyAdmin'])->name('account.admin.destroy');
     Route::put('/admin/accounts/admin/{id}/edit', [App\Http\Controllers\Admin\UserController::class, 'updateAdmin'])->name('account.admin.update');
+    Route::post('/admin/accounts/admin/update-picture', [App\Http\Controllers\Admin\UserController::class, 'updatePicture'])->name('account.admin.updatePicture');
 });
 
 require __DIR__.'/auth.php';

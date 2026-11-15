@@ -9,6 +9,7 @@
          archiveModal: false, 
          archiveUrl: '', 
          adminEditModal: false, 
+         changePicModal: false, /* NEW: Picture Modal State */
          editAdminId: '', 
          editFirstName: '', 
          editMiddleName: '', 
@@ -25,6 +26,11 @@
             </div>
             
             <div class="flex flex-wrap gap-3 w-full lg:w-auto">
+                <!-- NEW CHANGE PICTURE BUTTON -->
+                <button @click="changePicModal = true" type="button" class="flex-1 md:flex-none justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black whitespace-nowrap text-sm md:text-base">
+                    <i class="fa-solid fa-image"></i> Change Picture
+                </button>
+                
                 <a href="{{ route('admin.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black whitespace-nowrap text-sm md:text-base">
                     <i class="fa-solid fa-box-archive"></i> View Archives
                 </a>
@@ -104,6 +110,66 @@
             </table>
         </div>
     </main>
+
+    <!-- NEW CHANGE PICTURE MODAL -->
+    <div x-show="changePicModal" class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>
+        <div @click.away="changePicModal = false" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] m-auto flex-shrink-0 relative">
+            
+            <button type="button" @click="changePicModal = false" class="absolute top-4 right-6 text-3xl text-gray-400 hover:text-red-600 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <h3 class="text-3xl font-black mb-6 uppercase text-black italic">Change Picture</h3>
+            
+            <form action="{{ route('account.admin.updatePicture') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                
+                <div class="mb-5">
+                    <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Select Admin <span class="text-red-600">*</span></label>
+                    <select name="admin_id" required class="w-full border-2 border-black rounded-xl p-3 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400 bg-white">
+                        <option value="" disabled selected>-- Select Account --</option>
+                        
+                        @if(isset($superadmins) && count($superadmins) > 0)
+                            <optgroup label="Superadmins">
+                                @foreach($superadmins as $superadmin)
+                                    <option value="{{ $superadmin->id }}">
+                                        {{ $superadmin->admin?->first_name ?? $superadmin->name }} {{ $superadmin->admin?->last_name ?? '' }} (Superadmin)
+                                    </option>
+                                @endforeach
+                            </optgroup>
+                        @endif
+
+                        <optgroup label="Regular Admins">
+                            @php
+                                $allAdmins = collect($males)->merge($females);
+                            @endphp
+                            @foreach($allAdmins as $adminUser)
+                                <option value="{{ $adminUser->user_id ?? $adminUser->id }}">
+                                    {{ $adminUser->admin?->first_name }} {{ $adminUser->admin?->last_name }} 
+                                    ({{ $adminUser->name }})
+                                </option>
+                            @endforeach
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <div class="mb-8">
+                    <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Upload New Picture <span class="text-red-600">*</span></label>
+                    <input type="file" name="profile_picture" accept="image/*" required class="w-full border-2 border-black rounded-xl p-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400 bg-gray-50 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-2 file:border-black file:text-sm file:font-black file:bg-[#ffb31a] file:text-black hover:file:bg-[#e68a2d] file:transition-colors cursor-pointer">
+                    <p class="text-[11px] text-gray-500 mt-2 font-bold uppercase tracking-widest">Accepted formats: JPG, PNG. Max size: 2MB.</p>
+                </div>
+                
+                <div class="flex justify-end gap-3">
+                    <button type="button" @click="changePicModal = false" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold uppercase border-2 border-black hover:bg-gray-300 transition-all">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-black uppercase border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-upload"></i> Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- EDIT ADMIN MODAL -->
     <div x-show="adminEditModal" class="fixed inset-0 z-[9999] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak>

@@ -697,4 +697,46 @@ class UserController extends Controller
 
         return back()->with('success', 'Term Schedule securely updated.');
     }
+
+    public function updatePicture(Request $request)
+    {
+        $request->validate([
+            'admin_id' => 'required',
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        // Find the user who is an admin or superadmin
+        $user = User::findOrFail($request->admin_id);
+
+        if ($request->hasFile('profile_picture')) {
+            $file = $request->file('profile_picture');
+            // Create a unique filename
+            $filename = time() . '_' . \Illuminate\Support\Str::slug($user->username ?? 'admin') . '.' . $file->getClientOriginalExtension();
+            
+            // Move file to the public/uploads/profiles directory to match your storeAdmin logic
+            $file->move(public_path('uploads/profiles'), $filename);
+            $photoPath = 'uploads/profiles/' . $filename;
+
+            // Update the linked Admin profile table
+            if ($user->admin) {
+                $user->admin->update([
+                    'profile_photo_path' => $photoPath
+                ]);
+            } else {
+                // In case the user exists but the linked admin record is missing, create it
+                \App\Models\Admin::create([
+                    'user_id' => $user->user_id ?? $user->id,
+                    'profile_photo_path' => $photoPath
+                ]);
+            }
+
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'Admin Profile Picture Updated',
+                'description' => Auth::user()->name . " updated the profile picture for admin account: " . ($user->name ?? $user->username)
+            ]);
+        }
+
+        return back()->with('success', 'Profile picture updated successfully!');
+    }
 }
