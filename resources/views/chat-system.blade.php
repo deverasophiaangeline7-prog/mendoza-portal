@@ -1028,6 +1028,19 @@
                                 needsMarkRead = true; 
                                 
                                 const isMe = String(msg.sender_id) === String(this.myId);
+                                if (isMe) {
+                                    const tempBubbles = document.querySelectorAll('.js-optimistic-my-bubble');
+                                    let handled = false;
+                                    for (let ob of tempBubbles) {
+                                        if (ob.id.startsWith('temp-msg-') && ob.textContent.includes(msg.content)) {
+                                            ob.id = `msg-bubble-${msg.id}`; // Rename to real ID
+                                            ob.classList.remove('js-optimistic-my-bubble'); // Clean up class
+                                            handled = true;
+                                            break;
+                                        }
+                                    }
+                                    if (handled) return; // Kung na-handle na, i-skip na ang pag-append ulit
+                                }
                                 let bubbleHtml = '';
 
                                 if (isMe) {
@@ -1263,7 +1276,14 @@
 
                         const tempBubble = document.getElementById(tempId);
                         if (tempBubble) {
-                            tempBubble.id = 'msg-bubble-' + data.current_msg.id;
+                            // Siguraduhing walang naiwang duplicate na galing sa polling
+                            const alreadyExists = document.getElementById('msg-bubble-' + data.current_msg.id);
+                            if (alreadyExists && alreadyExists !== tempBubble) {
+                                tempBubble.remove();
+                            } else {
+                                tempBubble.id = 'msg-bubble-' + data.current_msg.id;
+                                tempBubble.classList.remove('js-optimistic-my-bubble');
+                            }
                         }
                         
                         if (data.trigger_ai) {
