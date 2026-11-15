@@ -121,6 +121,7 @@ class MessageController extends Controller
         $groupUser->custom_name = $request->group_name; // Saves into our new column!
         $groupUser->status      = 'active';
         $groupUser->profile_photo_path  = $photoPath; // Save the photo path
+        $groupUser->created_by  = Auth::id();
         $groupUser->save();
 
         // 2. Link the members to the group
@@ -728,4 +729,123 @@ class MessageController extends Controller
 
         return response()->json(['sidebar' => $sidebarData]);
     }
+
+        /**
+     * Sino ang puwedeng mag-edit ng group photo?
+     */
+    private function canEditGroupPhoto($group, $authUser)
+    {
+        $role = strtolower($authUser->role ?? '');
+
+        // Official GC (gc_section_*)
+        if (\Illuminate\Support\Str::startsWith($group->username, 'gc_section_')) {
+            // System admin: laging pwede
+            if (in_array($role, ['admin', 'superadmin'])) {
+                return true;
+            }
+            // Ang adviser ng section na iyon
+            $secId = str_replace('gc_section_', '', $group->username);
+            $section = \App\Models\Section::find($secId);
+            if ($section && (int) $section->teacher_id === (int) $authUser->user_id) {
+                return true;
+            }
+            return false;
+        }
+
+        // Manual GC (group_*)
+        if (\Illuminate\Support\Str::startsWith($group->username, 'group_')) {
+            // Creator: pwede
+            if ((int) $group->created_by === (int) $authUser->user_id) {
+                return true;
+            }
+            // Admin, pero miyembro lang ng GC na ito
+            if (in_array($role, ['admin', 'superadmin'])) {
+                $isMember = DB::table('group_members')
+                    ->where('group_id', $group->user_id)
+                    ->where('user_id', $authUser->user_id)
+                    ->exists();
+                return $isMember;
+            }
+            return false;
+        }
+
+        return false;
+    }
+
+        /**
+     * SEE MEMBERS — listahan ng miyembro ng group.
+     */
+    public function getGroupMembers($id)
+    {
+        $group = User::where('user_id', $id)->whereNotNull('custom_name')->firstOrFail();
+        $authUser = Auth::user();
+
+        $memberIds = DB::table('group_members')->where('group_id', $id)->pluck('user_id');
+
+        // Isama ang creator kung wala pa sa pivot (safety net)
+        if ($group->created_by && !$memberIds->contains($group->created_by)) {
+            $memberIds->push($group->created_by);
+        }
+
+        $members = User::whereIn('user_id', $memberIds)->get()->map(function ($u) use ($group) {
+            $photo = '[ui-avatars.com](https://ui-avatars.com/api/?name=)' . urlencode($u->name) . '&background=f3f4f6&color=374151';
+            if ($u->profile_photo_path) {
+                $photo = str_starts_with($u->profile_photo_path, 'profile_photos')
+                    ? asset('storage/' . $u->profile_photo_path)
+                    : asset($u->profile_photo_path);
+            }
+            return [
+                'user_id'    => $u->user_id,
+                'name'       => $u->name,
+                'role'       => $u->role,
+                'photo'      => $photo,
+                'is_creator' => (int) $u->user_id === (int) $group->created_by,
+            ];
+        })->values();
+
+        return response()->json([
+            'success'        => true,
+            'group_name'     => $group->custom_name,
+            'members'        => $members,
+            'can_edit_photo' => $this->canEditGroupPhoto($group, $authUser),
+        ]);
+    }
+
+    /**
+     * UPDATE GROUP PHOTO — upload ng bagong larawan.
+     */
+    public function updateGroupPhoto(Request $request, $id)
+    {
+        $group = User::where('user_id', $id)->whereNotNull('custom_name')->firstOrFail();
+        $authUser = Auth::user();
+
+        if (!$this->canEditGroupPhoto($group, $authUser)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hindi ka awtorisadong magpalit ng group photo.',
+            ], 403);
+        }
+
+        $request->validate([
+            'group_photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+
+        // Burahin ang lumang photo (kung galing sa storage natin)
+        if ($group->profile_photo_path && str_starts_with($group->profile_photo_path, 'profile_photos')) {
+            $oldFull = storage_path('app/public/' . $group->profile_photo_path);
+            if (file_exists($oldFull)) {
+                @unlink($oldFull);
+            }
+        }
+
+        $path = $request->file('group_photo')->store('profile_photos', 'public');
+        $group->profile_photo_path = $path;
+        $group->save();
+
+        return response()->json([
+            'success'  => true,
+            'new_path' => asset('storage/' . $path),
+        ]);
+    }
+
 }

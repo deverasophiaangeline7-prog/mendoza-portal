@@ -26,6 +26,8 @@ class User extends Authenticatable
         'profile_photo_path',
         'section_id',
         'custom_name',
+        'status',
+        'created_by',
     ];
 
     /**

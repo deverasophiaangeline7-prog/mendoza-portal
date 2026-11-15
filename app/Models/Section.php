@@ -48,7 +48,7 @@ class Section extends Model
                 'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
                 'role' => 'admin', // Bypass rules
                 'section_id' => $section_id,
-                'customer_name' => 'SECTION_GC',
+                'custom_name' => 'SECTION_GC',
                 'status' => 'active',
             ]
         );

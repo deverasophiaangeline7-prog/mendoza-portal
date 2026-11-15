@@ -79,6 +79,8 @@ Route::middleware(['auth', \App\Http\Middleware\ForcePasswordChange::class])->gr
     Route::post('/messages/group/{id}/archive', [MessageController::class, 'archiveGroup'])->name('messages.group.archive');
     Route::post('/messages/group/{id}/restore', [MessageController::class, 'restoreGroup'])->name('messages.group.restore'); // <-- NEW ARCHIVE ROUTE
     Route::delete('/messages/group/{id}/delete', [MessageController::class, 'deleteGroup'])->name('messages.group.delete');
+    Route::get('/messages/group/{id}/members', [MessageController::class, 'getGroupMembers'])->name('messages.group.members');
+    Route::post('/messages/group/{id}/photo', [MessageController::class, 'updateGroupPhoto'])->name('messages.group.photo');
     
     Route::get('/messages/sidebar/poll', [MessageController::class, 'pollSidebar'])->name('messages.sidebar.poll');
     Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');

@@ -75,6 +75,8 @@
         0%, 80%, 100% { transform: scale(0); }
         40% { transform: scale(1); }
     }
+
+    [x-cloak] { display: none !important; }
 </style>
 
 <div class="h-[calc(100vh-100px)] w-full bg-white overflow-hidden flex" x-data="chatSystem()">
@@ -238,7 +240,7 @@
                                 : asset($selectedUser->profile_photo_path);
                         }
                     @endphp
-                    <img src="{{ $headerPhotoUrl }}" class="w-10 h-10 rounded-full mr-3 border object-cover" alt="User">
+                    <img src="{{ $headerPhotoUrl }}" class="w-10 h-10 rounded-full mr-3 border object-cover {{ !is_null($selectedUser->custom_name) ? 'js-group-header-photo' : '' }}" alt="User">
                     <div>
                         <h3 class="font-bold text-gray-800 flex items-center gap-2">
                             {{ $selectedUser->custom_name ?? $selectedUser->name }}
@@ -268,6 +270,11 @@
                     
                     <div x-show="groupMenuOpen" style="display: none;" class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
                         
+                        <!-- See Members -->
+                        <button type="button" @click="groupMenuOpen = false; openMembersModal()" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-50 transition-colors">
+                            <i class="fa-solid fa-users mr-2 text-[#6d0101]"></i> See Members
+                        </button>
+
                         <!-- Archive Group -->
                         @if(!isset($isGroupArchived) || !$isGroupArchived)
                         <form action="{{ route('messages.group.archive', $selectedUser->user_id) }}" method="POST">
@@ -896,6 +903,77 @@
         </div>
     </div>
 
+    <!-- SEE MEMBERS MODAL -->
+    <div x-show="membersModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-transition.opacity>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="p-4 border-b bg-[#6d0101] text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg" x-text="membersData.group_name || 'Group Members'"></h3>
+                <button @click="membersModal = false" class="hover:text-gray-300 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="p-4 max-h-80 overflow-y-auto divide-y divide-gray-100">
+                <template x-if="membersLoading">
+                    <p class="text-center text-sm text-gray-400 py-6">Loading members...</p>
+                </template>
+                <template x-if="!membersLoading && membersData.members.length === 0">
+                    <p class="text-center text-sm text-gray-400 py-6">Walang miyembro.</p>
+                </template>
+                <template x-for="m in membersData.members" :key="m.user_id">
+                    <div class="flex items-center py-3">
+                        <img :src="m.photo" class="w-10 h-10 rounded-full border object-cover mr-3 flex-shrink-0">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate" x-text="m.name"></h4>
+                            <span class="text-[10px] font-black uppercase tracking-wider"
+                                  :class="m.role === 'admin' ? 'text-blue-600' : (m.role === 'teacher' ? 'text-amber-600' : 'text-green-600')"
+                                  x-text="m.role"></span>
+                        </div>
+                        <span x-show="m.is_creator" class="text-[10px] font-bold text-gray-400 ml-2">Creator</span>
+                    </div>
+                </template>
+            </div>
+
+            <div class="p-4 border-t flex justify-between items-center gap-3">
+                <button x-show="membersData.can_edit_photo" @click="openPhotoModal()"
+                        class="bg-[#6d0101] text-white px-4 py-2 rounded-xl font-bold hover:bg-red-900 transition text-sm">
+                    <i class="fa-solid fa-camera mr-1"></i> Change Photo
+                </button>
+                <button @click="membersModal = false" class="ml-auto bg-gray-200 text-gray-800 px-4 py-2 rounded-xl font-bold hover:bg-gray-300 transition text-sm">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPDATE GROUP PHOTO MODAL -->
+    <div x-show="photoModal" x-cloak class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-transition.opacity>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col p-6 text-center" @click.away="photoModal = false">
+            <h3 class="font-bold text-lg text-gray-800 mb-4">Update Group Photo</h3>
+
+            <div class="relative w-28 h-28 mx-auto mb-4 cursor-pointer" @click="$refs.newGroupPhoto.click()">
+                <img :src="newPhotoPreview || membersData.group_photo" class="w-28 h-28 rounded-full border-[3px] border-gray-200 object-cover">
+                <div class="absolute bottom-0 right-0 bg-[#6d0101] text-white rounded-full w-9 h-9 flex items-center justify-center border-[3px] border-white">
+                    <i class="fa-solid fa-camera text-sm"></i>
+                </div>
+            </div>
+
+            <input type="file" accept="image/*" class="hidden" x-ref="newGroupPhoto"
+                   @change="
+                       const f = $event.target.files[0];
+                       if (f) {
+                           selectedPhotoFile = f;
+                           const r = new FileReader();
+                           r.onload = e => newPhotoPreview = e.target.result;
+                           r.readAsDataURL(f);
+                       }
+                   ">
+
+            <div class="flex justify-center gap-3 mt-2">
+                <button @click="photoModal = false" type="button" class="flex-1 bg-gray-100 text-gray-700 px-4 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition">Cancel</button>
+                <button @click="uploadGroupPhoto()" :disabled="!selectedPhotoFile || photoUploading"
+                        x-text="photoUploading ? 'Uploading...' : 'Save'"
+                        class="flex-1 bg-[#6d0101] text-white px-4 py-2.5 rounded-xl font-bold hover:bg-red-900 transition disabled:opacity-50"></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom Delete Confirmation Modal (Now safely outside!) -->
     <div x-show="deleteModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-transition.opacity>
         <div class="bg-white rounded-2xl shadow-xl w-full max-sm overflow-hidden flex flex-col p-6 text-center" @click.away="deleteModal = false">
@@ -930,6 +1008,13 @@
             newMsgModal: false,
             createGroupModal: false,
             deleteModal: false,
+            membersModal: false,
+            membersLoading: false,
+            membersData: { group_name: '', members: [], can_edit_photo: false, group_photo: '' },
+            photoModal: false,
+            photoUploading: false,
+            newPhotoPreview: null,
+            selectedPhotoFile: null,
             messageInput: '',
             thisUserIsTyping: false, 
             otherUserIsTyping: false, 
@@ -972,6 +1057,72 @@
                     if (firstNonOfficial) parent.insertBefore(sidebarItem, firstNonOfficial); 
                     else parent.appendChild(sidebarItem);
                 }
+            },
+
+            async openMembersModal() {
+                if (!this.selectedUserId) return;
+                this.membersModal = true;
+                this.membersLoading = true;
+                this.membersData = { group_name: '', members: [], can_edit_photo: false, group_photo: '' };
+                try {
+                    const res = await fetch(`/messages/group/${this.selectedUserId}/members`);
+                    const data = await res.json();
+                    if (data.success) {
+                        const headerImg = document.querySelector('.js-group-header-photo');
+                        this.membersData = {
+                            group_name: data.group_name,
+                            members: data.members,
+                            can_edit_photo: data.can_edit_photo,
+                            group_photo: headerImg ? headerImg.src : '',
+                        };
+                    }
+                } catch (e) {}
+                this.membersLoading = false;
+            },
+
+            openPhotoModal() {
+                this.photoModal = true;
+                this.newPhotoPreview = null;
+                this.selectedPhotoFile = null;
+            },
+
+            async uploadGroupPhoto() {
+                if (!this.selectedPhotoFile) return;
+                this.photoUploading = true;
+
+                const form = new FormData();
+                form.append('group_photo', this.selectedPhotoFile);
+                form.append('_token', '{{ csrf_token() }}');
+
+                try {
+                    const res = await fetch(`/messages/group/${this.selectedUserId}/photo`, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                        body: form,
+                    });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        const newUrl = data.new_path + '?t=' + Date.now();
+
+                        // Update header photo
+                        const headerImg = document.querySelector('.js-group-header-photo');
+                        if (headerImg) headerImg.src = newUrl;
+
+                        // Update sidebar photo
+                        const sidebarImg = document.querySelector(`#sidebar-item-${this.selectedUserId} img`);
+                        if (sidebarImg) sidebarImg.src = newUrl;
+
+                        this.membersData.group_photo = newUrl;
+                        this.photoModal = false;
+                    } else {
+                        alert(data.message || 'Upload failed.');
+                    }
+                } catch (e) {
+                    alert('Upload failed.');
+                }
+
+                this.photoUploading = false;
             },
 
             async pollNewMessages() {
