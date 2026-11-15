@@ -1254,6 +1254,13 @@
                         this.isSending = false;
                         this.thisUserIsTyping = false; 
 
+                        const sidebarItem = document.getElementById(`sidebar-item-${receiverId}`);
+                        if (!sidebarItem) {
+                            // Kung wala pa sa sidebar (new chat), mag-reload nang mabilis para ma-generate ng PHP ang bagong chat item.
+                            window.location.reload();
+                            return; // Stop execution here
+                        }
+
                         const tempBubble = document.getElementById(tempId);
                         if (tempBubble) {
                             tempBubble.id = 'msg-bubble-' + data.current_msg.id;
