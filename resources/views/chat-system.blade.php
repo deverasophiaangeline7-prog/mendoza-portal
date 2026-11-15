@@ -123,7 +123,7 @@
                         $baseBg = 'bg-blue-50/70 hover:bg-blue-100/70';
                     } else {
                         if ($isGroupChat) {
-                            $baseBg = 'bg-yellow-50 hover:bg-yellow-100';
+                            $baseBg = 'bg-red-50 hover:bg-red-100';
                         } else {
                             $baseBg = 'bg-white hover:bg-gray-50';
                         }
@@ -1157,7 +1157,7 @@
                                     totalUnread += chat.unread_count; 
                                     
                                     sidebarItem.classList.add('bg-blue-50/70');
-                                    sidebarItem.classList.remove('bg-white', 'bg-yellow-50', 'hover:bg-gray-50', 'hover:bg-yellow-100');
+                                    sidebarItem.classList.remove('bg-white', 'bg-red-50', 'hover:bg-gray-50', 'hover:bg-red-100');
                                     sidebarText.classList.add('text-gray-900', 'font-semibold');
                                     sidebarText.classList.remove('text-gray-500');
                                     
@@ -1167,12 +1167,12 @@
                                     }
                                 } else {
                                     sidebarItem.classList.remove('bg-blue-50/70');
-                                    if (isOfficial) {
-                                        sidebarItem.classList.add('bg-yellow-50', 'hover:bg-yellow-100');
+                                    if (isGroupChat) {
+                                        sidebarItem.classList.add('bg-red-50', 'hover:bg-red-100');
                                         sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
                                     } else {
                                         sidebarItem.classList.add('bg-white', 'hover:bg-gray-50');
-                                        sidebarItem.classList.remove('bg-yellow-50', 'hover:bg-yellow-100');
+                                        sidebarItem.classList.remove('bg-red-50', 'hover:bg-red-100');
                                     }
                                     
                                     sidebarText.classList.remove('text-gray-900', 'font-semibold');
