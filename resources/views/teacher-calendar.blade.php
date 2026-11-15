@@ -61,7 +61,7 @@
                 <div class="mb-4 flex-shrink-0">
                     <h4 class="text-2xl font-black text-red-600 uppercase leading-tight mb-3">{{ $event->event_title }}</h4>
                     
-                    <div class="flex flex-col gap-1.5">
+                    <div class="flex flex-col gap-0">
                         <p class="font-bold text-gray-400 italic text-sm flex items-center gap-1.5">
                             <i class="fa-regular fa-calendar w-4"></i>
                             {{ \Carbon\Carbon::parse($event->start_date)->format('F d, Y') }}
@@ -151,12 +151,12 @@
 
                 <!-- Add Button anchored to bottom -->
                 @if(!in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']))
-                <div class="mt-4 pt-4 border-t-2 border-black flex-shrink-0">
+                <div class="mt-3 flex-shrink-0">
                     <button type="button" @click="
                         selectedEventId = '{{ $event->calendar_id }}'; 
                         selectedEventTitle = '{{ addslashes($event->event_title) }}'; 
                         openModal = true;
-                    " class="w-full bg-blue-600 text-white font-black border-[3px] border-black py-2.5 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all uppercase text-sm tracking-wide">
+                    " class="w-full bg-blue-600 text-white font-black border-[3px] border-black py-2.5 rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all uppercase text-sm tracking-wide">
                         + Add Student
                     </button>
                 </div>
