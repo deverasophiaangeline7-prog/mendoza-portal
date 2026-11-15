@@ -116,11 +116,26 @@
                 @php
                     $hasUnread = $user->unreadMessagesCount() > 0;
                     $latestMsg = $user->latestMessageWithAuthUser();
+                    $isGroupChat = !is_null($user->custom_name);
+                    $isOfficialGC = str_contains(strtoupper($user->custom_name ?? ''), '(OFFICIAL)');
+                    
+                    if ($hasUnread) {
+                        $baseBg = 'bg-blue-50/70 hover:bg-blue-100/70';
+                    } else {
+                        if ($isGroupChat) {
+                            $baseBg = 'bg-yellow-50 hover:bg-yellow-100';
+                        } else {
+                            $baseBg = 'bg-white hover:bg-gray-50';
+                        }
+                    }
+                    $activeBorder = (isset($selectedUser) && $selectedUser->user_id == $user->user_id) ? 'border-l-4 border-[#6d0101] bg-gray-50' : 'border-l-4 border-transparent';
                 @endphp
                 <a href="{{ route('messages.show', ['id' => $user->user_id]) }}" 
                    id="sidebar-item-{{ $user->user_id }}"
+                   data-is-group="{{ $isGroupChat ? 'true' : 'false' }}"
+                   data-is-official="{{ $isOfficialGC ? 'true' : 'false' }}"
                    x-show="searchQuery === '' || '{{ strtolower(addslashes($user->custom_name ?? $user->name)) }}'.includes(searchQuery.toLowerCase())"
-                   class="block p-4 border-b border-gray-200 transition {{ $hasUnread ? 'bg-blue-50/70' : 'bg-white hover:bg-gray-50' }} {{ (isset($selectedUser) && $selectedUser->user_id == $user->user_id) ? 'border-l-4 border-[#6d0101] bg-gray-50' : 'border-l-4 border-transparent' }}">
+                   class="block p-4 border-b border-gray-200 transition {{ $baseBg }} {{ $activeBorder }}">
                     <div class="flex items-center">
                         @php
                             $photoName = $user->custom_name ?? $user->name;
@@ -131,10 +146,16 @@
                                     : asset($user->profile_photo_path);
                             }
                         @endphp
-                        <img src="{{ $photoUrl }}" class="w-12 h-12 rounded-full mr-3 border object-cover flex-shrink-0" alt="User">
+                        <div class="relative flex-shrink-0 mr-3">
+                            <img src="{{ $photoUrl }}" class="w-12 h-12 rounded-full border object-cover" alt="User">
+                            @if($isGroupChat)
+                                <div class="absolute -bottom-1 -right-1 bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center border-2 border-white shadow-sm"><i class="fa-solid fa-users text-[9px]"></i></div>
+                            @endif
+                        </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between items-baseline">
                                 <span class="truncate flex items-center gap-1 min-w-0 {{ $hasUnread ? 'font-bold text-black' : 'font-bold text-gray-900' }}">
+                                    @if($isOfficialGC) <i class="fa-solid fa-thumbtack text-[11px] text-[#6d0101]" title="Official Group"></i> @endif
                                     @if(isset($user->type) && $user->type === 'announcement') 📌 
                                     @elseif(isset($user->type) && $user->type === 'advisory') 🎓 
                                     @endif   
@@ -938,6 +959,20 @@
                 }, 4000);
             },
 
+            moveToTop(sidebarItem) {
+                if (!sidebarItem) return;
+                const isOfficial = sidebarItem.getAttribute('data-is-official') === 'true';
+                const parent = sidebarItem.parentNode;
+                
+                if (isOfficial) {
+                    parent.prepend(sidebarItem); 
+                } else {
+                    const firstNonOfficial = Array.from(parent.children).find(el => el.tagName === 'A' && el.getAttribute('data-is-official') === 'false' && el !== sidebarItem);
+                    if (firstNonOfficial) parent.insertBefore(sidebarItem, firstNonOfficial); 
+                    else parent.appendChild(sidebarItem);
+                }
+            },
+
             async pollNewMessages() {
                 if (!this.selectedUserId) return;
                 
@@ -1112,15 +1147,17 @@
                         if (sidebarItem && sidebarText) {
                             if (sidebarText.textContent.trim() !== chat.latest_message.trim()) {
                                 sidebarText.textContent = chat.latest_message;
-                                sidebarItem.parentNode.prepend(sidebarItem); 
+                                this.moveToTop(sidebarItem); 
                             }
                             
                             if (this.selectedUserId != chat.user_id) {
+                                const isOfficial = sidebarItem.getAttribute('data-is-official') === 'true';
+                                
                                 if (chat.unread_count > 0) {
                                     totalUnread += chat.unread_count; 
                                     
                                     sidebarItem.classList.add('bg-blue-50/70');
-                                    sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
+                                    sidebarItem.classList.remove('bg-white', 'bg-yellow-50', 'hover:bg-gray-50', 'hover:bg-yellow-100');
                                     sidebarText.classList.add('text-gray-900', 'font-semibold');
                                     sidebarText.classList.remove('text-gray-500');
                                     
@@ -1130,7 +1167,14 @@
                                     }
                                 } else {
                                     sidebarItem.classList.remove('bg-blue-50/70');
-                                    sidebarItem.classList.add('bg-white', 'hover:bg-gray-50');
+                                    if (isOfficial) {
+                                        sidebarItem.classList.add('bg-yellow-50', 'hover:bg-yellow-100');
+                                        sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
+                                    } else {
+                                        sidebarItem.classList.add('bg-white', 'hover:bg-gray-50');
+                                        sidebarItem.classList.remove('bg-yellow-50', 'hover:bg-yellow-100');
+                                    }
+                                    
                                     sidebarText.classList.remove('text-gray-900', 'font-semibold');
                                     sidebarText.classList.add('text-gray-500');
                                     
