@@ -123,9 +123,9 @@
                         $baseBg = 'bg-blue-50/70 hover:bg-blue-100/70';
                     } else {
                         if ($isGroupChat) {
-                            $baseBg = 'bg-red-50 hover:bg-red-100';
-                        } else {
                             $baseBg = 'bg-white hover:bg-gray-50';
+                        } else {
+                            $activeBorder = (isset($selectedUser) && $selectedUser->user_id == $user->user_id) ? 'border-l-4 border-[#6d0101] bg-gray-50' : 'border-l-4 border-transparent';
                         }
                     }
                     $activeBorder = (isset($selectedUser) && $selectedUser->user_id == $user->user_id) ? 'border-l-4 border-[#6d0101] bg-gray-50' : 'border-l-4 border-transparent';
@@ -155,11 +155,12 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between items-baseline">
                                 <span class="truncate flex items-center gap-1 min-w-0 {{ $hasUnread ? 'font-bold text-black' : 'font-bold text-gray-900' }}">
-                                    @if($isOfficialGC) <i class="fa-solid fa-thumbtack text-[11px] text-[#6d0101]" title="Official Group"></i> @endif
                                     @if(isset($user->type) && $user->type === 'announcement') 📌 
                                     @elseif(isset($user->type) && $user->type === 'advisory') 🎓 
                                     @endif   
                                     <span class="truncate">{{ $user->custom_name ?? $user->name }}</span>
+                                    
+                                    @if($isOfficialGC) <i class="fa-solid fa-thumbtack text-[11px] text-[#6d0101] ml-1" title="Official Group"></i> @endif
                                     
                                     <span id="sidebar-badge-{{ $user->user_id }}" 
                                           class="bg-red-600 text-white rounded-full px-2 py-0.5 text-[10px] font-bold ml-1 flex-shrink-0 {{ $hasUnread ? '' : 'hidden' }}">
@@ -1151,13 +1152,11 @@
                             }
                             
                             if (this.selectedUserId != chat.user_id) {
-                                const isOfficial = sidebarItem.getAttribute('data-is-official') === 'true';
-                                
                                 if (chat.unread_count > 0) {
                                     totalUnread += chat.unread_count; 
                                     
                                     sidebarItem.classList.add('bg-blue-50/70');
-                                    sidebarItem.classList.remove('bg-white', 'bg-red-50', 'hover:bg-gray-50', 'hover:bg-red-100');
+                                    sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
                                     sidebarText.classList.add('text-gray-900', 'font-semibold');
                                     sidebarText.classList.remove('text-gray-500');
                                     
@@ -1167,13 +1166,7 @@
                                     }
                                 } else {
                                     sidebarItem.classList.remove('bg-blue-50/70');
-                                    if (isGroupChat) {
-                                        sidebarItem.classList.add('bg-red-50', 'hover:bg-red-100');
-                                        sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
-                                    } else {
-                                        sidebarItem.classList.add('bg-white', 'hover:bg-gray-50');
-                                        sidebarItem.classList.remove('bg-red-50', 'hover:bg-red-100');
-                                    }
+                                    sidebarItem.classList.add('bg-white', 'hover:bg-gray-50');
                                     
                                     sidebarText.classList.remove('text-gray-900', 'font-semibold');
                                     sidebarText.classList.add('text-gray-500');
