@@ -59,11 +59,11 @@
                 
                 <!-- Event Header -->
                 <div class="mb-4 flex-shrink-0">
-                    <h4 class="text-3xl font-black text-red-600 uppercase leading-tight mb-2">{{ $event->event_title }}</h4>
+                    <h4 class="text-2xl font-black text-red-600 uppercase leading-tight mb-3">{{ $event->event_title }}</h4>
                     
-                    <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex flex-col gap-1.5">
                         <p class="font-bold text-gray-400 italic text-sm flex items-center gap-1.5">
-                            <i class="fa-regular fa-calendar"></i>
+                            <i class="fa-regular fa-calendar w-4"></i>
                             {{ \Carbon\Carbon::parse($event->start_date)->format('F d, Y') }}
                         </p>
                         
@@ -84,7 +84,7 @@
                             @endphp
                             @if($displayTime)
                             <p class="font-bold text-gray-400 italic text-sm flex items-center gap-1.5">
-                                <i class="fa-regular fa-clock"></i>
+                                <i class="fa-regular fa-clock w-4"></i>
                                 {{ $displayTime }}
                             </p>
                             @endif
@@ -94,7 +94,7 @@
                 
                 <!-- Scrollable area for participants -->
                 <div class="flex-1 border-t-2 border-dashed border-black pt-4 flex flex-col overflow-hidden">
-                    <h5 class="font-black text-[10px] uppercase mb-4 text-gray-400 tracking-widest text-center flex-shrink-0">Event Program</h5>
+                    <h5 class="font-black text-[10px] uppercase mb-4 text-black tracking-widest text-center flex-shrink-0">Event Program</h5>
                     
                     @php
                         $groupedByStudent = $event->participants->groupBy(function($participant) {
@@ -126,14 +126,14 @@
                                     <!-- Role Tags Container -->
                                     <div class="flex flex-wrap gap-1.5">
                                         @foreach($studentParticipants as $participant)
-                                            <span class="inline-flex items-center gap-1 text-[10px] bg-[#b45309] text-white px-2 py-1 rounded font-black uppercase tracking-tighter">
-                                                {{ $participant->role ?: 'General Participant' }}
+                                            <span class="inline-flex items-center gap-1 text-[11px] bg-[#b45309] text-white px-2 py-1 rounded font-bold capitalize">
+                                                {{ strtolower($participant->role ?: 'General Participant') }}
                                                 
                                                 @if(!in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']) && in_array($participant->student_id, $myStudentIds))
                                                 <button type="button" 
                                                     @click="deleteModal = true; deleteUrl = '{{ route('calendar.deleteParticipant', $participant->id) }}'; deleteParticipantName = '{{ addslashes(($studentInfo->last_name ?? '') . ', ' . ($studentInfo->first_name ?? '') . ' (' . ($participant->role ?: 'General Participant') . ')') }}'"
                                                     class="text-amber-200 hover:text-white transition-colors flex items-center justify-center" title="Remove role">
-                                                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                                                    <i class="fa-solid fa-xmark text-[11px] ml-0.5"></i>
                                                 </button>
                                                 @endif
                                             </span>
