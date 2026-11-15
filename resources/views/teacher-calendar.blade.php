@@ -21,14 +21,14 @@
 <style>
     [x-cloak] { display: none !important; }
     
-    /* Tom Select Theme Matching */
-    .ts-control { border: 2px solid black !important; border-radius: 0.75rem !important; padding: 10px !important; font-weight: 700 !important; background-color: #f9fafb !important; }
-    .ts-dropdown { border: 2px solid black !important; border-radius: 0.75rem !important; margin-top: 5px !important; }
-    .ts-control .item { background: #fb923c !important; color: black !important; border: 1px solid black !important; font-weight: 800 !important; border-radius: 5px !important; }
+    /* Softened Tom Select Theme */
+    .ts-control { border: 1px solid #e5e7eb !important; border-radius: 0.5rem !important; padding: 0.75rem !important; font-weight: 500 !important; background-color: #f9fafb !important; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important; }
+    .ts-dropdown { border: 1px solid #e5e7eb !important; border-radius: 0.5rem !important; margin-top: 4px !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important; }
+    .ts-control .item { background: #ffedd5 !important; color: #9a3412 !important; border: none !important; font-weight: 500 !important; border-radius: 0.375rem !important; padding: 2px 8px !important; }
 </style>
 
-<!-- Outermost wrapper housing the Alpine.js state from the original body element -->
-<div class="flex-1 bg-gray-100 min-h-screen" x-data="{ 
+<!-- Outermost wrapper housing the Alpine.js state -->
+<div class="flex-1 bg-gray-50 min-h-screen" x-data="{ 
     openModal: false, 
     selectedEventId: null, 
     selectedEventTitle: '',
@@ -39,23 +39,22 @@
     showSuccessToast: {{ session('success') ? 'true' : 'false' }}
 }" x-init="if(showErrorToast || showSuccessToast) setTimeout(() => { showErrorToast = false; showSuccessToast = false; }, 5000)">
 
-    <main class="p-8 bg-white">
+    <main class="p-8">
         <div class="flex justify-between items-center mb-8">
             <div>
-                <h2 class="text-4xl font-black uppercase tracking-tighter text-gray-900">Student Participation</h2>
+                <h2 class="text-3xl font-bold tracking-tight text-gray-900">Student Participation</h2>
             </div>
         </div>
 
-        <div id="calendar-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div id="calendar-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($events as $event)
-            <!-- Reduced height to h-[380px] -->
-            <div class="bg-white border-[3px] border-black p-6 rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col h-[380px]">
-                <div class="mb-4">
-                    <h4 class="text-3xl font-black text-red-600 uppercase leading-tight mb-2">{{ $event->event_title }}</h4>
-                    <!-- Made Date and Time side-by-side -->
-                    <div class="flex flex-wrap items-center gap-4">
-                        <p class="font-bold text-gray-400 italic text-sm">
-                            <i class="fa-regular fa-calendar w-4"></i>
+            <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm flex flex-col h-[400px] hover:shadow-md transition-shadow duration-200">
+                <div class="mb-5 flex-shrink-0">
+                    <h4 class="text-xl font-bold text-gray-800 leading-tight mb-3 capitalize">{{ strtolower($event->event_title) }}</h4>
+                    
+                    <div class="flex flex-col gap-2">
+                        <p class="font-medium text-gray-500 text-sm flex items-center gap-2">
+                            <i class="fa-regular fa-calendar text-gray-400 w-4"></i>
                             {{ \Carbon\Carbon::parse($event->start_date)->format('F d, Y') }}
                         </p>
                         
@@ -81,8 +80,8 @@
                                 $displayTime = implode(' - ', array_filter([$startTime, $endTime]));
                             @endphp
                             @if($displayTime)
-                            <p class="font-bold text-gray-400 italic text-sm">
-                                <i class="fa-regular fa-clock w-4"></i>
+                            <p class="font-medium text-gray-500 text-sm flex items-center gap-2">
+                                <i class="fa-regular fa-clock text-gray-400 w-4"></i>
                                 {{ $displayTime }}
                             </p>
                             @endif
@@ -91,8 +90,8 @@
                 </div>
                 
                 <!-- Fixed size scrollable area for participants -->
-                <div class="flex-1 border-t-2 border-dashed border-black pt-4 flex flex-col overflow-hidden">
-                    <h5 class="font-black text-[10px] uppercase mb-3 text-gray-400 tracking-widest text-center flex-shrink-0">Event Program</h5>
+                <div class="flex-1 border-t border-dashed border-gray-200 pt-5 flex flex-col overflow-hidden mt-1">
+                    <h5 class="font-semibold text-[11px] uppercase mb-4 text-gray-400 tracking-wider flex-shrink-0">Event Program</h5>
                     
                     @php
                         // Group participants by student
@@ -101,59 +100,58 @@
                         })->sortKeys();
                     @endphp
 
-                    <div class="overflow-y-auto flex-1 pr-2 space-y-3 custom-scrollbar">
+                    <div class="overflow-y-auto flex-1 pr-2 space-y-4 custom-scrollbar">
                         @forelse($groupedByStudent as $studentId => $studentParticipants)
                             @php 
                                 $studentInfo = $studentParticipants->first()->student; 
                                 $sectionString = $studentInfo->section ? ($studentInfo->section->grade_level . ' - ' . $studentInfo->section->section_name) : ''; 
                             @endphp
-                            <div class="pb-2 border-b border-gray-100 last:border-b-0">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <span class="text-sm font-black text-gray-900">
-                                                {{ $studentInfo->last_name ?? '' }}, {{ $studentInfo->first_name ?? '' }}
+                            <div class="pb-3 border-b border-gray-50 last:border-b-0 last:pb-0">
+                                <div class="flex flex-col gap-1.5">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="text-sm font-semibold text-gray-800 capitalize">
+                                            {{ strtolower($studentInfo->last_name ?? '') }}, {{ strtolower($studentInfo->first_name ?? '') }}
+                                        </span>
+                                        @if($sectionString)
+                                            <span class="text-[10px] bg-gray-100 text-gray-500 font-medium px-1.5 py-0.5 rounded-md border border-gray-200">
+                                                {{ $sectionString }}
                                             </span>
-                                            @if($sectionString)
-                                                <span class="text-[9px] bg-gray-100 text-gray-600 font-extrabold px-1.5 py-0.5 rounded border border-gray-300 uppercase">
-                                                    {{ $sectionString }}
-                                                </span>
-                                            @endif
-                                        </div>
-                                        <div class="flex flex-wrap gap-1 mt-1">
-                                            @foreach($studentParticipants as $participant)
-                                                <span class="inline-flex items-center text-[10px] bg-amber-700 text-white px-2 py-0.5 rounded font-black uppercase tracking-tighter">
-                                                    {{ $participant->role ?: 'General Participant' }}
-                                                    
-                                                    @if(!in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']) && in_array($participant->student_id, $myStudentIds))
-                                                    <button type="button" 
-                                                            @click="deleteModal = true; deleteUrl = '{{ route('calendar.deleteParticipant', $participant->id) }}'; deleteParticipantName = '{{ addslashes(($studentInfo->last_name ?? '') . ', ' . ($studentInfo->first_name ?? '') . ' (' . ($participant->role ?: 'General Participant') . ')') }}'"
-                                                            class="ml-1.5 text-amber-200 hover:text-white transition-colors" title="Remove role">
-                                                        <i class="fa-solid fa-xmark text-[10px]"></i>
-                                                    </button>
-                                                    @endif
-                                                </span>
-                                            @endforeach
-                                        </div>
+                                        @endif
+                                    </div>
+                                    
+                                    <div class="flex flex-wrap gap-1.5 mt-0.5">
+                                        @foreach($studentParticipants as $participant)
+                                            <span class="inline-flex items-center text-[11px] bg-orange-50 text-orange-700 px-2 py-1 rounded-md font-medium border border-orange-100">
+                                                {{ $participant->role ?: 'General Participant' }}
+                                                
+                                                @if(!in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']) && in_array($participant->student_id, $myStudentIds))
+                                                <button type="button" 
+                                                    @click="deleteModal = true; deleteUrl = '{{ route('calendar.deleteParticipant', $participant->id) }}'; deleteParticipantName = '{{ addslashes(($studentInfo->last_name ?? '') . ', ' . ($studentInfo->first_name ?? '') . ' (' . ($participant->role ?: 'General Participant') . ')') }}'"
+                                                    class="ml-2 text-orange-400 hover:text-orange-600 transition-colors" title="Remove role">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                                @endif
+                                            </span>
+                                        @endforeach
                                     </div>
                                 </div>
                             </div>
                         @empty
                             <div class="flex items-center justify-center h-full">
-                                <p class="text-sm text-gray-300 italic text-center">No participants assigned yet.</p>
+                                <p class="text-sm text-gray-400 italic text-center">No participants assigned yet.</p>
                             </div>
                         @endforelse
                     </div>
                 </div>
 
                 @if(!in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']))
-                <div class="mt-4 pt-4 border-t-2 border-black flex-shrink-0">
+                <div class="mt-4 pt-4 border-t border-gray-100 flex-shrink-0">
                     <button type="button" @click="
                         selectedEventId = '{{ $event->calendar_id }}'; 
                         selectedEventTitle = '{{ addslashes($event->event_title) }}'; 
                         openModal = true;
-                    " class="w-full bg-blue-600 text-white font-black border-2 border-black py-2 rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 transition-all uppercase text-sm">
-                        + Add Student
+                    " class="w-full bg-white text-blue-600 border border-blue-200 font-semibold py-2.5 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors text-sm shadow-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus text-xs"></i> Add Student
                     </button>
                 </div>
                 @endif
@@ -165,21 +163,21 @@
     <!-- ASSIGN PARTICIPANTS MODAL -->
     @if(!in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']))
     <div x-show="openModal" 
-         class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" 
+         class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4" 
          x-cloak x-transition
          x-init="$watch('openModal', value => { if(value) { initTomSelect(); } })">
         
-        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-4 border-black relative m-auto flex-shrink-0" @click.away="openModal = false">
-            <h3 class="text-2xl font-black mb-1 text-red-880 uppercase italic">Assign Participants</h3>
-            <p class="text-gray-500 font-bold uppercase text-[10px] mb-6" x-text="selectedEventTitle"></p>
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md relative m-auto flex-shrink-0" @click.away="openModal = false">
+            <h3 class="text-xl font-bold mb-1 text-gray-900">Assign Participants</h3>
+            <p class="text-gray-500 font-medium text-sm mb-6 capitalize" x-text="selectedEventTitle.toLowerCase()"></p>
 
-            <form action="{{ route('calendar.addParticipant') }}" method="POST" class="space-y-4">
+            <form action="{{ route('calendar.addParticipant') }}" method="POST" class="space-y-5">
                 @csrf
                 <input type="hidden" name="event_id" :value="selectedEventId">
                 <div>
                     <div class="flex justify-between items-center mb-2">
-                        <label class="block font-black text-xs uppercase text-gray-400">Search Students</label>
-                        <button type="button" onclick="selectAllStudents()" class="text-[10px] font-black bg-gray-200 hover:bg-black hover:text-white text-black px-2 py-1 rounded-lg border border-black uppercase transition-colors">
+                        <label class="block font-semibold text-sm text-gray-700">Search Students</label>
+                        <button type="button" onclick="selectAllStudents()" class="text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md transition-colors">
                             Select All
                         </button>
                     </div>
@@ -193,7 +191,7 @@
                 </div>
 
                 <div>
-                    <label class="block font-black text-xs uppercase text-gray-400 mb-2">Assign Role(s)</label>
+                    <label class="block font-semibold text-sm text-gray-700 mb-2">Assign Role(s)</label>
                     <select id="role-select" name="roles[]" multiple placeholder="Select roles (optional)..." autocomplete="off">
                         <option value="Co-Emcee">Co-Emcee</option>
                         <option value="Contestant">Contestant</option>
@@ -203,32 +201,32 @@
                     </select>
                 </div>
 
-                <div class="flex space-x-3 pt-4">
-                    <button type="button" @click="openModal = false" class="flex-1 px-4 py-3 bg-gray-100 border-2 border-black font-black rounded-xl uppercase text-xs hover:bg-gray-200 transition-colors">Cancel</button>
-                    <button type="submit" class="flex-1 px-4 py-3 bg-green-400 text-black font-black border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] uppercase text-xs active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">Confirm</button>
+                <div class="flex space-x-3 pt-6">
+                    <button type="button" @click="openModal = false" class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-700 font-semibold rounded-lg text-sm hover:bg-gray-100 transition-colors">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-lg shadow-sm text-sm hover:bg-blue-700 transition-colors">Confirm Setup</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- REMOVE PARTICIPANT MODAL -->
-    <div x-show="deleteModal" class="fixed inset-0 z-[100] flex p-4 bg-black/60 backdrop-blur-sm overflow-y-auto" x-cloak x-transition>
-        <div class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] m-auto flex-shrink-0" @click.away="deleteModal = false">
+    <div x-show="deleteModal" class="fixed inset-0 z-[100] flex p-4 bg-gray-900/40 backdrop-blur-sm overflow-y-auto" x-cloak x-transition>
+        <div class="bg-white rounded-2xl p-8 max-w-sm w-full shadow-xl m-auto flex-shrink-0" @click.away="deleteModal = false">
             <div class="text-center">
-                <div class="bg-red-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    <i class="fa-solid fa-user-xmark text-4xl text-red-600"></i>
+                <div class="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 text-red-500">
+                    <i class="fa-solid fa-user-xmark text-2xl"></i>
                 </div>
-                <h2 class="text-3xl font-black mb-2 uppercase text-black">Remove Role?</h2>
-                <p class="text-lg font-bold text-gray-600 mb-8 leading-tight">
-                    Are you sure you want to remove <br><span class="font-black text-black underline" x-text="deleteParticipantName"></span>?
+                <h2 class="text-xl font-bold mb-2 text-gray-900">Remove Role?</h2>
+                <p class="text-sm text-gray-500 mb-6">
+                    Are you sure you want to remove the role from <br><span class="font-semibold text-gray-900" x-text="deleteParticipantName"></span>?
                 </p>
                 <div class="flex flex-col gap-3">
                     <form :action="deleteUrl" method="POST">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="w-full bg-red-500 text-white font-black py-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-600 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all uppercase text-xl tracking-wider">Yes, Remove</button>
+                        <button type="submit" class="w-full bg-red-600 text-white font-semibold py-2.5 rounded-lg shadow-sm hover:bg-red-700 transition-colors text-sm">Yes, remove role</button>
                     </form>
-                    <button @click="deleteModal = false" type="button" class="w-full bg-gray-100 text-gray-700 font-black py-4 rounded-xl border-4 border-black hover:bg-gray-200 transition-all uppercase text-lg tracking-wider">Cancel</button>
+                    <button @click="deleteModal = false" type="button" class="w-full bg-white border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-sm">Cancel</button>
                 </div>
             </div>
         </div>
@@ -289,12 +287,12 @@
     </script>
 
     <!-- TOAST NOTIFICATIONS -->
-    <div x-show="showSuccessToast" x-cloak x-transition class="fixed bottom-10 right-10 z-[200] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black font-black uppercase">
-        <i class="fa-solid fa-circle-check mr-2"></i> {{ session('success') }}
+    <div x-show="showSuccessToast" x-cloak x-transition class="fixed bottom-6 right-6 z-[200] px-6 py-3 rounded-lg shadow-lg bg-green-50 text-green-800 font-medium border border-green-200 text-sm flex items-center">
+        <i class="fa-solid fa-circle-check mr-2 text-green-500"></i> {{ session('success') }}
     </div>
 
-    <div x-show="showErrorToast" x-cloak x-transition class="fixed bottom-10 right-10 z-[200] px-8 py-4 rounded-2xl border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-red-500 text-white font-black uppercase">
-        <i class="fa-solid fa-circle-exclamation mr-2"></i> 
+    <div x-show="showErrorToast" x-cloak x-transition class="fixed bottom-6 right-6 z-[200] px-6 py-3 rounded-lg shadow-lg bg-red-50 text-red-800 font-medium border border-red-200 text-sm flex items-center">
+        <i class="fa-solid fa-circle-exclamation mr-2 text-red-500"></i> 
         @if($errors->any()) {{ $errors->first() }} @else Something went wrong! @endif
     </div>
 

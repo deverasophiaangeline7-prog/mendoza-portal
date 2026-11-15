@@ -787,7 +787,9 @@ class MessageController extends Controller
             $memberIds->push($group->created_by);
         }
 
-        $members = User::whereIn('user_id', $memberIds)->get()->map(function ($u) use ($group) {
+        $members = User::whereIn('user_id', $memberIds)
+            ->whereNull('custom_name') // Huwag isama ang mga virtual group user (gc_section_*, group_*)
+            ->get()->map(function ($u) use ($group) {
             $photo = '[ui-avatars.com](https://ui-avatars.com/api/?name=)' . urlencode($u->name) . '&background=f3f4f6&color=374151';
             if ($u->profile_photo_path) {
                 $photo = str_starts_with($u->profile_photo_path, 'profile_photos')

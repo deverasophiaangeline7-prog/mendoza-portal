@@ -25,7 +25,8 @@
                 <div class="flex items-center gap-4 mt-2">
                     <h3 class="text-2xl md:text-4xl font-bold text-amber-700 italic leading-none">Admins</h3>
                     @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
-                        <div class="flex items-center bg-white border-[3px] border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] px-3 md:px-4 h-8 md:h-10 not-italic">
+                        <!-- Added whitespace-nowrap and shrink-0 to prevent text wrapping -->
+                        <div class="flex items-center bg-white border-[3px] border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] px-3 md:px-4 h-8 md:h-10 not-italic whitespace-nowrap shrink-0">
                             <span class="text-black font-black uppercase tracking-widest text-xs md:text-sm">
                                 Total: <span class="text-[#b91c1c] text-sm md:text-base ml-1">{{ \App\Models\User::whereIn('role', ['admin', 'superadmin'])->count() }}</span>
                             </span>
@@ -35,19 +36,20 @@
             </div>
             
             <div class="flex flex-wrap gap-3 w-full md:w-auto">
-            <!-- NEW CHANGE PICTURE BUTTON -->
-            <button @click="changePicModal = true" type="button" class="flex-1 md:flex-none justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
-                <i class="fa-solid fa-image"></i> Change Picture
-            </button>
-            
-            <a href="{{ route('admin.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
-                <i class="fa-solid fa-box-archive"></i> View Archives
-            </a>
-            
-            <a href="{{ route('account.management') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </a>
-        </div>
+                <!-- NEW CHANGE PICTURE BUTTON -->
+                <button @click="changePicModal = true" type="button" class="flex-1 md:flex-none justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
+                    <i class="fa-solid fa-image"></i> Change Picture
+                </button>
+                
+                <a href="{{ route('admin.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
+                    <i class="fa-solid fa-box-archive"></i> View Archives
+                </a>
+                
+                <a href="{{ route('account.management') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </div> <!-- THIS IS THE CLOSING DIV THAT WAS MISSING! -->
 
         <!-- SCROLLABLE TABLE CONTAINER -->
         <div class="overflow-x-auto border-2 border-black rounded-lg shadow-sm bg-white w-full">
