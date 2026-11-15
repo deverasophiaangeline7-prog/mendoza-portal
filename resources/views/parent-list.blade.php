@@ -45,15 +45,12 @@
                 <h2 class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight leading-none">List of Accounts</h2>
                 <div class="flex items-center gap-4 mt-2">
                     <h3 class="text-2xl md:text-4xl font-bold text-amber-700 italic leading-none">Parents</h3>
-                    @if(auth()->user()->role === 'admin')    
-                        <!-- Redesigned Neobrutalist Split-Badge -->
-                        <div class="flex items-stretch border-[3px] border-black rounded-xl overflow-hidden shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] not-italic h-8 md:h-10">
-                            <div class="bg-black text-white flex items-center justify-center px-3 md:px-4 text-xs md:text-sm font-black uppercase tracking-widest">
-                                Total
-                            </div>
-                            <div class="bg-white flex items-center justify-center px-3 md:px-4 text-[#b91c1c] font-black text-sm md:text-base border-l-[3px] border-black">
-                                {{ \App\Models\User::where('role', 'parent')->count() }}
-                            </div>
+                    @if(in_array(auth()->user()->role, ['admin', 'superadmin'])) 
+                        <!-- Redesigned Neobrutalist Single Box -->
+                        <div class="flex items-center bg-white border-[3px] border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] px-3 md:px-4 h-8 md:h-10 not-italic">
+                            <span class="text-black font-black uppercase tracking-widest text-xs md:text-sm">
+                                Total Students: <span class="text-sm md:text-base ml-1">{{ \App\Models\User::where('role', 'parent')->count() }}</span>
+                            </span>
                         </div>
                     @endif
                 </div>
