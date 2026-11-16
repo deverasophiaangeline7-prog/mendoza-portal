@@ -707,40 +707,105 @@ class MessageController extends Controller
     }
 
     public function pollSidebar()
-    {
-        $authId = Auth::id();
-        $authUser = Auth::user();
-        $users = $this->getChatHistoryUsers($authId);
-        
-        $sidebarData = $users->map(function($user) use ($authId) {
+{
+    $authId = Auth::id();
+    $authUser = Auth::user();
+    $users = $this->getChatHistoryUsers($authId);
+
+    $sidebarData = $users->map(function ($user) use ($authId, $authUser) {
+
+        $isGroup = \Illuminate\Support\Str::startsWith(
+            $user->username,
+            ['group_', 'gc_section_']
+        );
+
+        $latestMsg = null;
+        $unreadCount = 0;
+
+        if ($isGroup) {
+
+            // GROUP CHAT:
+            // All messages are stored with the GROUP as receiver_id.
+            $latestMsg = Message::where('receiver_id', $user->user_id)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            // Count messages that THIS user has not read yet.
+            $unreadCount = Message::where('receiver_id', $user->user_id)
+                ->whereNotExists(function ($query) use ($authId) {
+                    $query->select(DB::raw(1))
+                        ->from('message_reads')
+                        ->whereColumn('message_reads.message_id', 'messages.id')
+                        ->where('message_reads.user_id', $authId);
+                })
+                ->count();
+
+        } else {
+
+            // 1-ON-1 CHAT:
+            // Keep the existing model logic.
             $latestMsg = $user->latestMessageWithAuthUser();
-            
-            $prefix = '';
-            $isMentioned = false;
-            if ($latestMsg) {
-                if ($latestMsg->sender_id != $authId && (str_contains(strtolower($latestMsg->content), '@' . strtolower($authUser->name)) || str_contains(strtolower($latestMsg->content), '@everybody'))) {
-                    $isMentioned = true;
-                }
-                if ($latestMsg->sender_id == $authId) {
-                    $prefix = 'You: ';
-                } else {
-                    $sender = \App\Models\User::find($latestMsg->sender_id);
-                    if ($sender) {
-                        $prefix = in_array(strtolower($sender->role), ['admin', 'superadmin']) ? 'Admin: ' : strtok($sender->name, " ") . ': ';
-                    }
-                }
+            $unreadCount = $user->unreadMessagesCount();
+        }
+
+        $prefix = '';
+        $isMentioned = false;
+
+        if ($latestMsg) {
+
+            // Check mentions
+            if (
+                $latestMsg->sender_id != $authId &&
+                (
+                    str_contains(
+                        strtolower($latestMsg->content),
+                        '@' . strtolower($authUser->name)
+                    )
+                    ||
+                    str_contains(
+                        strtolower($latestMsg->content),
+                        '@everybody'
+                    )
+                )
+            ) {
+                $isMentioned = true;
             }
 
-            return [
-                'user_id' => $user->user_id,
-                'unread_count' => $user->unreadMessagesCount(),
-                'latest_message' => $latestMsg ? $prefix . $latestMsg->content : 'No messages yet...',
-                'is_mentioned' => $isMentioned,
-            ];
-        });
+            // Message prefix
+            if ($latestMsg->sender_id == $authId) {
 
-        return response()->json(['sidebar' => $sidebarData]);
-    }
+                $prefix = 'You: ';
+
+            } else {
+
+                $sender = User::find($latestMsg->sender_id);
+
+                if ($sender) {
+
+                    $prefix = in_array(
+                        strtolower($sender->role),
+                        ['admin', 'superadmin']
+                    )
+                        ? 'Admin: '
+                        : strtok($sender->name, " ") . ': ';
+                }
+            }
+        }
+
+        return [
+            'user_id' => $user->user_id,
+            'unread_count' => $unreadCount,
+            'latest_message' => $latestMsg
+                ? $prefix . $latestMsg->content
+                : 'No messages yet...',
+            'is_mentioned' => $isMentioned,
+        ];
+    });
+
+    return response()->json([
+        'sidebar' => $sidebarData
+    ]);
+}
 
         /**
      * Sino ang puwedeng mag-edit ng group photo?

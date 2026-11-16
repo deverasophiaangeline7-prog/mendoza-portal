@@ -20,8 +20,7 @@
                     
                     {{-- Profile Picture Container (Edit Button Removed) --}}
                     <div class="relative flex-shrink-0 mb-4 md:mb-0">
-                        <div class="w-44 h-44 bg-amber-700 border-[4px] border-black rounded-[2rem] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center rotate-[-2deg]">
-                        @if(auth()->user()->profile_photo_path)
+                        <div class="w-44 h-44 bg-amber-700 border-[4px] border-black rounded-[2rem] overflow-hidden flex items-center justify-center rotate-[-2deg]">                        @if(auth()->user()->profile_photo_path)
                             <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}" 
                                  class="w-full h-full object-cover">
                         @else
@@ -46,7 +45,7 @@
 
             </div>
 
-            <div class="bg-white border-[5px] border-black p-10 rounded-[3rem] shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] mb-10">
+                <div class="bg-white border-[5px] border-black p-10 rounded-[3rem] mb-10">
                 <!-- Switched to a 12-column grid to control the exact width of left/right sides -->
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-x-12 lg:gap-x-20 gap-y-12 min-w-0">
                     

@@ -3,7 +3,7 @@
 @section('title', 'Admin List')
 
 @section('content')
-<div class="flex-1 p-4 md:p-8 bg-white min-h-screen" 
+<div class="flex-1 flex flex-col bg-white min-h-screen relative" 
      x-data="{ 
          openModal: false, 
          archiveModal: false, 
@@ -16,107 +16,139 @@
          editLastName: ''
      }">
 
-    <main class="max-w-6xl mx-auto">
+    <main class="flex-1 p-8">
+        @if(session()->has('toast_status') || session()->has('success') || $errors->any())
+        @php
+            $isError = $errors->any() || session('toast_status') === 'error';
+            $toastMessage = $errors->any() ? $errors->first() : (session('toast_message') ?? session('success'));
+        @endphp
+        <div id="import-toast" class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-4 min-w-[320px] max-w-[400px] rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-green-100 text-green-900' }} px-5 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-opacity duration-500">
+            <div class="flex items-center gap-3">
+                @if($isError)
+                    <i class="fa-solid fa-triangle-exclamation text-2xl shrink-0"></i>
+                @else
+                    <i class="fa-solid fa-circle-check text-2xl shrink-0"></i>
+                @endif
+                <span class="text-sm md:text-base leading-tight">{{ $toastMessage }}</span>
+            </div>
+            <button onclick="document.getElementById('import-toast').style.display='none'" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
         
-        <!-- RESPONSIVE HEADER SECTION -->
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 w-full">
-            <div>
-                <h2 class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight leading-none">List of Accounts</h2>
-                <div class="flex items-center gap-4 mt-2">
-                    <h3 class="text-2xl md:text-4xl font-bold text-amber-700 italic leading-none">Admins</h3>
-                    @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
-                        <!-- Simple Pill Badge -->
-                        <span class="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full border border-black/20 shrink-0 whitespace-nowrap not-italic">
-                            Total: <span class="text-[#b91c1c] font-black ml-1">{{ count($males) + count($females) }}</span>
-                        </span>
-                    @endif
-                </div>
-            </div>
+        <script>
+            setTimeout(function() {
+                var toast = document.getElementById('import-toast');
+                if (toast) {
+                    toast.style.opacity = '0';
+                    setTimeout(function() { toast.style.display = 'none'; }, 500);
+                }
+            }, 5000);
+        </script>
+        @endif
+
+        <div class="max-w-6xl mx-auto">
             
-            <div class="flex flex-wrap gap-3 w-full md:w-auto">
-                <!-- NEW CHANGE PICTURE BUTTON -->
-                <button @click="changePicModal = true" type="button" class="flex-1 md:flex-none justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
-                    <i class="fa-solid fa-image"></i> Change Picture
-                </button>
+            <!-- RESPONSIVE HEADER SECTION -->
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 w-full">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight leading-none">List of Accounts</h2>
+                    <div class="flex items-center gap-4 mt-2">
+                        <h3 class="text-2xl md:text-4xl font-bold text-amber-700 italic leading-none">Admins</h3>
+                        @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
+                            <!-- Simple Pill Badge -->
+                            <span class="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full border border-black/20 shrink-0 whitespace-nowrap not-italic">
+                                Total: <span class="text-[#b91c1c] font-black ml-1">{{ count($males) + count($females) }}</span>
+                            </span>
+                        @endif
+                    </div>
+                </div>
                 
-                <a href="{{ route('admin.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
-                    <i class="fa-solid fa-box-archive"></i> View Archives
-                </a>
-                
-                <a href="{{ route('account.management') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
-                    <i class="fa-solid fa-arrow-left"></i> Back
-                </a>
+                <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                    <!-- NEW CHANGE PICTURE BUTTON -->
+                    <button @click="changePicModal = true" type="button" class="flex-1 md:flex-none justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
+                        <i class="fa-solid fa-image"></i> Change Picture
+                    </button>
+                    
+                    <a href="{{ route('admin.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
+                        <i class="fa-solid fa-box-archive"></i> View Archives
+                    </a>
+                    
+                    <a href="{{ route('account.management') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div> 
+
+            <!-- SCROLLABLE TABLE CONTAINER -->
+            <div class="overflow-x-auto border-2 border-black rounded-lg shadow-sm bg-white w-full">
+                <table class="w-full min-w-[600px] text-left border-collapse">
+                    <thead class="bg-gray-200 border-b-2 border-black text-xl font-bold">
+                        <tr>
+                            <th class="p-4 border-r-2 border-black text-center w-24">No.</th>
+                            <th class="p-4">Admin Name</th>
+                            <th class="p-4 w-40 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bg-gray-300 font-bold border-b-2 border-black uppercase tracking-widest"><td colspan="3" class="p-2 pl-4 italic">Male</td></tr>
+                        @foreach($males as $index => $admin)
+                            <tr class="border-b-2 border-black hover:bg-gray-50 transition">
+                                <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
+                                <td class="p-4 font-bold uppercase">{{ $admin->name }}</td>
+                                <td class="p-4">
+                                    <div class="flex justify-center gap-2 items-center">
+                                        <button type="button" 
+                                                @click="adminEditModal = true; 
+                                                        editAdminId = '{{ $admin->user_id ?? $admin->id }}'; 
+                                                        editFirstName = '{{ addslashes($admin->admin->first_name ?? '') }}'; 
+                                                        editMiddleName = '{{ addslashes($admin->admin->middle_name ?? '') }}'; 
+                                                        editLastName = '{{ addslashes($admin->admin->last_name ?? '') }}';"
+                                                class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
+                                            Edit
+                                        </button>
+                                        
+                                        <button type="button" 
+                                            @click="archiveModal = true; archiveUrl = '{{ route('account.admin.archive', $admin->user_id ?? $admin->id) }}'" 
+                                            title="Archive" 
+                                            class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
+                                            <i class="fa-solid fa-box-archive"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+
+                        <tr class="bg-gray-300 font-bold border-b-2 border-black uppercase tracking-widest"><td colspan="3" class="p-2 pl-4 italic">Female</td></tr>
+                        @foreach($females as $index => $admin)
+                            <tr class="border-b-2 border-black hover:bg-gray-50 transition">
+                                <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
+                               <td class="p-4 font-bold uppercase">{{ $admin->name }}</td>
+                                <td class="p-4">
+                                    <div class="flex justify-center gap-2 items-center">
+                                        <button type="button" 
+                                                @click="adminEditModal = true; 
+                                                        editAdminId = '{{ $admin->user_id ?? $admin->id }}'; 
+                                                        editFirstName = '{{ addslashes($admin->admin->first_name ?? '') }}'; 
+                                                        editMiddleName = '{{ addslashes($admin->admin->middle_name ?? '') }}'; 
+                                                        editLastName = '{{ addslashes($admin->admin->last_name ?? '') }}';" 
+                                                class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
+                                            Edit
+                                        </button>
+                                        
+                                        <button type="button" 
+                                            @click="archiveModal = true; archiveUrl = '{{ route('account.admin.archive', $admin->user_id ?? $admin->id) }}'" 
+                                            title="Archive" 
+                                            class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
+                                            <i class="fa-solid fa-box-archive"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-        </div> 
-
-        <!-- SCROLLABLE TABLE CONTAINER -->
-        <div class="overflow-x-auto border-2 border-black rounded-lg shadow-sm bg-white w-full">
-            <table class="w-full min-w-[600px] text-left border-collapse">
-                <thead class="bg-gray-200 border-b-2 border-black text-xl font-bold">
-                    <tr>
-                        <th class="p-4 border-r-2 border-black text-center w-24">No.</th>
-                        <th class="p-4">Admin Name</th>
-                        <th class="p-4 w-40 text-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="bg-gray-300 font-bold border-b-2 border-black uppercase tracking-widest"><td colspan="3" class="p-2 pl-4 italic">Male</td></tr>
-                    @foreach($males as $index => $admin)
-                        <tr class="border-b-2 border-black hover:bg-gray-50 transition">
-                            <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
-                            <td class="p-4 font-bold uppercase">{{ $admin->name }}</td>
-                            <td class="p-4">
-                                <div class="flex justify-center gap-2 items-center">
-                                    <button type="button" 
-                                            @click="adminEditModal = true; 
-                                                    editAdminId = '{{ $admin->user_id ?? $admin->id }}'; 
-                                                    editFirstName = '{{ addslashes($admin->admin->first_name ?? '') }}'; 
-                                                    editMiddleName = '{{ addslashes($admin->admin->middle_name ?? '') }}'; 
-                                                    editLastName = '{{ addslashes($admin->admin->last_name ?? '') }}';"
-                                            class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
-                                        Edit
-                                    </button>
-                                    
-                                    <button type="button" 
-                                        @click="archiveModal = true; archiveUrl = '{{ route('account.admin.archive', $admin->user_id ?? $admin->id) }}'" 
-                                        title="Archive" 
-                                        class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
-                                        <i class="fa-solid fa-box-archive"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-
-                    <tr class="bg-gray-300 font-bold border-b-2 border-black uppercase tracking-widest"><td colspan="3" class="p-2 pl-4 italic">Female</td></tr>
-                    @foreach($females as $index => $admin)
-                        <tr class="border-b-2 border-black hover:bg-gray-50 transition">
-                            <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
-                           <td class="p-4 font-bold uppercase">{{ $admin->name }}</td>
-                            <td class="p-4">
-                                <div class="flex justify-center gap-2 items-center">
-                                    <button type="button" 
-                                            @click="adminEditModal = true; 
-                                                    editAdminId = '{{ $admin->user_id ?? $admin->id }}'; 
-                                                    editFirstName = '{{ addslashes($admin->admin->first_name ?? '') }}'; 
-                                                    editMiddleName = '{{ addslashes($admin->admin->middle_name ?? '') }}'; 
-                                                    editLastName = '{{ addslashes($admin->admin->last_name ?? '') }}';" 
-                                            class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
-                                        Edit
-                                    </button>
-                                    
-                                    <button type="button" 
-                                        @click="archiveModal = true; archiveUrl = '{{ route('account.admin.archive', $admin->user_id ?? $admin->id) }}'" 
-                                        title="Archive" 
-                                        class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
-                                        <i class="fa-solid fa-box-archive"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
         </div>
     </main>
 
@@ -154,8 +186,7 @@
                             @endphp
                             @foreach($allAdmins as $adminUser)
                                 <option value="{{ $adminUser->user_id ?? $adminUser->id }}">
-                                    {{ $adminUser->admin?->first_name }} {{ $adminUser->admin?->last_name }} 
-                                    ({{ $adminUser->name }})
+                                    {{ $adminUser->admin?->first_name }} {{ $adminUser->admin?->last_name }}
                                 </option>
                             @endforeach
                         </optgroup>

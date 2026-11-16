@@ -270,7 +270,6 @@ x-data="{
                         @foreach($teachers as $teacherUser)
                             <option value="{{ $teacherUser->user_id }}">
                                 {{ $teacherUser->teacher?->first_name }} {{ $teacherUser->teacher?->last_name }} 
-                                ({{ $teacherUser->username }})
                             </option>
                         @endforeach
                     </select>
