@@ -18,9 +18,9 @@
                 
                 <div class="flex flex-col md:flex-row items-center gap-8">
                     
-                    {{-- Profile Picture Container --}}
+                    {{-- Profile Picture Container (SHADOW REMOVED) --}}
                     <div class="relative flex-shrink-0 mb-4 md:mb-0">
-                        <div class="w-44 h-44 bg-blue-700 border-[4px] border-black rounded-[2rem] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center rotate-[-2deg]">
+                        <div class="w-44 h-44 bg-blue-700 border-[4px] border-black rounded-[2rem] overflow-hidden flex items-center justify-center rotate-[-2deg]">
                         @if(auth()->user()->admin && auth()->user()->admin->profile_photo_path)
                             <img src="{{ asset(auth()->user()->admin->profile_photo_path) }}" 
                                  class="w-full h-full object-cover">
@@ -35,7 +35,7 @@
                             {{ auth()->user()->name }}
                         </h2>
                         <div class="font-bold text-gray-400 mt-4 italic uppercase tracking-widest text-2xl">
-                            SYSTEM ADMINISTRATOR
+                            {{ auth()->user()->role === 'superadmin' ? 'SUPERADMIN' : 'SYSTEM ADMINISTRATOR' }}
                         </div>
                     </div>
                 </div>
@@ -46,12 +46,13 @@
 
             </div>
 
-            <div class="bg-white border-[5px] border-black p-10 rounded-[3rem] shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] mb-10">
+            {{-- Main Information Container (SHADOW REMOVED) --}}
+            <div class="bg-white border-[5px] border-black p-10 rounded-[3rem] mb-10">
                 <!-- Switched to a 12-column grid to control the exact width of left/right sides -->
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-x-12 lg:gap-x-20 gap-y-12 min-w-0">
                     
-                    <!-- Left side takes up more space (8 out of 12 columns) -->
-                    <div class="md:col-span-8 space-y-10 min-w-0">
+                    <!-- Left side takes up more space (7 out of 12 columns) -->
+                    <div class="md:col-span-7 space-y-10 min-w-0">
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Email Address</label>
                             <p class="text-3xl font-black italic break-words">
@@ -67,8 +68,8 @@
                         </div>
                     </div>
 
-                    <!-- Right side is pushed to the edge (4 out of 12 columns) -->
-                    <div class="md:col-span-4 space-y-10 min-w-0">
+                    <!-- Right side is pushed to the edge (5 out of 12 columns) -->
+                    <div class="md:col-span-5 space-y-10 min-w-0">
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Access Level</label>
                             <p class="text-3xl font-black uppercase italic break-words text-[#34C759]">
@@ -79,7 +80,7 @@
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Account Role</label>
                             <p class="text-3xl font-black uppercase italic break-words">
-                                {{ auth()->user()->role ?? 'ADMIN' }}
+                                {{ auth()->user()->role === 'superadmin' ? 'SUPERADMIN' : 'ADMIN' }}
                             </p>
                         </div>
                     </div>
