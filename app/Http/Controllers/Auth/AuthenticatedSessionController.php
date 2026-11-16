@@ -28,6 +28,8 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
         $request->session()->regenerate();
 
+        Auth::logoutOtherDevices($request->password);
+        
         $role = auth()->user()->role;
         $loginType = $request->input('login_type');
 

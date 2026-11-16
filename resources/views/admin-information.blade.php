@@ -1,0 +1,195 @@
+@extends('layouts.navigation')
+
+@section('title', 'Admin Profile')
+
+@section('content')
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+</style>
+
+<div class="flex-1 flex flex-col h-full overflow-hidden relative" x-data="{ passwordModal: false }">
+    
+    <main class="flex-1 bg-white p-10 relative overflow-y-hidden custom-scrollbar">
+        
+        <div class="max-w-4xl mx-auto w-full mt-4">
+            
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8 mb-12 pl-4">
+                
+                <div class="flex flex-col md:flex-row items-center gap-8">
+                    
+                    {{-- Profile Picture Container --}}
+                    <div class="relative flex-shrink-0 mb-4 md:mb-0">
+                        <div class="w-44 h-44 bg-blue-700 border-[4px] border-black rounded-[2rem] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center rotate-[-2deg]">
+                        @if(auth()->user()->profile_photo_path)
+                            <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}" 
+                                 class="w-full h-full object-cover">
+                        @else
+                            <i class="fa-solid fa-user-shield text-7xl text-white"></i>
+                        @endif
+                        </div>
+                    </div>
+
+                    <div class="text-center md:text-left">
+                        <h2 class="text-6xl font-black uppercase italic tracking-tighter leading-none text-black">
+                            {{ auth()->user()->name }}
+                        </h2>
+                        <div class="font-bold text-gray-400 mt-4 italic uppercase tracking-widest text-2xl">
+                            SYSTEM ADMINISTRATOR
+                        </div>
+                    </div>
+                </div>
+
+                <button @click="passwordModal = true" class="bg-[#111] text-white font-black uppercase tracking-widest px-6 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-800 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2 flex-shrink-0">
+                    <i class="fa-solid fa-key text-yellow-400"></i> Change Password
+                </button>
+
+            </div>
+
+            <div class="bg-white border-[5px] border-black p-10 rounded-[3rem] shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] mb-10">
+                <!-- Switched to a 12-column grid to control the exact width of left/right sides -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-x-12 lg:gap-x-20 gap-y-12 min-w-0">
+                    
+                    <!-- Left side takes up more space (8 out of 12 columns) -->
+                    <div class="md:col-span-8 space-y-10 min-w-0">
+                        <div>
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Email Address</label>
+                            <p class="text-3xl font-black italic break-words">
+                                {{ auth()->user()->email ?? auth()->user()->username ?? 'N/A' }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Date Joined</label>
+                            <p class="text-3xl font-black uppercase italic break-words">
+                                {{ auth()->user()->created_at ? \Carbon\Carbon::parse(auth()->user()->created_at)->format('d/m/Y') : 'N/A' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Right side is pushed to the edge (4 out of 12 columns) -->
+                    <div class="md:col-span-4 space-y-10 min-w-0">
+                        <div>
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Access Level</label>
+                            <p class="text-3xl font-black uppercase italic break-words text-[#34C759]">
+                                FULL ACCESS
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Account Role</label>
+                            <p class="text-3xl font-black uppercase italic break-words">
+                                {{ auth()->user()->role ?? 'ADMIN' }}
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    {{-- PASSWORD UPDATE MODAL (With Strength Indicator) --}}
+    <div x-show="passwordModal" 
+         x-data="{ 
+             currentPassword: '', 
+             newPassword: '', 
+             confirmPassword: '',
+             strength() {
+                 let p = this.newPassword;
+                 if(!p) return '';
+                 if(p.length < 8) return 'Weak';
+                 let l = /[a-zA-Z]/.test(p), n = /\d/.test(p), s = /[^a-zA-Z0-9]/.test(p);
+                 if(l && n && s) return 'Strong';
+                 if((l&&n)||(l&&s)||(n&&s)) return 'Mid';
+                 return 'Weak';
+             }
+         }"
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
+        
+        <div @click.away="passwordModal = false; currentPassword = ''; newPassword = ''; confirmPassword = ''" class="bg-white border-4 border-black rounded-[2rem] p-8 max-w-md w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative">
+            
+            <button @click="passwordModal = false; currentPassword = ''; newPassword = ''; confirmPassword = ''" class="absolute top-4 right-6 text-3xl font-black text-gray-400 hover:text-red-600 transition-colors">&times;</button>
+            
+            <h2 class="text-3xl font-black mb-6 uppercase tracking-tight text-center text-black italic">Change Password</h2>
+            
+            <form action="{{ route('user.password.update') }}" method="POST" 
+                  @submit.prevent="if(newPassword === confirmPassword && currentPassword !== newPassword && strength() === 'Strong') $el.submit()">
+                @csrf
+                @method('PUT')
+                
+                <div class="space-y-5 mb-8">
+                    <div x-data="{ show: false }">
+                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Current Password</label>
+                        <div class="relative flex items-center">
+                            <input :type="show ? 'text' : 'password'" name="current_password" x-model="currentPassword" required class="w-full border-2 border-black rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 focus:ring-red-400 pr-10">
+                            <button type="button" @click="show = !show" class="absolute right-3 text-gray-400 hover:text-black">
+                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div x-data="{ show: false }">
+                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">New Password</label>
+                        <div class="relative flex items-center">
+                            <input :type="show ? 'text' : 'password'" name="password" x-model="newPassword" required 
+                                   class="w-full border-2 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-colors pr-10"
+                                   :class="(currentPassword !== '' && newPassword !== '' && currentPassword === newPassword) ? 'border-red-500 focus:ring-red-500 bg-red-50' : 'border-black focus:ring-red-400 bg-white'">
+                            <button type="button" @click="show = !show" class="absolute right-3 text-gray-400 hover:text-black">
+                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
+                        
+                        {{-- LIVE STRENGTH INDICATOR --}}
+                        <div x-show="newPassword !== ''" x-transition class="mt-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-gray-50 p-2 rounded-lg border-2 border-black">
+                            <span class="text-gray-600">Strength:</span>
+                            <div class="flex-1 flex h-2 gap-1">
+                                <div class="flex-1 rounded-full transition-colors duration-300" :class="strength() === 'Weak' ? 'bg-red-500' : (strength() === 'Mid' ? 'bg-yellow-400' : 'bg-green-500')"></div>
+                                <div class="flex-1 rounded-full transition-colors duration-300" :class="(strength() === 'Mid' || strength() === 'Strong') ? (strength() === 'Mid' ? 'bg-yellow-400' : 'bg-green-500') : 'bg-gray-200'"></div>
+                                <div class="flex-1 rounded-full transition-colors duration-300" :class="strength() === 'Strong' ? 'bg-green-500' : 'bg-gray-200'"></div>
+                            </div>
+                            <span :class="{'text-red-600': strength() === 'Weak', 'text-yellow-600': strength() === 'Mid', 'text-green-600': strength() === 'Strong'}" x-text="strength()"></span>
+                        </div>
+
+                        <p x-show="currentPassword !== '' && newPassword !== '' && currentPassword === newPassword" 
+                           x-transition 
+                           class="text-red-600 font-bold text-sm mt-2 flex items-center gap-1">
+                            <i class="fa-solid fa-circle-exclamation"></i> Cannot be the same as current password
+                        </p>
+                    </div>
+
+                    <div x-data="{ show: false }">
+                        <label class="block font-bold uppercase text-gray-600 text-sm mb-2 tracking-widest">Confirm New Password</label>
+                        <div class="relative flex items-center">
+                            <input :type="show ? 'text' : 'password'" name="password_confirmation" x-model="confirmPassword" required 
+                                   class="w-full border-2 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-4 transition-colors pr-10"
+                                   :class="(confirmPassword !== '' && newPassword !== confirmPassword) ? 'border-red-500 focus:ring-red-500 bg-red-50' : 'border-black focus:ring-red-400 bg-white'">
+                            <button type="button" @click="show = !show" class="absolute right-3 text-gray-400 hover:text-black">
+                                <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
+                        
+                        <p x-show="confirmPassword !== '' && newPassword !== confirmPassword" 
+                           x-transition 
+                           class="text-red-600 font-bold text-sm mt-2 flex items-center gap-1">
+                            <i class="fa-solid fa-circle-exclamation"></i> Passwords do not match
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end items-center space-x-4">
+                    <button type="button" @click="passwordModal = false; currentPassword = ''; newPassword = ''; confirmPassword = ''" class="font-bold text-gray-500 hover:text-black uppercase tracking-wider px-4 transition-colors">Cancel</button>
+                    
+                    <button type="submit" 
+                            :disabled="(confirmPassword !== '' && newPassword !== confirmPassword) || (currentPassword !== '' && newPassword !== '' && currentPassword === newPassword) || newPassword === '' || strength() !== 'Strong'"
+                            :class="((confirmPassword !== '' && newPassword !== confirmPassword) || (currentPassword !== '' && newPassword !== '' && currentPassword === newPassword) || newPassword === '' || strength() !== 'Strong') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-600 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none'"
+                            class="bg-[#34C759] text-white font-black uppercase tracking-wider px-6 py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center">
+                        <i class="fa-solid fa-check mr-2"></i> Update
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+@endsection

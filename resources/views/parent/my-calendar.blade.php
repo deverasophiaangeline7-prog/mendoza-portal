@@ -50,9 +50,9 @@
 
             <!-- Reduced mt-4 to mt-2 and pt-4 to pt-3 to pull the line up -->
             <div class="mt-2 pt-3 border-t-2 border-dashed border-black flex-1">
-                <p class="text-[11px] font-black text-gray-500 mb-3 tracking-widest uppercase">
+                <p class="text-[11px] font-black text-gray-500 mb-3 tracking-widest">
                     <span class="capitalize text-black">{{ strtolower($student->first_name ?? 'Student') }} {{ strtolower($student->last_name ?? '') }}</span> 
-                    Assigned Role(s):
+                    assigned role(s):
                 </p>
                 
                 <div class="flex flex-wrap gap-1.5">

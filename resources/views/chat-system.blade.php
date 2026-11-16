@@ -1193,7 +1193,7 @@
                     });
 
                     // Ipasa ang last_id sa backend
-                    const response = await fetch(`/messages/${this.selectedUserId}/poll?last_id=${lastId}`);
+                    const response = await fetch(`/messages/${this.selectedUserId}/poll?last_id=${lastId}&t=${Date.now()}`, { cache: 'no-store' });
                     if (!response.ok) return;
                     
                     const data = await response.json();
@@ -1349,7 +1349,7 @@
 
             async pollSidebarUpdates() {
                 try {
-                    const response = await fetch('/messages/sidebar/poll');
+                    const response = await fetch('/messages/sidebar/poll?t=' + Date.now(), { cache: 'no-store' });
                     if (!response.ok) return;
                     const data = await response.json();
                     
