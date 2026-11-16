@@ -22,19 +22,21 @@
             $isError = $errors->any() || session('toast_status') === 'error';
             $toastMessage = $errors->any() ? $errors->first() : (session('toast_message') ?? session('success'));
         @endphp
-        <div id="import-toast" class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-4 min-w-[320px] max-w-[400px] rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-green-100 text-green-900' }} px-5 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-opacity duration-500">
+        <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" 
+            class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-[#d1fae5] text-[#065f46]' }} px-6 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
             <div class="flex items-center gap-3">
                 @if($isError)
                     <i class="fa-solid fa-triangle-exclamation text-2xl shrink-0"></i>
                 @else
                     <i class="fa-solid fa-circle-check text-2xl shrink-0"></i>
                 @endif
-                <span class="text-sm md:text-base leading-tight">{{ $toastMessage }}</span>
+                <span class="text-base whitespace-nowrap leading-none">{{ $toastMessage }}</span>
             </div>
-            <button onclick="document.getElementById('import-toast').style.display='none'" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
+            <button @click="show = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
+        @endif
         
         <script>
             setTimeout(function() {

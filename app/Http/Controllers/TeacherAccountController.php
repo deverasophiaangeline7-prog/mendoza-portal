@@ -345,7 +345,7 @@ class TeacherAccountController extends Controller
 
         return redirect()->back()->with([
     'toast_status' => 'success',
-    'toast_message' => 'Teacher profile picture updated successfully!'
+    'toast_message' => 'Profile picture updated successfully!'
         ]);
     }
 }
