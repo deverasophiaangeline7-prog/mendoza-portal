@@ -6,26 +6,26 @@
 <main class="flex-1 p-8 bg-white min-h-screen" x-data="{ addSectionModal: false, deleteSectionModal: false, changePicModal: false, confirmDeleteModal: false, selectedSectionName: '' }">
 
     <!-- FIXED TOAST NOTIFICATION -->
-    @if(session()->has('toast_status') || $errors->any() || session('success'))
-        @php
-            $isError = $errors->any() || session('toast_status') === 'error';
-            $toastMessage = $errors->any() ? $errors->first() : (session('toast_message') ?? session('success'));
-        @endphp
-        <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" 
-            class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-[#d1fae5] text-[#065f46]' }} px-6 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-            <div class="flex items-center gap-3">
-                @if($isError)
-                    <i class="fa-solid fa-circle-exclamation text-2xl shrink-0"></i>
-                @else
-                    <i class="fa-solid fa-circle-check text-2xl shrink-0"></i>
-                @endif
-                <span class="text-base whitespace-nowrap leading-none">{{ $toastMessage }}</span>
-            </div>
-            <button @click="show = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+    @if(session()->has('toast_status') || session()->has('success') || $errors->any())
+    @php
+        $isError = $errors->any() || session('toast_status') === 'error';
+        $toastMessage = $errors->any() ? $errors->first() : (session('toast_message') ?? session('success'));
+    @endphp
+    <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" 
+        class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-[#d1fae5] text-[#065f46]' }} px-6 py-4 font-black">
+        <div class="flex items-center gap-3">
+            @if($isError)
+                <i class="fa-solid fa-triangle-exclamation text-2xl shrink-0"></i>
+            @else
+                <i class="fa-solid fa-circle-check text-2xl shrink-0"></i>
+            @endif
+            <span class="text-base whitespace-nowrap leading-none">{{ $toastMessage }}</span>
         </div>
-        @endif
+        <button @click="show = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    @endif
 
     <div class="max-w-6xl mx-auto">
 
@@ -101,9 +101,9 @@
                     <select name="parent_id" required class="w-full border-2 border-black rounded-xl p-3 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400 bg-white">
                         <option value="" disabled selected>-- Select Account --</option>
                         @foreach($parents ?? [] as $parent)
-                           <option value="{{ $parent->user_id }}">
-                               {{ $parent->parent?->first_name ?? '' }} {{ $parent->parent?->last_name ?? $parent->username }}
-                           </option>
+                        <option value="{{ $parent->user_id ?? $parent->id }}">
+                            {{ $parent->parent?->first_name && $parent->parent?->last_name ? $parent->parent->first_name . ' ' . $parent->parent->last_name : ($parent->name ?? $parent->username) }}
+                        </option>
                         @endforeach
                     </select>
                 </div>

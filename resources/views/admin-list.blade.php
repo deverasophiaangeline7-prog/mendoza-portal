@@ -23,7 +23,7 @@
             $toastMessage = $errors->any() ? $errors->first() : (session('toast_message') ?? session('success'));
         @endphp
         <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" 
-            class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-[#d1fae5] text-[#065f46]' }} px-6 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-[#d1fae5] text-[#065f46]' }} px-6 py-4 font-black">
             <div class="flex items-center gap-3">
                 @if($isError)
                     <i class="fa-solid fa-triangle-exclamation text-2xl shrink-0"></i>
