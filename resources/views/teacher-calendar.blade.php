@@ -159,7 +159,7 @@
                         selectedEventId = '{{ $event->calendar_id }}'; 
                         selectedEventTitle = '{{ addslashes($event->event_title) }}'; 
                         openModal = true;
-                    " class="w-full bg-blue-600 text-white font-black border-[3px] border-black py-2.5 rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all uppercase text-sm tracking-wide">
+                    " class="w-full bg-blue-600 text-white font-black py-2.5 rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all uppercase text-sm tracking-wide">
                         + Add Student
                     </button>
                 </div>
