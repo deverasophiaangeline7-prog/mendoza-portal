@@ -48,7 +48,6 @@
 
             {{-- Main Information Container (SHADOW REMOVED) --}}
             <div class="bg-white border-[5px] border-black p-10 rounded-[3rem] mb-10">
-                <!-- Switched to a 12-column grid to control the exact width of left/right sides -->
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-x-12 lg:gap-x-20 gap-y-12 min-w-0">
                     
                     <!-- Left side takes up more space (7 out of 12 columns) -->
@@ -60,22 +59,35 @@
                             </p>
                         </div>
 
-                        <div>
-                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Date Joined</label>
-                            <p class="text-3xl font-black uppercase italic break-words">
-                                {{ auth()->user()->created_at ? \Carbon\Carbon::parse(auth()->user()->created_at)->format('d/m/Y') : 'N/A' }}
-                            </p>
-                        </div>
+                        {{-- DYNAMIC LEFT BOTTOM FIELD --}}
+                        @if(auth()->user()->role === 'superadmin')
+                            <div>
+                                <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Access Level</label>
+                                <p class="text-3xl font-black uppercase italic break-words text-[#34C759]">
+                                    FULL ACCESS
+                                </p>
+                            </div>
+                        @else
+                            <div>
+                                <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Birthdate</label>
+                                <p class="text-3xl font-black uppercase italic break-words">
+                                    {{ auth()->user()->admin && auth()->user()->admin->birthdate ? \Carbon\Carbon::parse(auth()->user()->admin->birthdate)->format('d/m/Y') : 'N/A' }}
+                                </p>
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Right side is pushed to the edge (5 out of 12 columns) -->
                     <div class="md:col-span-5 space-y-10 min-w-0">
-                        <div>
-                            <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Access Level</label>
-                            <p class="text-3xl font-black uppercase italic break-words text-[#34C759]">
-                                FULL ACCESS
-                            </p>
-                        </div>
+                        {{-- DYNAMIC RIGHT TOP FIELD --}}
+                        @if(auth()->user()->role !== 'superadmin')
+                            <div>
+                                <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Gender</label>
+                                <p class="text-3xl font-black uppercase italic break-words text-black">
+                                    {{ auth()->user()->admin->gender ?? 'N/A' }}
+                                </p>
+                            </div>
+                        @endif
 
                         <div>
                             <label class="block font-black text-red-600 uppercase text-[11px] tracking-[0.25em] mb-3">Account Role</label>

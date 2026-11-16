@@ -1410,6 +1410,13 @@
                                 }
                             }
                         }
+
+                        } else if (!sidebarItem && chat.unread_count > 0) {
+                            // Bagong chat na wala pa sa sidebar — i-inject natin.
+                            // Kailangan ng full reload dahil PHP-generated ang sidebar item HTML.
+                            window.location.reload();
+                            return;
+                        }
                     });
 
                     const navBadge = document.getElementById('nav-chat-badge');
