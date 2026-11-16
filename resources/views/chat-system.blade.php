@@ -1354,7 +1354,7 @@
 
             async pollSidebarUpdates() {
                 try {
-                    // 👈 BAGO: May cache-busting at auto-kick dito rin para sa Sidebar!
+                    // 👈 I-update para magdala ng timestamp at walang cache
                     const response = await fetch('/messages/sidebar/poll?t=' + Date.now(), { cache: 'no-store' });
                     
                     if (response.status === 401 || response.status === 419) {
@@ -1364,9 +1364,7 @@
                     if (!response.ok) return;
 
                     const data = await response.json();
-                    
                     let totalUnread = 0; 
-
                     const reversedSidebar = [...data.sidebar].reverse();
 
                     reversedSidebar.forEach(chat => {
@@ -1379,6 +1377,8 @@
                             if (chat.is_mentioned && chat.unread_count > 0) {
                                 displayText = "🔔 Mentioned you: " + chat.latest_message;
                             }
+                            
+                            // 👈 DITO ANG FIX: Pinagkumpara natin ang displayText sa kasalukuyang laman
                             if (sidebarText.textContent.trim() !== displayText.trim()) {
                                 sidebarText.textContent = displayText;
                                 this.moveToTop(sidebarItem); 
@@ -1387,7 +1387,6 @@
                             if (this.selectedUserId != chat.user_id) {
                                 if (chat.unread_count > 0) {
                                     totalUnread += chat.unread_count; 
-                                    
                                     sidebarItem.classList.add('bg-blue-50/70');
                                     sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
                                     sidebarText.classList.add('text-gray-900', 'font-semibold');
@@ -1400,7 +1399,6 @@
                                 } else {
                                     sidebarItem.classList.remove('bg-blue-50/70');
                                     sidebarItem.classList.add('bg-white', 'hover:bg-gray-50');
-                                    
                                     sidebarText.classList.remove('text-gray-900', 'font-semibold');
                                     sidebarText.classList.add('text-gray-500');
                                     
@@ -1410,8 +1408,6 @@
                                 }
                             }
                         }
-
-                    } 
                     });
 
                     const navBadge = document.getElementById('nav-chat-badge');
