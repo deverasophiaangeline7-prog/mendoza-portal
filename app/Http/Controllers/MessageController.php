@@ -647,7 +647,7 @@ class MessageController extends Controller
         $newMessages = $query->orderBy('created_at', 'asc')->orderBy('id', 'asc')->get();
 
         // Map the results for frontend rendering
-        $formattedMessages = $newMessages->map(function($msg) use ($isGroup) {
+        $formattedMessages = $newMessages->map(function($msg) use ($isGroup, $conversationId) {
             $senderName = '';
             $senderRole = '';
             $senderPhoto = '';
@@ -801,6 +801,7 @@ class MessageController extends Controller
 
         $members = User::whereIn('user_id', $memberIds)
             ->whereNull('custom_name') // Huwag isama ang mga virtual group user (gc_section_*, group_*)
+            ->where('user_id', '!=', $authUser->user_id) 
             ->get()->map(function ($u) use ($group) {
             $photo = '[ui-avatars.com](https://ui-avatars.com/api/?name=)' . urlencode($u->name) . '&background=f3f4f6&color=374151';
             if ($u->profile_photo_path) {
@@ -866,10 +867,11 @@ class MessageController extends Controller
     {
         $content = e($text); 
         
-        
-        $content = str_ireplace('@everybody', '<strong class="font-black text-[#6d0101]">@everybody</strong>', $content);
+        // BAGO: 'font-black' na lang. Tinanggal na natin ang 'text-[#6d0101]' para hindi maging invisible sa maroon bubble.
+        $mentionStyle = 'font-black';
 
-        
+        $content = str_ireplace('@everybody', '<strong class="'.$mentionStyle.'">@everybody</strong>', $content);
+
         $receiver = User::find($conversationId);
         if ($receiver) {
             if (\Illuminate\Support\Str::startsWith($receiver->username, ['group_', 'gc_section_'])) {
@@ -878,11 +880,10 @@ class MessageController extends Controller
                 $members = User::whereIn('user_id', $memberIds)->get()->sortByDesc(function($m) { return strlen($m->name); });
                 
                 foreach($members as $m) {
-                    $content = str_ireplace('@'.$m->name, '<strong class="font-black text-[#6d0101]">@'.$m->name.'</strong>', $content);
+                    $content = str_ireplace('@'.$m->name, '<strong class="'.$mentionStyle.'">@'.$m->name.'</strong>', $content);
                 }
             } else {
-                
-                $content = str_ireplace('@'.$receiver->name, '<strong class="font-black text-[#6d0101]">@'.$receiver->name.'</strong>', $content);
+                $content = str_ireplace('@'.$receiver->name, '<strong class="'.$mentionStyle.'">@'.$receiver->name.'</strong>', $content);
             }
         }
         

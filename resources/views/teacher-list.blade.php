@@ -117,11 +117,10 @@ x-data="{
                     <div class="flex items-center gap-4 mt-2">
                         <h3 class="text-xl md:text-2xl font-bold text-amber-700 italic leading-none">Teachers</h3>
                         @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
-                            <div class="flex items-center bg-white border-[3px] border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] px-3 md:px-4 h-8 md:h-10 not-italic">
-                                <span class="text-black font-black uppercase tracking-widest text-xs md:text-sm">
-                                    Total: <span class="text-[#b91c1c] text-sm md:text-base ml-1">{{ \App\Models\User::where('role', 'teacher')->count() }}</span>
-                                </span>
-                            </div>
+                            <!-- Simple Pill Badge -->
+                            <span class="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full border border-black/20 shrink-0 whitespace-nowrap not-italic">
+                                Total: <span class="text-[#b91c1c] font-black ml-1">{{ count($teachers) }}</span>
+                            </span>
                         @endif
                     </div>
                 </div>

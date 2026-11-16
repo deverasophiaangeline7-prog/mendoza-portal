@@ -3,7 +3,7 @@
 @section('title', 'Admin List')
 
 @section('content')
-<div class="flex-1 p-4 md:p-8 bg-gray-100 min-h-screen" 
+<div class="flex-1 p-4 md:p-8 bg-white min-h-screen" 
      x-data="{ 
          openModal: false, 
          archiveModal: false, 
@@ -25,12 +25,10 @@
                 <div class="flex items-center gap-4 mt-2">
                     <h3 class="text-2xl md:text-4xl font-bold text-amber-700 italic leading-none">Admins</h3>
                     @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
-                        <!-- Added whitespace-nowrap and shrink-0 to prevent text wrapping -->
-                        <div class="flex items-center bg-white border-[3px] border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] px-3 md:px-4 h-8 md:h-10 not-italic whitespace-nowrap shrink-0">
-                            <span class="text-black font-black uppercase tracking-widest text-xs md:text-sm">
-                                Total: <span class="text-[#b91c1c] text-sm md:text-base ml-1">{{ \App\Models\User::whereIn('role', ['admin', 'superadmin'])->count() }}</span>
-                            </span>
-                        </div>
+                        <!-- Simple Pill Badge -->
+                        <span class="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full border border-black/20 shrink-0 whitespace-nowrap not-italic">
+                            Total: <span class="text-[#b91c1c] font-black ml-1">{{ count($males) + count($females) }}</span>
+                        </span>
                     @endif
                 </div>
             </div>
@@ -49,7 +47,7 @@
                     <i class="fa-solid fa-arrow-left"></i> Back
                 </a>
             </div>
-        </div> <!-- THIS IS THE CLOSING DIV THAT WAS MISSING! -->
+        </div> 
 
         <!-- SCROLLABLE TABLE CONTAINER -->
         <div class="overflow-x-auto border-2 border-black rounded-lg shadow-sm bg-white w-full">

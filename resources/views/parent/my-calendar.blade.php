@@ -6,14 +6,14 @@
 <main class="p-8 bg-white min-h-screen">
     <h2 class="text-4xl font-black uppercase mb-8 tracking-tighter text-gray-900">Student Calendar</h2>
 
-    <div id="calendar-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div id="calendar-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         @forelse($events as $event)
         <div class="bg-white border-[3px] border-black p-6 rounded-[2rem] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col">
-            <div class="mb-4 flex-shrink-0">
-                <!-- Reduced gap on title using mb-1 -->
+            
+            <!-- Reduced mb-4 to mb-2 to lessen the gap before the dashed line -->
+            <div class="mb-2 flex-shrink-0">
                 <h4 class="text-2xl font-black text-red-600 uppercase leading-tight mb-1">{{ $event->event_title }}</h4>
                 
-                <!-- Stacked date and time closely with gap-0 -->
                 <div class="flex flex-col gap-0">
                     <p class="font-bold text-gray-400 italic text-sm flex items-center gap-1.5">
                         <i class="fa-regular fa-calendar w-4"></i>
@@ -48,17 +48,15 @@
                 </div>
             </div>
 
-            <!-- Parent-specific body with updated layout matching the system design -->
-            <div class="mt-4 pt-4 border-t-2 border-dashed border-black">
+            <!-- Reduced mt-4 to mt-2 and pt-4 to pt-3 to pull the line up -->
+            <div class="mt-2 pt-3 border-t-2 border-dashed border-black flex-1">
                 <p class="text-[11px] font-black text-gray-500 mb-3 tracking-widest uppercase">
-                    <!-- Standard case applied to the student's name -->
                     <span class="capitalize text-black">{{ strtolower($student->first_name ?? 'Student') }} {{ strtolower($student->last_name ?? '') }}</span> 
                     Assigned Role(s):
                 </p>
                 
                 <div class="flex flex-wrap gap-1.5">
                     @foreach($event->participants as $participation)
-                        <!-- Cleaned up role tags: no border, smaller bold text, capitalized (sentence case) -->
                         <span class="inline-flex items-center gap-1.5 text-[11px] bg-[#8cc63f] text-black px-2 py-1 rounded font-bold capitalize">
                             <i class="fa-solid fa-star text-white"></i> 
                             {{ strtolower($participation->role ?: 'General Participant') }}

@@ -1440,7 +1440,7 @@
                 chatMessages.insertAdjacentHTML('beforeend', `
                     <div id="${tempId}" class="text-right mb-6 w-full relative js-optimistic-my-bubble">
                         <div class="flex flex-col items-end w-full">
-                            <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
+                            <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none js-msg-text">
                                 ${text}
                             </span>
                             <div class="text-[10px] text-gray-400 mt-1">
@@ -1492,8 +1492,8 @@
                                 tempBubble.id = 'msg-bubble-' + data.current_msg.id;
                                 tempBubble.classList.remove('js-optimistic-my-bubble');
 
-                                const textSpan = tempBubble.querySelector('span.inline-block');
-                                if (textSpan) textSpan.innerHTML = data.current_msg.formatted_content;
+                                const textSpan = tempBubble.querySelector('.js-msg-text');
+                                if (textSpan) textSpan.innerHTML = data.current_msg.formatted_content || data.current_msg.content;
                             }
                         }
                         
