@@ -59,7 +59,7 @@
                 
                 <!-- Event Header -->
                 <div class="mb-4 flex-shrink-0">
-                    <h4 class="text-2xl font-black text-red-600 uppercase leading-tight mb-3">{{ $event->event_title }}</h4>
+                    <h4 class="text-2xl font-black text-red-600 uppercase leading-tight mb-1">{{ $event->event_title }}</h4>
                     
                     <div class="flex flex-col gap-0">
                         <p class="font-bold text-gray-400 italic text-sm flex items-center gap-1.5">
@@ -67,8 +67,9 @@
                             {{ \Carbon\Carbon::parse($event->start_date)->format('F d, Y') }}
                         </p>
                         
-                        @if($event->time)
-                            @php
+                        @php
+                            $displayTime = 'No time set';
+                            if($event->time) {
                                 $timeParts = preg_split('/(\r\n|\n| - )/', $event->time);
                                 $startTime = '';
                                 if (isset($timeParts[0]) && trim($timeParts[0])) {
@@ -80,15 +81,17 @@
                                     try { $endTime = \Carbon\Carbon::parse(trim($timeParts[1]))->format('h:i A'); } 
                                     catch (\Exception $e) { $endTime = trim($timeParts[1]); }
                                 }
-                                $displayTime = implode(' - ', array_filter([$startTime, $endTime]));
-                            @endphp
-                            @if($displayTime)
-                            <p class="font-bold text-gray-400 italic text-sm flex items-center gap-1.5">
-                                <i class="fa-regular fa-clock w-4"></i>
-                                {{ $displayTime }}
-                            </p>
-                            @endif
-                        @endif
+                                $parsedTime = implode(' - ', array_filter([$startTime, $endTime]));
+                                if ($parsedTime) {
+                                    $displayTime = $parsedTime;
+                                }
+                            }
+                        @endphp
+                        
+                        <p class="font-bold text-gray-400 italic text-sm flex items-center gap-1.5">
+                            <i class="fa-regular fa-clock w-4"></i>
+                            {{ $displayTime }}
+                        </p>
                     </div>
                 </div>
                 
@@ -113,12 +116,12 @@
                             <div class="mb-4 last:mb-0">
                                 <div class="flex flex-col">
                                     <div class="flex items-center gap-2 flex-wrap mb-1">
-                                        <span class="text-sm font-black text-gray-900 uppercase">
-                                            {{ $studentInfo->last_name ?? '' }}, {{ $studentInfo->first_name ?? '' }}
+                                        <span class="text-sm font-black text-gray-900 capitalize">
+                                            {{ strtolower($studentInfo->last_name ?? '') }}, {{ strtolower($studentInfo->first_name ?? '') }}
                                         </span>
                                         @if($sectionString)
-                                            <span class="text-[9px] bg-gray-100 text-gray-600 font-extrabold px-2 py-0.5 rounded border border-gray-300 uppercase">
-                                                {{ $sectionString }}
+                                            <span class="text-[9px] bg-gray-100 text-gray-600 font-extrabold px-2 py-0.5 rounded border border-gray-300 capitalize">
+                                                {{ strtolower($sectionString) }}
                                             </span>
                                         @endif
                                     </div>
@@ -131,7 +134,7 @@
                                                 
                                                 @if(!in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']) && in_array($participant->student_id, $myStudentIds))
                                                 <button type="button" 
-                                                    @click="deleteModal = true; deleteUrl = '{{ route('calendar.deleteParticipant', $participant->id) }}'; deleteParticipantName = '{{ addslashes(($studentInfo->last_name ?? '') . ', ' . ($studentInfo->first_name ?? '') . ' (' . ($participant->role ?: 'General Participant') . ')') }}'"
+                                                    @click="deleteModal = true; deleteUrl = '{{ route('calendar.deleteParticipant', $participant->id) }}'; deleteParticipantName = '{{ addslashes(ucwords(strtolower($studentInfo->last_name ?? '')) . ', ' . ucwords(strtolower($studentInfo->first_name ?? '')) . ' (' . ($participant->role ?: 'General Participant') . ')') }}'"
                                                     class="text-amber-200 hover:text-white transition-colors flex items-center justify-center" title="Remove role">
                                                     <i class="fa-solid fa-xmark text-[11px] ml-0.5"></i>
                                                 </button>

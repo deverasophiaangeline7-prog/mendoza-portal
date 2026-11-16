@@ -367,7 +367,7 @@
 
                                         <span title="{{ $message->created_at->format('M d, Y g:i A') }}" 
                                             class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm cursor-default {{ $message->sender_id === auth()->user()->user_id ? 'bg-[#6d0101] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none' }}">
-                                            {{ $message->content }}
+                                            {!! $message->formatted_content ?? e($message->content) !!}
                                         </span>
                                         
                                         <div class="text-[10px] text-gray-400 mt-1">
@@ -425,17 +425,32 @@
                         <i class="fa-solid fa-lock mr-1"></i> Only administrators can send messages.
                     </div>
                 @else
-                    <form @submit.prevent="sendMessage('{{ $selectedUser->user_id }}')" class="flex gap-2">
-                        <input type="text" 
-                               x-model="messageInput"  
-                                    :disabled="thisUserIsTyping || isSending"
-                                    class="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:border-[#6d0101] focus:ring-1 focus:ring-[#6d0101] transition-all disabled:opacity-50" 
-                                    placeholder="Type your message here..." 
-                                    required>
-                        <button type="submit" :disabled="thisUserIsTyping || isSending" x-text="isSending ? 'Sending...' : 'Send'" class="bg-[#6d0101] text-white px-6 py-2 rounded-full hover:bg-red-900 transition disabled:opacity-50">
-                            Send
-                        </button>
-                    </form>
+                    <div class="relative w-full">
+                        <!-- MENTION DROPDOWN -->
+                        <div x-show="mentionDropdownOpen" x-cloak @click.away="mentionDropdownOpen = false" class="absolute bottom-full mb-2 left-0 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden max-h-48 overflow-y-auto">
+                            <template x-for="m in filteredMentions" :key="m.user_id">
+                                <button type="button" @click="selectMention(m.name)" class="w-full text-left px-4 py-2.5 hover:bg-gray-100 flex items-center justify-between transition border-b border-gray-50 last:border-0">
+                                    <span class="font-bold text-sm text-[#6d0101]" x-text="'@' + m.name"></span>
+                                    <span class="text-[9px] uppercase text-gray-400 font-black" x-text="m.role"></span>
+                                </button>
+                            </template>
+                        </div>
+                        
+                        <form @submit.prevent="sendMessage('{{ $selectedUser->user_id }}')" class="flex gap-2">
+                            <input type="text" 
+                                   x-ref="chatInput"
+                                   x-model="messageInput"  
+                                   @input="checkMentionTrigger()"
+                                   :disabled="thisUserIsTyping || isSending"
+                                   autocomplete="off"
+                                   class="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:border-[#6d0101] focus:ring-1 focus:ring-[#6d0101] transition-all disabled:opacity-50" 
+                                   placeholder="Type your message here..." 
+                                   required>
+                            <button type="submit" :disabled="thisUserIsTyping || isSending" x-text="isSending ? 'Sending...' : 'Send'" class="bg-[#6d0101] text-white px-6 py-2 rounded-full hover:bg-red-900 transition disabled:opacity-50">
+                                Send
+                            </button>
+                        </form>
+                    </div>
                 @endif
             </div>
         @else
@@ -1016,6 +1031,10 @@
             newPhotoPreview: null,
             selectedPhotoFile: null,
             messageInput: '',
+            mentionDropdownOpen: false,
+            mentionSearch: '',
+            mentionMembers: [],
+            filteredMentions: [],
             thisUserIsTyping: false, 
             otherUserIsTyping: false, 
             isSending: false,
@@ -1034,6 +1053,7 @@
 
                 if (this.selectedUserId && this.myId) {
                     this.dynamicallyMarkRead();
+                    this.fetchMentionMembers();
 
                     this.pollingInterval = setInterval(() => {
                         this.pollNewMessages();
@@ -1057,6 +1077,39 @@
                     if (firstNonOfficial) parent.insertBefore(sidebarItem, firstNonOfficial); 
                     else parent.appendChild(sidebarItem);
                 }
+            },
+
+            async fetchMentionMembers() {
+                if (!this.isGroupChat || !this.selectedUserId) return;
+                try {
+                    const res = await fetch(`/messages/group/${this.selectedUserId}/members`);
+                    const data = await res.json();
+                    if (data.success) {
+                        this.mentionMembers = data.members;
+                        // Isama si @everybody sa listahan
+                        this.mentionMembers.unshift({ user_id: 'all', name: 'everybody', role: 'all' });
+                    }
+                } catch (e) {}
+            },
+
+            checkMentionTrigger() {
+                if (!this.isGroupChat) return;
+                // I-check kung may tinatype na @ sa huli
+                const match = this.messageInput.match(/@([a-zA-Z0-9 ]*)$/);
+                if (match) {
+                    this.mentionSearch = match[1].toLowerCase();
+                    this.filteredMentions = this.mentionMembers.filter(m => m.name.toLowerCase().includes(this.mentionSearch));
+                    this.mentionDropdownOpen = this.filteredMentions.length > 0;
+                } else {
+                    this.mentionDropdownOpen = false;
+                }
+            },
+
+            selectMention(name) {
+                // Palitan yung tinaype ng user ng kumpletong pangalan
+                this.messageInput = this.messageInput.replace(/@([a-zA-Z0-9 ]*)$/, `@${name} `);
+                this.mentionDropdownOpen = false;
+                this.$refs.chatInput.focus(); // I-balik ang cursor sa chat input
             },
 
             async openMembersModal() {
@@ -1199,7 +1252,7 @@
                                         <div id="msg-bubble-${msg.id}" class="mb-6 w-full relative text-right flex flex-col items-end js-dynamically-fetched-bubble">
                                             <div class="flex flex-col items-end max-w-[85%]">
                                                 <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
-                                                    ${msg.content}
+                                                    ${msg.formatted_content || msg.content}
                                                 </span>
                                                 <div class="text-[10px] text-gray-400 mt-1">
                                                     <span>${msg.time_formatted}</span>
@@ -1230,7 +1283,7 @@
                                             <div class="flex flex-col items-start max-w-[85%]">
                                                 ${senderInfoHtml}
                                                 <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-gray-100 text-gray-800 rounded-bl-none">
-                                                    ${msg.content}
+                                                    ${msg.formatted_content || msg.content}
                                                 </span>
                                                 <div class="text-[10px] text-gray-400 mt-1">
                                                     <span>${msg.time_formatted}</span>
@@ -1310,8 +1363,12 @@
                         const badgeContainer = document.getElementById(`sidebar-badge-${chat.user_id}`);
                         
                         if (sidebarItem && sidebarText) {
-                            if (sidebarText.textContent.trim() !== chat.latest_message.trim()) {
-                                sidebarText.textContent = chat.latest_message;
+                        let displayText = chat.latest_message;
+                            if (chat.is_mentioned && chat.unread_count > 0) {
+                                displayText = "🔔 Mentioned you: " + chat.latest_message;
+                            }
+                            if (sidebarText.textContent.trim() !== displayText.trim()) {
+                                sidebarText.textContent = displayText;
                                 this.moveToTop(sidebarItem); 
                             }
                             
@@ -1434,6 +1491,9 @@
                             } else {
                                 tempBubble.id = 'msg-bubble-' + data.current_msg.id;
                                 tempBubble.classList.remove('js-optimistic-my-bubble');
+
+                                const textSpan = tempBubble.querySelector('span.inline-block');
+                                if (textSpan) textSpan.innerHTML = data.current_msg.formatted_content;
                             }
                         }
                         

@@ -85,6 +85,10 @@ class MessageController extends Controller
                 ->orderBy('id', 'asc')->get();
         }
 
+        foreach($messages as $msg) {
+            $msg->formatted_content = $this->formatMentions($msg->content, $id);
+        }
+
         // NEW: Check if the current user has archived this group
         $isGroupArchived = false;
         if ($isGroup) {
@@ -224,6 +228,7 @@ class MessageController extends Controller
             'is_read' => false,
         ]);
 
+        $currentMessage->formatted_content = $this->formatMentions($currentMessage->content, $request->receiver_id);
         $receiver = User::find($request->receiver_id);
         $isReceiverGroup = \Illuminate\Support\Str::startsWith($receiver->username, ['group_', 'gc_section_']);
         
@@ -662,6 +667,7 @@ class MessageController extends Controller
             return [
                 'id' => $msg->id,
                 'content' => $msg->content,
+                'formatted_content' => $this->formatMentions($msg->content, $conversationId),
                 'sender_id' => $msg->sender_id,
                 'time_formatted' => $msg->created_at->setTimezone('Asia/Manila')->format('g:i A'),
                 'sender_name' => $senderName,
@@ -703,13 +709,18 @@ class MessageController extends Controller
     public function pollSidebar()
     {
         $authId = Auth::id();
+        $authUser = Auth::user();
         $users = $this->getChatHistoryUsers($authId);
         
         $sidebarData = $users->map(function($user) use ($authId) {
             $latestMsg = $user->latestMessageWithAuthUser();
             
             $prefix = '';
+            $isMentioned = false;
             if ($latestMsg) {
+                if ($latestMsg->sender_id != $authId && (str_contains(strtolower($latestMsg->content), '@' . strtolower($authUser->name)) || str_contains(strtolower($latestMsg->content), '@everybody'))) {
+                    $isMentioned = true;
+                }
                 if ($latestMsg->sender_id == $authId) {
                     $prefix = 'You: ';
                 } else {
@@ -724,6 +735,7 @@ class MessageController extends Controller
                 'user_id' => $user->user_id,
                 'unread_count' => $user->unreadMessagesCount(),
                 'latest_message' => $latestMsg ? $prefix . $latestMsg->content : 'No messages yet...',
+                'is_mentioned' => $isMentioned,
             ];
         });
 
@@ -850,4 +862,30 @@ class MessageController extends Controller
         ]);
     }
 
+    private function formatMentions($text, $conversationId)
+    {
+        $content = e($text); 
+        
+        
+        $content = str_ireplace('@everybody', '<strong class="font-black text-[#6d0101]">@everybody</strong>', $content);
+
+        
+        $receiver = User::find($conversationId);
+        if ($receiver) {
+            if (\Illuminate\Support\Str::startsWith($receiver->username, ['group_', 'gc_section_'])) {
+                $memberIds = DB::table('group_members')->where('group_id', $conversationId)->pluck('user_id');
+                
+                $members = User::whereIn('user_id', $memberIds)->get()->sortByDesc(function($m) { return strlen($m->name); });
+                
+                foreach($members as $m) {
+                    $content = str_ireplace('@'.$m->name, '<strong class="font-black text-[#6d0101]">@'.$m->name.'</strong>', $content);
+                }
+            } else {
+                
+                $content = str_ireplace('@'.$receiver->name, '<strong class="font-black text-[#6d0101]">@'.$receiver->name.'</strong>', $content);
+            }
+        }
+        
+        return $content;
+    }
 }
