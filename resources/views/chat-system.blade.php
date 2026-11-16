@@ -1182,7 +1182,6 @@
                 if (!this.selectedUserId) return;
                 
                 try {
-                    // HANAPIN ANG PINAKAMATAAS NA ID SA SCREEN
                     let lastId = 0;
                     const bubbles = document.querySelectorAll('[id^="msg-bubble-"]');
                     bubbles.forEach(bubble => {
@@ -1192,8 +1191,14 @@
                         }
                     });
 
-                    // Ipasa ang last_id sa backend
+                    // 👈 BAGO: May &t=Date.now() at cache: no-store para iwas browser cache lag!
                     const response = await fetch(`/messages/${this.selectedUserId}/poll?last_id=${lastId}&t=${Date.now()}`, { cache: 'no-store' });
+                    
+                    // 👈 BAGO: Kung pinatay ng Single Session ang account mo, i-a-auto kick ka pabalik sa login!
+                    if (response.status === 401 || response.status === 419) {
+                        window.location.reload();
+                        return;
+                    }
                     if (!response.ok) return;
                     
                     const data = await response.json();
@@ -1237,13 +1242,13 @@
                                     let handled = false;
                                     for (let ob of tempBubbles) {
                                         if (ob.id.startsWith('temp-msg-') && ob.textContent.includes(msg.content)) {
-                                            ob.id = `msg-bubble-${msg.id}`; // Rename to real ID
-                                            ob.classList.remove('js-optimistic-my-bubble'); // Clean up class
+                                            ob.id = `msg-bubble-${msg.id}`; 
+                                            ob.classList.remove('js-optimistic-my-bubble'); 
                                             handled = true;
                                             break;
                                         }
                                     }
-                                    if (handled) return; // Kung na-handle na, i-skip na ang pag-append ulit
+                                    if (handled) return; 
                                 }
                                 let bubbleHtml = '';
 
@@ -1349,8 +1354,15 @@
 
             async pollSidebarUpdates() {
                 try {
+                    // 👈 BAGO: May cache-busting at auto-kick dito rin para sa Sidebar!
                     const response = await fetch('/messages/sidebar/poll?t=' + Date.now(), { cache: 'no-store' });
+                    
+                    if (response.status === 401 || response.status === 419) {
+                        window.location.reload();
+                        return;
+                    }
                     if (!response.ok) return;
+
                     const data = await response.json();
                     
                     let totalUnread = 0; 
@@ -1363,7 +1375,7 @@
                         const badgeContainer = document.getElementById(`sidebar-badge-${chat.user_id}`);
                         
                         if (sidebarItem && sidebarText) {
-                        let displayText = chat.latest_message;
+                            let displayText = chat.latest_message;
                             if (chat.is_mentioned && chat.unread_count > 0) {
                                 displayText = "🔔 Mentioned you: " + chat.latest_message;
                             }

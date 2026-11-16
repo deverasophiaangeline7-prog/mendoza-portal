@@ -270,6 +270,14 @@
                         Dashboard
                     </x-sidebar-link>
 
+                    @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
+                        <x-sidebar-link href="{{ route('admin.information') }}"
+                            icon="fa-solid fa-user-shield" 
+                            :active="request()->routeIs('admin.information')">
+                            {{ auth()->user()->role === 'superadmin' ? 'Superadmin Information' : 'Admin Information' }}
+                        </x-sidebar-link>
+                    @endif
+                     
                     @if(auth()->user()->role === 'parent')
                         <x-sidebar-link href="{{ route('student.view') }}"
                             icon="fa-solid fa-user-graduate"

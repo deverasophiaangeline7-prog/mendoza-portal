@@ -21,8 +21,8 @@
                     {{-- Profile Picture Container --}}
                     <div class="relative flex-shrink-0 mb-4 md:mb-0">
                         <div class="w-44 h-44 bg-blue-700 border-[4px] border-black rounded-[2rem] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center rotate-[-2deg]">
-                        @if(auth()->user()->profile_photo_path)
-                            <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}" 
+                        @if(auth()->user()->admin && auth()->user()->admin->profile_photo_path)
+                            <img src="{{ asset(auth()->user()->admin->profile_photo_path) }}" 
                                  class="w-full h-full object-cover">
                         @else
                             <i class="fa-solid fa-user-shield text-7xl text-white"></i>

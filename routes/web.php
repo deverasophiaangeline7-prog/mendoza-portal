@@ -173,6 +173,7 @@ Route::middleware(['auth', 'verified', 'role:admin,superadmin'])->group(function
     Route::get('/students/view/{id}', [App\Http\Controllers\Admin\StudentController::class, 'showStudent'])->name('students.showStudent');
     Route::get('/archives/report-cards/{school_year_id}', [ReportCardController::class, 'archivedIndex'])->name('archives.reportcards');
     Route::get('/archives/report-cards/view/{student_id}/{school_year_id}', [ReportCardController::class, 'archivedShowStudent'])->name('archives.reportcards.showStudent'); 
+    Route::post('/admin/accounts/admin/update-picture', [App\Http\Controllers\Admin\UserController::class, 'updatePicture'])->name('account.admin.updatePicture');
     
     Route::get('/account-management', function () { 
         $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();
