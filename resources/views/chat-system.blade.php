@@ -1355,7 +1355,7 @@
             async pollSidebarUpdates() {
                 try {
                     // 👇 BAGO: Makikita mo na ito sa Console Tab mo every 4 seconds!
-                    console.log("✅ Nag-poll sa sidebar...", new Date().toLocaleTimeString());
+                    console.log("✅ Nag-poll sa sidebar...", data.sidebar);
 
                     const response = await fetch('/messages/sidebar/poll?t=' + Date.now(), { cache: 'no-store' });
                     
