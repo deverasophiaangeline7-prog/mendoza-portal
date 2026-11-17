@@ -61,7 +61,7 @@
                         @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
                             <!-- Simple Pill Badge -->
                             <span class="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full border border-black/20 shrink-0 whitespace-nowrap not-italic">
-                                Total: <span class="text-[#b91c1c] font-black ml-1">{{ \App\Models\User::whereIn('role', ['admin', 'superadmin'])->count() }}</span>
+                                Total: <span class="text-[#b91c1c] font-black ml-1">{{ $superadminList->count() + $filteredMales->count() + $filteredFemales->count() }}</span>
                             </span>
                         @endif
                     </div>

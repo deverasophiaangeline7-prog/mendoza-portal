@@ -162,10 +162,12 @@ class User extends Authenticatable
 
     public function latestMessageWithAuthUser()
     {
-        // SMART QUERY: Check if this user is actually a virtual Group Chat
-        if (!is_null($this->custom_name)) {
+        // 👈 FIX: Gagamitin na natin ang username para laging sure na GC ito!
+        $isGroup = \Illuminate\Support\Str::startsWith($this->username, ['group_', 'gc_section_']);
+        
+        if ($isGroup) {
             return \App\Models\Message::where('receiver_id', $this->user_id)
-                                      ->latest('id') // Fixed!
+                                      ->latest('id')
                                       ->first();
         }
 
@@ -181,9 +183,10 @@ class User extends Authenticatable
 
     public function unreadMessagesCount()
     {
-        // GROUP CHAT UNREAD LOGIC
-        if (!is_null($this->custom_name)) {
-            // Exclude messages sent by the logged-in user
+        // 👈 FIX: Parehong security checking para hindi na magkamali ang server
+        $isGroup = \Illuminate\Support\Str::startsWith($this->username, ['group_', 'gc_section_']);
+        
+        if ($isGroup) {
             $allMessageIds = \App\Models\Message::where('receiver_id', $this->user_id)
                                                 ->where('sender_id', '!=', auth()->id())
                                                 ->pluck('id');

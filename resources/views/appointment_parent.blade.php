@@ -77,6 +77,8 @@
 
     .form-control {
         width: 100%;
+        max-width: 100%;
+        margin: 0;
         padding: 8px 15px;
         border: 2px solid #000;
         border-radius: 25px; 
@@ -335,6 +337,7 @@
     
     .nested-modal-content, .validation-modal {
         background: white; border: 4px solid #000; padding: 30px; width: 90%; max-width: 600px; text-align: center; box-shadow: 10px 10px 0px var(--ma-orange); border-radius: 15px;
+        box-sizing: border-box; /* Added to prevent overflow on mobile */
     }
 
     .validation-modal {
@@ -351,6 +354,32 @@
     .nested-modal-content h3 { margin-top: 0; font-size: 20px; font-weight: 900;}
     .nested-modal-actions { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
 
+    /* Toast Notification CSS */
+    .toast-notification {
+        position: fixed; 
+        bottom: 40px; 
+        right: 40px; 
+        z-index: 9999; 
+        border: 4px solid #000; 
+        border-radius: 20px; 
+        padding: 15px 30px; 
+        font-weight: 900; 
+        font-size: 18px; 
+        box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); 
+        display: flex; 
+        align-items: center; 
+        gap: 15px; 
+        text-transform: uppercase;
+    }
+
+    .toast-success { background-color: var(--ma-green); color: black; }
+    .toast-error { background-color: var(--ma-red); color: white; }
+    
+    .toast-close-btn {
+        background: none; border: none; font-size: 24px; font-weight: 900; 
+        cursor: pointer; padding: 0; color: inherit; line-height: 1;
+    }
+
     /* RESPONSIVE CSS FIXES */
     @media (max-width: 992px) {
         .dashboard-container {
@@ -366,6 +395,10 @@
         .left-column, .right-column {
             width: 100%;
             display: block; 
+        }
+        
+        .ma-card {
+            padding: 15px; /* Slight padding reduction for breathing room on mobile */
         }
 
         .schedule-grid {
@@ -388,8 +421,10 @@
             font-size: 26px; 
         }
 
-        .nested-modal-content {
+        .nested-modal-content, .validation-modal {
+            width: 95%; /* Better fit */
             padding: 20px 15px;
+            box-shadow: 4px 4px 0px var(--ma-orange); /* Reduce shadow so it doesn't break horizontal screen width */
         }
 
         .nested-modal-actions {
@@ -400,15 +435,31 @@
         .nested-modal-actions button {
             width: 100%;
         }
+
+        /* Make Toast responsive to fix bottom horizontal scrolling */
+        .toast-notification {
+            bottom: 20px;
+            right: 20px;
+            left: 20px; /* Stretch across the bottom screen */
+            padding: 12px 20px;
+            font-size: 14px;
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+            border-radius: 15px;
+            border-width: 3px;
+        }
+
+        .toast-notification i {
+            font-size: 20px !important;
+        }
     }
 </style>
 
 {{-- FLOATING TOAST NOTIFICATION FOR SUCCESS --}}
 @if(session('success'))
-<div id="toast-success" style="position: fixed; bottom: 40px; right: 40px; z-index: 9999; background-color: var(--ma-green); color: black; border: 4px solid #000; border-radius: 20px; padding: 15px 30px; font-weight: 900; font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); display: flex; align-items: center; gap: 15px; text-transform: uppercase;">
+<div id="toast-success" class="toast-notification toast-success">
     <i class="fa-solid fa-circle-check" style="font-size: 24px;"></i> 
     <span>{{ session('success') }}</span>
-    <button onclick="document.getElementById('toast-success').style.display='none'" style="background: none; border: none; font-size: 24px; font-weight: black; cursor: pointer; padding: 0;">&times;</button>
+    <button onclick="document.getElementById('toast-success').style.display='none'" class="toast-close-btn">&times;</button>
 </div>
 <script>
     setTimeout(() => {
@@ -420,10 +471,10 @@
 
 {{-- FLOATING TOAST NOTIFICATION FOR ERRORS --}}
 @if(session('error'))
-<div id="toast-error" style="position: fixed; bottom: 40px; right: 40px; z-index: 9999; background-color: var(--ma-red); color: white; border: 4px solid #000; border-radius: 20px; padding: 15px 30px; font-weight: 900; font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); display: flex; align-items: center; gap: 15px; text-transform: uppercase;">
+<div id="toast-error" class="toast-notification toast-error">
     <i class="fa-solid fa-circle-exclamation" style="font-size: 24px;"></i> 
     <span>{{ session('error') }}</span>
-    <button onclick="document.getElementById('toast-error').style.display='none'" style="background: none; border: none; font-size: 24px; font-weight: black; cursor: pointer; padding: 0; color: white;">&times;</button>
+    <button onclick="document.getElementById('toast-error').style.display='none'" class="toast-close-btn">&times;</button>
 </div>
 <script>
     setTimeout(() => {
