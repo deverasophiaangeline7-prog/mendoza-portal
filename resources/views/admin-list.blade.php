@@ -23,7 +23,7 @@
          archiveUrl: '', 
          adminEditModal: false, 
          changePicModal: false, 
-         showToast: {{ $hasToast ? 'true' : 'false' }}, /* MOVED TO ROOT STATE TO FIX TOAST NOT SHOWING */
+         showToast: {{ $hasToast ? 'true' : 'false' }}, 
          editAdminId: '', 
          editFirstName: '', 
          editMiddleName: '', 
@@ -105,7 +105,7 @@
                                         <div class="flex justify-center gap-2 items-center">
                                             <button type="button" 
                                                     @click="adminEditModal = true; 
-                                                            editAdminId = '{{ $super->id }}'; 
+                                                            editAdminId = '{{ $super->user_id ?? $super->id }}'; 
                                                             editFirstName = '{{ addslashes($super->admin?->first_name ?? '') }}'; 
                                                             editMiddleName = '{{ addslashes($super->admin?->middle_name ?? '') }}'; 
                                                             editLastName = '{{ addslashes($super->admin?->last_name ?? '') }}';"
@@ -115,7 +115,7 @@
                                             
                                             <!-- Optionally disable archive for superadmins, or keep it if allowed -->
                                             <button type="button" 
-                                                @click="archiveModal = true; archiveUrl = '{{ route('account.admin.archive', $super->id) }}'" 
+                                                @click="archiveModal = true; archiveUrl = '{{ route('account.admin.archive', $super->user_id ?? $super->id) }}'" 
                                                 title="Archive" 
                                                 class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
                                                 <i class="fa-solid fa-box-archive"></i>
@@ -210,7 +210,7 @@
                         @if($superadminList->count() > 0)
                             <optgroup label="Superadmins">
                                 @foreach($superadminList as $superadmin)
-                                    <option value="{{ $superadmin->id }}">
+                                    <option value="{{ $superadmin->user_id ?? $superadmin->id }}">
                                         {{ $superadmin->admin?->first_name ?? $superadmin->name }} {{ $superadmin->admin?->last_name ?? '' }} (Superadmin)
                                     </option>
                                 @endforeach

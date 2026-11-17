@@ -1354,10 +1354,11 @@
 
             async pollSidebarUpdates() {
                 try {
-                    // 1. Walang cache lag
+                    // 👇 BAGO: Makikita mo na ito sa Console Tab mo every 4 seconds!
+                    console.log("✅ Nag-poll sa sidebar...", new Date().toLocaleTimeString());
+
                     const response = await fetch('/messages/sidebar/poll?t=' + Date.now(), { cache: 'no-store' });
                     
-                    // 2. Single session auto-kick
                     if (response.status === 401 || response.status === 419) {
                         window.location.reload();
                         return;
@@ -1367,9 +1368,8 @@
                     const data = await response.json();
                     let totalUnread = 0; 
                     
-                    // 3. CRITICAL FIX: Siguraduhing mababasa ng Javascript ang data (Array man o Object)
-                    const rawSidebar = data.sidebar || [];
-                    const sidebarArray = Array.isArray(rawSidebar) ? rawSidebar : Object.values(rawSidebar);
+                    // 👇 FIX: Para hindi mag-crash kahit object o array ang ibalik ng Laravel
+                    const sidebarArray = Array.isArray(data.sidebar) ? data.sidebar : Object.values(data.sidebar);
                     const reversedSidebar = [...sidebarArray].reverse();
 
                     reversedSidebar.forEach(chat => {
@@ -1377,7 +1377,7 @@
                         const sidebarText = document.getElementById(`sidebar-text-${chat.user_id}`);
                         const badgeContainer = document.getElementById(`sidebar-badge-${chat.user_id}`);
                         
-                        // 4. Kung may nag-chat na bagong tao na wala pa sa sidebar, i-reload para lumitaw
+                        // Kung may bagong chat na wala sa sidebar, auto-refresh para lumitaw
                         if (!sidebarItem && chat.unread_count > 0) {
                             window.location.reload();
                             return;
@@ -1391,7 +1391,7 @@
                             
                             let isUpdated = false;
 
-                            // I-update ang text kung may bagong message
+                            // Update text kung nagbago
                             if (sidebarText.textContent.trim() !== displayText.trim()) {
                                 sidebarText.textContent = displayText;
                                 isUpdated = true;
@@ -1407,10 +1407,11 @@
                                     sidebarText.classList.remove('text-gray-500');
                                     
                                     if (badgeContainer) {
+                                        // Update badge count
                                         if (badgeContainer.innerText != chat.unread_count || badgeContainer.classList.contains('hidden')) {
                                             badgeContainer.innerText = chat.unread_count;
                                             badgeContainer.classList.remove('hidden');
-                                            isUpdated = true;
+                                            isUpdated = true; // 👈 Pampa-angat kapag dumami ang unread!
                                         }
                                     }
                                 } else {
@@ -1426,14 +1427,13 @@
                                 }
                             }
 
-                            // I-aangat natin sa pinakataas kapag may pagbabago!
+                            // 👈 DITO AANGAT ANG CHATBOX KUNG MAY NAGBAGO!
                             if (isUpdated) {
                                 this.moveToTop(sidebarItem); 
                             }
                         }
                     });
 
-                    // Update Main Navigation Badge
                     const navBadge = document.getElementById('nav-chat-badge');
                     if (navBadge) {
                         if (totalUnread > 0) {
