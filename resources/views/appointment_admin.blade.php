@@ -48,19 +48,22 @@
     
     .cell-green-half { background: linear-gradient(to bottom, var(--ma-green) 50%, #ffffff 50%); }
 
+    /* Moved to fixed positioning so it works globally outside the modal */
     .toast-banner {
-        position: absolute;
-        top: 15px;
+        position: fixed;
+        top: 20px;
         left: 50%;
         transform: translateX(-50%);
         background: #000;
         color: #fff;
-        padding: 8px 20px;
+        padding: 12px 24px;
         border-radius: 20px;
         font-weight: 900;
-        font-size: 14px;
-        z-index: 1010;
+        font-size: 15px;
+        z-index: 99999999;
         transition: opacity 0.3s ease;
+        border: 2px solid #fff;
+        box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
     }
 
     .schedule-grid td.active-manage-cell { outline: 3px dashed #000; outline-offset: -3px; }
@@ -79,6 +82,9 @@
     .btn-cancel:active, .btn-confirm:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px 0px #000; }
 </style>
 
+<!-- Global Toast Banner -->
+<div id="toastBanner" class="toast-banner hidden"></div>
+
 <!-- Using the exact same layout structure and classes as Attendance -->
 <div class="flex-1 p-4 md:p-8 bg-white min-h-screen relative flex flex-col items-center">
     <div class="max-w-6xl w-full text-center flex flex-col items-center">
@@ -95,19 +101,24 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 md:gap-x-14 gap-y-6 md:gap-y-12 w-full max-w-6xl justify-items-center px-2">
             @foreach($advisersList as $adviser)
                 @php 
-                    $assigned = !empty($adviser['user_id']);
-                    $teacherId = $assigned ? $adviser['user_id'] : 'null';
+                    /* Expanded to check teacher_id and id just in case your array keys differ */
+                    $teacherId = $adviser['user_id'] ?? $adviser['teacher_id'] ?? $adviser['id'] ?? null;
+                    $assigned = !empty($teacherId);
                 @endphp
 
-                <div @if($assigned) onclick="openAdminModal('{{ addslashes($adviser['section']) }}', '{{ addslashes($adviser['name']) }}', '{{ $teacherId }}')" @endif
-                     class="border-2 border-black w-full max-w-[350px] rounded-[40px] py-6 flex flex-col items-center group transition-all relative shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-[#e68a2d] {{ $assigned ? 'cursor-pointer hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:scale-95' : 'opacity-50 cursor-not-allowed' }}">
+                <!-- All boxes are now clickable! Data attributes prevent broken Javascript from apostrophes -->
+                <div data-section="{{ $adviser['section'] }}"
+                     data-name="{{ $adviser['name'] ?? 'Unassigned' }}"
+                     data-teacher="{{ $teacherId ?? 'null' }}"
+                     onclick="openAdminModal(this.dataset.section, this.dataset.name, this.dataset.teacher)"
+                     class="border-2 border-black w-full max-w-[350px] rounded-[40px] py-6 flex flex-col items-center group transition-all relative shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-[#e68a2d] cursor-pointer hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:scale-95 {{ !$assigned ? 'opacity-70' : '' }}">
                     
-                    <span class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight transition-transform {{ $assigned ? 'group-hover:-translate-y-1 group-hover:text-amber-700' : '' }}" 
+                    <span class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight transition-transform group-hover:-translate-y-1 group-hover:text-amber-700" 
                           style="-webkit-text-stroke: 1.5px white;">
                         {{ $adviser['section'] }}
                     </span>
                     
-                    <span class="text-lg md:text-xl font-medium text-black transition-transform mt-1 {{ $assigned ? 'group-hover:-translate-y-1' : '' }}">
+                    <span class="text-lg md:text-xl font-medium text-black transition-transform mt-1 group-hover:-translate-y-1">
                         {{ $assigned ? $adviser['name'] : 'Unassigned' }}
                     </span>
                 </div>
@@ -118,8 +129,6 @@
 
 <div id="adminCalendarModal" class="modal-overlay hidden">
     <div class="admin-modal">
-        <div id="toastBanner" class="toast-banner hidden">Schedule saved successfully!</div>
-
         @php
             $dateParam = request('date');
             if ($dateParam) {
@@ -243,13 +252,13 @@
 
     function openAdminModal(section, name, teacherId) {
         if (!teacherId || teacherId === 'null') {
-            showToast('No teacher assigned for this section.', true);
+            showToast('No teacher assigned to this section yet.', true);
             return;
         }
 
         currentTeacherId = Number(teacherId);
         if (Number.isNaN(currentTeacherId)) {
-            showToast('Invalid teacher ID.', true);
+            showToast('Invalid teacher ID data.', true);
             return;
         }
 
@@ -293,9 +302,9 @@
     function showToast(message, isError = false) {
         const toast = document.getElementById('toastBanner');
         toast.innerText = message;
-        toast.style.background = isError ? 'var(--ma-red)' : '#000';
+        toast.style.background = isError ? 'var(--ma-red)' : 'var(--ma-green)';
         toast.classList.remove('hidden');
-        setTimeout(() => { toast.classList.add('hidden'); }, 2000);
+        setTimeout(() => { toast.classList.add('hidden'); }, 3000);
     }
 
     function resetControlModes() {
