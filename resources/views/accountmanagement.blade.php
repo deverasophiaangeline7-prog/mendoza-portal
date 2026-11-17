@@ -376,7 +376,7 @@
          class="fixed inset-0 z-[9999] flex p-4 md:p-8 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
         
-        <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[4px] border-black rounded-[2rem] p-5 md:p-8 max-w-4xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto scrollbar-hide">
+        <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[3px] md:border-[4px] border-black rounded-[2rem] p-5 md:p-8 w-[92%] max-w-4xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto scrollbar-hide">
             
             <button @click="termScheduleModal = false" class="absolute top-3 md:top-4 right-5 md:right-6 text-4xl md:text-5xl font-black text-black hover:text-gray-700 transition-colors leading-none z-10">&times;</button>
 
@@ -393,6 +393,7 @@
                 @method('PUT') 
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    
                     <!-- Term 1 -->
                     <div class="bg-white border-[3px] border-black p-4 md:p-5 rounded-[1.5rem] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                         <h4 class="text-xl font-black uppercase mb-4 text-center bg-gray-100 border-[3px] border-black rounded-xl py-2">Term 1</h4>
@@ -401,14 +402,14 @@
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
                                 <input type="date" name="term1_start" required
                                        value="{{ old('term1_start', $activeYear ? $activeYear->term1_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_start') border-red-500 bg-red-50 @else bg-white @enderror">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_start') border-red-500 bg-red-50 @enderror">
                                 @error('term1_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
                                 <input type="date" name="term1_end" required
                                        value="{{ old('term1_end', $activeYear ? $activeYear->term1_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_end') border-red-500 bg-red-50 @else bg-white @enderror">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_end') border-red-500 bg-red-50 @enderror">
                                 @error('term1_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
@@ -422,14 +423,14 @@
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
                                 <input type="date" name="term2_start" required
                                        value="{{ old('term2_start', $activeYear ? $activeYear->term2_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_start') border-red-500 bg-red-50 @else bg-white @enderror">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_start') border-red-500 bg-red-50 @enderror">
                                 @error('term2_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
                                 <input type="date" name="term2_end" required
                                        value="{{ old('term2_end', $activeYear ? $activeYear->term2_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_end') border-red-500 bg-red-50 @else bg-white @enderror">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_end') border-red-500 bg-red-50 @enderror">
                                 @error('term2_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
@@ -443,18 +444,19 @@
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
                                 <input type="date" name="term3_start" required
                                        value="{{ old('term3_start', $activeYear ? $activeYear->term3_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_start') border-red-500 bg-red-50 @else bg-white @enderror">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_start') border-red-500 bg-red-50 @enderror">
                                 @error('term3_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
                                 <input type="date" name="term3_end" required
                                        value="{{ old('term3_end', $activeYear ? $activeYear->term3_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_end') border-red-500 bg-red-50 @else bg-white @enderror">
+                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_end') border-red-500 bg-red-50 @enderror">
                                 @error('term3_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     </div>
+
                 </div>
 
                 <div class="flex flex-col gap-3 shrink-0">

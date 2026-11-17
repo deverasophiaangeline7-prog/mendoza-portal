@@ -12,23 +12,34 @@
         --ma-dark-grey: #b0b0b0; 
     }
 
-    /* GLOBAL FIX: Prevent page from stretching horizontally */
-    html, body {
-        max-width: 100vw;
-        overflow-x: hidden;
+    /* THE ULTIMATE IOS FIX: Force everything to respect borders */
+    *, *::before, *::after {
+        box-sizing: border-box !important;
     }
 
-    .dashboard-container * {
-        box-sizing: border-box !important;
+    html, body {
+        width: 100%;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+        position: relative;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    /* ANTI-BLOWOUT: Force all containers to obey screen width */
+    .dashboard-container, 
+    .main-content, 
+    .left-column, 
+    .right-column, 
+    .appointment-form-card {
+        min-width: 0 !important; 
+        max-width: 100% !important;
     }
 
     .dashboard-container {
         display: flex;
         font-family: 'Arial', sans-serif;
         width: 100%;
-        max-width: 100vw;
         min-height: calc(100vh - 80px);
-        overflow-x: hidden;
     }
 
     .main-content {
@@ -38,7 +49,6 @@
         gap: 30px;
         background-color: #ffffff;
         width: 100%;
-        max-width: 100%;
     }
 
     .left-column { 
@@ -46,13 +56,11 @@
         display: flex; 
         flex-direction: column; 
         gap: 20px; 
-        min-width: 0; 
     }
     
     .right-column { 
         flex: 1.2; 
         position: relative; 
-        min-width: 0; 
     }
 
     .appointment-form-card {
@@ -61,6 +69,7 @@
         padding: 20px;
         background: #fff;
         width: 100%;
+        overflow: hidden; /* Cages internal elements */
     }
 
     .appointment-form-card h3 {
@@ -71,7 +80,7 @@
         margin-bottom: 15px;
     }
 
-    .form-group { margin-bottom: 12px; }
+    .form-group { margin-bottom: 12px; width: 100%; }
     
     .form-group label {
         display: block;
@@ -83,7 +92,7 @@
 
     .form-control {
         width: 100%;
-        max-width: 100%;
+        min-width: 0; /* Prevents Safari from extending past parent */
         margin: 0;
         padding: 8px 15px;
         border: 2px solid #000;
@@ -91,6 +100,8 @@
         background-color: var(--ma-bg-grey);
         font-weight: bold;
         font-size: 14px;
+        -webkit-appearance: none; /* Stops iOS from adding extra bulk to inputs */
+        appearance: none;
     }
 
     .radio-group {
@@ -98,6 +109,7 @@
         gap: 15px;
         margin-left: 5px;
         margin-bottom: 10px;
+        flex-wrap: wrap;
     }
 
     .radio-group label {
@@ -116,7 +128,11 @@
         height: 16px;
     }
 
-    .time-group { display: flex; gap: 15px; width: 100%; }
+    .time-group { 
+        display: flex; 
+        gap: 15px; 
+        width: 100%; 
+    }
 
     .btn-submit {
         background-color: var(--ma-green);
@@ -150,13 +166,13 @@
 
     .btn-cancel-icon:hover { transform: scale(1.1); }
 
-    /* Forces the table to scroll independently without stretching the screen */
+    /* Forces iOS to scroll tables smoothly and stay inside borders */
     .table-responsive {
         width: 100%;
         max-width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        display: block;
+        display: block !important;
     }
 
     .pending-table {
@@ -181,6 +197,8 @@
         font-weight: bold;
         background-color: white;
         font-size: 14px;
+        text-align: center;
+        vertical-align: middle;
     }
 
     .pill-orange {
@@ -408,21 +426,37 @@
         align-items: center; 
         gap: 15px; 
         text-transform: uppercase;
-        box-sizing: border-box;
     }
     .toast-success { background-color: var(--ma-green); color: black; }
     .toast-error { background-color: var(--ma-red); color: white; }
     .toast-icon { font-size: 22px; flex-shrink: 0; }
     .toast-close-btn { background: none; border: none; font-size: 24px; font-weight: 900; cursor: pointer; padding: 0; color: inherit; line-height: 1; margin-left: auto; }
 
-    /* RESPONSIVE CSS FIXES */
+    /* STRICT MOBILE OVERRIDES - Kills iOS Flexbox Bugs */
     @media (max-width: 992px) {
-        .dashboard-container { display: block; padding: 10px; }
-        .main-content { flex-direction: column; padding: 10px; gap: 20px; }
-        .left-column, .right-column { width: 100%; display: block; }
-        .appointment-form-card { padding: 15px; }
+        .dashboard-container { 
+            display: block; 
+            padding: 10px; 
+            width: 100%;
+        }
+        .main-content {
+            display: block; /* Turns off flexbox completely on mobile to stop stretching */
+            padding: 10px;
+            width: 100%;
+        }
+        .left-column, .right-column { 
+            display: block; 
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .appointment-form-card { 
+            padding: 15px; 
+            width: 100%;
+            overflow: hidden; 
+        }
         .schedule-grid { min-width: 600px; }
         .time-group { flex-direction: column; gap: 10px; }
+        .time-group .form-group { width: 100%; }
         
         .calendar-header-wrapper {
             flex-direction: column; gap: 15px; margin-bottom: 20px; padding-top: 5px;
@@ -434,19 +468,10 @@
         .nested-modal-actions button { width: 100%; }
     }
 
-    /* Desktop overrides for Toast */
     @media (min-width: 768px) {
         .toast-notification {
-            bottom: 40px; 
-            right: 40px; 
-            left: auto;
-            transform: none;
-            width: auto;
-            max-width: 500px;
-            font-size: 18px; 
-            box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); 
-            padding: 15px 30px; 
-            border-radius: 20px; 
+            bottom: 40px; right: 40px; left: auto; transform: none; width: auto; max-width: 500px;
+            font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); padding: 15px 30px; border-radius: 20px; 
         }
         .toast-icon { font-size: 24px; }
     }
@@ -527,11 +552,11 @@
                     </div>
 
                     <div class="time-group">
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group">
                             <label>Start Time</label>
                             <input type="time" id="start_time" name="start_time" class="form-control" required>
                         </div>
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group">
                             <label>End Time</label>
                             <input type="time" id="end_time" name="end_time" class="form-control" required>
                         </div>
@@ -1029,7 +1054,6 @@
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
 
-    // CHECK URL FOR NOTIFICATION TRIGGER ON PAGE LOAD
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('action') === 'view_requests') {
@@ -1039,7 +1063,6 @@
         }
     });
 
-    // UPDATE END TIME DYNAMICALLY WHEN DURATION RADIO IS CHANGED
     document.querySelectorAll('input[name="duration_pref"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const startInput = document.getElementById('start_time').value;
@@ -1061,7 +1084,6 @@
         });
     });
 
-    // HANDLE CELL CLICKS TO AUTO-FILL FORM
     document.addEventListener('click', function(event) {
         const cell = event.target.closest('#sync-schedule-grid td[data-date]');
         
@@ -1103,7 +1125,6 @@
         }
     });
 
-    // SILENT BACKGROUND SYNC FOR APPOINTMENTS
     setInterval(() => {
         const isModalOpen = document.querySelectorAll('.modal-overlay:not(.modal-hidden)').length > 0;
         

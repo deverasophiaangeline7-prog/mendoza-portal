@@ -665,27 +665,68 @@ class UserController extends Controller
 
     public function updateTerms(Request $request)
     {
-        // Validate the dates
-        $validated = $request->validate([
-            'term1_start' => 'required|date',
-            'term1_end'   => 'required|date|after_or_equal:term1_start',
-            
-            'term2_start' => 'required|date|after_or_equal:term1_end',
-            'term2_end'   => 'required|date|after_or_equal:term2_start',
-            
-            'term3_start' => 'required|date|after_or_equal:term2_end',
-            'term3_end'   => 'required|date|after_or_equal:term3_start',
-        ]);
-
-        // Fetch the currently active school year 
-        // (Note: your web.php uses 'status' => 'active')
+        // 1. Kunin muna natin ang Active School Year para sa Boundary Logic
         $activeYear = SchoolYear::where('status', 'active')->first();
 
         if (!$activeYear) {
             return back()->with('error', 'No active school year found to update.');
         }
 
-        // Update the record in the database
+        // Hihiwain natin yung "2026-2027" para makuha ang start at end year
+        $years = explode('-', $activeYear->school_year);
+        $startYear = (int) $years[0];
+        $endYear = (int) $years[1];
+        
+        // Boundary Dates (Hal. Bawal mas maaga sa June 1, 2026 at bawal lumagpas sa July 31, 2027)
+        $minDate = "{$startYear}-06-01";
+        $maxDate = "{$endYear}-07-31";
+
+        // 2. Base Validation (Kasama na ang "No Same Date" at "1-Day Gap")
+        $validated = $request->validate([
+            'term1_start' => "required|date|after_or_equal:{$minDate}|before_or_equal:{$maxDate}",
+            'term1_end'   => "required|date|after:term1_start|before_or_equal:{$maxDate}", // "after:" means no same date
+            
+            'term2_start' => "required|date|after:term1_end|before_or_equal:{$maxDate}", // "after:" means 1 day gap minimum
+            'term2_end'   => "required|date|after:term2_start|before_or_equal:{$maxDate}",
+            
+            'term3_start' => "required|date|after:term2_end|before_or_equal:{$maxDate}",
+            'term3_end'   => "required|date|after:term3_start|before_or_equal:{$maxDate}",
+        ], [
+            // Custom Error Messages para mas maganda basahin sa screen
+            'term1_end.after' => 'Term 1 End Date must be after the Start Date.',
+            'term2_start.after' => 'Term 2 must start AFTER Term 1 ends (Requires at least 1-day break).',
+            'term3_start.after' => 'Term 3 must start AFTER Term 2 ends (Requires at least 1-day break).',
+            '*.after_or_equal' => "Dates must be within the active School Year ($activeYear->school_year).",
+            '*.before_or_equal' => "Dates must be within the active School Year ($activeYear->school_year).",
+        ]);
+
+        // 3. 1-Month Duration Validation (Carbon Checks)
+        $validator = \Illuminate\Support\Facades\Validator::make([], []); 
+
+        $t1_start = Carbon::parse($validated['term1_start']);
+        $t1_end = Carbon::parse($validated['term1_end']);
+        $t2_start = Carbon::parse($validated['term2_start']);
+        $t2_end = Carbon::parse($validated['term2_end']);
+        $t3_start = Carbon::parse($validated['term3_start']);
+        $t3_end = Carbon::parse($validated['term3_end']);
+
+        // Check kung umabot ba ng at least 28 days (approx 1 month) ang bawat term
+        if ($t1_start->diffInDays($t1_end) < 28) {
+            $validator->errors()->add('term1_end', 'Term 1 must last for at least 1 month (approx. 28 days).');
+        }
+        if ($t2_start->diffInDays($t2_end) < 28) {
+            $validator->errors()->add('term2_end', 'Term 2 must last for at least 1 month (approx. 28 days).');
+        }
+        if ($t3_start->diffInDays($t3_end) < 28) {
+            $validator->errors()->add('term3_end', 'Term 3 must last for at least 1 month (approx. 28 days).');
+        }
+
+        // Kung may bumagsak sa 1-month rule, ibabato natin ang error sa screen
+        if ($validator->errors()->isNotEmpty()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        // 4. Save to Database kung perfect ang lahat
         $activeYear->update([
             'term1_start' => $validated['term1_start'],
             'term1_end'   => $validated['term1_end'],
@@ -695,7 +736,13 @@ class UserController extends Controller
             'term3_end'   => $validated['term3_end'],
         ]);
 
-        return back()->with('success', 'Term Schedule securely updated.');
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Term Schedule Updated',
+            'description' => Auth::user()->username . ' successfully configured the term schedule for SY ' . $activeYear->school_year
+        ]);
+
+        return back()->with('success', 'Term Schedule securely updated and validated.');
     }
 
     public function updatePicture(Request $request)
