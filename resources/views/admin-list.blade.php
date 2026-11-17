@@ -5,7 +5,7 @@
 @section('content')
 
 @php
-    // Ensure we reliably fetch Superadmins and prevent them from duplicating in the Male/Female lists
+    // Ensure we reliably fetch Superadmin and prevent them from duplicating in the Male/Female lists
     $superadminList = \App\Models\User::where('role', 'superadmin')->get();
     $filteredMales = collect($males)->filter(fn($u) => $u->role !== 'superadmin');
     $filteredFemales = collect($females)->filter(fn($u) => $u->role !== 'superadmin');
@@ -101,26 +101,8 @@
                                 <tr class="border-b-2 border-black hover:bg-gray-50 transition">
                                     <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
                                     <td class="p-4 font-bold uppercase">{{ $super->name }}</td>
-                                    <td class="p-4">
-                                        <div class="flex justify-center gap-2 items-center">
-                                            <button type="button" 
-                                                    @click="adminEditModal = true; 
-                                                            editAdminId = '{{ $super->user_id ?? $super->id }}'; 
-                                                            editFirstName = '{{ addslashes($super->admin?->first_name ?? '') }}'; 
-                                                            editMiddleName = '{{ addslashes($super->admin?->middle_name ?? '') }}'; 
-                                                            editLastName = '{{ addslashes($super->admin?->last_name ?? '') }}';"
-                                                    class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
-                                                Edit
-                                            </button>
-                                            
-                                            <!-- Optionally disable archive for superadmins, or keep it if allowed -->
-                                            <button type="button" 
-                                                @click="archiveModal = true; archiveUrl = '{{ route('account.admin.archive', $super->user_id ?? $super->id) }}'" 
-                                                title="Archive" 
-                                                class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
-                                                <i class="fa-solid fa-box-archive"></i>
-                                            </button>
-                                        </div>
+                                    <td class="p-4 text-center">
+                                        <span class="text-gray-400 font-bold italic text-sm">Action Restricted</span>
                                     </td>
                                 </tr>
                             @endforeach
@@ -208,7 +190,7 @@
                         <option value="" disabled selected>-- Select Account --</option>
                         
                         @if($superadminList->count() > 0)
-                            <optgroup label="Superadmins">
+                            <optgroup label="Superadmin">
                                 @foreach($superadminList as $superadmin)
                                     <option value="{{ $superadmin->user_id ?? $superadmin->id }}">
                                         {{ $superadmin->admin?->first_name ?? $superadmin->name }} {{ $superadmin->admin?->last_name ?? '' }} (Superadmin)
