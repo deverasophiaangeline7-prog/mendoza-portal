@@ -98,7 +98,6 @@ x-data="{
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-    @endif
         
         <script>
             setTimeout(function() {
