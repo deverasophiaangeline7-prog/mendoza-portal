@@ -12,34 +12,12 @@
         --ma-dark-grey: #b0b0b0; 
     }
 
-    /* THE ULTIMATE IOS FIX: Force everything to respect borders */
-    *, *::before, *::after {
-        box-sizing: border-box !important;
-    }
-
-    html, body {
-        width: 100%;
-        max-width: 100vw !important;
-        overflow-x: hidden !important;
-        position: relative;
-        -webkit-text-size-adjust: 100%;
-    }
-
-    /* ANTI-BLOWOUT: Force all containers to obey screen width */
-    .dashboard-container, 
-    .main-content, 
-    .left-column, 
-    .right-column, 
-    .appointment-form-card {
-        min-width: 0 !important; 
-        max-width: 100% !important;
-    }
-
     .dashboard-container {
         display: flex;
         font-family: 'Arial', sans-serif;
         width: 100%;
         min-height: calc(100vh - 80px);
+        box-sizing: border-box;
     }
 
     .main-content {
@@ -48,7 +26,9 @@
         display: flex;
         gap: 30px;
         background-color: #ffffff;
+        box-sizing: border-box;
         width: 100%;
+        max-width: 100%;
     }
 
     .left-column { 
@@ -56,11 +36,13 @@
         display: flex; 
         flex-direction: column; 
         gap: 20px; 
+        min-width: 0; 
     }
     
     .right-column { 
         flex: 1.2; 
         position: relative; 
+        min-width: 0; 
     }
 
     .appointment-form-card {
@@ -69,7 +51,7 @@
         padding: 20px;
         background: #fff;
         width: 100%;
-        overflow: hidden; /* Cages internal elements */
+        box-sizing: border-box;
     }
 
     .appointment-form-card h3 {
@@ -80,7 +62,7 @@
         margin-bottom: 15px;
     }
 
-    .form-group { margin-bottom: 12px; width: 100%; }
+    .form-group { margin-bottom: 12px; }
     
     .form-group label {
         display: block;
@@ -92,16 +74,13 @@
 
     .form-control {
         width: 100%;
-        min-width: 0; /* Prevents Safari from extending past parent */
-        margin: 0;
         padding: 8px 15px;
         border: 2px solid #000;
         border-radius: 25px;
         background-color: var(--ma-bg-grey);
         font-weight: bold;
         font-size: 14px;
-        -webkit-appearance: none; /* Stops iOS from adding extra bulk to inputs */
-        appearance: none;
+        box-sizing: border-box;
     }
 
     .radio-group {
@@ -109,7 +88,6 @@
         gap: 15px;
         margin-left: 5px;
         margin-bottom: 10px;
-        flex-wrap: wrap;
     }
 
     .radio-group label {
@@ -128,11 +106,7 @@
         height: 16px;
     }
 
-    .time-group { 
-        display: flex; 
-        gap: 15px; 
-        width: 100%; 
-    }
+    .time-group { display: flex; gap: 15px; width: 100%; }
 
     .btn-submit {
         background-color: var(--ma-green);
@@ -147,6 +121,7 @@
         cursor: pointer;
     }
 
+    /* Small Circular Cancel Button */
     .btn-cancel-icon {
         background-color: var(--ma-red);
         color: white;
@@ -164,15 +139,16 @@
         transition: transform 0.2s;
     }
 
-    .btn-cancel-icon:hover { transform: scale(1.1); }
+    .btn-cancel-icon:hover {
+        transform: scale(1.1);
+    }
 
-    /* Forces iOS to scroll tables smoothly and stay inside borders */
+    /* Responsive Table Wrapper */
     .table-responsive {
         width: 100%;
-        max-width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        display: block !important;
+        box-sizing: border-box;
     }
 
     .pending-table {
@@ -197,8 +173,6 @@
         font-weight: bold;
         background-color: white;
         font-size: 14px;
-        text-align: center;
-        vertical-align: middle;
     }
 
     .pill-orange {
@@ -254,7 +228,10 @@
         transition: transform 0.2s;
     }
 
-    .nav-arrow:hover { transform: scale(1.2); color: var(--ma-red); }
+    .nav-arrow:hover {
+        transform: scale(1.2); 
+        color: var(--ma-red); 
+    }
 
     .requests-trigger {
         position: absolute;
@@ -304,6 +281,12 @@
         margin: -5px 0 15px 0;
     }
 
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+
     .schedule-grid {
         width: 100%;
         border-collapse: collapse;
@@ -311,11 +294,17 @@
         border: 2px solid #000;
     }
 
-    .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 10px 5px; height: 40px; }
+    .schedule-grid th, .schedule-grid td {
+        border: 2px solid #000;
+        padding: 10px 5px;
+        height: 40px;
+    }
+
     .schedule-grid th { background-color: var(--ma-bg-grey); font-weight: 900; }
     
     .day-header { font-size: 11px; text-transform: uppercase; color: #555; }
     .date-header { font-size: 16px; }
+
     .time-col { background-color: var(--ma-bg-grey); width: 60px; font-weight: 900; font-size: 14px; }
     
     .cell-red { background-color: var(--ma-red); }
@@ -323,9 +312,19 @@
     .cell-grey { background-color: var(--ma-dark-grey) !important; }
     .cell-white { background-color: #ffffff; }
 
-    .cell-half-top { background: linear-gradient(180deg, var(--ma-green) 0 50%, #ffffff 50% 100%); }
-    .cell-half-bottom { background: linear-gradient(180deg, #ffffff 0 50%, var(--ma-green) 50% 100%); }
+    .cell-half-top {
+        background: linear-gradient(180deg, var(--ma-green) 0 50%, #ffffff 50% 100%);
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+    }
+    
+    .cell-half-bottom {
+        background: linear-gradient(180deg, #ffffff 0 50%, var(--ma-green) 50% 100%);
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+    }
 
+    /* Clickable Schedule Cells - Orange Hover & Selection */
     .schedule-grid td.cell-white {
         cursor: pointer;
         transition: transform 0.1s, background-color 0.2s, box-shadow 0.1s;
@@ -355,134 +354,237 @@
     }
     
     .legend-item span {
-        display: inline-block; width: 16px; height: 16px; border-radius: 50%;
-        border: 2px solid #000; margin-right: 5px; vertical-align: middle;
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid #000;
+        margin-right: 5px;
+        vertical-align: middle;
     }
 
-    .disclaimer { color: var(--ma-red); text-align: center; font-size: 13px; font-weight: 900; margin-top: 5px; }
+    .disclaimer {
+        color: var(--ma-red);
+        text-align: center;
+        font-size: 13px;
+        font-weight: 900;
+        margin-top: 5px;
+    }
 
     .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
     }
+    
     .modal-hidden { display: none !important; }
 
-    .requests-modal, .validation-modal, .nested-modal-content {
-        background: white; border: 4px solid #000; border-radius: 25px;
-        width: 90%; max-width: 900px; padding: 25px; position: relative;
-        max-height: 75vh; overflow-y: auto; overflow-x: hidden;
-        margin: 0 auto; box-shadow: 6px 6px 0px var(--ma-orange);
+    .requests-modal, .validation-modal {
+        background: white;
+        border: 4px solid #000;
+        border-radius: 25px;
+        width: 90%;
+        max-width: 900px;
+        padding: 20px;
+        position: relative;
+        max-height: 75vh;
+        overflow-y: auto;
     }
 
-    .validation-modal, .nested-modal-content { max-width: 500px; text-align: center; }
-    .validation-modal h3 { margin-top: 0; color: var(--ma-red); font-weight: 900; font-size: 22px; }
-    .nested-modal-content h3 { margin-top: 0; font-size: 20px; font-weight: 900; }
+    .validation-modal {
+        max-width: 450px;
+        text-align: center;
+    }
+
+    .validation-modal h3 {
+        margin-top: 0;
+        color: var(--ma-red);
+        font-weight: 900;
+        font-size: 22px;
+    }
 
     .modal-header {
-        display: flex; justify-content: center; align-items: center;
-        position: relative; margin-bottom: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        margin-bottom: 20px;
     }
-    .modal-header h2 { margin: 0; font-size: 24px; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+
+    .modal-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
     .close-btn {
-        position: absolute; right: 0; top: 0; background: var(--ma-red); color: white; border: 3px solid #fff;
-        box-shadow: 0 0 0 2px #000; border-radius: 50%; width: 40px; height: 40px; font-size: 24px;
-        font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        position: absolute;
+        right: 0;
+        top: 0;
+        background: var(--ma-red);
+        color: white;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 2px #000;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .modal-table { width: 100%; border-collapse: collapse; border: 2px solid #000; }
-    .modal-table th { background-color: var(--ma-orange); color: #000; border: 2px solid #000; padding: 15px; font-size: 16px; }
-    .modal-table td { border: 2px solid #000; padding: 15px; font-weight: bold; vertical-align: middle; }
+    .modal-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 2px solid #000;
+    }
 
-    .action-buttons { display: flex; gap: 10px; justify-content: center; }
-    .btn-flat { padding: 8px 18px; border: 2px solid #000; border-radius: 20px; color: black; font-weight: 900; font-size: 14px; cursor: pointer; }
+    .modal-table th {
+        background-color: var(--ma-orange);
+        color: #000;
+        border: 2px solid #000;
+        padding: 15px;
+        font-size: 16px;
+    }
+
+    .modal-table td {
+        border: 2px solid #000;
+        padding: 15px;
+        font-weight: bold;
+        vertical-align: middle;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .btn-flat {
+        padding: 8px 18px;
+        border: 2px solid #000;
+        border-radius: 20px;
+        color: black;
+        font-weight: 900;
+        font-size: 14px;
+        cursor: pointer;
+    }
 
     .btn-approve { background-color: var(--ma-green); color: black; border: 2px solid #000; }
     .btn-reschedule { background-color: var(--ma-orange); color: black; border: 2px solid #000; }
     .btn-decline { background-color: var(--ma-red); color: black; border: 2px solid #000; }
 
     .nested-modal {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1010;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1010;
     }
-    .nested-modal-actions { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
 
-    /* TOAST CSS REWRITE - Mobile First, physically impossible to overflow */
-    .toast-notification {
-        position: fixed; 
-        bottom: 20px; 
-        left: 50%;
-        transform: translateX(-50%);
+    .nested-modal-content {
+        background: white;
+        border: 4px solid #000;
+        border-radius: 25px;
+        padding: 30px;
         width: 90%;
-        max-width: 450px;
-        z-index: 99999; 
-        border: 4px solid #000; 
-        border-radius: 15px; 
-        padding: 15px 20px; 
-        font-weight: 900; 
-        font-size: 14px; 
-        box-shadow: 4px 4px 0px 0px rgba(0,0,0,1); 
-        display: flex; 
-        align-items: center; 
-        gap: 15px; 
-        text-transform: uppercase;
+        max-width: 600px;
+        text-align: center;
+        box-shadow: 10px 10px 0px var(--ma-orange);
     }
-    .toast-success { background-color: var(--ma-green); color: black; }
-    .toast-error { background-color: var(--ma-red); color: white; }
-    .toast-icon { font-size: 22px; flex-shrink: 0; }
-    .toast-close-btn { background: none; border: none; font-size: 24px; font-weight: 900; cursor: pointer; padding: 0; color: inherit; line-height: 1; margin-left: auto; }
 
-    /* STRICT MOBILE OVERRIDES - Kills iOS Flexbox Bugs */
+    .nested-modal-content h3 { margin-top: 0; font-size: 20px; }
+
+    .nested-modal-actions {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    /* RESPONSIVE CSS FIXES */
     @media (max-width: 992px) {
-        .dashboard-container { 
+        .dashboard-container {
             display: block; 
-            padding: 10px; 
-            width: 100%;
         }
-        .main-content {
-            display: block; /* Turns off flexbox completely on mobile to stop stretching */
-            padding: 10px;
-            width: 100%;
-        }
-        .left-column, .right-column { 
-            display: block; 
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        .appointment-form-card { 
-            padding: 15px; 
-            width: 100%;
-            overflow: hidden; 
-        }
-        .schedule-grid { min-width: 600px; }
-        .time-group { flex-direction: column; gap: 10px; }
-        .time-group .form-group { width: 100%; }
-        
-        .calendar-header-wrapper {
-            flex-direction: column; gap: 15px; margin-bottom: 20px; padding-top: 5px;
-        }
-        .month-title { font-size: 26px; }
-        .requests-trigger { position: relative; top: 0; right: 0; margin-top: 10px; }
-        .modal-table { display: block; overflow-x: auto; white-space: nowrap; }
-        .nested-modal-actions { flex-direction: column; gap: 10px; }
-        .nested-modal-actions button { width: 100%; }
-    }
 
-    @media (min-width: 768px) {
-        .toast-notification {
-            bottom: 40px; right: 40px; left: auto; transform: none; width: auto; max-width: 500px;
-            font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); padding: 15px 30px; border-radius: 20px; 
+        .main-content {
+            flex-direction: column; 
+            padding: 15px;
+            gap: 25px;
         }
-        .toast-icon { font-size: 24px; }
+
+        .left-column, .right-column {
+            width: 100%;
+            display: block; 
+        }
+
+        .schedule-grid {
+            min-width: 650px; 
+        }
+
+        .time-group {
+            flex-direction: column; 
+            gap: 10px;
+        }
+
+        .calendar-header-wrapper {
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-top: 10px;
+        }
+
+        .month-title {
+            font-size: 26px; 
+        }
+
+        .requests-trigger {
+            position: relative; 
+            top: 0;
+            right: 0;
+            margin-top: 10px;
+        }
+
+        .modal-table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .nested-modal-content {
+            padding: 20px 15px;
+        }
+
+        .nested-modal-actions {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .nested-modal-actions button {
+            width: 100%;
+        }
     }
 </style>
 
 {{-- FLOATING TOAST NOTIFICATION FOR SUCCESS --}}
 @if(session('success'))
-<div id="toast-success" class="toast-notification toast-success">
-    <i class="fa-solid fa-circle-check toast-icon"></i> 
+<div id="toast-success" style="position: fixed; bottom: 40px; right: 40px; z-index: 9999; background-color: var(--ma-green); color: black; border: 4px solid #000; border-radius: 20px; padding: 15px 30px; font-weight: 900; font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); display: flex; align-items: center; gap: 15px; text-transform: uppercase;">
+    <i class="fa-solid fa-circle-check" style="font-size: 24px;"></i> 
     <span>{{ session('success') }}</span>
-    <button onclick="document.getElementById('toast-success').style.display='none'" class="toast-close-btn">&times;</button>
+    <button onclick="document.getElementById('toast-success').style.display='none'" style="background: none; border: none; font-size: 24px; font-weight: black; cursor: pointer; padding: 0;">&times;</button>
 </div>
 <script>
     setTimeout(() => {
@@ -494,10 +596,10 @@
 
 {{-- FLOATING TOAST NOTIFICATION FOR ERRORS --}}
 @if(session('error'))
-<div id="toast-error" class="toast-notification toast-error">
-    <i class="fa-solid fa-circle-exclamation toast-icon"></i> 
+<div id="toast-error" style="position: fixed; bottom: 40px; right: 40px; z-index: 9999; background-color: var(--ma-red); color: white; border: 4px solid #000; border-radius: 20px; padding: 15px 30px; font-weight: 900; font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); display: flex; align-items: center; gap: 15px; text-transform: uppercase;">
+    <i class="fa-solid fa-circle-exclamation" style="font-size: 24px;"></i> 
     <span>{{ session('error') }}</span>
-    <button onclick="document.getElementById('toast-error').style.display='none'" class="toast-close-btn">&times;</button>
+    <button onclick="document.getElementById('toast-error').style.display='none'" style="background: none; border: none; font-size: 24px; font-weight: black; cursor: pointer; padding: 0; color: white;">&times;</button>
 </div>
 <script>
     setTimeout(() => {
@@ -552,11 +654,11 @@
                     </div>
 
                     <div class="time-group">
-                        <div class="form-group">
+                        <div class="form-group" style="flex: 1;">
                             <label>Start Time</label>
                             <input type="time" id="start_time" name="start_time" class="form-control" required>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="flex: 1;">
                             <label>End Time</label>
                             <input type="time" id="end_time" name="end_time" class="form-control" required>
                         </div>
@@ -908,8 +1010,13 @@
 </div>
 
 <script>
-    function openModal(modalId) { document.getElementById(modalId).classList.remove('modal-hidden'); }
-    function closeModal(modalId) { document.getElementById(modalId).classList.add('modal-hidden'); }
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.remove('modal-hidden');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('modal-hidden');
+    }
 
     function showValidationPopUp(message) {
         document.getElementById('valModalMessage').innerText = message;
@@ -925,9 +1032,11 @@
         const dateInput = document.getElementById('appointment_date').value;
         const startTimeInput = document.getElementById('start_time').value;
         const endTimeInput = document.getElementById('end_time').value;
+        
         const topicInput = document.querySelector('input[name="discussion_topic"]').value;
 
         const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
+
         if (invalidTopicRegex.test(topicInput)) {
             event.preventDefault();
             showValidationPopUp('The discussion topic can only contain letters, numbers, spaces, periods, commas, hyphens, and apostrophes.');
@@ -944,6 +1053,7 @@
             showValidationPopUp('Appointments cannot be booked in the past.');
             return false;
         }
+
         if (dateInput > maxDate) {
             event.preventDefault();
             showValidationPopUp('Appointments can only be scheduled up to two weeks in advance.');
@@ -970,11 +1080,13 @@
             showValidationPopUp('Appointments can only be scheduled between 8:00 AM and 5:00 PM.');
             return false;
         }
+
         if (startMins < 780 && endMins > 720) {
             event.preventDefault();
             showValidationPopUp('Appointments cannot be scheduled during the 12:00 PM - 1:00 PM lunch break.');
             return false;
         }
+
         if (dateInput === today) {
             const now = new Date();
             const currentMins = now.getHours() * 60 + now.getMinutes();
@@ -984,11 +1096,13 @@
                 return false;
             }
         }
+
         if (duration <= 0) {
             event.preventDefault();
             showValidationPopUp('Invalid time selected. The end time must be later than the start time.');
             return false;
         }
+
         if (duration !== 30 && duration !== 60) {
             event.preventDefault();
             showValidationPopUp('Appointment duration must be exactly 30 minutes or 1 hour.');
@@ -997,6 +1111,7 @@
 
         const cellHour = parseInt(startParts[0], 10);
         let timeSlotLabel = '';
+
         if (cellHour === 8) timeSlotLabel = '8AM';
         else if (cellHour === 9) timeSlotLabel = '9AM';
         else if (cellHour === 10) timeSlotLabel = '10AM';
@@ -1054,15 +1169,21 @@
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
 
+    // CHECK URL FOR NOTIFICATION TRIGGER ON PAGE LOAD
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
+        
         if (urlParams.get('action') === 'view_requests') {
+            // Open the incoming requests modal
             openModal('requestsModalOverlay');
+            
+            // Optional: Clean up the URL so it doesn't reopen if the user refreshes the page
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.replaceState({path: cleanUrl}, '', cleanUrl);
         }
     });
 
+    // UPDATE END TIME DYNAMICALLY WHEN DURATION RADIO IS CHANGED
     document.querySelectorAll('input[name="duration_pref"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const startInput = document.getElementById('start_time').value;
@@ -1084,24 +1205,33 @@
         });
     });
 
+    // HANDLE CELL CLICKS TO AUTO-FILL FORM
     document.addEventListener('click', function(event) {
         const cell = event.target.closest('#sync-schedule-grid td[data-date]');
         
         if (cell) {
             if (cell.classList.contains('cell-white') || cell.getAttribute('data-status') === 'available') {
+                
+                // Clear previous selection highlight
                 document.querySelectorAll('.cell-selected').forEach(c => c.classList.remove('cell-selected'));
+                // Add highlight to the clicked cell
                 cell.classList.add('cell-selected');
 
                 const date = cell.getAttribute('data-date');
                 const timeLabel = cell.getAttribute('data-time');
                 
                 let startHour = parseInt(timeLabel.replace(/AM|PM/g, ''));
-                if (timeLabel.includes('PM') && startHour !== 12) startHour += 12;
+                if (timeLabel.includes('PM') && startHour !== 12) {
+                    startHour += 12;
+                }
                 
                 const duration = parseInt(document.querySelector('input[name="duration_pref"]:checked').value);
                 let endHour = startHour;
                 let endMin = duration === 30 ? '30' : '00';
-                if (duration === 60) endHour += 1;
+                
+                if (duration === 60) {
+                    endHour += 1;
+                }
                 
                 const formattedStartTime = startHour.toString().padStart(2, '0') + ':00';
                 const formattedEndTime = endHour.toString().padStart(2, '0') + ':' + endMin;
@@ -1110,21 +1240,28 @@
                 document.getElementById('start_time').value = formattedStartTime;
                 document.getElementById('end_time').value = formattedEndTime;
                 
+                // Focus on parent select dropdown if empty, otherwise go to discussion topic
                 const parentSelect = document.querySelector('select[name="parent_id"]');
-                if (!parentSelect.value) parentSelect.focus();
-                else document.querySelector('input[name="discussion_topic"]').focus();
+                if (!parentSelect.value) {
+                    parentSelect.focus();
+                } else {
+                    document.querySelector('input[name="discussion_topic"]').focus();
+                }
                 
             } else {
                 let status = cell.getAttribute('data-status');
                 let message = 'This time slot is unavailable.';
+                
                 if (status === 'class') message = 'Cannot book here. This slot is reserved for Class Hours.';
                 if (status === 'leave') message = 'Cannot book here. You are On Leave for this day.';
                 if (status === 'booked') message = 'Cannot book here. This slot is already taken.';
+                
                 showValidationPopUp(message);
             }
         }
     });
 
+    // SILENT BACKGROUND SYNC FOR APPOINTMENTS
     setInterval(() => {
         const isModalOpen = document.querySelectorAll('.modal-overlay:not(.modal-hidden)').length > 0;
         
@@ -1141,27 +1278,32 @@
                         currentParentRequests.innerHTML = newParentRequests.innerHTML;
                     }
 
+                    // 1. Sync Teacher Sent Requests
                     const newTeacherSent = doc.getElementById('sync-teacher-sent');
                     const currentTeacherSent = document.getElementById('sync-teacher-sent');
                     if (newTeacherSent && currentTeacherSent) {
                         currentTeacherSent.innerHTML = newTeacherSent.innerHTML;
                     }
 
+                    // 2. Sync Teacher Incoming Requests Modal
                     const newTeacherIncoming = doc.getElementById('sync-teacher-incoming');
                     const currentTeacherIncoming = document.getElementById('sync-teacher-incoming');
                     if (newTeacherIncoming && currentTeacherIncoming) {
                         currentTeacherIncoming.innerHTML = newTeacherIncoming.innerHTML;
                     }
 
+                    // 3. Sync the Teacher's Request Badge Number
                     const newBadge = doc.querySelector('.request-badge');
                     const currentBadge = document.querySelector('.request-badge');
                     if (newBadge && currentBadge) {
                         currentBadge.innerText = newBadge.innerText;
                     }
 
+                    // 4. Sync Schedule Grid Live Updates & Maintain Selection Memory
                     const newScheduleGrid = doc.getElementById('sync-schedule-grid');
                     const currentScheduleGrid = document.getElementById('sync-schedule-grid');
                     if (newScheduleGrid && currentScheduleGrid) {
+                        // Preserve the currently selected cell before swapping HTML
                         let selectedDate = null;
                         let selectedTime = null;
                         const activeCell = document.querySelector('.cell-selected');
@@ -1172,6 +1314,7 @@
 
                         currentScheduleGrid.innerHTML = newScheduleGrid.innerHTML;
 
+                        // Re-apply the selection class after the HTML swaps
                         if (selectedDate && selectedTime) {
                             const newActiveCell = document.querySelector(`td[data-date="${selectedDate}"][data-time="${selectedTime}"]`);
                             if (newActiveCell && newActiveCell.getAttribute('data-status') === 'available') {

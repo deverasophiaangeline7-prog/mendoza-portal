@@ -147,7 +147,7 @@
         </div>
 
         <!-- Changed overflow-hidden to overflow-x-auto to enable mobile scrolling -->
-        <div class="border-[3px] border-black rounded-xl overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-white">
+        <div class="border-[3px] border-black rounded-xl overflow-x-auto shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-white">
             <table class="w-full min-w-[600px] text-left border-collapse">
                 <thead>
                     <tr class="bg-[#e5e7eb] border-b-[3px] border-black text-black">
