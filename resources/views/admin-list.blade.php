@@ -3,13 +3,27 @@
 @section('title', 'Admin List')
 
 @section('content')
+
+@php
+    // Ensure we reliably fetch Superadmins and prevent them from duplicating in the Male/Female lists
+    $superadminList = \App\Models\User::where('role', 'superadmin')->get();
+    $filteredMales = collect($males)->filter(fn($u) => $u->role !== 'superadmin');
+    $filteredFemales = collect($females)->filter(fn($u) => $u->role !== 'superadmin');
+    
+    // Check if there are any toast messages to show
+    $hasToast = session()->has('toast_status') || session()->has('success') || $errors->any();
+    $isError = $errors->any() || session('toast_status') === 'error';
+    $toastMessage = $errors->any() ? $errors->first() : (session('toast_message') ?? session('success'));
+@endphp
+
 <div class="flex-1 flex flex-col bg-white min-h-screen relative" 
      x-data="{ 
          openModal: false, 
          archiveModal: false, 
          archiveUrl: '', 
          adminEditModal: false, 
-         changePicModal: false, /* NEW: Picture Modal State */
+         changePicModal: false, 
+         showToast: {{ $hasToast ? 'true' : 'false' }}, /* MOVED TO ROOT STATE TO FIX TOAST NOT SHOWING */
          editAdminId: '', 
          editFirstName: '', 
          editMiddleName: '', 
@@ -17,13 +31,11 @@
      }">
 
     <main class="flex-1 p-8">
-        @if(session()->has('toast_status') || session()->has('success') || $errors->any())
-        @php
-            $isError = $errors->any() || session('toast_status') === 'error';
-            $toastMessage = $errors->any() ? $errors->first() : (session('toast_message') ?? session('success'));
-        @endphp
-        <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" 
-            class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-[#d1fae5] text-[#065f46]' }} px-6 py-4 font-black">
+        
+        <!-- FIXED 1-LINE TOAST NOTIFICATION (NO HEAVY SHADOW) -->
+        @if($hasToast)
+        <div x-show="showToast" x-init="setTimeout(() => showToast = false, 5000)" x-cloak
+             class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-[#d1fae5] text-[#065f46]' }} px-6 py-4 font-black transition-opacity duration-300">
             <div class="flex items-center gap-3">
                 @if($isError)
                     <i class="fa-solid fa-triangle-exclamation text-2xl shrink-0"></i>
@@ -32,20 +44,10 @@
                 @endif
                 <span class="text-base whitespace-nowrap leading-none">{{ $toastMessage }}</span>
             </div>
-            <button @click="show = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
+            <button @click="showToast = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        
-        <script>
-            setTimeout(function() {
-                var toast = document.getElementById('import-toast');
-                if (toast) {
-                    toast.style.opacity = '0';
-                    setTimeout(function() { toast.style.display = 'none'; }, 500);
-                }
-            }, 5000);
-        </script>
         @endif
 
         <div class="max-w-6xl mx-auto">
@@ -59,7 +61,7 @@
                         @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
                             <!-- Simple Pill Badge -->
                             <span class="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full border border-black/20 shrink-0 whitespace-nowrap not-italic">
-                                Total: <span class="text-[#b91c1c] font-black ml-1">{{ count($males) + count($females) }}</span>
+                                Total: <span class="text-[#b91c1c] font-black ml-1">{{ \App\Models\User::whereIn('role', ['admin', 'superadmin'])->count() }}</span>
                             </span>
                         @endif
                     </div>
@@ -92,8 +94,41 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- SUPERADMIN SECTION -->
+                        @if($superadminList->count() > 0)
+                            <tr class="bg-gray-300 font-bold border-b-2 border-black uppercase tracking-widest"><td colspan="3" class="p-2 pl-4 italic">Superadmin</td></tr>
+                            @foreach($superadminList as $index => $super)
+                                <tr class="border-b-2 border-black hover:bg-gray-50 transition">
+                                    <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
+                                    <td class="p-4 font-bold uppercase">{{ $super->name }}</td>
+                                    <td class="p-4">
+                                        <div class="flex justify-center gap-2 items-center">
+                                            <button type="button" 
+                                                    @click="adminEditModal = true; 
+                                                            editAdminId = '{{ $super->id }}'; 
+                                                            editFirstName = '{{ addslashes($super->admin?->first_name ?? '') }}'; 
+                                                            editMiddleName = '{{ addslashes($super->admin?->middle_name ?? '') }}'; 
+                                                            editLastName = '{{ addslashes($super->admin?->last_name ?? '') }}';"
+                                                    class="bg-[#34C759] hover:bg-green-600 transition-colors text-white px-4 py-1.5 rounded-full font-bold text-sm">
+                                                Edit
+                                            </button>
+                                            
+                                            <!-- Optionally disable archive for superadmins, or keep it if allowed -->
+                                            <button type="button" 
+                                                @click="archiveModal = true; archiveUrl = '{{ route('account.admin.archive', $super->id) }}'" 
+                                                title="Archive" 
+                                                class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-full font-bold text-sm transition-colors">
+                                                <i class="fa-solid fa-box-archive"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endif
+
+                        <!-- MALE ADMIN SECTION -->
                         <tr class="bg-gray-300 font-bold border-b-2 border-black uppercase tracking-widest"><td colspan="3" class="p-2 pl-4 italic">Male</td></tr>
-                        @foreach($males as $index => $admin)
+                        @foreach($filteredMales as $index => $admin)
                             <tr class="border-b-2 border-black hover:bg-gray-50 transition">
                                 <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
                                 <td class="p-4 font-bold uppercase">{{ $admin->name }}</td>
@@ -120,8 +155,9 @@
                             </tr>
                         @endforeach
 
+                        <!-- FEMALE ADMIN SECTION -->
                         <tr class="bg-gray-300 font-bold border-b-2 border-black uppercase tracking-widest"><td colspan="3" class="p-2 pl-4 italic">Female</td></tr>
-                        @foreach($females as $index => $admin)
+                        @foreach($filteredFemales as $index => $admin)
                             <tr class="border-b-2 border-black hover:bg-gray-50 transition">
                                 <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
                                <td class="p-4 font-bold uppercase">{{ $admin->name }}</td>
@@ -171,9 +207,9 @@
                     <select name="admin_id" required class="w-full border-2 border-black rounded-xl p-3 font-bold focus:outline-none focus:ring-4 focus:ring-blue-400 bg-white">
                         <option value="" disabled selected>-- Select Account --</option>
                         
-                        @if(isset($superadmins) && count($superadmins) > 0)
+                        @if($superadminList->count() > 0)
                             <optgroup label="Superadmins">
-                                @foreach($superadmins as $superadmin)
+                                @foreach($superadminList as $superadmin)
                                     <option value="{{ $superadmin->id }}">
                                         {{ $superadmin->admin?->first_name ?? $superadmin->name }} {{ $superadmin->admin?->last_name ?? '' }} (Superadmin)
                                     </option>
@@ -183,11 +219,11 @@
 
                         <optgroup label="Regular Admins">
                             @php
-                                $allAdmins = collect($males)->merge($females);
+                                $allAdmins = collect($filteredMales)->merge($filteredFemales);
                             @endphp
                             @foreach($allAdmins as $adminUser)
                                 <option value="{{ $adminUser->user_id ?? $adminUser->id }}">
-                                    {{ $adminUser->admin?->first_name }} {{ $adminUser->admin?->last_name }}
+                                    {{ $adminUser->admin?->first_name ?? $adminUser->name }} {{ $adminUser->admin?->last_name ?? '' }}
                                 </option>
                             @endforeach
                         </optgroup>

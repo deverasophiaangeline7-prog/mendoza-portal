@@ -1354,9 +1354,10 @@
 
             async pollSidebarUpdates() {
                 try {
-                    // 👈 I-update para magdala ng timestamp at walang cache
+                    // 1. Walang cache lag
                     const response = await fetch('/messages/sidebar/poll?t=' + Date.now(), { cache: 'no-store' });
                     
+                    // 2. Single session auto-kick
                     if (response.status === 401 || response.status === 419) {
                         window.location.reload();
                         return;
@@ -1365,36 +1366,52 @@
 
                     const data = await response.json();
                     let totalUnread = 0; 
-                    const reversedSidebar = [...data.sidebar].reverse();
+                    
+                    // 3. CRITICAL FIX: Siguraduhing mababasa ng Javascript ang data (Array man o Object)
+                    const rawSidebar = data.sidebar || [];
+                    const sidebarArray = Array.isArray(rawSidebar) ? rawSidebar : Object.values(rawSidebar);
+                    const reversedSidebar = [...sidebarArray].reverse();
 
                     reversedSidebar.forEach(chat => {
                         const sidebarItem = document.getElementById(`sidebar-item-${chat.user_id}`);
                         const sidebarText = document.getElementById(`sidebar-text-${chat.user_id}`);
                         const badgeContainer = document.getElementById(`sidebar-badge-${chat.user_id}`);
                         
+                        // 4. Kung may nag-chat na bagong tao na wala pa sa sidebar, i-reload para lumitaw
+                        if (!sidebarItem && chat.unread_count > 0) {
+                            window.location.reload();
+                            return;
+                        }
+
                         if (sidebarItem && sidebarText) {
                             let displayText = chat.latest_message;
                             if (chat.is_mentioned && chat.unread_count > 0) {
                                 displayText = "🔔 Mentioned you: " + chat.latest_message;
                             }
                             
-                            // 👈 DITO ANG FIX: Pinagkumpara natin ang displayText sa kasalukuyang laman
+                            let isUpdated = false;
+
+                            // I-update ang text kung may bagong message
                             if (sidebarText.textContent.trim() !== displayText.trim()) {
                                 sidebarText.textContent = displayText;
-                                this.moveToTop(sidebarItem); 
+                                isUpdated = true;
                             }
                             
                             if (this.selectedUserId != chat.user_id) {
                                 if (chat.unread_count > 0) {
                                     totalUnread += chat.unread_count; 
+                                    
                                     sidebarItem.classList.add('bg-blue-50/70');
                                     sidebarItem.classList.remove('bg-white', 'hover:bg-gray-50');
                                     sidebarText.classList.add('text-gray-900', 'font-semibold');
                                     sidebarText.classList.remove('text-gray-500');
                                     
                                     if (badgeContainer) {
-                                        badgeContainer.innerText = chat.unread_count;
-                                        badgeContainer.classList.remove('hidden');
+                                        if (badgeContainer.innerText != chat.unread_count || badgeContainer.classList.contains('hidden')) {
+                                            badgeContainer.innerText = chat.unread_count;
+                                            badgeContainer.classList.remove('hidden');
+                                            isUpdated = true;
+                                        }
                                     }
                                 } else {
                                     sidebarItem.classList.remove('bg-blue-50/70');
@@ -1402,14 +1419,21 @@
                                     sidebarText.classList.remove('text-gray-900', 'font-semibold');
                                     sidebarText.classList.add('text-gray-500');
                                     
-                                    if (badgeContainer) {
+                                    if (badgeContainer && !badgeContainer.classList.contains('hidden')) {
                                         badgeContainer.classList.add('hidden');
+                                        isUpdated = true;
                                     }
                                 }
+                            }
+
+                            // I-aangat natin sa pinakataas kapag may pagbabago!
+                            if (isUpdated) {
+                                this.moveToTop(sidebarItem); 
                             }
                         }
                     });
 
+                    // Update Main Navigation Badge
                     const navBadge = document.getElementById('nav-chat-badge');
                     if (navBadge) {
                         if (totalUnread > 0) {
