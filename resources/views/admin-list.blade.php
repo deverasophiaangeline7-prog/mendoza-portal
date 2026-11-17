@@ -89,21 +89,24 @@
                     <thead class="bg-gray-200 border-b-2 border-black text-xl font-bold">
                         <tr>
                             <th class="p-4 border-r-2 border-black text-center w-24">No.</th>
-                            <th class="p-4">Admin Name</th>
+                            <th class="p-4">Name</th>
                             <th class="p-4 w-40 text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
+
                         <!-- SUPERADMIN SECTION -->
                         @if($superadminList->count() > 0)
                             <tr class="bg-gray-300 font-bold border-b-2 border-black uppercase tracking-widest"><td colspan="3" class="p-2 pl-4 italic">Superadmin</td></tr>
                             @foreach($superadminList as $index => $super)
                                 <tr class="border-b-2 border-black hover:bg-gray-50 transition">
                                     <td class="p-4 border-r-2 border-black text-center font-bold">{{ $index + 1 }}</td>
+                                    
+                                    <!-- Outputting the actual name from the users table -->
                                     <td class="p-4 font-bold uppercase">{{ $super->name }}</td>
-                                    <td class="p-4 text-center">
-                                        <span class="text-gray-400 font-bold italic text-sm">Action Restricted</span>
-                                    </td>
+                                    
+                                    <!-- COMPLETELY BLANK ACTION COLUMN -->
+                                    <td class="p-4"></td>
                                 </tr>
                             @endforeach
                         @endif
@@ -193,7 +196,7 @@
                             <optgroup label="Superadmin">
                                 @foreach($superadminList as $superadmin)
                                     <option value="{{ $superadmin->user_id ?? $superadmin->id }}">
-                                        {{ $superadmin->admin?->first_name ?? $superadmin->name }} {{ $superadmin->admin?->last_name ?? '' }} (Superadmin)
+                                        {{ $superadmin->admin?->first_name ?? $superadmin->name }} {{ $superadmin->admin?->last_name ?? '' }}
                                     </option>
                                 @endforeach
                             </optgroup>

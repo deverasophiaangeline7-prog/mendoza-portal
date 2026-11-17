@@ -32,13 +32,11 @@
 
                     <div class="text-center md:text-left">
                         <h2 class="text-6xl font-black uppercase italic tracking-tighter leading-none text-black">
-                            {{ auth()->user()->role === 'superadmin' ? 'SUPERADMIN' : auth()->user()->name }}
+                            {{ auth()->user()->name }}
                         </h2>
-                        @if(auth()->user()->role !== 'superadmin')
-                            <div class="font-bold text-gray-400 mt-4 italic uppercase tracking-widest text-2xl">
-                                SYSTEM ADMINISTRATOR
-                            </div>
-                        @endif
+                        <div class="font-bold text-gray-400 mt-4 italic uppercase tracking-widest text-2xl">
+                            {{ auth()->user()->role === 'superadmin' ? 'SUPERADMIN' : 'SYSTEM ADMINISTRATOR' }}
+                        </div>
                     </div>
                 </div>
 

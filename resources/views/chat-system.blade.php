@@ -1354,9 +1354,6 @@
 
             async pollSidebarUpdates() {
                 try {
-                    // 👇 BAGO: Makikita mo na ito sa Console Tab mo every 4 seconds!
-                    console.log("✅ Nag-poll sa sidebar...", data.sidebar);
-
                     const response = await fetch('/messages/sidebar/poll?t=' + Date.now(), { cache: 'no-store' });
                     
                     if (response.status === 401 || response.status === 419) {
@@ -1366,9 +1363,12 @@
                     if (!response.ok) return;
 
                     const data = await response.json();
+                    
+                    // 👇 DITO DAPAT NAKAPWESTO ANG CONSOLE LOG (Pagkatapos ma-define ang 'data')
+                    console.log("✅ Nag-poll sa sidebar...", data.sidebar);
+
                     let totalUnread = 0; 
                     
-                    // 👇 FIX: Para hindi mag-crash kahit object o array ang ibalik ng Laravel
                     const sidebarArray = Array.isArray(data.sidebar) ? data.sidebar : Object.values(data.sidebar);
                     const reversedSidebar = [...sidebarArray].reverse();
 
@@ -1377,7 +1377,6 @@
                         const sidebarText = document.getElementById(`sidebar-text-${chat.user_id}`);
                         const badgeContainer = document.getElementById(`sidebar-badge-${chat.user_id}`);
                         
-                        // Kung may bagong chat na wala sa sidebar, auto-refresh para lumitaw
                         if (!sidebarItem && chat.unread_count > 0) {
                             window.location.reload();
                             return;
@@ -1391,7 +1390,6 @@
                             
                             let isUpdated = false;
 
-                            // Update text kung nagbago
                             if (sidebarText.textContent.trim() !== displayText.trim()) {
                                 sidebarText.textContent = displayText;
                                 isUpdated = true;
@@ -1407,11 +1405,10 @@
                                     sidebarText.classList.remove('text-gray-500');
                                     
                                     if (badgeContainer) {
-                                        // Update badge count
                                         if (badgeContainer.innerText != chat.unread_count || badgeContainer.classList.contains('hidden')) {
                                             badgeContainer.innerText = chat.unread_count;
                                             badgeContainer.classList.remove('hidden');
-                                            isUpdated = true; // 👈 Pampa-angat kapag dumami ang unread!
+                                            isUpdated = true; 
                                         }
                                     }
                                 } else {
@@ -1427,7 +1424,6 @@
                                 }
                             }
 
-                            // 👈 DITO AANGAT ANG CHATBOX KUNG MAY NAGBAGO!
                             if (isUpdated) {
                                 this.moveToTop(sidebarItem); 
                             }
