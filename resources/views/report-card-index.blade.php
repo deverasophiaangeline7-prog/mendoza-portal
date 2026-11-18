@@ -29,8 +29,8 @@
                class="bg-[#e68a2d] w-full max-w-[350px] py-6 rounded-[40px] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all text-center flex flex-col justify-center items-center group active:scale-95">
                
                 <span class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight transition-transform group-hover:-translate-y-1" 
-                    style="text-shadow: -1.5px -1.5px 0 #fff, 1.5px -1.5px 0 #fff, -1.5px 1.5px 0 #fff, 1.5px 1.5px 0 #fff;">
-                    {{ $displayLevel }}
+                 style="-webkit-text-stroke: 1.5px white; paint-order: stroke fill;">
+                {{ $displayLevel }}
                 </span>
 
                 <span class="text-lg md:text-xl font-medium text-black transition-transform group-hover:-translate-y-1 mt-1">
