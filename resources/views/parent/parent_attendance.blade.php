@@ -3,12 +3,13 @@
 @section('title', 'Parent Dashboard - Attendance')
 
 @section('content')
-<div class="flex-1 flex flex-col justify-between h-full min-h-screen bg-white" 
+<!-- The x-init dynamically calculates the exact height needed based on your navbar, eliminating the need to guess rem values -->
+<div class="flex flex-col justify-between w-full bg-white overflow-hidden" 
      x-data="calendarNav()" 
+     x-init="$nextTick(() => { $el.style.height = `calc(100vh - ${$el.getBoundingClientRect().top}px)` })"
      @popstate.window="navigate(window.location.href)">
     
-    <!-- Updated container: Stacks vertically on mobile, side-by-side on large screens -->
-    <div class="flex-1 p-4 flex flex-col lg:flex-row justify-center items-center lg:items-start gap-8 mt-4 md:mt-8">
+    <div class="flex-1 overflow-y-auto p-4 flex flex-col lg:flex-row justify-center items-center gap-8">
         
         <!-- Calendar Section -->
         <div id="calendar-container" 
@@ -35,7 +36,6 @@
 
             <div class="grid grid-cols-7 text-center border-b-[3px] border-black py-2 bg-gray-100">
                 @foreach(['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as $day)
-                    <!-- Added responsive text sizing to prevent overlap on narrow screens -->
                     <span class="text-[#b22222] font-black text-[10px] sm:text-sm">{{ $day }}</span>
                 @endforeach
             </div>
@@ -57,7 +57,7 @@
                                 .then(res => res.json())
                                 .then(data => { this.attendanceData = { ...data }; })
                                 .catch(err => console.error('Error fetching attendance:', err));
-                        }, 5000); // 5 seconds
+                        }, 5000);
                     }
                  }">
                 
@@ -67,10 +67,8 @@
 
                 @foreach($days as $dayNum => $status)
                     @php
-                        // Calculate the exact YYYY-MM-DD for this specific calendar square
                         $dateString = $currentDate->copy()->day($dayNum)->format('Y-m-d');
                     @endphp
-                    <!-- Alpine dynamically changes the class based on the live database status -->
                     <div class="border-2 sm:border-[3px] aspect-square flex items-center justify-center text-sm sm:text-xl font-black rounded-lg transition-all"
                          :class="getClass(attendanceData['{{ $dateString }}'] || 'none')">
                         {{ $dayNum }}
@@ -83,7 +81,6 @@
         <div class="w-full max-w-xl lg:w-56 border-[3px] border-black p-4 rounded-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-gray-50">
             <h3 class="font-black text-xl mb-4 uppercase tracking-wider border-b-[3px] border-black pb-2 text-center lg:text-left">Legend</h3>
             
-            <!-- Wraps legend items on mobile so they don't break the container -->
             <div class="flex flex-row flex-wrap lg:flex-col justify-center gap-4 lg:space-y-3 lg:gap-0">
                 @php
                     $legend = [
@@ -104,8 +101,7 @@
         </div>
     </div>
 
-    <!-- Added flex-col for narrow screens to prevent long names from crashing into sections -->
-    <footer class="p-4 sm:p-6 bg-white border-t-[3px] border-black flex flex-col md:flex-row justify-between items-center gap-2 font-black text-lg sm:text-xl shadow-[0px_-4px_0px_0px_rgba(0,0,0,1)] relative z-10 flex-shrink-0 text-center md:text-left">
+    <footer class="flex-shrink-0 p-4 sm:p-6 bg-white border-t-[3px] border-black flex flex-col md:flex-row justify-between items-center gap-2 font-black text-lg sm:text-xl shadow-[0px_-4px_0px_0px_rgba(0,0,0,1)] relative z-10 text-center md:text-left">
         <div class="uppercase tracking-wide text-black">
             {{ $student->last_name }}, {{ $student->first_name }} 
             {{ $student->middle_name ? substr($student->middle_name, 0, 1) . '.' : '' }}
@@ -116,7 +112,6 @@
     </footer>
 </div>
 
-<!-- Alpine Script to handle the smooth DOM replacement -->
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('calendarNav', () => ({
@@ -127,30 +122,21 @@
                 this.loading = true;
                 
                 try {
-                    // Fetch the new page HTML
                     const response = await fetch(url, {
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     });
                     
                     const html = await response.text();
-                    
-                    // Parse the new HTML string into a DOM element
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    
-                    // Extract just the calendar container from the fetched page
                     const newCalendar = doc.getElementById('calendar-container');
                     
                     if (newCalendar) {
-                        // Swap out the old calendar with the new one
                         document.getElementById('calendar-container').innerHTML = newCalendar.innerHTML;
-                        
-                        // Update the browser URL bar so refreshing works, without reloading the page
                         window.history.pushState({}, '', url);
                     }
                 } catch (error) {
                     console.error('Failed to load new month:', error);
-                    // Fallback to standard page load if fetch fails
                     window.location.href = url;
                 } finally {
                     this.loading = false;

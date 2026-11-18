@@ -74,6 +74,7 @@
 
     .form-control {
         width: 100%;
+        min-height: 42px; /* Add this to force consistent height */
         padding: 8px 15px;
         border: 2px solid #000;
         border-radius: 25px; 
