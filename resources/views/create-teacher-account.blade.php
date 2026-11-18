@@ -10,9 +10,19 @@
         height: 2.5rem;
         padding: 0 0.75rem;
         width: 100%;
-        min-width: 0; 
+        min-width: 0;
         max-width: 100%;
+        appearance: none;
+        -webkit-appearance: none;
     }
+    
+    /* Ultimate CSS Reset to hide Android/iOS default calendar icons and arrows */
+    input[type="date"]::-webkit-inner-spin-button,
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        display: none;
+        -webkit-appearance: none;
+    }
+    
     [x-cloak] { display: none !important; }
 </style>
 
@@ -109,7 +119,7 @@
 
                     <div class="flex flex-col md:flex-row md:items-center">
                         <label class="w-full md:w-32 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0">Birthdate: <span class="text-red-600">*</span></label>
-                        <input type="date" name="birthdate" class="form-input-pill" value="{{ old('birthdate') }}" max="{{ \Carbon\Carbon::now()->subYears(18)->format('Y-m-d') }}" required>
+                        <input type="date" name="birthdate" class="form-input-pill bg-white cursor-pointer" value="{{ old('birthdate') }}" max="{{ \Carbon\Carbon::now()->subYears(18)->format('Y-m-d') }}" onclick="if(this.showPicker) this.showPicker();" required>
                     </div>
 
                     <div class="flex flex-col">

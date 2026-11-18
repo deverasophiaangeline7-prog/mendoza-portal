@@ -10,9 +10,19 @@
         height: 2.5rem;
         padding: 0 0.75rem;
         width: 100%;
-        min-width: 0; 
+        min-width: 0;
         max-width: 100%;
+        appearance: none;
+        -webkit-appearance: none;
     }
+    
+    /* Ultimate CSS Reset to hide Android/iOS default calendar icons and arrows */
+    input[type="date"]::-webkit-inner-spin-button,
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        display: none;
+        -webkit-appearance: none;
+    }
+    
     [x-cloak] { display: none !important; }
 </style>
 
@@ -120,7 +130,7 @@
                                 $minDate = \Carbon\Carbon::create($targetYear - 100, 1, 1)->format('Y-m-d');
                                 $maxDate = \Carbon\Carbon::create($targetYear - 3, 12, 31)->format('Y-m-d'); 
                             @endphp
-                            <input type="date" name="birthdate" class="form-input-pill @error('birthdate') border-red-600 @enderror" value="{{ old('birthdate') }}" min="{{ $minDate }}" max="{{ $maxDate }}" required>
+                            <input type="date" name="birthdate" class="form-input-pill bg-white cursor-pointer @error('birthdate') border-red-600 @enderror" value="{{ old('birthdate') }}" min="{{ $minDate }}" max="{{ $maxDate }}" onclick="if(this.showPicker) this.showPicker();" required>
                         </div>
                         @error('birthdate')
                             <span class="text-red-600 text-[10px] font-black uppercase italic mt-1 ml-0 md:ml-40 flex items-center"><i class="fa-solid fa-circle-exclamation mr-1 text-xs"></i>{{ $message }}</span>
