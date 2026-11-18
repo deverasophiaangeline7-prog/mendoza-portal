@@ -128,7 +128,16 @@ class ReportCardController extends Controller
     public function showStudent($student_id)
     {
         $student = Student::with('section')->findOrFail($student_id);
-        
+        $teacherName = '_________________';
+        if ($student->section && $student->section->teacher_id) {
+            $adviser = Teacher::where('user_id', $student->section->teacher_id)->first();
+            if ($adviser) {
+                $fullName = trim(($adviser->first_name ?? '') . ' ' . ($adviser->last_name ?? ''));
+                if (!empty($fullName)) {
+                    $teacherName = strtoupper($fullName);
+                }
+            }
+        }
         // ==========================================
         // 1. FIXED PERMISSIONS FOR THE EDIT BUTTON
         // ==========================================
@@ -191,7 +200,8 @@ class ReportCardController extends Controller
                 'savedRemarks' => $existingRemarks, // Passed to Blade template
                 'canManage' => $canManage,
                 'activeTerm' => $activeTerm,
-                'activeYear' => $activeYear
+                'activeYear' => $activeYear,
+                'teacherName' => $teacherName,
             ]);
         }
 
@@ -229,6 +239,7 @@ class ReportCardController extends Controller
             'activeYear' => $activeYear,
             'activeTerm' => $activeTerm,
             'gradeNum' => $gradeNum,
+            'teacherName' => $teacherName,
         ]);
     }
 
