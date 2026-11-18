@@ -781,6 +781,27 @@
                     min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
                     max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
             </div>
+
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Date</label>
+                <input type="date" name="suggested_date" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required
+                    min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                    max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
+            </div>
+            
+            <!-- NEW DURATION PREFERENCE BLOCK -->
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Duration Preference</label>
+                <div class="radio-group" style="margin-left: 5px;">
+                    <label>
+                        <input type="radio" name="reschedule_duration_pref" value="30" checked> 30 Minutes
+                    </label>
+                    <label>
+                        <input type="radio" name="reschedule_duration_pref" value="60"> 1 Hour
+                    </label>
+                </div>
+            </div>
+            <!-- END NEW BLOCK -->
             
             <div class="time-group" style="text-align: left;">
                 <div style="flex: 1;">
@@ -986,10 +1007,10 @@
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
 
-    // UPDATE END TIME DYNAMICALLY WHEN DURATION RADIO IS CHANGED
-    document.querySelectorAll('input[name="duration_pref"]').forEach(radio => {
+    // UPDATE END TIME DYNAMICALLY WHEN RESCHEDULE DURATION IS CHANGED
+    document.querySelectorAll('input[name="reschedule_duration_pref"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            const startInput = document.getElementById('start_time').value;
+            const startInput = document.querySelector('input[name="suggested_start_time"]').value;
             if (startInput) {
                 const parts = startInput.split(':');
                 let h = parseInt(parts[0]);
@@ -999,10 +1020,10 @@
                     let endH = h;
                     let endM = m + 30;
                     if (endM >= 60) { endH++; endM -= 60; }
-                    document.getElementById('end_time').value = endH.toString().padStart(2, '0') + ':' + endM.toString().padStart(2, '0');
+                    document.querySelector('input[name="suggested_end_time"]').value = endH.toString().padStart(2, '0') + ':' + endM.toString().padStart(2, '0');
                 } else {
                     let endH = h + 1;
-                    document.getElementById('end_time').value = endH.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
+                    document.querySelector('input[name="suggested_end_time"]').value = endH.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
                 }
             }
         });
