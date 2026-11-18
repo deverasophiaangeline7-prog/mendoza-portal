@@ -8,13 +8,12 @@
      x-init="$nextTick(() => { $el.style.height = `calc(100vh - ${$el.getBoundingClientRect().top}px)` })"
      @popstate.window="navigate(window.location.href)">
     
-    <!-- Changed: Adjusted padding (py-8), switched to justify-start on mobile for better vertical flow, and increased the gap slightly -->
-    <div class="flex-1 overflow-y-auto px-2 py-8 sm:p-8 flex flex-col lg:flex-row justify-start lg:justify-center items-center gap-8 lg:gap-12">
+    <!-- Changed: Adjusted padding to px-4 sm:px-8 to naturally protect the shadow, no artificial width constraints -->
+    <div class="flex-1 overflow-y-auto px-4 py-8 sm:p-8 flex flex-col lg:flex-row justify-start lg:justify-center items-center gap-8 lg:gap-12">
         
         <!-- Calendar Section -->
-        <!-- Changed: Added w-[96%] on mobile so the black drop shadow doesn't touch the screen edge -->
         <div id="calendar-container" 
-             class="border-[3px] border-black w-[96%] sm:w-full max-w-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-white rounded-xl overflow-hidden relative"
+             class="border-[3px] border-black w-full max-w-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-white rounded-xl overflow-hidden relative"
              :class="{ 'opacity-50 pointer-events-none': loading }"
              style="transition: opacity 0.3s ease;">
              
@@ -78,11 +77,9 @@
         </div>
 
         <!-- Legend Section -->
-        <!-- Changed: Added w-[96%] here as well for symmetry -->
-        <div class="w-[96%] sm:w-full max-w-xl lg:w-56 border-[3px] border-black p-4 rounded-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-gray-50 mb-4 lg:mb-0">
+        <div class="w-full max-w-xl lg:w-56 border-[3px] border-black p-4 rounded-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-gray-50 mb-4 lg:mb-0">
             <h3 class="font-black text-xl mb-4 uppercase tracking-wider border-b-[3px] border-black pb-2 text-center lg:text-left">Legend</h3>
             
-            <!-- Changed: Increased the gap between legend items slightly for a less cluttered look -->
             <div class="flex flex-row flex-wrap lg:flex-col justify-center gap-5 lg:space-y-4 lg:gap-0">
                 @php
                     $legend = [
@@ -103,12 +100,13 @@
         </div>
     </div>
 
-    <footer class="flex-shrink-0 p-4 sm:p-6 bg-white border-t-[3px] border-black flex flex-col md:flex-row justify-between items-center gap-2 font-black text-lg sm:text-xl shadow-[0px_-4px_0px_0px_rgba(0,0,0,1)] relative z-10 text-center md:text-left">
-        <div class="uppercase tracking-wide text-black">
+    <!-- Changed: Forced flex-row even on mobile. Shrunk text slightly on narrow screens (text-xs to text-sm) so it fits beautifully on one line. -->
+    <footer class="flex-shrink-0 p-3 sm:p-6 bg-white border-t-[3px] border-black flex flex-row justify-between items-center gap-2 font-black text-sm sm:text-xl shadow-[0px_-4px_0px_0px_rgba(0,0,0,1)] relative z-10">
+        <div class="uppercase tracking-wide text-black text-left truncate max-w-[60%]">
             {{ $student->last_name }}, {{ $student->first_name }} 
             {{ $student->middle_name ? substr($student->middle_name, 0, 1) . '.' : '' }}
         </div>
-        <div class="uppercase tracking-wide text-[#ffb02e] drop-shadow-[1px_1px_0px_rgba(0,0,0,1)]">
+        <div class="uppercase tracking-wide text-[#ffb02e] drop-shadow-[1px_1px_0px_rgba(0,0,0,1)] text-right truncate max-w-[35%]">
             {{ $student->grade_level }} {{ $student->section ? '- ' . $student->section->section_name : '' }}
         </div>
     </footer>
