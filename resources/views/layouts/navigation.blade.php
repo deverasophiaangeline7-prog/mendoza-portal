@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="bg-white">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -379,7 +379,7 @@
             </nav>
 
             {{-- MAIN CONTENT --}}
-            <main class="flex-1 bg-white overflow-y-auto w-full relative z-10">
+            <main class="flex-1 bg-white min-h-screen overflow-y-auto w-full relative z-10">
                 @yield('content')
             </main>
         </div>
