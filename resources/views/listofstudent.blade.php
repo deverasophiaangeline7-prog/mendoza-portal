@@ -105,7 +105,7 @@
     }
 @endphp
 
-<div class="flex-1 p-8 bg-gray-100 min-h-screen" 
+<div class="flex-1 p-8 bg-white min-h-screen" 
      x-data="{ 
          openModal: false, 
          promoteModal: false,

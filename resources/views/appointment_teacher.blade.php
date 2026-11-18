@@ -624,7 +624,7 @@
 </script>
 @endif
 
-<div class="dashboard-container">
+<div class="dashboard-container bg-white min-h-screen">
     <div class="main-content">
         <div class="left-column">
             
