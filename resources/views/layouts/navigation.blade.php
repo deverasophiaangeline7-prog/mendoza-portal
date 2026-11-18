@@ -45,6 +45,15 @@
             text-decoration: none;
         }
     </style>
+    @if(auth()->check() && strtolower(auth()->user()->role) === 'teacher')
+<style>
+    /* Sa Teacher account lang ito gagana — hindi gagalawin ang Parent */
+    html, body, main, 
+    .bg-gray-50, .bg-gray-100, .dashboard-container {
+        background-color: #ffffff !important;
+    }
+</style>
+@endif
 </head>
 
 <!-- Wrap body in Alpine state -->
