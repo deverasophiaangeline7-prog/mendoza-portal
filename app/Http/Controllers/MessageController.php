@@ -784,6 +784,24 @@ class MessageController extends Controller
         return false;
     }
 
+    private function canManageGroup($group, $authUser)
+    {
+        $role = strtolower($authUser->role ?? '');
+        
+        // System admin: laging pwede
+        if (in_array($role, ['admin', 'superadmin'])) {
+            return true;
+        }
+
+        // Kung manual GC ito, ang creator lang ang pwede
+        if (\Illuminate\Support\Str::startsWith($group->username, 'group_')) {
+            return (int) $group->created_by === (int) $authUser->user_id;
+        }
+
+        // Official GC (gc_section_*) - Admins lang ang pwedeng mag-manage (na-cover na sa unang check)
+        return false;
+    }
+
         /**
      * SEE MEMBERS — listahan ng miyembro ng group.
      */
@@ -803,7 +821,7 @@ class MessageController extends Controller
             ->whereNull('custom_name') // Huwag isama ang mga virtual group user (gc_section_*, group_*)
             ->where('user_id', '!=', $authUser->user_id) 
             ->get()->map(function ($u) use ($group) {
-            $photo = '[ui-avatars.com](https://ui-avatars.com/api/?name=)' . urlencode($u->name) . '&background=f3f4f6&color=374151';
+            $photo = 'https://ui-avatars.com/api/?name=' . urlencode($u->name) . '&background=f3f4f6&color=374151';
             if ($u->profile_photo_path) {
                 $photo = str_starts_with($u->profile_photo_path, 'profile_photos')
                     ? asset('storage/' . $u->profile_photo_path)
@@ -818,12 +836,118 @@ class MessageController extends Controller
             ];
         })->values();
 
+        // I-check kung manual GC ito (group_*) at kung may rights ang current user na mag-manage
+        $isManualGroup = \Illuminate\Support\Str::startsWith($group->username, 'group_');
+        $canManage = $this->canManageGroup($group, $authUser);
+
         return response()->json([
             'success'        => true,
             'group_name'     => $group->custom_name,
             'members'        => $members,
             'can_edit_photo' => $this->canEditGroupPhoto($group, $authUser),
+            'can_add_member' => $isManualGroup && $canManage, // Only true for manual groups handled by authorized users
         ]);
+    }
+
+    public function getAvailableContactsForGroup($id)
+    {
+        $group = User::where('user_id', $id)->firstOrFail();
+        $authUser = Auth::user();
+        
+        // Allowed contacts ng current user (e.g. Teacher can't add students)
+        $allowedContacts = $this->getAllowedContacts($authUser);
+        
+        // Members na nasa group na
+        $currentMemberIds = DB::table('group_members')->where('group_id', $id)->pluck('user_id')->toArray();
+        
+        // Filter out contacts na nasa group na
+        $availableContacts = $allowedContacts->filter(function($contact) use ($currentMemberIds) {
+            return !in_array($contact->user_id, $currentMemberIds);
+        })->map(function ($c) {
+            $photoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($c->name) . '&background=f3f4f6&color=374151';
+            if ($c->profile_photo_path) {
+                $photoUrl = str_starts_with($c->profile_photo_path, 'profile_photos') 
+                    ? asset('storage/' . $c->profile_photo_path) 
+                    : asset($c->profile_photo_path);
+            }
+            return [
+                'user_id' => $c->user_id,
+                'name' => $c->name,
+                'role' => $c->role,
+                'photo' => $photoUrl
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'contacts' => $availableContacts
+        ]);
+    }
+
+    public function addGroupMember(Request $request, $id)
+    {
+        $group = User::where('user_id', $id)->firstOrFail();
+        $authUser = Auth::user();
+
+        // 1. Authorization Check (Manual groups only, authorized users only)
+        if (!\Illuminate\Support\Str::startsWith($group->username, 'group_') || !$this->canManageGroup($group, $authUser)) {
+             return response()->json(['success' => false, 'message' => 'Unauthorized action.'], 403);
+        }
+
+        $request->validate([
+            'members'    => 'required|array',
+            'members.*'  => 'exists:users,user_id',
+        ]);
+
+        $membersData = [];
+        $addedNames = [];
+
+        foreach ($request->members as $memberId) {
+            // Check if already a member
+            $exists = DB::table('group_members')->where('group_id', $id)->where('user_id', $memberId)->exists();
+            
+            if (!$exists) {
+                $membersData[] = [
+                    'group_id'   => $group->user_id,
+                    'user_id'    => $memberId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                
+                $newUser = User::find($memberId);
+                if($newUser) {
+                    $addedNames[] = $newUser->name;
+                    
+                    // 🔔 Notify new member
+                    try {
+                        DB::table('notifications')->insert([
+                            'user_id'    => $memberId,
+                            'title'      => 'Added to Group Chat',
+                            'message'    => Auth::user()->name . ' added you to the group: ' . $group->custom_name,
+                            'type'       => 'group_chat:' . $group->user_id,
+                            'is_read'    => false,
+                            'created_at' => now()
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Notification Error: ' . $e->getMessage());
+                    }
+                }
+            }
+        }
+
+        if (!empty($membersData)) {
+            DB::table('group_members')->insert($membersData);
+            
+            // Send system message to chat
+            Message::create([
+                'sender_id'   => Auth::id(),
+                'receiver_id' => $group->user_id,
+                'content'     => Auth::user()->name . ' added ' . implode(', ', $addedNames) . ' to the group.',
+                'is_read'     => false,
+            ]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Members added successfully!']);
     }
 
     /**

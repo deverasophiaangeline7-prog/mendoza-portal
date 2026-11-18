@@ -770,9 +770,18 @@ class UserController extends Controller
                     'profile_photo_path' => $photoPath
                 ]);
             } else {
-                // In case the user exists but the linked admin record is missing, create it
+                // FIX: Extract a first and last name from the user's base name to satisfy MySQL strict constraints
+                $nameParts = explode(' ', trim($user->name), 2);
+                $firstName = $nameParts[0] ?? 'Superadmin';
+                $lastName = $nameParts[1] ?? 'Account';
+
+                // In case the user exists but the linked admin record is missing, create it safely
                 \App\Models\Admin::create([
                     'user_id' => $user->user_id ?? $user->id,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'gender' => 'Male', // Placeholder to prevent strict DB errors
+                    'birthdate' => now()->toDateString(), // Placeholder to prevent strict DB errors
                     'profile_photo_path' => $photoPath
                 ]);
             }

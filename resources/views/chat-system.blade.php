@@ -262,7 +262,12 @@
                 </div>
 
                 <!-- Group Chat Options Menu -->
+                <!-- Group Chat Options Menu -->
                 @if(!is_null($selectedUser->custom_name))
+                @php 
+                    $isManualGroup = \Illuminate\Support\Str::startsWith($selectedUser->username, 'group_');
+                    $canManageGroup = in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']) || ($isManualGroup && $selectedUser->created_by == auth()->id());
+                @endphp
                 <div x-data="{ groupMenuOpen: false }" class="relative ml-auto">
                     <button @click="groupMenuOpen = !groupMenuOpen" @click.away="groupMenuOpen = false" class="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition w-10 h-10 flex items-center justify-center">
                         <i class="fa-solid fa-ellipsis-vertical text-xl"></i>
@@ -271,35 +276,35 @@
                     <div x-show="groupMenuOpen" style="display: none;" class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
                         
                         <!-- See Members -->
-                        <button type="button" @click="groupMenuOpen = false; openMembersModal()" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-50 transition-colors">
+                        <button type="button" @click="groupMenuOpen = false; openMembersModal()" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-50 transition-colors border-b border-gray-100">
                             <i class="fa-solid fa-users mr-2 text-[#6d0101]"></i> See Members
                         </button>
-
-                        <!-- Archive Group -->
-                        @if(!isset($isGroupArchived) || !$isGroupArchived)
-                        <form action="{{ route('messages.group.archive', $selectedUser->user_id) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-orange-50 transition-colors">
-                                <i class="fa-solid fa-box-archive mr-2 text-orange-600"></i> Archive Group
-                            </button>
-                        </form>
-                        @endif
-
-                        <!-- Restore Group -->
-                        @if(isset($isGroupArchived) && $isGroupArchived)
-                        <form action="{{ route('messages.group.restore', $selectedUser->user_id) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-green-50 transition-colors border-b border-gray-100">
-                                <i class="fa-solid fa-clock-rotate-left mr-2 text-green-600"></i> Restore Group
-                            </button>
-                        </form>
-                        @endif
-
-                        <!-- Delete Group -->
-                        <button @click="groupMenuOpen = false; deleteModal = true" type="button" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-red-50 transition-colors border-t border-gray-100">
-                            <i class="fa-solid fa-trash mr-2 text-red-600"></i> Delete Group
-                        </button>
                         
+                        <!-- Archive Group (Available sa manual groups at CREATOR LANG ang pwede) -->
+                        @if($isManualGroup && $selectedUser->created_by == auth()->id())
+                            @if(!isset($isGroupArchived) || !$isGroupArchived)
+                            <form action="{{ route('messages.group.archive', $selectedUser->user_id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-orange-50 transition-colors">
+                                    <i class="fa-solid fa-box-archive mr-2 text-orange-600"></i> Archive Group
+                                </button>
+                            </form>
+                            @else
+                            <form action="{{ route('messages.group.restore', $selectedUser->user_id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-green-50 transition-colors">
+                                    <i class="fa-solid fa-clock-rotate-left mr-2 text-green-600"></i> Restore Group
+                                </button>
+                            </form>
+                            @endif
+                        @endif
+
+                        <!-- Delete Group (Admins or Creator only) -->
+                        @if($canManageGroup)
+                            <button @click="groupMenuOpen = false; deleteModal = true" type="button" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-red-50 transition-colors border-t border-gray-100">
+                                <i class="fa-solid fa-trash mr-2 text-red-600"></i> Delete Group
+                            </button>
+                        @endif
                     </div>
                 </div>
                 @endif

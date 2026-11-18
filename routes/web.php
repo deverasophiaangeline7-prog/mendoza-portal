@@ -80,6 +80,8 @@ Route::middleware(['auth', \App\Http\Middleware\ForcePasswordChange::class])->gr
     Route::post('/messages/group/{id}/restore', [MessageController::class, 'restoreGroup'])->name('messages.group.restore'); // <-- NEW ARCHIVE ROUTE
     Route::delete('/messages/group/{id}/delete', [MessageController::class, 'deleteGroup'])->name('messages.group.delete');
     Route::get('/messages/group/{id}/members', [MessageController::class, 'getGroupMembers'])->name('messages.group.members');
+    Route::get('/messages/group/{id}/available-contacts', [MessageController::class, 'getAvailableContactsForGroup'])->name('messages.group.available-contacts');
+    Route::post('/messages/group/{id}/add-member', [MessageController::class, 'addGroupMember'])->name('messages.group.add-member');
     Route::post('/messages/group/{id}/photo', [MessageController::class, 'updateGroupPhoto'])->name('messages.group.photo');
     
     Route::get('/messages/sidebar/poll', [MessageController::class, 'pollSidebar'])->name('messages.sidebar.poll');

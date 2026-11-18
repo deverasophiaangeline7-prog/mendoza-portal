@@ -752,7 +752,7 @@
 </div>
 
 <!-- VALIDATION POPUP MODAL -->
-<div id="validationModalOverlay" class="modal-overlay modal-hidden">
+<div id="validationModalOverlay" class="modal-overlay modal-hidden" style="z-index: 9999;">
     <div class="validation-modal">
         <h3 id="valModalTitle"><i class="fa-solid fa-triangle-exclamation"></i> Invalid Action</h3>
         <p id="valModalMessage" style="font-weight: bold; font-size: 15px; margin: 20px 0; color: #333;"></p>
