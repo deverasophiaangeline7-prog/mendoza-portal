@@ -105,9 +105,11 @@
                         <button  @click="dropdownOpen = false; newMsgModal = true" class="w-full text-left block px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-100 border-b border-gray-100 transition-colors">
                             <i class="fa-solid fa-pen-to-square mr-2 text-[#6d0101]"></i> New Message
                         </button>
+                        @if(auth()->user()->role !== 'parent')
                         <button @click="dropdownOpen = false; createGroupModal = true" class="w-full text-left block px-4 py-3 text-sm text-gray-800 font-bold hover:bg-gray-100 transition-colors">
                             <i class="fa-solid fa-users mr-2 text-[#6d0101]"></i> Create a group chat
                         </button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -262,11 +264,13 @@
                 </div>
 
                 <!-- Group Chat Options Menu -->
-                <!-- Group Chat Options Menu -->
                 @if(!is_null($selectedUser->custom_name))
                 @php 
                     $isManualGroup = \Illuminate\Support\Str::startsWith($selectedUser->username, 'group_');
-                    $canManageGroup = in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']) || ($isManualGroup && $selectedUser->created_by == auth()->id());
+                    $isAdmin = in_array(strtolower(auth()->user()->role), ['admin', 'superadmin']);
+                    $isCreator = $isManualGroup && $selectedUser->created_by == auth()->id();
+                    
+                    $canDeleteGroup = $isAdmin || $isCreator;
                 @endphp
                 <div x-data="{ groupMenuOpen: false }" class="relative ml-auto">
                     <button @click="groupMenuOpen = !groupMenuOpen" @click.away="groupMenuOpen = false" class="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition w-10 h-10 flex items-center justify-center">
@@ -280,28 +284,26 @@
                             <i class="fa-solid fa-users mr-2 text-[#6d0101]"></i> See Members
                         </button>
                         
-                        <!-- Archive Group (Available sa manual groups at CREATOR LANG ang pwede) -->
-                        @if($isManualGroup && $selectedUser->created_by == auth()->id())
-                            @if(!isset($isGroupArchived) || !$isGroupArchived)
-                            <form action="{{ route('messages.group.archive', $selectedUser->user_id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-orange-50 transition-colors">
-                                    <i class="fa-solid fa-box-archive mr-2 text-orange-600"></i> Archive Group
-                                </button>
-                            </form>
-                            @else
-                            <form action="{{ route('messages.group.restore', $selectedUser->user_id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-green-50 transition-colors">
-                                    <i class="fa-solid fa-clock-rotate-left mr-2 text-green-600"></i> Restore Group
-                                </button>
-                            </form>
-                            @endif
+                        <!-- Archive Group (Available to ALL members for ALL groups) -->
+                        @if(!isset($isGroupArchived) || !$isGroupArchived)
+                        <form action="{{ route('messages.group.archive', $selectedUser->user_id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-orange-50 transition-colors border-b border-gray-100">
+                                <i class="fa-solid fa-box-archive mr-2 text-orange-600"></i> Archive Group
+                            </button>
+                        </form>
+                        @else
+                        <form action="{{ route('messages.group.restore', $selectedUser->user_id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-green-50 transition-colors border-b border-gray-100">
+                                <i class="fa-solid fa-clock-rotate-left mr-2 text-green-600"></i> Restore Group
+                            </button>
+                        </form>
                         @endif
 
                         <!-- Delete Group (Admins or Creator only) -->
-                        @if($canManageGroup)
-                            <button @click="groupMenuOpen = false; deleteModal = true" type="button" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-red-50 transition-colors border-t border-gray-100">
+                        @if($canDeleteGroup)
+                            <button @click="groupMenuOpen = false; deleteModal = true" type="button" class="w-full text-left px-4 py-3 text-sm text-gray-800 font-bold hover:bg-red-50 transition-colors">
                                 <i class="fa-solid fa-trash mr-2 text-red-600"></i> Delete Group
                             </button>
                         @endif
@@ -333,7 +335,7 @@
                         @foreach($messages as $message)
                             @if(str_contains($message->content, 'created the group:'))
                                 <!-- System Alert Styling -->
-                                <div class="text-center my-4 w-full">
+                                <div id="msg-bubble-{{ $message->id }}" class="text-center my-4 w-full">
                                     <span class="inline-block px-4 py-1.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded-full border border-gray-200 shadow-sm">
                                         @if($message->sender_id == auth()->user()->user_id)
                                             <!-- If the logged-in user is the one who created it -->
@@ -654,6 +656,11 @@
                             @endforeach
                         @endforeach
 
+                        <!-- No User Found State (New Message) -->
+                        <div x-show="userSearch !== '' && !{{ json_encode($contacts) }}.some(c => (c.name + ' ' + c.role).toLowerCase().includes(userSearch.toLowerCase()))" 
+                             class="py-4 text-center text-[#6d0101] text-xs font-bold italic" style="display: none;">
+                            No user found.
+                        </div>
                     @else
                         <div class="p-6 text-center text-gray-500 text-sm font-bold">
                             No contacts available.
@@ -902,6 +909,12 @@
                                 @endforeach
                             @endforeach
 
+
+                            <!-- No User Found State (Create GC) -->
+                        <div x-show="groupSearch !== '' && !{{ json_encode($contacts) }}.some(c => (c.name + ' ' + c.role).toLowerCase().includes(groupSearch.toLowerCase()))" 
+                             class="py-4 text-center text-[#6d0101] text-xs font-bold italic" style="display: none;">
+                            No user found.
+                        </div>
                         @else
                             <div class="p-6 text-center text-gray-500 text-sm font-bold">No contacts available.</div>
                         @endif
@@ -1240,68 +1253,82 @@
                             const existingMsgBubble = document.getElementById(`msg-bubble-${msg.id}`);
                             if (!existingMsgBubble) {
                                 needsMarkRead = true; 
-                                
-                                const isMe = String(msg.sender_id) === String(this.myId);
-                                if (isMe) {
-                                    const tempBubbles = document.querySelectorAll('.js-optimistic-my-bubble');
-                                    let handled = false;
-                                    for (let ob of tempBubbles) {
-                                        if (ob.id.startsWith('temp-msg-') && ob.textContent.includes(msg.content)) {
-                                            ob.id = `msg-bubble-${msg.id}`; 
-                                            ob.classList.remove('js-optimistic-my-bubble'); 
-                                            handled = true;
-                                            break;
-                                        }
-                                    }
-                                    if (handled) return; 
-                                }
                                 let bubbleHtml = '';
 
-                                if (isMe) {
+                                // CHECK IF SYSTEM ALERT (Para hindi maging maroon bubble!)
+                                if (msg.content.includes('created the group:')) {
+                                    let pillText = msg.content;
+                                    if (String(msg.sender_id) === String(this.myId)) {
+                                        pillText = 'You created the group: ' + msg.content.split('created the group:')[1].trim();
+                                    }
                                     bubbleHtml = `
-                                        <div id="msg-bubble-${msg.id}" class="mb-6 w-full relative text-right flex flex-col items-end js-dynamically-fetched-bubble">
-                                            <div class="flex flex-col items-end max-w-[85%]">
-                                                <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
-                                                    ${msg.formatted_content || msg.content}
-                                                </span>
-                                                <div class="text-[10px] text-gray-400 mt-1">
-                                                    <span>${msg.time_formatted}</span>
-                                                </div>
-                                            </div>
-                                            <div class="absolute -bottom-4 right-2 js-realtime-seen-text flex items-center gap-0.5 justify-end"></div>
+                                        <div id="msg-bubble-${msg.id}" class="text-center my-4 w-full">
+                                            <span class="inline-block px-4 py-1.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded-full border border-gray-200 shadow-sm">
+                                                ${pillText}
+                                            </span>
                                         </div>
                                     `;
                                 } else {
-                                    let senderInfoHtml = '';
-                                    if (this.isGroupChat) {
-                                        const roleBadgeClass = msg.sender_role === 'admin' ? 'bg-blue-100 text-blue-700' : (msg.sender_role === 'teacher' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500');
-                                        senderInfoHtml = `
-                                            <div class="flex items-center gap-1.5 ml-1 mb-1">
-                                                <span class="text-[11px] font-bold text-gray-600">${msg.sender_name}</span>
-                                                <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${roleBadgeClass}">
-                                                    ${msg.sender_role}
-                                                </span>
+                                    // NORMAL CHAT BUBBLE
+                                    const isMe = String(msg.sender_id) === String(this.myId);
+                                    if (isMe) {
+                                        const tempBubbles = document.querySelectorAll('.js-optimistic-my-bubble');
+                                        let handled = false;
+                                        for (let ob of tempBubbles) {
+                                            if (ob.id.startsWith('temp-msg-') && ob.textContent.includes(msg.content)) {
+                                                ob.id = `msg-bubble-${msg.id}`; 
+                                                ob.classList.remove('js-optimistic-my-bubble'); 
+                                                handled = true;
+                                                break;
+                                            }
+                                        }
+                                        if (handled) return; 
+
+                                        bubbleHtml = `
+                                            <div id="msg-bubble-${msg.id}" class="mb-6 w-full relative text-right flex flex-col items-end js-dynamically-fetched-bubble">
+                                                <div class="flex flex-col items-end max-w-[85%]">
+                                                    <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-[#6d0101] text-white rounded-br-none">
+                                                        ${msg.formatted_content || msg.content}
+                                                    </span>
+                                                    <div class="text-[10px] text-gray-400 mt-1">
+                                                        <span>${msg.time_formatted}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="absolute -bottom-4 right-2 js-realtime-seen-text flex items-center gap-0.5 justify-end"></div>
+                                            </div>
+                                        `;
+                                    } else {
+                                        let senderInfoHtml = '';
+                                        if (this.isGroupChat) {
+                                            const roleBadgeClass = msg.sender_role === 'admin' ? 'bg-blue-100 text-blue-700' : (msg.sender_role === 'teacher' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500');
+                                            senderInfoHtml = `
+                                                <div class="flex items-center gap-1.5 ml-1 mb-1">
+                                                    <span class="text-[11px] font-bold text-gray-600">${msg.sender_name}</span>
+                                                    <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${roleBadgeClass}">
+                                                        ${msg.sender_role}
+                                                    </span>
+                                                </div>
+                                            `;
+                                        }
+                                        
+                                        const avatarHtml = `<img src="${msg.sender_photo}" title="${msg.sender_name}" class="w-8 h-8 rounded-full border object-cover mb-1 shadow-sm flex-shrink-0 cursor-default">`;
+
+                                        bubbleHtml = `
+                                            <div id="msg-bubble-${msg.id}" class="mb-6 w-full relative text-left flex items-end gap-2 js-dynamically-fetched-bubble">
+                                                ${avatarHtml}
+                                                <div class="flex flex-col items-start max-w-[85%]">
+                                                    ${senderInfoHtml}
+                                                    <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-gray-100 text-gray-800 rounded-bl-none">
+                                                        ${msg.formatted_content || msg.content}
+                                                    </span>
+                                                    <div class="text-[10px] text-gray-400 mt-1">
+                                                        <span>${msg.time_formatted}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="absolute -bottom-4 right-2 js-realtime-seen-text flex items-center gap-0.5 justify-end"></div>
                                             </div>
                                         `;
                                     }
-                                    
-                                    const avatarHtml = `<img src="${msg.sender_photo}" title="${msg.sender_name}" class="w-8 h-8 rounded-full border object-cover mb-1 shadow-sm flex-shrink-0 cursor-default">`;
-
-                                    bubbleHtml = `
-                                        <div id="msg-bubble-${msg.id}" class="mb-6 w-full relative text-left flex items-end gap-2 js-dynamically-fetched-bubble">
-                                            ${avatarHtml}
-                                            <div class="flex flex-col items-start max-w-[85%]">
-                                                ${senderInfoHtml}
-                                                <span class="inline-block p-3 px-4 rounded-2xl shadow-sm text-sm bg-gray-100 text-gray-800 rounded-bl-none">
-                                                    ${msg.formatted_content || msg.content}
-                                                </span>
-                                                <div class="text-[10px] text-gray-400 mt-1">
-                                                    <span>${msg.time_formatted}</span>
-                                                </div>
-                                            </div>
-                                            <div class="absolute -bottom-4 right-2 js-realtime-seen-text flex items-center gap-0.5 justify-end"></div>
-                                        </div>
-                                    `;
                                 }
 
                                 chatMessagesWrapper.insertAdjacentHTML('beforeend', bubbleHtml);

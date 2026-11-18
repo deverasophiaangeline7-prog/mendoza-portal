@@ -74,7 +74,7 @@
 
     .form-control {
         width: 100%;
-        min-height: 42px; /* Add this to force consistent height */
+        min-height: 42px; 
         padding: 8px 15px;
         border: 2px solid #000;
         border-radius: 25px; 
@@ -82,14 +82,12 @@
         font-weight: bold;
         font-size: 14px;
         box-sizing: border-box;
-        /* iOS Flex/Overflow Fixes */
         min-width: 0;
         max-width: 100%;
         appearance: none;
         -webkit-appearance: none;
     }
 
-    /* Ultimate CSS Reset to hide Android/iOS default calendar and clock icons */
     input[type="date"]::-webkit-inner-spin-button,
     input[type="date"]::-webkit-calendar-picker-indicator,
     input[type="time"]::-webkit-inner-spin-button,
@@ -136,7 +134,6 @@
         cursor: pointer;
     }
 
-    /* Small Circular Cancel Button */
     .btn-cancel-icon {
         background-color: var(--ma-red);
         color: white;
@@ -154,11 +151,8 @@
         transition: transform 0.2s;
     }
 
-    .btn-cancel-icon:hover {
-        transform: scale(1.1);
-    }
+    .btn-cancel-icon:hover { transform: scale(1.1); }
 
-    /* Responsive Table Wrapper */
     .table-responsive {
         width: 100%;
         overflow-x: auto;
@@ -243,10 +237,7 @@
         transition: transform 0.2s;
     }
 
-    .nav-arrow:hover {
-        transform: scale(1.2); 
-        color: var(--ma-red); 
-    }
+    .nav-arrow:hover { transform: scale(1.2); color: var(--ma-red); }
 
     .requests-trigger {
         position: absolute;
@@ -309,17 +300,10 @@
         border: 2px solid #000;
     }
 
-    .schedule-grid th, .schedule-grid td {
-        border: 2px solid #000;
-        padding: 10px 5px;
-        height: 40px;
-    }
-
+    .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 10px 5px; height: 40px; }
     .schedule-grid th { background-color: var(--ma-bg-grey); font-weight: 900; }
-    
     .day-header { font-size: 11px; text-transform: uppercase; color: #555; }
     .date-header { font-size: 16px; }
-
     .time-col { background-color: var(--ma-bg-grey); width: 60px; font-weight: 900; font-size: 14px; }
     
     .cell-red { background-color: var(--ma-red); }
@@ -327,19 +311,9 @@
     .cell-grey { background-color: var(--ma-dark-grey) !important; }
     .cell-white { background-color: #ffffff; }
 
-    .cell-half-top {
-        background: linear-gradient(180deg, var(--ma-green) 0 50%, #ffffff 50% 100%);
-        background-repeat: no-repeat;
-        background-size: 100% 100%;
-    }
-    
-    .cell-half-bottom {
-        background: linear-gradient(180deg, #ffffff 0 50%, var(--ma-green) 50% 100%);
-        background-repeat: no-repeat;
-        background-size: 100% 100%;
-    }
+    .cell-half-top { background: linear-gradient(180deg, var(--ma-green) 0 50%, #ffffff 50% 100%); background-repeat: no-repeat; background-size: 100% 100%; }
+    .cell-half-bottom { background: linear-gradient(180deg, #ffffff 0 50%, var(--ma-green) 50% 100%); background-repeat: no-repeat; background-size: 100% 100%; }
 
-    /* Clickable Schedule Cells - Orange Hover & Selection */
     .schedule-grid td.cell-white {
         cursor: pointer;
         transition: transform 0.1s, background-color 0.2s, box-shadow 0.1s;
@@ -369,130 +343,48 @@
     }
     
     .legend-item span {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        border: 2px solid #000;
-        margin-right: 5px;
-        vertical-align: middle;
+        display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #000; margin-right: 5px; vertical-align: middle;
     }
 
     .disclaimer {
-        color: var(--ma-red);
-        text-align: center;
-        font-size: 13px;
-        font-weight: 900;
-        margin-top: 5px;
+        color: var(--ma-red); text-align: center; font-size: 13px; font-weight: 900; margin-top: 5px;
     }
 
     .modal-overlay {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;
     }
     
     .modal-hidden { display: none !important; }
 
     .requests-modal, .validation-modal {
-        background: white;
-        border: 4px solid #000;
-        border-radius: 25px;
-        width: 90%;
-        max-width: 900px;
-        padding: 20px;
-        position: relative;
-        max-height: 75vh;
-        overflow-y: auto;
+        background: white; border: 4px solid #000; border-radius: 25px; width: 90%; max-width: 900px; padding: 20px; position: relative; max-height: 75vh; overflow-y: auto;
     }
 
-    .validation-modal {
-        max-width: 450px;
-        text-align: center;
-    }
-
-    .validation-modal h3 {
-        margin-top: 0;
-        color: var(--ma-red);
-        font-weight: 900;
-        font-size: 22px;
-    }
+    .validation-modal { max-width: 450px; text-align: center; }
+    .validation-modal h3 { margin-top: 0; color: var(--ma-red); font-weight: 900; font-size: 22px; }
 
     .modal-header {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-        margin-bottom: 20px;
+        display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 20px;
     }
 
-    .modal-header h2 {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 900;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+    .modal-header h2 { margin: 0; font-size: 24px; font-weight: 900; display: flex; align-items: center; gap: 10px; }
 
     .close-btn {
-        position: absolute;
-        right: 0;
-        top: 0;
-        background: var(--ma-red);
-        color: white;
-        border: 3px solid #fff;
-        box-shadow: 0 0 0 2px #000;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        font-size: 24px;
-        font-weight: bold;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        position: absolute; right: 0; top: 0; background: var(--ma-red); color: white; border: 3px solid #fff; box-shadow: 0 0 0 2px #000; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
 
     .modal-table {
-        width: 100%;
-        border-collapse: collapse;
-        border: 2px solid #000;
+        width: 100%; border-collapse: collapse; border: 2px solid #000;
     }
 
-    .modal-table th {
-        background-color: var(--ma-orange);
-        color: #000;
-        border: 2px solid #000;
-        padding: 15px;
-        font-size: 16px;
-    }
+    .modal-table th { background-color: var(--ma-orange); color: #000; border: 2px solid #000; padding: 15px; font-size: 16px; }
+    .modal-table td { border: 2px solid #000; padding: 15px; font-weight: bold; vertical-align: middle; }
 
-    .modal-table td {
-        border: 2px solid #000;
-        padding: 15px;
-        font-weight: bold;
-        vertical-align: middle;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-    }
+    .action-buttons { display: flex; gap: 10px; justify-content: center; }
 
     .btn-flat {
-        padding: 8px 18px;
-        border: 2px solid #000;
-        border-radius: 20px;
-        color: black;
-        font-weight: 900;
-        font-size: 14px;
-        cursor: pointer;
+        padding: 8px 18px; border: 2px solid #000; border-radius: 20px; color: black; font-weight: 900; font-size: 14px; cursor: pointer;
     }
 
     .btn-approve { background-color: var(--ma-green); color: black; border: 2px solid #000; }
@@ -500,97 +392,29 @@
     .btn-decline { background-color: var(--ma-red); color: black; border: 2px solid #000; }
 
     .nested-modal {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1010;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1010;
     }
 
     .nested-modal-content {
-        background: white;
-        border: 4px solid #000;
-        border-radius: 25px;
-        padding: 30px;
-        width: 90%;
-        max-width: 600px;
-        text-align: center;
-        box-shadow: 10px 10px 0px var(--ma-orange);
+        background: white; border: 4px solid #000; border-radius: 25px; padding: 30px; width: 90%; max-width: 600px; text-align: center; box-shadow: 10px 10px 0px var(--ma-orange);
     }
 
     .nested-modal-content h3 { margin-top: 0; font-size: 20px; }
+    .nested-modal-actions { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
 
-    .nested-modal-actions {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 20px;
-    }
-
-    /* RESPONSIVE CSS FIXES */
     @media (max-width: 992px) {
-        .dashboard-container {
-            display: block; 
-        }
-
-        .main-content {
-            flex-direction: column; 
-            padding: 15px;
-            gap: 25px;
-        }
-
-        .left-column, .right-column {
-            width: 100%;
-            display: block; 
-        }
-
-        .schedule-grid {
-            min-width: 650px; 
-        }
-
-        .time-group {
-            flex-direction: column; 
-            gap: 10px;
-        }
-
-        .calendar-header-wrapper {
-            flex-direction: column;
-            gap: 15px;
-            margin-bottom: 25px;
-            padding-top: 10px;
-        }
-
-        .month-title {
-            font-size: 26px; 
-        }
-
-        .requests-trigger {
-            position: relative; 
-            top: 0;
-            right: 0;
-            margin-top: 10px;
-        }
-
-        .modal-table {
-            display: block;
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-
-        .nested-modal-content {
-            padding: 20px 15px;
-        }
-
-        .nested-modal-actions {
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .nested-modal-actions button {
-            width: 100%;
-        }
+        .dashboard-container { display: block; }
+        .main-content { flex-direction: column; padding: 15px; gap: 25px; }
+        .left-column, .right-column { width: 100%; display: block; }
+        .schedule-grid { min-width: 650px; }
+        .time-group { flex-direction: column; gap: 10px; }
+        .calendar-header-wrapper { flex-direction: column; gap: 15px; margin-bottom: 25px; padding-top: 10px; }
+        .month-title { font-size: 26px; }
+        .requests-trigger { position: relative; top: 0; right: 0; margin-top: 10px; }
+        .modal-table { display: block; overflow-x: auto; white-space: nowrap; }
+        .nested-modal-content { padding: 20px 15px; }
+        .nested-modal-actions { flex-direction: column; gap: 10px; }
+        .nested-modal-actions button { width: 100%; }
     }
 </style>
 
@@ -602,10 +426,7 @@
     <button onclick="document.getElementById('toast-success').style.display='none'" style="background: none; border: none; font-size: 24px; font-weight: black; cursor: pointer; padding: 0;">&times;</button>
 </div>
 <script>
-    setTimeout(() => {
-        const toast = document.getElementById('toast-success');
-        if(toast) toast.style.display = 'none';
-    }, 4000);
+    setTimeout(() => { const toast = document.getElementById('toast-success'); if(toast) toast.style.display = 'none'; }, 4000);
 </script>
 @endif
 
@@ -617,10 +438,7 @@
     <button onclick="document.getElementById('toast-error').style.display='none'" style="background: none; border: none; font-size: 24px; font-weight: black; cursor: pointer; padding: 0; color: white;">&times;</button>
 </div>
 <script>
-    setTimeout(() => {
-        const toast = document.getElementById('toast-error');
-        if(toast) toast.style.display = 'none';
-    }, 4000);
+    setTimeout(() => { const toast = document.getElementById('toast-error'); if(toast) toast.style.display = 'none'; }, 4000);
 </script>
 @endif
 
@@ -656,18 +474,6 @@
                                max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
                     </div>
 
-                    <div class="form-group">
-                        <label>Duration Preference</label>
-                        <div class="radio-group">
-                            <label>
-                                <input type="radio" name="duration_pref" value="30" checked> 30 Minutes
-                            </label>
-                            <label>
-                                <input type="radio" name="duration_pref" value="60"> 1 Hour
-                            </label>
-                        </div>
-                    </div>
-
                     <div class="time-group">
                         <div class="form-group" style="flex: 1;">
                             <label>Start Time</label>
@@ -676,6 +482,18 @@
                         <div class="form-group" style="flex: 1;">
                             <label>End Time</label>
                             <input type="time" id="end_time" name="end_time" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 5px;">
+                        <label>Duration Preference</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="duration_pref" value="30" checked> 30 Minutes
+                            </label>
+                            <label>
+                                <input type="radio" name="duration_pref" value="60"> 1 Hour
+                            </label>
                         </div>
                     </div>
 
@@ -967,8 +785,8 @@
     <div class="nested-modal-content">
         <h3 style="color: var(--ma-orange); font-weight: bold; text-transform: uppercase;">State your reason for rescheduling</h3>
         
-            <form id="rescheduleForm" method="POST" action="" onsubmit="return validateRescheduleForm(event)">
-                @csrf @method('PATCH')
+        <form id="rescheduleForm" method="POST" action="" onsubmit="return validateRescheduleForm(event)">
+            @csrf @method('PATCH')
             
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Reason</label>
@@ -983,28 +801,7 @@
                     min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
                     max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
             </div>
-
-            <div style="text-align: left; margin-bottom: 15px;">
-                <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Date</label>
-                <input type="date" name="suggested_date" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required
-                    min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
-                    max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
-            </div>
             
-            <!-- NEW DURATION PREFERENCE BLOCK -->
-            <div style="text-align: left; margin-bottom: 15px;">
-                <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Duration Preference</label>
-                <div class="radio-group" style="margin-left: 5px;">
-                    <label>
-                        <input type="radio" name="reschedule_duration_pref" value="30" checked> 30 Minutes
-                    </label>
-                    <label>
-                        <input type="radio" name="reschedule_duration_pref" value="60"> 1 Hour
-                    </label>
-                </div>
-            </div>
-            <!-- END NEW BLOCK -->
-
             <div class="time-group" style="text-align: left;">
                 <div style="flex: 1;">
                     <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Start Time</label>
@@ -1013,6 +810,18 @@
                 <div style="flex: 1;">
                     <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">End Time</label>
                     <input type="time" name="suggested_end_time" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required>
+                </div>
+            </div>
+
+            <div style="text-align: left; margin-bottom: 15px; margin-top: 15px;">
+                <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Duration Preference</label>
+                <div class="radio-group" style="margin-left: 5px;">
+                    <label>
+                        <input type="radio" name="reschedule_duration_pref" value="30" checked> 30 Minutes
+                    </label>
+                    <label>
+                        <input type="radio" name="reschedule_duration_pref" value="60"> 1 Hour
+                    </label>
                 </div>
             </div>
             
@@ -1046,13 +855,8 @@
 </div>
 
 <script>
-    function openModal(modalId) {
-        document.getElementById(modalId).classList.remove('modal-hidden');
-    }
-
-    function closeModal(modalId) {
-        document.getElementById(modalId).classList.add('modal-hidden');
-    }
+    function openModal(modalId) { document.getElementById(modalId).classList.remove('modal-hidden'); }
+    function closeModal(modalId) { document.getElementById(modalId).classList.add('modal-hidden'); }
 
     function showValidationPopUp(message) {
         document.getElementById('valModalMessage').innerText = message;
@@ -1064,124 +868,136 @@
         openModal('cancelModalOverlay');
     }
 
-    function validateRescheduleForm(event) {
-    const form = document.getElementById('rescheduleForm');
-    const dateInput = form.querySelector('input[name="suggested_date"]').value;
-    const startTimeInput = form.querySelector('input[name="suggested_start_time"]').value;
-    const endTimeInput = form.querySelector('input[name="suggested_end_time"]').value;
-    const reasonInput = form.querySelector('input[name="reason"]').value;
+    function validateAppointmentForm(event) {
+        const dateInput = document.getElementById('appointment_date').value;
+        const startTimeInput = document.getElementById('start_time').value;
+        const endTimeInput = document.getElementById('end_time').value;
+        const topicInput = document.querySelector('input[name="discussion_topic"]').value;
 
-    // 1. Validate Reason (Text format)
-    const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
-    if (invalidTopicRegex.test(reasonInput)) {
-        event.preventDefault();
-        showValidationPopUp('The reason can only contain letters, numbers, spaces, periods, commas, hyphens, and apostrophes.');
-        return false;
-    }
-
-    if (!dateInput || !startTimeInput || !endTimeInput) return true;
-
-    // 2. Date Constraints
-    const today = "{{ \Carbon\Carbon::now()->format('Y-m-d') }}";
-    const maxDate = "{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}";
-    
-    if (dateInput < today) {
-        event.preventDefault();
-        showValidationPopUp('Appointments cannot be rescheduled to a past date.');
-        return false;
-    }
-
-    if (dateInput > maxDate) {
-        event.preventDefault();
-        showValidationPopUp('Appointments can only be rescheduled up to two weeks in advance.');
-        return false;
-    }
-
-    const [year, month, day] = dateInput.split('-');
-    const dateObj = new Date(year, month - 1, day);
-    const dayOfWeek = dateObj.getDay(); 
-    if (dayOfWeek === 0 || dayOfWeek === 6) { 
-        event.preventDefault();
-        showValidationPopUp('Appointments are only available from Monday to Friday.');
-        return false;
-    }
-
-    // 3. Time & Duration Constraints
-    const startParts = startTimeInput.split(':');
-    const endParts = endTimeInput.split(':');
-    const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
-    const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
-    const duration = endMins - startMins;
-
-    if (startMins < 480 || endMins > 1020) {
-        event.preventDefault();
-        showValidationPopUp('Appointments can only be scheduled between 8:00 AM and 5:00 PM.');
-        return false;
-    }
-
-    if (startMins < 780 && endMins > 720) {
-        event.preventDefault();
-        showValidationPopUp('Appointments cannot be scheduled during the 12:00 PM - 1:00 PM lunch break.');
-        return false;
-    }
-
-    if (dateInput === today) {
-        const now = new Date();
-        const currentMins = now.getHours() * 60 + now.getMinutes();
-        if (startMins <= currentMins) {
-            event.preventDefault();
-            showValidationPopUp('Appointments cannot be booked for a past time today.');
-            return false;
+        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
+        if (invalidTopicRegex.test(topicInput)) {
+            event.preventDefault(); showValidationPopUp('The discussion topic can only contain letters, numbers, spaces, periods, commas, hyphens, and apostrophes.'); return false;
         }
-    }
 
-    if (duration <= 0) {
-        event.preventDefault();
-        showValidationPopUp('Invalid time selected. The end time must be later than the start time.');
-        return false;
-    }
+        if (!dateInput || !startTimeInput || !endTimeInput) return true;
 
-    if (duration !== 30 && duration !== 60) {
-        event.preventDefault();
-        showValidationPopUp('Appointment duration must be exactly 30 minutes or 1 hour.');
-        return false;
-    }
+        const today = "{{ \Carbon\Carbon::now()->format('Y-m-d') }}";
+        const maxDate = "{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}";
+        
+        if (dateInput < today) { event.preventDefault(); showValidationPopUp('Appointments cannot be booked in the past.'); return false; }
+        if (dateInput > maxDate) { event.preventDefault(); showValidationPopUp('Appointments can only be scheduled up to two weeks in advance.'); return false; }
 
-    // 4. Schedule Grid Availability Check
-    const cellHour = parseInt(startParts[0], 10);
-    let timeSlotLabel = '';
+        const [year, month, day] = dateInput.split('-');
+        const dateObj = new Date(year, month - 1, day);
+        const dayOfWeek = dateObj.getDay(); 
+        if (dayOfWeek === 0 || dayOfWeek === 6) { event.preventDefault(); showValidationPopUp('Appointments are only available from Monday to Friday.'); return false; }
 
-    if (cellHour === 8) timeSlotLabel = '8AM';
-    else if (cellHour === 9) timeSlotLabel = '9AM';
-    else if (cellHour === 10) timeSlotLabel = '10AM';
-    else if (cellHour === 11) timeSlotLabel = '11AM';
-    else if (cellHour === 13) timeSlotLabel = '1PM';
-    else if (cellHour === 14) timeSlotLabel = '2PM';
-    else if (cellHour === 15) timeSlotLabel = '3PM';
-    else if (cellHour === 16) timeSlotLabel = '4PM';
+        const startParts = startTimeInput.split(':');
+        const endParts = endTimeInput.split(':');
+        const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
+        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+        const duration = endMins - startMins;
 
-    if (timeSlotLabel) {
-        const matchingCell = document.querySelector(`td[data-date="${dateInput}"][data-time="${timeSlotLabel}"]`);
-        if (matchingCell) {
-            const cellStatus = matchingCell.getAttribute('data-status');
-            if (cellStatus === 'leave') {
-                event.preventDefault();
-                showValidationPopUp('Cannot reschedule! You are On Leave for this day.');
-                return false;
-            } else if (cellStatus === 'class') {
-                event.preventDefault();
-                showValidationPopUp('Cannot reschedule! This slot is reserved for Class Hours.');
-                return false;
-            } else if (cellStatus === 'booked') {
-                event.preventDefault();
-                showValidationPopUp('Cannot reschedule! This time slot is already Booked.');
-                return false;
+        if (startMins < 480 || endMins > 1020) { event.preventDefault(); showValidationPopUp('Appointments can only be scheduled between 8:00 AM and 5:00 PM.'); return false; }
+        if (startMins < 780 && endMins > 720) { event.preventDefault(); showValidationPopUp('Appointments cannot be scheduled during the 12:00 PM - 1:00 PM lunch break.'); return false; }
+
+        if (dateInput === today) {
+            const now = new Date();
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            if (startMins <= currentMins) { event.preventDefault(); showValidationPopUp('Appointments cannot be booked for a past time today.'); return false; }
+        }
+
+        if (duration <= 0) { event.preventDefault(); showValidationPopUp('Invalid time selected. The end time must be later than the start time.'); return false; }
+        if (duration !== 30 && duration !== 60) { event.preventDefault(); showValidationPopUp('Appointment duration must be exactly 30 minutes or 1 hour.'); return false; }
+
+        const cellHour = parseInt(startParts[0], 10);
+        let timeSlotLabel = '';
+        if (cellHour === 8) timeSlotLabel = '8AM';
+        else if (cellHour === 9) timeSlotLabel = '9AM';
+        else if (cellHour === 10) timeSlotLabel = '10AM';
+        else if (cellHour === 11) timeSlotLabel = '11AM';
+        else if (cellHour === 13) timeSlotLabel = '1PM';
+        else if (cellHour === 14) timeSlotLabel = '2PM';
+        else if (cellHour === 15) timeSlotLabel = '3PM';
+        else if (cellHour === 16) timeSlotLabel = '4PM';
+
+        if (timeSlotLabel) {
+            const matchingCell = document.querySelector(`td[data-date="${dateInput}"][data-time="${timeSlotLabel}"]`);
+            if (matchingCell) {
+                const cellStatus = matchingCell.getAttribute('data-status');
+                if (cellStatus === 'leave') { event.preventDefault(); showValidationPopUp('Cannot book an appointment! You are On Leave for this day.'); return false; }
+                else if (cellStatus === 'class') { event.preventDefault(); showValidationPopUp('Cannot book an appointment! This slot is reserved for Class Hours.'); return false; }
+                else if (cellStatus === 'booked') { event.preventDefault(); showValidationPopUp('Cannot book an appointment! This time slot is already Booked.'); return false; }
             }
         }
+        return true;
     }
-    
-    return true;
-}
+
+    function validateRescheduleForm(event) {
+        const form = document.getElementById('rescheduleForm');
+        const dateInput = form.querySelector('input[name="suggested_date"]').value;
+        const startTimeInput = form.querySelector('input[name="suggested_start_time"]').value;
+        const endTimeInput = form.querySelector('input[name="suggested_end_time"]').value;
+        const reasonInput = form.querySelector('input[name="reason"]').value;
+
+        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
+        if (invalidTopicRegex.test(reasonInput)) {
+            event.preventDefault(); showValidationPopUp('The reason can only contain letters, numbers, spaces, periods, commas, hyphens, and apostrophes.'); return false;
+        }
+
+        if (!dateInput || !startTimeInput || !endTimeInput) return true;
+
+        const today = "{{ \Carbon\Carbon::now()->format('Y-m-d') }}";
+        const maxDate = "{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}";
+        
+        if (dateInput < today) { event.preventDefault(); showValidationPopUp('Appointments cannot be rescheduled to a past date.'); return false; }
+        if (dateInput > maxDate) { event.preventDefault(); showValidationPopUp('Appointments can only be rescheduled up to two weeks in advance.'); return false; }
+
+        const [year, month, day] = dateInput.split('-');
+        const dateObj = new Date(year, month - 1, day);
+        const dayOfWeek = dateObj.getDay(); 
+        if (dayOfWeek === 0 || dayOfWeek === 6) { event.preventDefault(); showValidationPopUp('Appointments are only available from Monday to Friday.'); return false; }
+
+        const startParts = startTimeInput.split(':');
+        const endParts = endTimeInput.split(':');
+        const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
+        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+        const duration = endMins - startMins;
+
+        if (startMins < 480 || endMins > 1020) { event.preventDefault(); showValidationPopUp('Appointments can only be scheduled between 8:00 AM and 5:00 PM.'); return false; }
+        if (startMins < 780 && endMins > 720) { event.preventDefault(); showValidationPopUp('Appointments cannot be scheduled during the 12:00 PM - 1:00 PM lunch break.'); return false; }
+
+        if (dateInput === today) {
+            const now = new Date();
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            if (startMins <= currentMins) { event.preventDefault(); showValidationPopUp('Appointments cannot be booked for a past time today.'); return false; }
+        }
+
+        if (duration <= 0) { event.preventDefault(); showValidationPopUp('Invalid time selected. The end time must be later than the start time.'); return false; }
+        if (duration !== 30 && duration !== 60) { event.preventDefault(); showValidationPopUp('Appointment duration must be exactly 30 minutes or 1 hour.'); return false; }
+
+        const cellHour = parseInt(startParts[0], 10);
+        let timeSlotLabel = '';
+        if (cellHour === 8) timeSlotLabel = '8AM';
+        else if (cellHour === 9) timeSlotLabel = '9AM';
+        else if (cellHour === 10) timeSlotLabel = '10AM';
+        else if (cellHour === 11) timeSlotLabel = '11AM';
+        else if (cellHour === 13) timeSlotLabel = '1PM';
+        else if (cellHour === 14) timeSlotLabel = '2PM';
+        else if (cellHour === 15) timeSlotLabel = '3PM';
+        else if (cellHour === 16) timeSlotLabel = '4PM';
+
+        if (timeSlotLabel) {
+            const matchingCell = document.querySelector(`td[data-date="${dateInput}"][data-time="${timeSlotLabel}"]`);
+            if (matchingCell) {
+                const cellStatus = matchingCell.getAttribute('data-status');
+                if (cellStatus === 'leave') { event.preventDefault(); showValidationPopUp('Cannot reschedule! You are On Leave for this day.'); return false; }
+                else if (cellStatus === 'class') { event.preventDefault(); showValidationPopUp('Cannot reschedule! This slot is reserved for Class Hours.'); return false; }
+                else if (cellStatus === 'booked') { event.preventDefault(); showValidationPopUp('Cannot reschedule! This time slot is already Booked.'); return false; }
+            }
+        }
+        return true;
+    }
 
     function openRescheduleModal(appointmentId) {
         const form = document.getElementById('rescheduleForm');
@@ -1209,69 +1025,87 @@
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
     }
 
-    // CHECK URL FOR NOTIFICATION TRIGGER ON PAGE LOAD
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
-        
         if (urlParams.get('action') === 'view_requests') {
-            // Open the incoming requests modal
             openModal('requestsModalOverlay');
-            
-            // Optional: Clean up the URL so it doesn't reopen if the user refreshes the page
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.replaceState({path: cleanUrl}, '', cleanUrl);
         }
     });
 
-    // UPDATE END TIME DYNAMICALLY WHEN RESCHEDULE DURATION IS CHANGED
-    document.querySelectorAll('input[name="reschedule_duration_pref"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const startInput = document.querySelector('input[name="suggested_start_time"]').value;
-            if (startInput) {
-                const parts = startInput.split(':');
-                let h = parseInt(parts[0]);
-                let m = parseInt(parts[1]);
-                
-                if (this.value === '30') {
-                    let endH = h;
-                    let endM = m + 30;
-                    if (endM >= 60) { endH++; endM -= 60; }
-                    document.querySelector('input[name="suggested_end_time"]').value = endH.toString().padStart(2, '0') + ':' + endM.toString().padStart(2, '0');
-                } else {
-                    let endH = h + 1;
-                    document.querySelector('input[name="suggested_end_time"]').value = endH.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
-                }
+    // === 1. MAIN FORM AUTO-CALCULATE END TIME ===
+    function calculateMainEndTime() {
+        const startInput = document.getElementById('start_time').value;
+        if (startInput) {
+            const duration = document.querySelector('input[name="duration_pref"]:checked').value;
+            const parts = startInput.split(':');
+            let h = parseInt(parts[0]);
+            let m = parseInt(parts[1]);
+            
+            if (duration === '30') {
+                let endH = h;
+                let endM = m + 30;
+                if (endM >= 60) { endH++; endM -= 60; }
+                document.getElementById('end_time').value = endH.toString().padStart(2, '0') + ':' + endM.toString().padStart(2, '0');
+            } else {
+                let endH = h + 1;
+                document.getElementById('end_time').value = endH.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
             }
-        });
+        }
+    }
+
+    document.getElementById('start_time').addEventListener('change', calculateMainEndTime);
+    document.querySelectorAll('input[name="duration_pref"]').forEach(radio => {
+        radio.addEventListener('change', calculateMainEndTime);
     });
 
-    // HANDLE CELL CLICKS TO AUTO-FILL FORM
+    // === 2. RESCHEDULE MODAL AUTO-CALCULATE END TIME ===
+    function calculateRescheduleEndTime() {
+        const startInput = document.querySelector('input[name="suggested_start_time"]').value;
+        if (startInput) {
+            const duration = document.querySelector('input[name="reschedule_duration_pref"]:checked').value;
+            const parts = startInput.split(':');
+            let h = parseInt(parts[0]);
+            let m = parseInt(parts[1]);
+            
+            if (duration === '30') {
+                let endH = h;
+                let endM = m + 30;
+                if (endM >= 60) { endH++; endM -= 60; }
+                document.querySelector('input[name="suggested_end_time"]').value = endH.toString().padStart(2, '0') + ':' + endM.toString().padStart(2, '0');
+            } else {
+                let endH = h + 1;
+                document.querySelector('input[name="suggested_end_time"]').value = endH.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
+            }
+        }
+    }
+
+    document.querySelector('input[name="suggested_start_time"]').addEventListener('change', calculateRescheduleEndTime);
+    document.querySelectorAll('input[name="reschedule_duration_pref"]').forEach(radio => {
+        radio.addEventListener('change', calculateRescheduleEndTime);
+    });
+
+    // === 3. HANDLE CELL CLICKS ===
     document.addEventListener('click', function(event) {
         const cell = event.target.closest('#sync-schedule-grid td[data-date]');
         
         if (cell) {
             if (cell.classList.contains('cell-white') || cell.getAttribute('data-status') === 'available') {
-                
-                // Clear previous selection highlight
                 document.querySelectorAll('.cell-selected').forEach(c => c.classList.remove('cell-selected'));
-                // Add highlight to the clicked cell
                 cell.classList.add('cell-selected');
 
                 const date = cell.getAttribute('data-date');
                 const timeLabel = cell.getAttribute('data-time');
                 
                 let startHour = parseInt(timeLabel.replace(/AM|PM/g, ''));
-                if (timeLabel.includes('PM') && startHour !== 12) {
-                    startHour += 12;
-                }
+                if (timeLabel.includes('PM') && startHour !== 12) { startHour += 12; }
                 
                 const duration = parseInt(document.querySelector('input[name="duration_pref"]:checked').value);
                 let endHour = startHour;
                 let endMin = duration === 30 ? '30' : '00';
                 
-                if (duration === 60) {
-                    endHour += 1;
-                }
+                if (duration === 60) { endHour += 1; }
                 
                 const formattedStartTime = startHour.toString().padStart(2, '0') + ':00';
                 const formattedEndTime = endHour.toString().padStart(2, '0') + ':' + endMin;
@@ -1280,7 +1114,6 @@
                 document.getElementById('start_time').value = formattedStartTime;
                 document.getElementById('end_time').value = formattedEndTime;
                 
-                // Focus on parent select dropdown if empty, otherwise go to discussion topic
                 const parentSelect = document.querySelector('select[name="parent_id"]');
                 if (!parentSelect.value) {
                     parentSelect.focus();
@@ -1301,7 +1134,7 @@
         }
     });
 
-    // SILENT BACKGROUND SYNC FOR APPOINTMENTS
+    // === 4. BACKGROUND SYNC ===
     setInterval(() => {
         const isModalOpen = document.querySelectorAll('.modal-overlay:not(.modal-hidden)').length > 0;
         
@@ -1318,32 +1151,27 @@
                         currentParentRequests.innerHTML = newParentRequests.innerHTML;
                     }
 
-                    // 1. Sync Teacher Sent Requests
                     const newTeacherSent = doc.getElementById('sync-teacher-sent');
                     const currentTeacherSent = document.getElementById('sync-teacher-sent');
                     if (newTeacherSent && currentTeacherSent) {
                         currentTeacherSent.innerHTML = newTeacherSent.innerHTML;
                     }
 
-                    // 2. Sync Teacher Incoming Requests Modal
                     const newTeacherIncoming = doc.getElementById('sync-teacher-incoming');
                     const currentTeacherIncoming = document.getElementById('sync-teacher-incoming');
                     if (newTeacherIncoming && currentTeacherIncoming) {
                         currentTeacherIncoming.innerHTML = newTeacherIncoming.innerHTML;
                     }
 
-                    // 3. Sync the Teacher's Request Badge Number
                     const newBadge = doc.querySelector('.request-badge');
                     const currentBadge = document.querySelector('.request-badge');
                     if (newBadge && currentBadge) {
                         currentBadge.innerText = newBadge.innerText;
                     }
 
-                    // 4. Sync Schedule Grid Live Updates & Maintain Selection Memory
                     const newScheduleGrid = doc.getElementById('sync-schedule-grid');
                     const currentScheduleGrid = document.getElementById('sync-schedule-grid');
                     if (newScheduleGrid && currentScheduleGrid) {
-                        // Preserve the currently selected cell before swapping HTML
                         let selectedDate = null;
                         let selectedTime = null;
                         const activeCell = document.querySelector('.cell-selected');
@@ -1354,7 +1182,6 @@
 
                         currentScheduleGrid.innerHTML = newScheduleGrid.innerHTML;
 
-                        // Re-apply the selection class after the HTML swaps
                         if (selectedDate && selectedTime) {
                             const newActiveCell = document.querySelector(`td[data-date="${selectedDate}"][data-time="${selectedTime}"]`);
                             if (newActiveCell && newActiveCell.getAttribute('data-status') === 'available') {
