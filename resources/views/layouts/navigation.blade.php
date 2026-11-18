@@ -13,14 +13,36 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
+        /* Instant Anti-FOUC & Anti-Blue Link Reset (Bago pa mag-load ang Tailwind CDN) */
+        *, *::before, *::after {
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            margin: 0;
+            background-color: #f3f4f6;
+        }
+        a, a:visited, a:hover, a:active {
+            color: inherit;
+            text-decoration: none;
+        }
+
         .hero-gradient {
             background-color: #6d0101;
         }
         [x-cloak] { display: none !important; }
         
+        /* Siguraduhing nakatago agad ang sidebar sa mobile kahit hindi pa tapos mag-load ang Tailwind at Alpine */
+        @media (max-width: 767px) {
+            .mobile-sidebar-init {
+                transform: translateX(-100%);
+            }
+        }
+
         nav ul a { 
             font-size: 1.125rem !important; 
             font-weight: 500 !important;    
+            color: #ffffff;
+            text-decoration: none;
         }
     </style>
 </head>
@@ -261,8 +283,8 @@
             </div>
 
             {{-- SIDEBAR --}}
-            <nav :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-                 class="absolute inset-y-0 left-0 z-[70] w-64 bg-[#6d0101] text-white pt-4 shadow-2xl transform transition-transform duration-300 md:relative md:translate-x-0 overflow-y-auto">
+            <nav :class="sidebarOpen ? '!translate-x-0' : '-translate-x-full'"
+                 class="mobile-sidebar-init -translate-x-full fixed md:relative inset-y-0 left-0 z-[70] w-64 bg-[#6d0101] text-white pt-4 shadow-2xl transform transition-transform duration-300 md:!translate-x-0 overflow-y-auto shrink-0">
                 <ul class="space-y-1">
                     <x-sidebar-link href="{{ route('dashboard') }}"
                         icon="fa-solid fa-chart-line"

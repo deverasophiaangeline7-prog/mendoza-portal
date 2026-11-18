@@ -11,6 +11,21 @@
         from { opacity: 0; transform: translateY(-10px); }
         to { opacity: 1; transform: translateY(0); }
     }
+    /* Optional: Style the scrollbar for the table */
+    .custom-scrollbar::-webkit-scrollbar {
+        height: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+    }
 </style>
 
 <main class="flex-1 p-4 sm:p-8 bg-white min-h-screen relative" x-data="attendanceData()">
@@ -19,7 +34,7 @@
         <!-- HEADER SECTION -->
         <div class="flex flex-col lg:flex-row justify-between items-center lg:items-start gap-6 mb-8">
             
-            <!-- Back Button (Only appears for NKP sections) -->
+            <!-- Back Button -->
             <div class="w-full lg:w-auto flex justify-center lg:justify-start order-2 lg:order-1 lg:min-w-[60px]">
                 @if(\Illuminate\Support\Str::contains(strtoupper($displayName), ['NURSERY', 'KINDERGARTEN', 'PREPARATORY', 'NKP']))
                 <a href="{{ route('attendance.index') }}" class="text-red-600 text-5xl hover:scale-110 transition">
@@ -49,38 +64,38 @@
 
         @if($canManage)
             <!-- CONTROL PANEL -->
-            <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-gray-50 flex flex-col xl:flex-row items-center justify-between gap-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-x-auto">
+            <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-gray-50 flex flex-col xl:flex-row items-center justify-between gap-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full">
                 
                 <!-- Left Side: Actions -->
-                <div class="flex flex-row items-center gap-3 w-max">
+                <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center xl:justify-start gap-3 w-full xl:w-auto">
+                    
                     <button @click="isManaging = !isManaging" 
-                        class="font-black px-5 py-2.5 border-[3px] border-black rounded-xl transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] whitespace-nowrap"
+                        class="w-full sm:w-auto font-black px-5 py-2.5 border-[3px] border-black rounded-xl transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] whitespace-nowrap"
                         :class="isManaging ? 'bg-green-400 text-black' : 'bg-gray-200 text-gray-500'">
                         <i class="fa-solid" :class="isManaging ? 'fa-unlock' : 'fa-lock'"></i>
                         <span x-text="isManaging ? ' EDITING MODE' : ' VIEW MODE'"></span>
                     </button>
                     
-                    <div x-show="isManaging" x-cloak class="flex flex-row items-center gap-3 animate-fade-in">
+                    <div x-show="isManaging" x-cloak class="flex flex-col sm:flex-row flex-wrap items-center gap-3 animate-fade-in w-full sm:w-auto">
                         <span class="font-black uppercase text-sm whitespace-nowrap hidden lg:inline">Select Day:</span>
                         <input type="date" 
-         x-model="selectedDate" 
-            @change="
-                if(selectedDate && selectedDate.length === 10) {
-                    const day = new Date(selectedDate).getUTCDay();
-                    if(day === 0 || day === 6) {
-                        triggerToast('Weekends are not allowed! Please select a weekday.', 'error');
-                        selectedDate = '';
-                    }
-                }
-            "
-       class="border-[3px] border-black p-2 rounded-xl font-black bg-white cursor-pointer w-[140px] sm:w-auto">
+                            x-model="selectedDate" 
+                            @change="
+                                if(selectedDate && selectedDate.length === 10) {
+                                    const day = new Date(selectedDate).getUTCDay();
+                                    if(day === 0 || day === 6) {
+                                        triggerToast('Weekends are not allowed! Please select a weekday.', 'error');
+                                        selectedDate = '';
+                                    }
+                                }
+                            "
+                            class="w-full sm:w-[150px] border-[3px] border-black p-2 rounded-xl font-black bg-white cursor-pointer">
                         
-                        <button @click="addDateToTable()" class="bg-blue-600 text-white px-4 sm:px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-blue-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
+                        <button @click="addDateToTable()" class="w-full sm:w-auto bg-blue-600 text-white px-4 sm:px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-blue-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
                             + ADD DATE
                         </button>
 
-                        <!-- UPDATED TO TRIGGER CUSTOM MODAL -->
-                        <button @click="confirmDeleteDate()" class="bg-red-600 text-white px-4 sm:px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-red-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
+                        <button @click="confirmDeleteDate()" class="w-full sm:w-auto bg-red-600 text-white px-4 sm:px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-red-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
                             - DELETE DATE
                         </button>
                     </div>
@@ -92,6 +107,7 @@
                 </button>
             </div>
         @elseif(auth()->user()->role === 'admin')
+            <!-- Admin View Block Retained -->
             <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-blue-100 flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-blue-900">
                 <i class="fa-solid fa-eye text-3xl mr-4"></i>
                 <div>
@@ -100,6 +116,7 @@
                 </div>
             </div>
         @elseif(auth()->user()->role === 'teacher')
+            <!-- Teacher View Block Retained -->
             <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-gray-200 flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-gray-700">
                 <i class="fa-solid fa-lock text-3xl mr-4"></i>
                 <div>
@@ -114,79 +131,82 @@
         @endif
 
         <!-- PAGINATION CONTROLS -->
-        <div class="flex justify-between items-center mb-6 bg-white border-[3px] border-black rounded-[20px] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 bg-white border-[3px] border-black rounded-[20px] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             @if(isset($currentPage) && isset($totalPages))
                 @if($currentPage < $totalPages)
-                    <a href="{{ request()->fullUrlWithQuery(['page' => $currentPage + 1]) }}" class="font-black text-black hover:text-blue-600 transition">
+                    <a href="{{ request()->fullUrlWithQuery(['page' => $currentPage + 1]) }}" class="w-full sm:w-auto text-center font-black text-black hover:text-blue-600 transition">
                         <i class="fa-solid fa-arrow-left"></i> OLDER DATES
                     </a>
                 @else
-                    <span class="font-black text-gray-400 cursor-not-allowed"><i class="fa-solid fa-arrow-left"></i> OLDER DATES</span>
+                    <span class="w-full sm:w-auto text-center font-black text-gray-400 cursor-not-allowed"><i class="fa-solid fa-arrow-left"></i> OLDER DATES</span>
                 @endif
 
                 <span class="font-black uppercase text-lg sm:text-xl text-center px-4">Page {{ $currentPage }} of {{ $totalPages }}</span>
 
                 @if($currentPage > 1)
-                    <a href="{{ request()->fullUrlWithQuery(['page' => $currentPage - 1]) }}" class="font-black text-black hover:text-blue-600 transition">
+                    <a href="{{ request()->fullUrlWithQuery(['page' => $currentPage - 1]) }}" class="w-full sm:w-auto text-center font-black text-black hover:text-blue-600 transition">
                         NEWER DATES <i class="fa-solid fa-arrow-right"></i>
                     </a>
                 @else
-                    <span class="font-black text-gray-400 cursor-not-allowed">NEWER DATES <i class="fa-solid fa-arrow-right"></i></span>
+                    <span class="w-full sm:w-auto text-center font-black text-gray-400 cursor-not-allowed">NEWER DATES <i class="fa-solid fa-arrow-right"></i></span>
                 @endif
             @else
                 <span class="font-black text-gray-400 text-center w-full">Pagination not available</span>
             @endif
         </div>
 
+        <!-- RESPONSIVE SCROLLABLE TABLE -->
         <div class="border-[3px] border-black overflow-hidden rounded-[30px] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] bg-white">
-            <table class="w-full border-collapse table-fixed">
-                <thead>
-                    <tr class="bg-gray-100 border-b-[3px] border-black">
-                        <th class="p-4 sm:p-5 border-r-[3px] border-black w-[40%] text-left uppercase font-black text-xl sm:text-2xl truncate">Learner Name</th>
-                        
-                        <template x-for="day in addedDates" :key="day">
-                            <th class="border-r-[2px] last:border-r-0 border-black text-center text-base sm:text-lg py-4 bg-amber-700 font-black truncate" 
-                                x-text="new Date(day).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })">
-                            </th>
-                        </template>
-                        
-                        <template x-if="addedDates.length === 0">
-                            <th class="p-5 text-gray-400 italic font-bold text-lg text-center">No dates added yet...</th>
-                        </template>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($students as $student)
-                    <tr class="border-b-[2px] border-black hover:bg-yellow-50/50">
-                        <td class="p-4 sm:p-5 border-r-[3px] border-black font-black text-base sm:text-lg text-black truncate">
-                            {{ strtoupper($student->last_name . ', ' . $student->first_name) }}
-                        </td>
-                        
-                        <template x-for="day in addedDates" :key="day">
-                            <td class="border-r-[2px] last:border-r-0 border-black h-12 sm:h-16 attendance-cell"
-                                x-data="{ status: getSavedStatus('{{ $student->student_id }}', day) }"
-                                :data-student="'{{ $student->student_id }}'"
-                                :data-date="day"
-                                :data-status="status"
-                                @click="if(isManaging) status = (status + 1) % 5"
-                                :class="{
-                                    'bg-white': status === 0,
-                                    'bg-green-500': status === 1,
-                                    'bg-red-500': status === 2,
-                                    'bg-[#facc15]': status === 3,
-                                    'bg-blue-500': status === 4,
-                                    'cursor-pointer': isManaging
-                                }">
+            <div class="overflow-x-auto w-full custom-scrollbar">
+                <table class="w-full border-collapse min-w-max">
+                    <thead>
+                        <tr class="bg-gray-100 border-b-[3px] border-black">
+                            <th class="p-4 sm:p-5 border-r-[3px] border-black min-w-[220px] text-left uppercase font-black text-xl sm:text-2xl truncate sticky left-0 bg-gray-100 z-10">Learner Name</th>
+                            
+                            <template x-for="day in addedDates" :key="day">
+                                <th class="border-r-[2px] last:border-r-0 border-black text-center text-base sm:text-lg py-4 px-2 bg-amber-700 font-black truncate min-w-[120px]" 
+                                    x-text="new Date(day).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })">
+                                </th>
+                            </template>
+                            
+                            <template x-if="addedDates.length === 0">
+                                <th class="p-5 text-gray-400 italic font-bold text-lg text-center min-w-[200px]">No dates added yet...</th>
+                            </template>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($students as $student)
+                        <tr class="border-b-[2px] border-black hover:bg-yellow-50/50">
+                            <td class="p-4 sm:p-5 border-r-[3px] border-black font-black text-base sm:text-lg text-black truncate sticky left-0 bg-white z-10">
+                                {{ strtoupper($student->last_name . ', ' . $student->first_name) }}
                             </td>
-                        </template>
-                        
-                        <template x-if="addedDates.length === 0">
-                            <td class="bg-white"></td>
-                        </template>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                            
+                            <template x-for="day in addedDates" :key="day">
+                                <td class="border-r-[2px] last:border-r-0 border-black h-12 sm:h-16 attendance-cell min-w-[120px]"
+                                    x-data="{ status: getSavedStatus('{{ $student->student_id }}', day) }"
+                                    :data-student="'{{ $student->student_id }}'"
+                                    :data-date="day"
+                                    :data-status="status"
+                                    @click="if(isManaging) status = (status + 1) % 5"
+                                    :class="{
+                                        'bg-white': status === 0,
+                                        'bg-green-500': status === 1,
+                                        'bg-red-500': status === 2,
+                                        'bg-[#facc15]': status === 3,
+                                        'bg-blue-500': status === 4,
+                                        'cursor-pointer': isManaging
+                                    }">
+                                </td>
+                            </template>
+                            
+                            <template x-if="addedDates.length === 0">
+                                <td class="bg-white min-w-[200px]"></td>
+                            </template>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -206,12 +226,12 @@
                 <span class="text-red-600 font-bold">This will also delete saved records for this day.</span>
             </p>
 
-            <div class="flex justify-center gap-4">
-                <button @click="showDeleteModal = false" class="text-black font-black uppercase tracking-widest hover:text-gray-600 transition-colors px-4 py-3">
+            <div class="flex flex-col sm:flex-row justify-center gap-4 w-full">
+                <button @click="showDeleteModal = false" class="text-black font-black uppercase tracking-widest hover:text-gray-600 transition-colors px-4 py-3 w-full sm:w-auto">
                     CANCEL
                 </button>
                 
-                <button @click="executeDeleteDate()" class="bg-red-600 text-white font-black py-3 px-6 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:brightness-95 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2">
+                <button @click="executeDeleteDate()" class="bg-red-600 text-white font-black py-3 px-6 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:brightness-95 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-2 w-full sm:w-auto">
                     YES, DELETE
                 </button>
             </div>
@@ -236,6 +256,7 @@
 </main>
 
 <script>
+// Script logic remains unchanged
 document.addEventListener('alpine:init', () => {
     Alpine.data('attendanceData', () => ({
         isManaging: false,
@@ -246,7 +267,6 @@ document.addEventListener('alpine:init', () => {
         addedDates: @json($existingDates ?? []),
         serverAttendance: @json($attendanceMap ?? []),
         
-        // Modal State
         showDeleteModal: false,
         dateToDelete: '',
         
@@ -271,7 +291,6 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        // STEP 1: OPEN THE CUSTOM UI MODAL
         confirmDeleteDate() {
             if (!this.selectedDate) {
                 this.triggerToast('Please select a date to delete!', 'error');
@@ -287,14 +306,10 @@ document.addEventListener('alpine:init', () => {
             this.showDeleteModal = true;
         },
 
-        // STEP 2: EXECUTE THE DELETION AFTER "YES" IS CLICKED
         async executeDeleteDate() {
             this.showDeleteModal = false;
-
-            // Instantly remove it from the frontend array so the column disappears
             this.addedDates = this.addedDates.filter(d => d !== this.dateToDelete);
 
-            // Fetch request to actually delete from database
             try {
                 const response = await fetch('/attendance/delete-date', {
                     method: 'POST',

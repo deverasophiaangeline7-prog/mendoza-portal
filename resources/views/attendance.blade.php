@@ -11,17 +11,17 @@
 }">
     <div class="max-w-6xl w-full text-center flex flex-col items-center">
         
-        <!-- Main Title (Matches Report Card size: text-3xl md:text-5xl) -->
+        <!-- Main Title -->
         <h2 class="text-3xl md:text-5xl font-black text-black mb-2 md:mb-3 uppercase tracking-tight">
             Attendance
         </h2>
 
-        <!-- Subtitle (Matches Report Card spacing and font size) -->
+        <!-- Subtitle -->
         <h3 class="text-xl md:text-3xl font-black text-black mb-6 md:mb-8">
             Select Section:
         </h3>
 
-        <!-- Sections Grid (Exact match to Report Card layout & spacing) -->
+        <!-- Sections Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 md:gap-x-14 gap-y-6 md:gap-y-12 w-full max-w-6xl justify-items-center px-2">
             @foreach($sections as $section)
                 @php
@@ -38,9 +38,9 @@
                         <i class="fa-solid fa-xmark"></i>
                     </div>
 
-                    <!-- Text Stroke style matches Report Card text rendering completely -->
+                    <!-- Text Stroke fixed via paint-order property -->
                     <span class="text-3xl md:text-4xl font-black text-black group-hover:-translate-y-1 group-hover:text-amber-700 transition-transform uppercase" 
-                        style="-webkit-text-stroke: 1.5px white;">
+                        style="-webkit-text-stroke: 1.5px white; paint-order: stroke fill;">
                         {{ $displayLevel }}
                     </span>
                     <span class="text-lg md:text-xl font-medium text-black group-hover:-translate-y-1 transition-transform mt-1">
