@@ -10,6 +10,8 @@
         height: 2.5rem;
         padding: 0 0.75rem;
         width: 100%;
+        min-width: 0; 
+        max-width: 100%;
     }
     [x-cloak] { display: none !important; }
 </style>

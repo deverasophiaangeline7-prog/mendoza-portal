@@ -10,7 +10,10 @@
         height: 2.5rem;
         padding: 0 0.75rem;
         width: 100%;
+        min-width: 0; 
+        max-width: 100%;
     }
+    [x-cloak] { display: none !important; }
 </style>
 
 <main class="flex-1 p-4 md:p-12 bg-white">

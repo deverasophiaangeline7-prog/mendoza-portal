@@ -12,6 +12,11 @@ class AdminSiteContentController extends Controller
 {
     public function edit()
     {
+        // 1. Backend Security: Kick out anyone who isn't a superadmin
+        if (auth()->user()->role !== 'superadmin') {
+            abort(403, 'Unauthorized access. Only superadmins can edit the homepage.');
+        }
+
         // Group content by page so it's easy to loop through in the view
         $contents = SiteContent::all()->groupBy('page');
         return view('admin.sitecontent.edit', compact('contents'));
@@ -19,6 +24,11 @@ class AdminSiteContentController extends Controller
 
     public function update(Request $request)
     {
+        // 1. Backend Security: Stop unauthorized form submissions
+        if (auth()->user()->role !== 'superadmin') {
+            abort(403, 'Unauthorized access. Only superadmins can edit the homepage.');
+        }
+
         $updatedPages = [];
 
         // Handle text fields
@@ -31,8 +41,8 @@ class AdminSiteContentController extends Controller
                     );
 
                     if ($record->wasChanged() || $record->wasRecentlyCreated) {
-                            $updatedPages[] = $page;
-                        }
+                        $updatedPages[] = $page;
+                    }
                 }
             }
         }
@@ -55,18 +65,18 @@ class AdminSiteContentController extends Controller
         }
 
         // --- ACTIVITY LOGGING SCRIPT ---
-    if (!empty($updatedPages)) {
-        $uniquePages = array_unique($updatedPages);
-        
-        foreach ($uniquePages as $pageName) {
-        AuditLog::create([
-            'user_id' => Auth::id(), 
-            'action' => 'Update Content',
-            'description' => "Updated the system content for page: " . ucfirst($pageName)
-        ]);
-    }
+        if (!empty($updatedPages)) {
+            $uniquePages = array_unique($updatedPages);
+            
+            foreach ($uniquePages as $pageName) {
+                AuditLog::create([
+                    'user_id' => Auth::id(), 
+                    'action' => 'Update Content',
+                    'description' => "Updated the system content for page: " . ucfirst($pageName)
+                ]);
+            }
+        }
 
         return redirect()->back()->with('status', 'Website content updated successfully!');
     }
-}
 }

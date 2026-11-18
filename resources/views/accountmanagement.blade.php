@@ -378,17 +378,29 @@
         
         <!-- CSS HACK PARA 100% CONSISTENT SA IOS, ANDROID, AT DESKTOP -->
         <style>
-            .custom-date-input::-webkit-calendar-picker-indicator {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                opacity: 0; /* Tinatago ang default icon pero pwede pa rin i-click */
-                cursor: pointer;
+            /* 1. Fix para hindi lumagpas (overflow) ang input box sa iOS Safari */
+            .custom-date-input {
+                -webkit-appearance: none !important;
+                -moz-appearance: none !important;
+                appearance: none !important;
+                box-sizing: border-box !important;
+                min-width: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
             }
+            
+            /* 2. Patayin nang tuluyan ang native calendar icon at arrow (Android/Desktop) para hindi mag-overlap */
+            .custom-date-input::-webkit-calendar-picker-indicator,
+            .custom-date-input::-webkit-inner-spin-button,
+            .custom-date-input::-webkit-clear-button {
+                display: none !important;
+                -webkit-appearance: none !important;
+            }
+            
+            /* 3. Pilitin ang iOS na i-left align ang text para pantay sa Android */
             .custom-date-input::-webkit-date-and-time-value {
-                text-align: left; /* Pinipilit ang iOS na i-left align ang text tulad ng Android */
+                text-align: left !important;
+                margin: 0 !important;
             }
         </style>
 
@@ -416,21 +428,24 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
-                                <div class="relative w-full">
+                                <!-- Wrapper na may showPicker() para clickable ang buong box -->
+                                <div class="relative w-full cursor-pointer" onclick="const i = this.querySelector('input'); if(i.showPicker) i.showPicker();">
                                     <input type="date" name="term1_start" required
                                            value="{{ old('term1_start', $activeYear ? $activeYear->term1_start : '') }}" 
-                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_start') border-red-500 bg-red-50 @enderror">
-                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                           onclick="if(this.showPicker) this.showPicker();"
+                                           class="custom-date-input block h-[48px] px-3 pr-10 md:px-4 md:pr-12 text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer @error('term1_start') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
                                 </div>
                                 @error('term1_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
-                                <div class="relative w-full">
+                                <div class="relative w-full cursor-pointer" onclick="const i = this.querySelector('input'); if(i.showPicker) i.showPicker();">
                                     <input type="date" name="term1_end" required
                                            value="{{ old('term1_end', $activeYear ? $activeYear->term1_end : '') }}" 
-                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_end') border-red-500 bg-red-50 @enderror">
-                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                           onclick="if(this.showPicker) this.showPicker();"
+                                           class="custom-date-input block h-[48px] px-3 pr-10 md:px-4 md:pr-12 text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer @error('term1_end') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
                                 </div>
                                 @error('term1_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
@@ -443,21 +458,23 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
-                                <div class="relative w-full">
+                                <div class="relative w-full cursor-pointer" onclick="const i = this.querySelector('input'); if(i.showPicker) i.showPicker();">
                                     <input type="date" name="term2_start" required
                                            value="{{ old('term2_start', $activeYear ? $activeYear->term2_start : '') }}" 
-                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_start') border-red-500 bg-red-50 @enderror">
-                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                           onclick="if(this.showPicker) this.showPicker();"
+                                           class="custom-date-input block h-[48px] px-3 pr-10 md:px-4 md:pr-12 text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer @error('term2_start') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
                                 </div>
                                 @error('term2_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
-                                <div class="relative w-full">
+                                <div class="relative w-full cursor-pointer" onclick="const i = this.querySelector('input'); if(i.showPicker) i.showPicker();">
                                     <input type="date" name="term2_end" required
                                            value="{{ old('term2_end', $activeYear ? $activeYear->term2_end : '') }}" 
-                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_end') border-red-500 bg-red-50 @enderror">
-                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                           onclick="if(this.showPicker) this.showPicker();"
+                                           class="custom-date-input block h-[48px] px-3 pr-10 md:px-4 md:pr-12 text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer @error('term2_end') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
                                 </div>
                                 @error('term2_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
@@ -470,21 +487,23 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
-                                <div class="relative w-full">
+                                <div class="relative w-full cursor-pointer" onclick="const i = this.querySelector('input'); if(i.showPicker) i.showPicker();">
                                     <input type="date" name="term3_start" required
                                            value="{{ old('term3_start', $activeYear ? $activeYear->term3_start : '') }}" 
-                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_start') border-red-500 bg-red-50 @enderror">
-                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                           onclick="if(this.showPicker) this.showPicker();"
+                                           class="custom-date-input block h-[48px] px-3 pr-10 md:px-4 md:pr-12 text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer @error('term3_start') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
                                 </div>
                                 @error('term3_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
-                                <div class="relative w-full">
+                                <div class="relative w-full cursor-pointer" onclick="const i = this.querySelector('input'); if(i.showPicker) i.showPicker();">
                                     <input type="date" name="term3_end" required
                                            value="{{ old('term3_end', $activeYear ? $activeYear->term3_end : '') }}" 
-                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_end') border-red-500 bg-red-50 @enderror">
-                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                           onclick="if(this.showPicker) this.showPicker();"
+                                           class="custom-date-input block h-[48px] px-3 pr-10 md:px-4 md:pr-12 text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer @error('term3_end') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
                                 </div>
                                 @error('term3_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
@@ -506,10 +525,12 @@
     </div>
     <!-- END: Term Schedule Modal -->
 
+    @if(auth()->user()->role === 'superadmin')
     <a href="{{ route('admin.content.edit') }}" 
        class="w-full max-w-md mx-auto bg-[#6d0101] hover:bg-red-900 text-white font-black text-lg md:text-2xl py-4 md:py-5 px-4 md:px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-3">
         Edit Homepage <i class="fas fa-globe"></i>
     </a>
+    @endif
 
 </div>
 @endsection
