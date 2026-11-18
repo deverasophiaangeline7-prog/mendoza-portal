@@ -19,7 +19,7 @@
         }
         body {
             margin: 0;
-            background-color: #f3f4f6;
+            background-color: #ffffff;
         }
         a, a:visited, a:hover, a:active {
             color: inherit;
@@ -48,7 +48,7 @@
 </head>
 
 <!-- Wrap body in Alpine state -->
-<body class="bg-gray-100" x-data="{ sidebarOpen: false }">
+<body class="bg-white" x-data="{ sidebarOpen: false }">
     @if(auth()->check() && auth()->user()->is_first_login)
         <!-- NEO-BRUTALIST SECURITY POP-UP MODAL -->
         <div class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
