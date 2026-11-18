@@ -114,9 +114,9 @@
                      class="border-2 border-black w-full max-w-[350px] rounded-[40px] py-6 flex flex-col items-center group transition-all relative shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-[#e68a2d] cursor-pointer hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:scale-95 {{ !$assigned ? 'opacity-70' : '' }}">
                     
                     <span class="text-3xl md:text-4xl font-black text-black uppercase tracking-tight transition-transform group-hover:-translate-y-1 group-hover:text-amber-700" 
-                          style="-webkit-text-stroke: 1.5px white;">
-                        {{ $adviser['section'] }}
-                    </span>
+                    style="-webkit-text-stroke: 1.5px white; paint-order: stroke fill;">
+                  {{ $adviser['section'] }}
+                </span>
                     
                     <span class="text-lg md:text-xl font-medium text-black transition-transform mt-1 group-hover:-translate-y-1">
                         {{ $assigned ? $adviser['name'] : 'Unassigned' }}
