@@ -87,31 +87,46 @@
     <div class="max-w-5xl mx-auto">
         
         <!-- ON-SCREEN HEADER & BUTTONS (Hidden during print) -->
-        <div class="no-print flex justify-between items-start mb-8 border-b-4 border-black pb-4">
-            <div>
-                <h2 class="text-4xl font-black uppercase text-black">{{ $studentName ?? 'Student Name' }}</h2>
-                <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName ?? 'Section Name' }}</h3>
-                <p class="text-sm font-bold text-blue-600 uppercase mt-1">Active Window: Term <span x-text="activeTerm"></span></p>
+        <div class="no-print flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b-4 border-black pb-4 gap-4">
+            
+            <!-- TITLE & MOBILE BACK BUTTON -->
+            <div class="flex justify-between items-start w-full md:w-auto">
+                <div>
+                    <h2 class="text-4xl font-black uppercase text-black">{{ $studentName ?? 'Student Name' }}</h2>
+                    <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName ?? 'Section Name' }}</h3>
+                    <p class="text-sm font-bold text-blue-600 uppercase mt-1">Active Window: Term <span x-text="activeTerm"></span></p>
+                </div>
+                
+                @if(auth()->user()->role !== 'parent')
+                {{-- MOBILE BACK BUTTON (Visible only on small screens) --}}
+                <a href="javascript:history.back()" class="md:hidden text-red-600 text-4xl hover:scale-110 transition leading-none mt-1 shrink-0">
+                    <i class="fa-solid fa-circle-left"></i>
+                </a>
+                @endif
             </div>
             
-            <div class="flex items-start gap-4">
+            <!-- ACTION BUTTONS -->
+            <div class="flex flex-row md:flex-nowrap items-stretch gap-3 w-full md:w-auto mt-2 md:mt-0">
                 @if($canManage ?? true)
-                <div class="flex flex-col space-y-2">
-                    <button @click="isManaging = !isManaging" class="font-black px-4 py-2 border-[3px] border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all" :class="isManaging ? 'bg-green-400' : 'bg-gray-200'">
+                <div class="flex flex-col space-y-2 flex-1 md:flex-none">
+                    <button @click="isManaging = !isManaging" class="h-full justify-center font-black px-4 py-3 md:py-2 border-[3px] border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2" :class="isManaging ? 'bg-green-400' : 'bg-gray-200'">
                         <i class="fa-solid" :class="isManaging ? 'fa-unlock' : 'fa-lock'"></i> <span x-text="isManaging ? ' EDITING' : ' VIEWING'"></span>
                     </button>
-                    <button x-show="isManaging" x-cloak @click="saveGrades()" class="bg-[#b26905] text-black px-4 py-2 rounded-lg border-[3px] border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
-                        <i class="fa-solid fa-floppy-disk mr-1"></i> SAVE
+                    <button x-show="isManaging" x-cloak @click="saveGrades()" class="h-full justify-center bg-[#b26905] text-black px-4 py-3 md:py-2 rounded-lg border-[3px] border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> SAVE
                     </button>
                 </div>
                 @endif
 
                 @if(auth()->user()->role !== 'parent')
-                <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-lg border-[3px] border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 transition-all">
-                    <i class="fa-solid fa-print mr-1"></i> PRINT
-                </button>
+                <div class="flex flex-col flex-1 md:flex-none">
+                    <button onclick="window.print()" class="h-full justify-center bg-blue-600 text-white px-4 py-3 md:py-2 rounded-lg border-[3px] border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> PRINT
+                    </button>
+                </div>
 
-                <a href="javascript:history.back()" class="text-red-600 text-5xl hover:scale-110 transition leading-none ml-2">
+                {{-- DESKTOP BACK BUTTON (Visible only on md+ screens) --}}
+                <a href="javascript:history.back()" class="hidden md:flex items-center text-red-600 text-5xl hover:scale-110 transition leading-none ml-2 shrink-0">
                     <i class="fa-solid fa-circle-left"></i>
                 </a>
                 @endif
@@ -185,55 +200,59 @@
                         <!-- 2. GRADES TABLE -->
                         <div class="w-full mb-3 print:mb-3">
                             <h4 class="text-center font-bold text-lg mb-2 uppercase print:text-[10px] print:mb-1">Report on Learning Progress and Achievement</h4>
-                            <table class="w-full text-sm deped-table bg-white">
-                                <thead>
-                                    <tr>
-                                        <th rowspan="2" class="w-1/3">Learning Areas</th>
-                                        <th colspan="3">Term</th>
-                                        <th rowspan="2" class="w-16 print:w-8">Final<br>Grade</th>
-                                        <th rowspan="2" class="w-20">Remarks</th>
-                                    </tr>
-                                    <tr>
-                                        <th class="w-12 print:w-6">1</th>
-                                        <th class="w-12 print:w-6">2</th>
-                                        <th class="w-12 print:w-6">3</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="text-center font-bold">
-                                    @foreach($subjects as $subject)
-                                    <tr>
-                                        <td class="text-left font-bold">{{ $subject }}</td>
-                                        @for($t = 1; $t <= 3; $t++)
-                                        <td class="input-cell text-center">
-                                            <input x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}') && canGradeSubject('{{ $subject }}')" type="number" min="0" max="100" step="0.01" 
-                                                   oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" 
-                                                   x-model="grades['{{ $subject }}'].term{{ $t }}" @input="calculateGrades()" 
-                                                   class="form-input-pill">
-                                            <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}') || !canGradeSubject('{{ $subject }}')" 
-                                            x-text="gradeLevelNum === 1 ? getDescriptor(grades['{{ $subject }}'].term{{ $t }}) : grades['{{ $subject }}'].term{{ $t }}"></span>
-                                        </td>
-                                        @endfor
-                                        <td class="text-center font-bold" 
-                                        x-text="gradeLevelNum === 1 ? getDescriptor(grades['{{ $subject }}'].final_grade) : grades['{{ $subject }}'].final_grade"></td>
-                                        <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
-                                    </tr>
-                                    @endforeach
-
-                                    <tr>
-                                        <td colspan="4" class="text-right font-bold pr-4 print:pr-2 uppercase">General Average</td>
-                                        <td class="text-center font-bold text-lg print:text-[9px]" 
-                                        x-text="gradeLevelNum === 1 ? getDescriptor(generalAverage) : generalAverage"></td>
-                                        <td class="text-center font-bold" x-text="finalStatus"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <!-- Mobile Scroll Wrapper -->
+                            <div class="w-full overflow-x-auto pb-3 print:overflow-visible print:pb-0">
+                                <table class="w-full min-w-[550px] print:min-w-0 text-sm deped-table bg-white">
+                                    <thead>
+                                        <tr>
+                                            <th rowspan="2" class="w-1/3">Learning Areas</th>
+                                            <th colspan="3">Term</th>
+                                            <th rowspan="2" class="w-16 print:w-8">Final<br>Grade</th>
+                                            <th rowspan="2" class="w-20">Remarks</th>
+                                        </tr>
+                                        <tr>
+                                            <th class="w-12 print:w-6">1</th>
+                                            <th class="w-12 print:w-6">2</th>
+                                            <th class="w-12 print:w-6">3</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-center font-bold">
+                                        @foreach($subjects as $subject)
+                                        <tr>
+                                            <td class="text-left font-bold">{{ $subject }}</td>
+                                            @for($t = 1; $t <= 3; $t++)
+                                            <td class="input-cell text-center">
+                                                <input x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}') && canGradeSubject('{{ $subject }}')" type="number" min="0" max="100" step="0.01" 
+                                                       oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;" 
+                                                       x-model="grades['{{ $subject }}'].term{{ $t }}" @input="calculateGrades()" 
+                                                       class="form-input-pill">
+                                                <span x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}') || !canGradeSubject('{{ $subject }}')" 
+                                                x-text="gradeLevelNum === 1 ? getDescriptor(grades['{{ $subject }}'].term{{ $t }}) : grades['{{ $subject }}'].term{{ $t }}"></span>
+                                            </td>
+                                            @endfor
+                                            <td class="text-center font-bold" 
+                                            x-text="gradeLevelNum === 1 ? getDescriptor(grades['{{ $subject }}'].final_grade) : grades['{{ $subject }}'].final_grade"></td>
+                                            <td class="text-center" x-text="grades['{{ $subject }}'].remarks"></td>
+                                        </tr>
+                                        @endforeach
+    
+                                        <tr>
+                                            <td colspan="4" class="text-right font-bold pr-4 print:pr-2 uppercase">General Average</td>
+                                            <td class="text-center font-bold text-lg print:text-[9px]" 
+                                            x-text="gradeLevelNum === 1 ? getDescriptor(generalAverage) : generalAverage"></td>
+                                            <td class="text-center font-bold" x-text="finalStatus"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <!-- 3. LEGEND (Grade 1 Only) -->
                         <div x-show="gradeLevelNum === 1" x-cloak class="w-full mb-3 print:mb-3">
                             <h4 class="text-center font-bold text-lg print:text-[10px] mb-2 print:mb-1">Performance Descriptors</h4>
-                            <div class="max-w-3xl mx-auto print:max-w-full">
-                                <table class="w-full text-sm deped-table bg-white font-semibold">
+                            <!-- Mobile Scroll Wrapper -->
+                            <div class="max-w-3xl mx-auto print:max-w-full overflow-x-auto pb-3 print:overflow-visible print:pb-0">
+                                <table class="w-full min-w-[500px] print:min-w-0 text-sm deped-table bg-white font-semibold">
                                     <thead>
                                         <tr><th class="w-1/3">Scale</th><th class="w-1/3">Descriptors</th><th class="w-1/3">Remarks</th></tr>
                                     </thead>
@@ -251,27 +270,30 @@
                         <!-- 4. TEACHER REMARKS -->
                         <div class="w-full mb-3 print:mb-3">
                             <h4 class="text-center font-bold text-lg uppercase print:text-[10px] mb-2 print:mb-1">Teacher's Comments/Remarks</h4>
-                            <table class="w-full text-sm deped-table bg-white">
-                                <tbody>
-                                    @for($t = 1; $t <= 3; $t++)
-                                    <tr>
-                                        <td class="w-32 font-bold align-middle px-3 py-2 text-center print:w-16 print:p-0 print:py-1">Term {{ $t }}</td>
-                                        <td class="p-0 align-top relative">
-                                            <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
-                                                      x-model="teacherRemarks.term{{ $t }}" 
-                                                      @input="teacherRemarks.term{{ $t }} = $event.target.value.replace(/[^a-zA-Z\s.,\-']/g, '')"
-                                                      rows="2"
-                                                      class="w-full min-h-[3rem] px-3 py-2 outline-none resize-y focus:bg-white focus:ring-2 focus:ring-blue-500 bg-transparent border-none"
-                                                      placeholder="Enter comments/remarks..."></textarea>
-                                                      
-                                            <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
-                                                 class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left print:min-h-[20px] print:h-5 print:py-0 print:px-1" 
-                                                 x-text="teacherRemarks.term{{ $t }}"></div>
-                                        </td>
-                                    </tr>
-                                    @endfor
-                                </tbody>
-                            </table>
+                            <!-- Mobile Scroll Wrapper -->
+                            <div class="w-full overflow-x-auto pb-3 print:overflow-visible print:pb-0">
+                                <table class="w-full min-w-[550px] print:min-w-0 text-sm deped-table bg-white">
+                                    <tbody>
+                                        @for($t = 1; $t <= 3; $t++)
+                                        <tr>
+                                            <td class="w-32 font-bold align-middle px-3 py-2 text-center print:w-16 print:p-0 print:py-1">Term {{ $t }}</td>
+                                            <td class="p-0 align-top relative">
+                                                <textarea x-show="isManaging && activeTerm == '{{ $t }}' && isTermUnlocked('{{ $t }}')" 
+                                                          x-model="teacherRemarks.term{{ $t }}" 
+                                                          @input="teacherRemarks.term{{ $t }} = $event.target.value.replace(/[^a-zA-Z\s.,\-']/g, '')"
+                                                          rows="2"
+                                                          class="w-full min-h-[3rem] px-3 py-2 outline-none resize-y focus:bg-white focus:ring-2 focus:ring-blue-500 bg-transparent border-none"
+                                                          placeholder="Enter comments/remarks..."></textarea>
+                                                          
+                                                <div x-show="!isManaging || activeTerm != '{{ $t }}' || !isTermUnlocked('{{ $t }}')" 
+                                                     class="w-full min-h-[3rem] px-3 py-2 whitespace-pre-wrap text-left print:min-h-[20px] print:h-5 print:py-0 print:px-1" 
+                                                     x-text="teacherRemarks.term{{ $t }}"></div>
+                                            </td>
+                                        </tr>
+                                        @endfor
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <!-- 5. HIDDEN PRINT FOOTER -->

@@ -35,24 +35,36 @@
     <div class="max-w-7xl mx-auto">
         
         <!-- ROW 1: HEADER & ACTION BUTTONS -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-            <div>
-                <h2 class="text-4xl font-black text-black uppercase tracking-tight">Student List</h2>
-                <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName }}</h3>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            
+            <!-- TITLE & MOBILE BACK BUTTON ROW -->
+            <div class="flex justify-between items-start w-full md:w-auto">
+                <div>
+                    <h2 class="text-4xl font-black text-black uppercase tracking-tight">Student List</h2>
+                    <h3 class="text-2xl font-bold text-amber-700 uppercase">{{ $sectionName }}</h3>
+                </div>
+                
+                {{-- MOBILE BACK BUTTON (Visible only on small screens) --}}
+                @if($showBackButton)
+                    <a href="{{ route('reportcard.index') }}" class="md:hidden text-red-600 text-4xl hover:scale-110 transition leading-none mt-1 shrink-0">
+                        <i class="fa-solid fa-circle-left"></i>
+                    </a>
+                @endif
             </div>
             
-            <div class="flex items-center gap-4 mt-4 md:mt-0">
+            <!-- ACTION BUTTONS (Print All & Desktop Back Button) -->
+            <div class="flex flex-wrap md:flex-nowrap items-center gap-4 w-full md:w-auto">
                 {{-- BATCH PRINT BUTTON --}}
                 @if(auth()->user()->role !== 'parent')
                     <a href="{{ route('reportcard.batch-print', $section_id) }}" target="_blank" 
-                       class="bg-blue-600 text-white font-black px-6 py-2 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all uppercase tracking-wider text-sm flex items-center">
+                       class="w-full md:w-auto justify-center bg-blue-600 text-white font-black px-6 py-3 md:py-2 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all uppercase tracking-wider text-sm flex items-center">
                         <i class="fa-solid fa-print mr-2"></i> Print All
                     </a>
                 @endif
 
-                {{-- BACK BUTTON --}}
+                {{-- DESKTOP BACK BUTTON (Visible only on md+ screens) --}}
                 @if($showBackButton)
-                    <a href="{{ route('reportcard.index') }}" class="text-red-600 text-5xl hover:scale-110 transition leading-none">
+                    <a href="{{ route('reportcard.index') }}" class="hidden md:block text-red-600 text-5xl hover:scale-110 transition leading-none shrink-0">
                         <i class="fa-solid fa-circle-left"></i>
                     </a>
                 @endif

@@ -376,6 +376,22 @@
          class="fixed inset-0 z-[9999] flex p-4 md:p-8 bg-black/80 backdrop-blur-sm overflow-y-auto" 
          x-cloak>
         
+        <!-- CSS HACK PARA 100% CONSISTENT SA IOS, ANDROID, AT DESKTOP -->
+        <style>
+            .custom-date-input::-webkit-calendar-picker-indicator {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                opacity: 0; /* Tinatago ang default icon pero pwede pa rin i-click */
+                cursor: pointer;
+            }
+            .custom-date-input::-webkit-date-and-time-value {
+                text-align: left; /* Pinipilit ang iOS na i-left align ang text tulad ng Android */
+            }
+        </style>
+
         <div @click.away="termScheduleModal = false" class="bg-purple-400 border-[3px] md:border-[4px] border-black rounded-[2rem] p-5 md:p-8 w-[92%] max-w-4xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] relative mt-24 mx-auto mb-10 md:m-auto flex-shrink-0 max-h-[70vh] overflow-y-auto scrollbar-hide">
             
             <button @click="termScheduleModal = false" class="absolute top-3 md:top-4 right-5 md:right-6 text-4xl md:text-5xl font-black text-black hover:text-gray-700 transition-colors leading-none z-10">&times;</button>
@@ -400,16 +416,22 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
-                                <input type="date" name="term1_start" required
-                                       value="{{ old('term1_start', $activeYear ? $activeYear->term1_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_start') border-red-500 bg-red-50 @enderror">
+                                <div class="relative w-full">
+                                    <input type="date" name="term1_start" required
+                                           value="{{ old('term1_start', $activeYear ? $activeYear->term1_start : '') }}" 
+                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_start') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                </div>
                                 @error('term1_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
-                                <input type="date" name="term1_end" required
-                                       value="{{ old('term1_end', $activeYear ? $activeYear->term1_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_end') border-red-500 bg-red-50 @enderror">
+                                <div class="relative w-full">
+                                    <input type="date" name="term1_end" required
+                                           value="{{ old('term1_end', $activeYear ? $activeYear->term1_end : '') }}" 
+                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term1_end') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                </div>
                                 @error('term1_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
@@ -421,16 +443,22 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
-                                <input type="date" name="term2_start" required
-                                       value="{{ old('term2_start', $activeYear ? $activeYear->term2_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_start') border-red-500 bg-red-50 @enderror">
+                                <div class="relative w-full">
+                                    <input type="date" name="term2_start" required
+                                           value="{{ old('term2_start', $activeYear ? $activeYear->term2_start : '') }}" 
+                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_start') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                </div>
                                 @error('term2_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
-                                <input type="date" name="term2_end" required
-                                       value="{{ old('term2_end', $activeYear ? $activeYear->term2_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_end') border-red-500 bg-red-50 @enderror">
+                                <div class="relative w-full">
+                                    <input type="date" name="term2_end" required
+                                           value="{{ old('term2_end', $activeYear ? $activeYear->term2_end : '') }}" 
+                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term2_end') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                </div>
                                 @error('term2_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
@@ -442,16 +470,22 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">Start Date</label>
-                                <input type="date" name="term3_start" required
-                                       value="{{ old('term3_start', $activeYear ? $activeYear->term3_start : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_start') border-red-500 bg-red-50 @enderror">
+                                <div class="relative w-full">
+                                    <input type="date" name="term3_start" required
+                                           value="{{ old('term3_start', $activeYear ? $activeYear->term3_start : '') }}" 
+                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_start') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                </div>
                                 @error('term3_start') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-bold uppercase mb-1 tracking-wider">End Date</label>
-                                <input type="date" name="term3_end" required
-                                       value="{{ old('term3_end', $activeYear ? $activeYear->term3_end : '') }}" 
-                                       class="w-full border-[3px] border-black rounded-lg px-3 py-2 text-sm md:text-base font-bold text-gray-900 bg-white min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_end') border-red-500 bg-red-50 @enderror">
+                                <div class="relative w-full">
+                                    <input type="date" name="term3_end" required
+                                           value="{{ old('term3_end', $activeYear ? $activeYear->term3_end : '') }}" 
+                                           class="custom-date-input block w-full h-[48px] pl-3 pr-10 text-left text-sm md:text-base font-bold text-gray-900 bg-white border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400/50 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] @error('term3_end') border-red-500 bg-red-50 @enderror">
+                                    <i class="fa-solid fa-calendar-day absolute right-3 top-1/2 transform -translate-y-1/2 text-black text-lg pointer-events-none"></i>
+                                </div>
                                 @error('term3_end') <p class="text-red-600 text-xs font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
