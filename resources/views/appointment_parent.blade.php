@@ -765,8 +765,8 @@
     <div class="nested-modal-content">
         <h3 style="color: var(--ma-orange); font-weight: bold; text-transform: uppercase;">State your reason for rescheduling</h3>
         
-        <form id="rescheduleForm" method="POST" action="">
-            @csrf @method('PATCH')
+            <form id="rescheduleForm" method="POST" action="" onsubmit="return validateRescheduleForm(event)">
+                @csrf @method('PATCH')
             
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Reason</label>
@@ -841,119 +841,124 @@
         openModal('cancelModalOverlay');
     }
 
-    function validateAppointmentForm(event) {
-        const dateInput = document.getElementById('appointment_date').value;
-        const startTimeInput = document.getElementById('start_time').value;
-        const endTimeInput = document.getElementById('end_time').value;
-        
-        const topicInput = document.querySelector('input[name="discussion_topic"]').value;
-        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
+    function validateRescheduleForm(event) {
+    const form = document.getElementById('rescheduleForm');
+    const dateInput = form.querySelector('input[name="suggested_date"]').value;
+    const startTimeInput = form.querySelector('input[name="suggested_start_time"]').value;
+    const endTimeInput = form.querySelector('input[name="suggested_end_time"]').value;
+    const reasonInput = form.querySelector('input[name="reason"]').value;
 
-        if (invalidTopicRegex.test(topicInput)) {
+    // 1. Validate Reason (Text format)
+    const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
+    if (invalidTopicRegex.test(reasonInput)) {
+        event.preventDefault();
+        showValidationPopUp('The reason can only contain letters, numbers, spaces, periods, commas, hyphens, and apostrophes.');
+        return false;
+    }
+
+    if (!dateInput || !startTimeInput || !endTimeInput) return true;
+
+    // 2. Date Constraints
+    const today = "{{ \Carbon\Carbon::now()->format('Y-m-d') }}";
+    const maxDate = "{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}";
+    
+    if (dateInput < today) {
+        event.preventDefault();
+        showValidationPopUp('Appointments cannot be rescheduled to a past date.');
+        return false;
+    }
+
+    if (dateInput > maxDate) {
+        event.preventDefault();
+        showValidationPopUp('Appointments can only be rescheduled up to two weeks in advance.');
+        return false;
+    }
+
+    const [year, month, day] = dateInput.split('-');
+    const dateObj = new Date(year, month - 1, day);
+    const dayOfWeek = dateObj.getDay(); 
+    if (dayOfWeek === 0 || dayOfWeek === 6) { 
+        event.preventDefault();
+        showValidationPopUp('Appointments are only available from Monday to Friday.');
+        return false;
+    }
+
+    // 3. Time & Duration Constraints
+    const startParts = startTimeInput.split(':');
+    const endParts = endTimeInput.split(':');
+    const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
+    const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+    const duration = endMins - startMins;
+
+    if (startMins < 480 || endMins > 1020) {
+        event.preventDefault();
+        showValidationPopUp('Appointments can only be scheduled between 8:00 AM and 5:00 PM.');
+        return false;
+    }
+
+    if (startMins < 780 && endMins > 720) {
+        event.preventDefault();
+        showValidationPopUp('Appointments cannot be scheduled during the 12:00 PM - 1:00 PM lunch break.');
+        return false;
+    }
+
+    if (dateInput === today) {
+        const now = new Date();
+        const currentMins = now.getHours() * 60 + now.getMinutes();
+        if (startMins <= currentMins) {
             event.preventDefault();
-            showValidationPopUp('The discussion topic can only contain letters, numbers, spaces, periods, commas, hyphens, and apostrophes.');
+            showValidationPopUp('Appointments cannot be booked for a past time today.');
             return false;
         }
+    }
 
-        if (!dateInput || !startTimeInput || !endTimeInput) return true;
+    if (duration <= 0) {
+        event.preventDefault();
+        showValidationPopUp('Invalid time selected. The end time must be later than the start time.');
+        return false;
+    }
 
-        const today = "{{ \Carbon\Carbon::now()->format('Y-m-d') }}";
-        const maxDate = "{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}";
-        
-        if (dateInput < today) {
-            event.preventDefault();
-            showValidationPopUp('Appointments cannot be booked in the past.');
-            return false;
-        }
+    if (duration !== 30 && duration !== 60) {
+        event.preventDefault();
+        showValidationPopUp('Appointment duration must be exactly 30 minutes or 1 hour.');
+        return false;
+    }
 
-        if (dateInput > maxDate) {
-            event.preventDefault();
-            showValidationPopUp('Appointments can only be scheduled up to two weeks in advance.');
-            return false;
-        }
+    // 4. Schedule Grid Availability Check
+    const cellHour = parseInt(startParts[0], 10);
+    let timeSlotLabel = '';
 
-        const [year, month, day] = dateInput.split('-');
-        const dateObj = new Date(year, month - 1, day);
-        const dayOfWeek = dateObj.getDay(); 
-        if (dayOfWeek === 0 || dayOfWeek === 6) { 
-            event.preventDefault();
-            showValidationPopUp('Appointments are only available from Monday to Friday.');
-            return false;
-        }
+    if (cellHour === 8) timeSlotLabel = '8AM';
+    else if (cellHour === 9) timeSlotLabel = '9AM';
+    else if (cellHour === 10) timeSlotLabel = '10AM';
+    else if (cellHour === 11) timeSlotLabel = '11AM';
+    else if (cellHour === 13) timeSlotLabel = '1PM';
+    else if (cellHour === 14) timeSlotLabel = '2PM';
+    else if (cellHour === 15) timeSlotLabel = '3PM';
+    else if (cellHour === 16) timeSlotLabel = '4PM';
 
-        const startParts = startTimeInput.split(':');
-        const endParts = endTimeInput.split(':');
-        const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
-        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
-        const duration = endMins - startMins;
-
-        if (startMins < 480 || endMins > 1020) {
-            event.preventDefault();
-            showValidationPopUp('Appointments can only be scheduled between 8:00 AM and 5:00 PM.');
-            return false;
-        }
-
-        if (startMins < 780 && endMins > 720) {
-            event.preventDefault();
-            showValidationPopUp('Appointments cannot be scheduled during the 12:00 PM - 1:00 PM lunch break.');
-            return false;
-        }
-
-        if (dateInput === today) {
-            const now = new Date();
-            const currentMins = now.getHours() * 60 + now.getMinutes();
-            if (startMins <= currentMins) {
+    if (timeSlotLabel) {
+        const matchingCell = document.querySelector(`td[data-date="${dateInput}"][data-time="${timeSlotLabel}"]`);
+        if (matchingCell) {
+            const cellStatus = matchingCell.getAttribute('data-status');
+            if (cellStatus === 'leave') {
                 event.preventDefault();
-                showValidationPopUp('Appointments cannot be booked for a past time today.');
+                showValidationPopUp('Cannot reschedule! The teacher is On Leave for this day.');
+                return false;
+            } else if (cellStatus === 'class') {
+                event.preventDefault();
+                showValidationPopUp('Cannot reschedule! This slot is reserved for Class Hours.');
+                return false;
+            } else if (cellStatus === 'booked') {
+                event.preventDefault();
+                showValidationPopUp('Cannot reschedule! This time slot is already Booked.');
                 return false;
             }
         }
-
-        if (duration <= 0) {
-            event.preventDefault();
-            showValidationPopUp('Invalid time selected. The end time must be later than the start time.');
-            return false;
-        }
-
-        if (duration !== 30 && duration !== 60) {
-            event.preventDefault();
-            showValidationPopUp('Appointment duration must be exactly 30 minutes or 1 hour.');
-            return false;
-        }
-
-        const cellHour = parseInt(startParts[0], 10);
-        let timeSlotLabel = '';
-
-        if (cellHour === 8) timeSlotLabel = '8AM';
-        else if (cellHour === 9) timeSlotLabel = '9AM';
-        else if (cellHour === 10) timeSlotLabel = '10AM';
-        else if (cellHour === 11) timeSlotLabel = '11AM';
-        else if (cellHour === 13) timeSlotLabel = '1PM';
-        else if (cellHour === 14) timeSlotLabel = '2PM';
-        else if (cellHour === 15) timeSlotLabel = '3PM';
-        else if (cellHour === 16) timeSlotLabel = '4PM';
-
-        if (timeSlotLabel) {
-            const matchingCell = document.querySelector(`td[data-date="${dateInput}"][data-time="${timeSlotLabel}"]`);
-            if (matchingCell) {
-                const cellStatus = matchingCell.getAttribute('data-status');
-                if (cellStatus === 'leave') {
-                    event.preventDefault();
-                    showValidationPopUp('Cannot book an appointment! The teacher is On Leave for this day.');
-                    return false;
-                } else if (cellStatus === 'class') {
-                    event.preventDefault();
-                    showValidationPopUp('Cannot book an appointment! This slot is reserved for Class Hours.');
-                    return false;
-                } else if (cellStatus === 'booked') {
-                    event.preventDefault();
-                    showValidationPopUp('Cannot book an appointment! This time slot is already Booked.');
-                    return false;
-                }
-            }
-        }
-        return true;
     }
+    
+    return true;
+}
 
     function openRescheduleModal(appointmentId) {
         const form = document.getElementById('rescheduleForm');
