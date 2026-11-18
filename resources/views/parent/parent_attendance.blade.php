@@ -3,21 +3,21 @@
 @section('title', 'Parent Dashboard - Attendance')
 
 @section('content')
-<!-- The x-init dynamically calculates the exact height needed based on your navbar, eliminating the need to guess rem values -->
 <div class="flex flex-col justify-between w-full bg-white overflow-hidden" 
      x-data="calendarNav()" 
      x-init="$nextTick(() => { $el.style.height = `calc(100vh - ${$el.getBoundingClientRect().top}px)` })"
      @popstate.window="navigate(window.location.href)">
     
-    <div class="flex-1 overflow-y-auto p-4 flex flex-col lg:flex-row justify-center items-center gap-8">
+    <!-- Changed: Adjusted padding (py-8), switched to justify-start on mobile for better vertical flow, and increased the gap slightly -->
+    <div class="flex-1 overflow-y-auto px-2 py-8 sm:p-8 flex flex-col lg:flex-row justify-start lg:justify-center items-center gap-8 lg:gap-12">
         
         <!-- Calendar Section -->
+        <!-- Changed: Added w-[96%] on mobile so the black drop shadow doesn't touch the screen edge -->
         <div id="calendar-container" 
-             class="border-[3px] border-black w-full max-w-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-white rounded-xl overflow-hidden relative"
+             class="border-[3px] border-black w-[96%] sm:w-full max-w-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-white rounded-xl overflow-hidden relative"
              :class="{ 'opacity-50 pointer-events-none': loading }"
              style="transition: opacity 0.3s ease;">
              
-            <!-- Loading Spinner -->
             <div x-show="loading" class="absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-70">
                 <span class="font-black text-xl animate-pulse">Loading...</span>
             </div>
@@ -78,10 +78,12 @@
         </div>
 
         <!-- Legend Section -->
-        <div class="w-full max-w-xl lg:w-56 border-[3px] border-black p-4 rounded-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-gray-50">
+        <!-- Changed: Added w-[96%] here as well for symmetry -->
+        <div class="w-[96%] sm:w-full max-w-xl lg:w-56 border-[3px] border-black p-4 rounded-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-gray-50 mb-4 lg:mb-0">
             <h3 class="font-black text-xl mb-4 uppercase tracking-wider border-b-[3px] border-black pb-2 text-center lg:text-left">Legend</h3>
             
-            <div class="flex flex-row flex-wrap lg:flex-col justify-center gap-4 lg:space-y-3 lg:gap-0">
+            <!-- Changed: Increased the gap between legend items slightly for a less cluttered look -->
+            <div class="flex flex-row flex-wrap lg:flex-col justify-center gap-5 lg:space-y-4 lg:gap-0">
                 @php
                     $legend = [
                         ['color' => 'bg-[#4ade80]', 'label' => 'Present'],
@@ -94,7 +96,7 @@
                 @foreach($legend as $item)
                     <div class="flex items-center gap-2 sm:gap-3">
                         <span class="{{ $item['color'] }} w-5 h-5 sm:w-6 sm:h-6 rounded-full border-[3px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"></span>
-                        <span class="font-black text-xs sm:text-sm uppercase">{{ $item['label'] }}</span>
+                        <span class="font-black text-[11px] sm:text-sm uppercase">{{ $item['label'] }}</span>
                     </div>
                 @endforeach
             </div>
