@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* Instant Anti-FOUC & Anti-Blue Link Reset (Bago pa mag-load ang Tailwind CDN) */
+        /* Instant Anti-FOUC & Anti-Blue Link Reset */
         *, *::before, *::after {
             -webkit-tap-highlight-color: transparent;
         }
@@ -31,7 +31,7 @@
         }
         [x-cloak] { display: none !important; }
         
-        /* Siguraduhing nakatago agad ang sidebar sa mobile kahit hindi pa tapos mag-load ang Tailwind at Alpine */
+        /* Siguraduhing nakatago agad ang sidebar sa mobile bago mag-load ang Alpine */
         @media (max-width: 767px) {
             .mobile-sidebar-init {
                 transform: translateX(-100%);
@@ -43,12 +43,30 @@
             font-weight: 500 !important;    
             color: #ffffff;
             text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Drag Handle Styling */
+        .sidebar-resizer {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 6px;
+            height: 100%;
+            cursor: col-resize;
+            z-index: 80;
+            transition: background-color 0.2s;
+        }
+        .sidebar-resizer:hover, .sidebar-resizer.is-resizing {
+            background-color: #fb923c; /* Orange highlight kapag hinihila */
         }
     </style>
 </head>
 
 <!-- Wrap body in Alpine state -->
-<body class="bg-gray-100" x-data="{ sidebarOpen: false }">
+<body class="bg-gray-100" x-data="sidebarLayout()" :class="{ 'select-none cursor-col-resize': isResizing }">
     @if(auth()->check() && auth()->user()->is_first_login)
         <!-- NEO-BRUTALIST SECURITY POP-UP MODAL -->
         <div class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -205,8 +223,11 @@
         <header class="hero-gradient text-white py-4 px-4 sm:px-6 shadow-lg flex justify-between items-center relative z-50 shrink-0">
             <div class="flex items-center">
                 
-                <!-- Hamburger Menu Button (Mobile Only) -->
-                <button @click="sidebarOpen = true" title="Menu" class="md:hidden text-white focus:outline-none hover:scale-110 transition-transform mr-4">
+                <!-- Hamburger Menu Button (Mobile & Collapsed Desktop) -->
+                <button @click="toggleSidebar()" 
+                        x-show="isMobile || desktopCollapsed" 
+                        title="Open Menu" 
+                        class="text-white focus:outline-none hover:scale-110 transition-transform mr-4">
                     <i class="fa-solid fa-bars text-2xl"></i>
                 </button>
 
@@ -283,9 +304,21 @@
             </div>
 
             {{-- SIDEBAR --}}
-            <nav :class="sidebarOpen ? '!translate-x-0' : '-translate-x-full'"
-                 class="mobile-sidebar-init -translate-x-full fixed md:relative inset-y-0 left-0 z-[70] w-64 bg-[#6d0101] text-white pt-4 shadow-2xl transform transition-transform duration-300 md:!translate-x-0 overflow-y-auto shrink-0">
-                <ul class="space-y-1">
+            <nav :class="[
+                    sidebarOpen ? '!translate-x-0' : '-translate-x-full',
+                    isResizing ? 'transition-none' : 'transition-all duration-300'
+                 ]"
+                 :style="!isMobile ? (desktopCollapsed ? 'width: 0px; padding-top: 0; overflow: hidden;' : `width: ${sidebarWidth}px`) : ''"
+                 class="mobile-sidebar-init -translate-x-full fixed md:relative inset-y-0 left-0 z-[70] w-64 bg-[#6d0101] text-white pt-4 shadow-2xl transform md:!translate-x-0 overflow-y-auto overflow-x-hidden shrink-0">
+                
+                <!-- Desktop Drag Handle (Hinihila pakaliwa/pakanan) -->
+                <div class="sidebar-resizer hidden md:block" 
+                     :class="{ 'is-resizing': isResizing }"
+                     @mousedown.prevent="startResize($event)"
+                     title="Drag to resize (Drag all the way left to hide)">
+                </div>
+
+                <ul class="space-y-1 min-w-[180px]">
                     <x-sidebar-link href="{{ route('dashboard') }}"
                         icon="fa-solid fa-chart-line"
                         :active="request()->routeIs('dashboard')">
@@ -410,6 +443,68 @@
                 document.body.appendChild(form);
                 form.submit();
             }
+
+            function sidebarLayout() {
+            return {
+                sidebarOpen: false,
+                desktopCollapsed: localStorage.getItem('mai_sidebar_collapsed') === 'true',
+                sidebarWidth: parseInt(localStorage.getItem('mai_sidebar_width')) || 256,
+                isResizing: false,
+                isMobile: window.innerWidth < 768,
+
+                init() {
+                    window.addEventListener('resize', () => {
+                        this.isMobile = window.innerWidth < 768;
+                        if (!this.isMobile) {
+                            this.sidebarOpen = false;
+                        }
+                    });
+                },
+
+                toggleSidebar() {
+                    if (this.isMobile) {
+                        this.sidebarOpen = !this.sidebarOpen;
+                    } else {
+                        this.desktopCollapsed = !this.desktopCollapsed;
+                        if (!this.desktopCollapsed && this.sidebarWidth < 180) {
+                            this.sidebarWidth = 256;
+                            localStorage.setItem('mai_sidebar_width', 256);
+                        }
+                        localStorage.setItem('mai_sidebar_collapsed', this.desktopCollapsed);
+                    }
+                },
+
+                startResize(e) {
+                    if (this.isMobile) return;
+                    this.isResizing = true;
+
+                    const onMouseMove = (moveEvent) => {
+                        if (!this.isResizing) return;
+                        const newWidth = moveEvent.clientX;
+
+                        // Kapag sinagad pakaliwa (less than 120px), kusa siyang magko-collapse at lilitaw ang Burger Menu!
+                        if (newWidth < 120) {
+                            this.desktopCollapsed = true;
+                            localStorage.setItem('mai_sidebar_collapsed', 'true');
+                        } else if (newWidth >= 180 && newWidth <= 420) {
+                            this.desktopCollapsed = false;
+                            this.sidebarWidth = newWidth;
+                            localStorage.setItem('mai_sidebar_collapsed', 'false');
+                            localStorage.setItem('mai_sidebar_width', newWidth);
+                        }
+                    };
+
+                    const onMouseUp = () => {
+                        this.isResizing = false;
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    };
+
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                }
+            }
+        }
 
             // Reset the timer whenever the user does something
             const events = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'];

@@ -84,6 +84,20 @@
         font-weight: bold;
         font-size: 14px;
         box-sizing: border-box;
+        /* iOS Flex/Overflow Fixes */
+        min-width: 0;
+        max-width: 100%;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    /* Ultimate CSS Reset to hide Android/iOS default calendar and clock icons */
+    input[type="date"]::-webkit-inner-spin-button,
+    input[type="date"]::-webkit-calendar-picker-indicator,
+    input[type="time"]::-webkit-inner-spin-button,
+    input[type="time"]::-webkit-calendar-picker-indicator {
+        display: none;
+        -webkit-appearance: none;
     }
 
     .radio-group {
@@ -449,9 +463,9 @@
 
                     <div class="form-group">
                         <label>Appointment Date</label>
-                        <input type="date" id="appointment_date" name="appointment_date" class="form-control" required
-                               min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
-                               max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
+                        <input type="date" id="appointment_date" name="appointment_date" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required
+                            min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                            max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
                     </div>
 
                     <div class="form-group">
@@ -469,11 +483,11 @@
                     <div class="time-group">
                         <div class="form-group" style="flex: 1;">
                             <label>Start Time</label>
-                            <input type="time" id="start_time" name="start_time" class="form-control" required>
+                            <input type="time" id="start_time" name="start_time" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required>
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label>End Time</label>
-                            <input type="time" id="end_time" name="end_time" class="form-control" required>
+                            <input type="time" id="end_time" name="end_time" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required>
                         </div>
                     </div>
 
@@ -762,19 +776,19 @@
 
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Date</label>
-                <input type="date" name="suggested_date" class="form-control" required
-                        min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
-                        max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
+                <input type="date" name="suggested_date" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required
+                    min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                    max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
             </div>
             
             <div class="time-group" style="text-align: left;">
                 <div style="flex: 1;">
                     <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Start Time</label>
-                    <input type="time" name="suggested_start_time" class="form-control" required>
+                    <input type="time" name="suggested_start_time" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required>
                 </div>
                 <div style="flex: 1;">
                     <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">End Time</label>
-                    <input type="time" name="suggested_end_time" class="form-control" required>
+                    <input type="time" name="suggested_end_time" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required>
                 </div>
             </div>
             
