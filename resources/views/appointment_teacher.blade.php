@@ -469,7 +469,7 @@
 
                     <div class="form-group">
                         <label>Appointment Date</label>
-                        <input type="date" id="appointment_date" name="appointment_date" class="form-control" required
+                            <input type="date" id="appointment_date" name="appointment_date" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required
                                min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
                                max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
                     </div>

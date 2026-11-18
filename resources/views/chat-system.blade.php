@@ -116,6 +116,28 @@
         </div>
         
         <div class="overflow-y-auto flex-1">
+            <!-- Archived Groups Dropdown -->
+            @if(isset($archivedGroups) && $archivedGroups->count() > 0)
+            <div x-data="{ showArchived: false }" class="border-b border-gray-200 bg-gray-50">
+                <button @click="showArchived = !showArchived" class="w-full p-4 flex justify-between items-center hover:bg-gray-100 text-sm font-bold text-gray-600 transition">
+                    <span><i class="fa-solid fa-box-archive mr-2"></i> Archived Groups ({{ $archivedGroups->count() }})</span>
+                    <i class="fa-solid" :class="showArchived ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </button>
+                <div x-show="showArchived" style="display: none;" class="bg-gray-50 border-t border-gray-200">
+                    @foreach($archivedGroups as $archived)
+                        <a href="{{ route('messages.show', ['id' => $archived->user_id]) }}" class="block p-3 border-b border-gray-200 hover:bg-orange-50 transition {{ (isset($selectedUser) && $selectedUser->user_id == $archived->user_id) ? 'border-l-4 border-orange-500 bg-orange-50' : 'border-l-4 border-transparent' }}">
+                            <div class="flex items-center opacity-75">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($archived->custom_name) }}" class="w-10 h-10 rounded-full mr-3 border grayscale" alt="User">
+                                <div class="flex-1 min-w-0">
+                                    <span class="truncate font-bold text-gray-700 text-sm">{{ $archived->custom_name }}</span>
+                                    <p class="text-[10px] text-orange-600 font-bold uppercase mt-0.5">Archived</p>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+            @endif
             @forelse($users as $user)
                 @php
                     $hasUnread = $user->unreadMessagesCount() > 0;
@@ -195,31 +217,8 @@
                     </div>
                 </a>
             @empty
-                <div class="p-8 text-center text-gray-500 text-sm">No active chats. Click the + icon to start a new conversation.</div>
+                <div class="p-8 text-center text-gray-500 text-sm mt-4">No active chats. Click the + icon to start a new conversation.</div>
             @endforelse
-            
-            <!-- Archived Groups Dropdown -->
-            @if(isset($archivedGroups) && $archivedGroups->count() > 0)
-            <div x-data="{ showArchived: false }" class="border-t border-gray-200 mt-auto">
-                <button @click="showArchived = !showArchived" class="w-full p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 text-sm font-bold text-gray-600 transition">
-                    <span><i class="fa-solid fa-box-archive mr-2"></i> Archived Groups ({{ $archivedGroups->count() }})</span>
-                    <i class="fa-solid" :class="showArchived ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </button>
-                <div x-show="showArchived" style="display: none;" class="bg-gray-50 border-t border-gray-200">
-                    @foreach($archivedGroups as $archived)
-                        <a href="{{ route('messages.show', ['id' => $archived->user_id]) }}" class="block p-3 border-b border-gray-200 hover:bg-orange-50 transition {{ (isset($selectedUser) && $selectedUser->user_id == $archived->user_id) ? 'border-l-4 border-orange-500 bg-orange-50' : 'border-l-4 border-transparent' }}">
-                            <div class="flex items-center opacity-75">
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode($archived->custom_name) }}" class="w-10 h-10 rounded-full mr-3 border grayscale" alt="User">
-                                <div class="flex-1 min-w-0">
-                                    <span class="truncate font-bold text-gray-700 text-sm">{{ $archived->custom_name }}</span>
-                                    <p class="text-[10px] text-orange-600 font-bold uppercase mt-0.5">Archived</p>
-                                </div>
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-            @endif
         </div>
     </div>
 
