@@ -54,7 +54,7 @@
                 <button @click="deleteSectionModal = true" type="button" class="flex-1 lg:flex-none justify-center bg-red-600 hover:bg-red-700 text-white px-3 md:px-5 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
                     <i class="fa-solid fa-trash"></i> Delete Section
                 </button>
-                <a href="{{ route('account.management') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
+                <a href="{{ route('account.management') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition-colors flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
                     <i class="fa-solid fa-arrow-left"></i> Back
                 </a>
             </div>
