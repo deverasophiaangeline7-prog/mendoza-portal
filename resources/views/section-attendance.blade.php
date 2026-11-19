@@ -255,14 +255,14 @@
          x-transition:leave="transition ease-in duration-300"
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 translate-y-10"
-         style="position: fixed; bottom: 40px; right: 40px; z-index: 999999; display: flex; align-items: center; justify-content: space-between; gap: 24px; width: auto; max-width: calc(100vw - 40px); border-radius: 12px; border: 3px solid #000000; padding: 16px 24px; font-weight: 900; font-family: 'Arial', sans-serif;"
+         class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto max-w-[calc(100vw-40px)] rounded-xl border-[3px] border-black px-6 py-4 font-black"
          :style="toastType === 'success' ? { backgroundColor: '#d1fae5', color: '#065f46' } : { backgroundColor: '#fee2e2', color: '#7f1d1d' }">
         
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <i class="fa-solid" style="font-size: 24px; flex-shrink: 0;" :class="toastType === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'"></i>
-            <span style="font-size: 16px; line-height: 1.2;" x-text="toastMessage"></span>
+        <div class="flex items-center gap-3">
+            <i class="fa-solid text-2xl shrink-0" :class="toastType === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'"></i>
+            <span class="text-base whitespace-nowrap leading-none" x-text="toastMessage"></span>
         </div>
-        <button type="button" @click="showToast = false" style="background: none; border: none; font-size: 22px; cursor: pointer; padding: 0; margin-left: 8px; color: inherit; display: flex; align-items: center; flex-shrink: 0;">
+        <button type="button" @click="showToast = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0 flex items-center" style="background: none; border: none; cursor: pointer; color: inherit;">
             <i class="fa-solid fa-xmark"></i>
         </button>
     </div>

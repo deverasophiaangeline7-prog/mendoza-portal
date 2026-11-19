@@ -297,23 +297,25 @@
 
     <!-- TOAST NOTIFICATIONS -->
     <div x-show="showSuccessToast" x-cloak x-transition
-         style="position: fixed; bottom: 40px; right: 40px; z-index: 999999; display: flex; align-items: center; justify-content: space-between; gap: 24px; width: auto; max-width: calc(100vw - 40px); border-radius: 12px; border: 3px solid #000000; background-color: #d1fae5; color: #065f46; padding: 16px 24px; font-weight: 900; font-family: 'Arial', sans-serif;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <i class="fa-solid fa-circle-check" style="font-size: 24px; flex-shrink: 0;"></i>
-            <span style="font-size: 16px; line-height: 1.2;">{{ session('success') }}</span>
+         class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto max-w-[calc(100vw-40px)] rounded-xl border-[3px] border-black px-6 py-4 font-black"
+         style="background-color: #d1fae5; color: #065f46;">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-2xl shrink-0"></i>
+            <span class="text-base whitespace-nowrap leading-none">{{ session('success') }}</span>
         </div>
-        <button type="button" @click="showSuccessToast = false" style="background: none; border: none; font-size: 22px; cursor: pointer; padding: 0; margin-left: 8px; color: inherit; display: flex; align-items: center; flex-shrink: 0;">
+        <button type="button" @click="showSuccessToast = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0 flex items-center" style="background: none; border: none; cursor: pointer; color: inherit;">
             <i class="fa-solid fa-xmark"></i>
         </button>
     </div>
 
     <div x-show="showErrorToast" x-cloak x-transition
-         style="position: fixed; bottom: 40px; right: 40px; z-index: 999999; display: flex; align-items: center; justify-content: space-between; gap: 24px; width: auto; max-width: calc(100vw - 40px); border-radius: 12px; border: 3px solid #000000; background-color: #fee2e2; color: #7f1d1d; padding: 16px 24px; font-weight: 900; font-family: 'Arial', sans-serif;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; flex-shrink: 0;"></i>
-            <span style="font-size: 16px; line-height: 1.2;">@if($errors->any()) {{ $errors->first() }} @else Something went wrong! @endif</span>
+         class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto max-w-[calc(100vw-40px)] rounded-xl border-[3px] border-black px-6 py-4 font-black"
+         style="background-color: #fee2e2; color: #7f1d1d;">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-2xl shrink-0"></i>
+            <span class="text-base whitespace-nowrap leading-none">@if($errors->any()) {{ $errors->first() }} @else Something went wrong! @endif</span>
         </div>
-        <button type="button" @click="showErrorToast = false" style="background: none; border: none; font-size: 22px; cursor: pointer; padding: 0; margin-left: 8px; color: inherit; display: flex; align-items: center; flex-shrink: 0;">
+        <button type="button" @click="showErrorToast = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0 flex items-center" style="background: none; border: none; cursor: pointer; color: inherit;">
             <i class="fa-solid fa-xmark"></i>
         </button>
     </div>

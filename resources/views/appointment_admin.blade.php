@@ -257,6 +257,8 @@
         if (confirmModal) document.body.appendChild(confirmModal);
         const cancelModal = document.getElementById('customCancelModal');
         if (cancelModal) document.body.appendChild(cancelModal);
+        const toast = document.getElementById('toastBanner');
+        if (toast) document.body.appendChild(toast);
     });
 
     let currentTeacherId = null;
