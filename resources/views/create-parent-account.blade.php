@@ -116,21 +116,71 @@
                         </select>
                     </div>
 
-                    <div class="flex flex-col">
+                    @php
+                        $activeSy = \App\Models\SchoolYear::where('status', 'active')->first();
+                        $targetYear = now()->year; 
+                        if ($activeSy) {
+                            $syText = $activeSy->school_year; 
+                            preg_match('/\d{4}/', $syText, $matches);
+                            $targetYear = $matches[0] ?? now()->year; 
+                        }
+                        $minDate = \Carbon\Carbon::create($targetYear - 100, 1, 1)->format('Y-m-d');
+                        $maxDate = \Carbon\Carbon::create($targetYear - 3, 12, 31)->format('Y-m-d'); 
+                        $oldBirthdate = old('birthdate', '');
+                        $oldDisplay = $oldBirthdate ? \Carbon\Carbon::parse($oldBirthdate)->format('m/d/Y') : '';
+                    @endphp
+                    <div class="flex flex-col"
+                         x-data="{
+                            displayDate: '{{ $oldDisplay }}',
+                            isoDate: '{{ $oldBirthdate }}',
+                            formatInput(e) {
+                                let v = e.target.value.replace(/\D/g, '').slice(0, 8);
+                                if (v.length >= 5) {
+                                    this.displayDate = `${v.slice(0,2)}/${v.slice(2,4)}/${v.slice(4)}`;
+                                } else if (v.length >= 3) {
+                                    this.displayDate = `${v.slice(0,2)}/${v.slice(2)}`;
+                                } else {
+                                    this.displayDate = v;
+                                }
+                                this.isoDate = v.length === 8 ? `${v.slice(4)}-${v.slice(0,2)}-${v.slice(2,4)}` : '';
+                            },
+                            syncFromPicker(e) {
+                                const val = e.target.value;
+                                this.isoDate = val;
+                                if (val) {
+                                    const [y, m, d] = val.split('-');
+                                    this.displayDate = `${m}/${d}/${y}`;
+                                } else {
+                                    this.displayDate = '';
+                                }
+                            }
+                         }">
                         <div class="flex flex-col md:flex-row md:items-center">
                             <label class="w-full md:w-40 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0">Birthdate: <span class="text-red-600">*</span></label>
-                            @php
-                                $activeSy = \App\Models\SchoolYear::where('status', 'active')->first();
-                                $targetYear = now()->year; 
-                                if ($activeSy) {
-                                    $syText = $activeSy->school_year; 
-                                    preg_match('/\d{4}/', $syText, $matches);
-                                    $targetYear = $matches[0] ?? now()->year; 
-                                }
-                                $minDate = \Carbon\Carbon::create($targetYear - 100, 1, 1)->format('Y-m-d');
-                                $maxDate = \Carbon\Carbon::create($targetYear - 3, 12, 31)->format('Y-m-d'); 
-                            @endphp
-                            <input type="date" name="birthdate" class="form-input-pill bg-white cursor-pointer @error('birthdate') border-red-600 @enderror" value="{{ old('birthdate') }}" min="{{ $minDate }}" max="{{ $maxDate }}" onclick="if(this.showPicker) this.showPicker();" required>
+                            <div class="relative w-full">
+                                <input type="text"
+                                       x-model="displayDate"
+                                       @input="formatInput($event)"
+                                       placeholder="MM/DD/YYYY"
+                                       maxlength="10"
+                                       inputmode="numeric"
+                                       pattern="\d{2}/\d{2}/\d{4}"
+                                       title="Enter date as MM/DD/YYYY"
+                                       class="form-input-pill bg-white pr-10 @error('birthdate') border-red-600 @enderror"
+                                       required>
+                                <div class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-black hover:text-gray-600">
+                                    <i class="fa-regular fa-calendar text-lg pointer-events-none"></i>
+                                    <input type="date"
+                                           :value="isoDate"
+                                           min="{{ $minDate }}"
+                                           max="{{ $maxDate }}"
+                                           @change="syncFromPicker($event)"
+                                           onclick="if(this.showPicker) this.showPicker();"
+                                           class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                           tabindex="-1">
+                                </div>
+                                <input type="hidden" name="birthdate" :value="isoDate">
+                            </div>
                         </div>
                         @error('birthdate')
                             <span class="text-red-600 text-[10px] font-black uppercase italic mt-1 ml-0 md:ml-40 flex items-center"><i class="fa-solid fa-circle-exclamation mr-1 text-xs"></i>{{ $message }}</span>

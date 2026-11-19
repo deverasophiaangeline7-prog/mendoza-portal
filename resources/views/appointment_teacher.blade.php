@@ -477,9 +477,21 @@
 
                     <div class="form-group">
                         <label>Appointment Date</label>
-                            <input type="date" id="appointment_date" name="appointment_date" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required
-                               min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
-                               max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
+                        <div style="position: relative; width: 100%;">
+                            <input type="text" id="appointment_date_display" class="form-control" style="padding-right: 42px;"
+                                   placeholder="MM/DD/YYYY" maxlength="10" inputmode="numeric"
+                                   pattern="\d{2}/\d{2}/\d{4}" title="Enter date as MM/DD/YYYY" required>
+                            <div style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #000;">
+                                <i class="fa-regular fa-calendar" style="font-size: 16px; pointer-events: none;"></i>
+                                <input type="date" id="appointment_date_picker"
+                                       min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                                       max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}"
+                                       onclick="if(this.showPicker) this.showPicker();"
+                                       style="position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;"
+                                       tabindex="-1">
+                            </div>
+                            <input type="hidden" id="appointment_date" name="appointment_date">
+                        </div>
                     </div>
 
                     <div class="time-group">
@@ -805,9 +817,21 @@
 
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Date</label>
-                <input type="date" name="suggested_date" class="form-control" style="cursor: pointer;" onclick="if(this.showPicker) this.showPicker();" required
-                    min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
-                    max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}">
+                <div style="position: relative; width: 100%;">
+                    <input type="text" id="suggested_date_display" class="form-control" style="padding-right: 42px;"
+                           placeholder="MM/DD/YYYY" maxlength="10" inputmode="numeric"
+                           pattern="\d{2}/\d{2}/\d{4}" title="Enter date as MM/DD/YYYY" required>
+                    <div style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #000;">
+                        <i class="fa-regular fa-calendar" style="font-size: 16px; pointer-events: none;"></i>
+                        <input type="date" id="suggested_date_picker"
+                               min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                               max="{{ \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY)->addWeeks(2)->addDays(4)->format('Y-m-d') }}"
+                               onclick="if(this.showPicker) this.showPicker();"
+                               style="position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;"
+                               tabindex="-1">
+                    </div>
+                    <input type="hidden" id="suggested_date" name="suggested_date">
+                </div>
             </div>
             
             <div class="time-group" style="text-align: left;">
@@ -863,6 +887,41 @@
 </div>
 
 <script>
+    // === DATE INPUT HELPER (MM/DD/YYYY + CALENDAR PICKER SYNC) ===
+    function setupDateField(displayId, hiddenId, pickerId) {
+        const displayEl = document.getElementById(displayId);
+        const hiddenEl = document.getElementById(hiddenId);
+        const pickerEl = document.getElementById(pickerId);
+
+        displayEl.addEventListener('input', function(e) {
+            let v = e.target.value.replace(/\D/g, '').slice(0, 8);
+            if (v.length >= 5) {
+                e.target.value = `${v.slice(0,2)}/${v.slice(2,4)}/${v.slice(4)}`;
+            } else if (v.length >= 3) {
+                e.target.value = `${v.slice(0,2)}/${v.slice(2)}`;
+            } else {
+                e.target.value = v;
+            }
+            const iso = v.length === 8 ? `${v.slice(4)}-${v.slice(0,2)}-${v.slice(2,4)}` : '';
+            hiddenEl.value = iso;
+            pickerEl.value = iso;
+        });
+
+        pickerEl.addEventListener('change', function(e) {
+            const val = e.target.value;
+            hiddenEl.value = val;
+            if (val) {
+                const [y, m, d] = val.split('-');
+                displayEl.value = `${m}/${d}/${y}`;
+            } else {
+                displayEl.value = '';
+            }
+        });
+    }
+
+    setupDateField('appointment_date_display', 'appointment_date', 'appointment_date_picker');
+    setupDateField('suggested_date_display', 'suggested_date', 'suggested_date_picker');
+
     function openModal(modalId) { document.getElementById(modalId).classList.remove('modal-hidden'); }
     function closeModal(modalId) { document.getElementById(modalId).classList.add('modal-hidden'); }
 
@@ -1118,7 +1177,10 @@
                 const formattedStartTime = startHour.toString().padStart(2, '0') + ':00';
                 const formattedEndTime = endHour.toString().padStart(2, '0') + ':' + endMin;
                 
+                const [y, m, d] = date.split('-');
                 document.getElementById('appointment_date').value = date;
+                document.getElementById('appointment_date_picker').value = date;
+                document.getElementById('appointment_date_display').value = `${m}/${d}/${y}`;
                 document.getElementById('start_time').value = formattedStartTime;
                 document.getElementById('end_time').value = formattedEndTime;
                 

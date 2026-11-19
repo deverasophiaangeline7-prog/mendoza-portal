@@ -29,7 +29,6 @@
 @php
     $nkpLevels = ['NURSERY', 'KINDER', 'KINDERGARTEN', 'PREPARATORY', 'PREP', 'NKP'];
 
-    
     $nonNkpSections = $sections->reject(function($sec) use ($nkpLevels) {
         return in_array(strtoupper(trim($sec->grade_level)), $nkpLevels);
     });
@@ -117,9 +116,64 @@
                         </select>
                     </div>
 
-                    <div class="flex flex-col md:flex-row md:items-center">
-                        <label class="w-full md:w-32 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0">Birthdate: <span class="text-red-600">*</span></label>
-                        <input type="date" name="birthdate" class="form-input-pill bg-white cursor-pointer" value="{{ old('birthdate') }}" max="{{ \Carbon\Carbon::now()->subYears(18)->format('Y-m-d') }}" onclick="if(this.showPicker) this.showPicker();" required>
+                    @php
+                        $maxDate = \Carbon\Carbon::now()->subYears(18)->format('Y-m-d');
+                        $oldBirthdate = old('birthdate', '');
+                        $oldDisplay = $oldBirthdate ? \Carbon\Carbon::parse($oldBirthdate)->format('m/d/Y') : '';
+                    @endphp
+                    <div class="flex flex-col"
+                         x-data="{
+                            displayDate: '{{ $oldDisplay }}',
+                            isoDate: '{{ $oldBirthdate }}',
+                            formatInput(e) {
+                                let v = e.target.value.replace(/\D/g, '').slice(0, 8);
+                                if (v.length >= 5) {
+                                    this.displayDate = `${v.slice(0,2)}/${v.slice(2,4)}/${v.slice(4)}`;
+                                } else if (v.length >= 3) {
+                                    this.displayDate = `${v.slice(0,2)}/${v.slice(2)}`;
+                                } else {
+                                    this.displayDate = v;
+                                }
+                                this.isoDate = v.length === 8 ? `${v.slice(4)}-${v.slice(0,2)}-${v.slice(2,4)}` : '';
+                            },
+                            syncFromPicker(e) {
+                                const val = e.target.value;
+                                this.isoDate = val;
+                                if (val) {
+                                    const [y, m, d] = val.split('-');
+                                    this.displayDate = `${m}/${d}/${y}`;
+                                } else {
+                                    this.displayDate = '';
+                                }
+                            }
+                         }">
+                        <div class="flex flex-col md:flex-row md:items-center">
+                            <label class="w-full md:w-32 flex-shrink-0 font-bold text-base md:text-xl mb-1 md:mb-0">Birthdate: <span class="text-red-600">*</span></label>
+                            <div class="relative w-full">
+                                <input type="text"
+                                       x-model="displayDate"
+                                       @input="formatInput($event)"
+                                       placeholder="MM/DD/YYYY"
+                                       maxlength="10"
+                                       inputmode="numeric"
+                                       pattern="\d{2}/\d{2}/\d{4}"
+                                       title="Enter date as MM/DD/YYYY"
+                                       class="form-input-pill bg-white pr-10 @error('birthdate') border-red-600 @enderror"
+                                       required>
+                                <div class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-black hover:text-gray-600">
+                                    <i class="fa-regular fa-calendar text-lg pointer-events-none"></i>
+                                    <input type="date"
+                                           :value="isoDate"
+                                           max="{{ $maxDate }}"
+                                           @change="syncFromPicker($event)"
+                                           onclick="if(this.showPicker) this.showPicker();"
+                                           class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                           tabindex="-1">
+                                </div>
+                                <input type="hidden" name="birthdate" :value="isoDate">
+                            </div>
+                        </div>
+                        @error('birthdate') <span class="text-red-600 text-sm ml-0 md:ml-32 mt-1 font-bold italic">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="flex flex-col">
@@ -214,8 +268,9 @@
                         <div class="flex flex-col md:flex-row gap-4 mb-4 items-center bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
                             <div class="w-full md:w-1/2">
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Target Section</label>
-                                <select :name="`assignments[${index}][section_id]`" x-model="assignment.section_id" @change="assignment.subject = ''" class="form-input-pill bg-white cursor-pointer" required>                                    
-                                    <option value="" disabled selected>Select a Section...</option>                                    <template x-for="sec in sectionsList" :key="sec.id">
+                                <select :name="`assignments[${index}][section_id]`" x-model="assignment.section_id" @change="assignment.subject = ''" class="form-input-pill bg-white cursor-pointer" required>
+                                    <option value="" disabled selected>Select a Section...</option>
+                                    <template x-for="sec in sectionsList" :key="sec.id">
                                         <option :value="sec.id" x-text="sec.name"></option>
                                     </template>
                                 </select>
