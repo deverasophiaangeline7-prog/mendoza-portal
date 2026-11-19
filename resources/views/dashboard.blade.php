@@ -357,9 +357,6 @@
                                 SAVE
                             </button>
                         </div>
-
-                        <label class="block font-black text-xs uppercase text-gray-400">Notes (PS)</label>
-                        <textarea x-model="tempPs" class="w-full p-2 border-2 border-black rounded-lg"></textarea>
                         
                         <div class="flex space-x-2 pt-2 w-full">
                             <button @click="isEditing = false" class="bg-gray-200 px-4 py-2 rounded-lg font-black flex-1 border-2 border-black hover:bg-gray-300 transition">CANCEL</button>
