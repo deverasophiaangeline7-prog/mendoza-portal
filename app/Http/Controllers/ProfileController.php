@@ -51,6 +51,8 @@ class ProfileController extends Controller
                 'confirmed', 
                 Password::min(8)->letters()->numbers()->symbols()
             ],
+        ], [
+            'current_password.current_password' => 'The current password is incorrect.',
         ]);
 
         $user = $request->user();
@@ -79,6 +81,10 @@ class ProfileController extends Controller
             'action' => 'Change Password',
             'description' => $user->username . ' updated their account password.'
         ]);
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
 
         return back()->with('success', 'Your password has been successfully updated!');
     }

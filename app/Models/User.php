@@ -28,6 +28,7 @@ class User extends Authenticatable
         'custom_name',
         'status',
         'created_by',
+        'is_first_login',
     ];
 
     /**

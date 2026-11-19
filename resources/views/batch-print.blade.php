@@ -59,13 +59,18 @@
         }
     @endphp
 
-    <div id="print-floating-actions" class="fixed top-6 right-6 no-print z-50 flex gap-4 transition-all duration-300">
-        <button onclick="window.close()" class="bg-gray-200 text-black font-black px-6 py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-300 transition-all uppercase tracking-wider text-sm">
-            Close Tab
-        </button>
-        <button onclick="window.print()" class="bg-blue-600 text-white font-black px-6 py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 transition-all uppercase tracking-wider text-sm">
-            <i class="fa-solid fa-print mr-2"></i> Print Now
-        </button>
+    <div id="print-floating-actions" class="sticky top-0 left-0 right-0 no-print z-50 bg-white/95 backdrop-blur-sm border-b-[3px] border-black px-4 py-3 mb-4 flex items-center justify-between shadow-sm transition-all duration-300">
+        <span class="text-xs sm:text-sm font-black uppercase tracking-wider text-gray-700 truncate mr-3">
+            Print Preview &middot; {{ $section->grade_level }} - {{ $section->section_name }}
+        </span>
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+            <button onclick="window.close()" class="bg-gray-200 text-black font-black px-3 sm:px-5 py-2 rounded-lg border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-300 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all uppercase tracking-wider text-xs">
+                Close Tab
+            </button>
+            <button onclick="window.print()" class="bg-blue-600 text-white font-black px-3 sm:px-5 py-2 rounded-lg border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-700 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all uppercase tracking-wider text-xs">
+                Print Now
+            </button>
+        </div>
     </div>
 
     <!-- MAIN PRINT CONTAINER -->

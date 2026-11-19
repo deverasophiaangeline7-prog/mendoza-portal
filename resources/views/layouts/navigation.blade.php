@@ -81,7 +81,14 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('user.password.update') }}">
+                <!-- Live AJAX Error Alert -->
+                <div x-show="errorMessages.length > 0" x-cloak class="bg-red-100 border-2 border-red-500 text-red-700 px-4 py-3 rounded-xl mb-6 font-bold text-sm shadow-[4px_4px_0_0_rgba(239,68,68,1)]">
+                    <template x-for="(msg, i) in errorMessages" :key="i">
+                        <p><i class="fa-solid fa-triangle-exclamation mr-2"></i><span x-text="msg"></span></p>
+                    </template>
+                </div>
+
+                <form method="POST" action="{{ route('user.password.update') }}" @submit.prevent="submitPasswordUpdate($event)">
                     @csrf
                     @method('put')
 
@@ -150,10 +157,11 @@
                         
                         <!-- Submit Button -->
                         <button type="submit" 
-                            :disabled="showMismatchError || password === ''"
-                            :class="(showMismatchError || password === '') ? 'opacity-50 cursor-not-allowed' : 'hover:translate-y-1 hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)]'"
+                            :disabled="showMismatchError || password === '' || isSubmitting"
+                            :class="(showMismatchError || password === '' || isSubmitting) ? 'opacity-50 cursor-not-allowed' : 'hover:translate-y-1 hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)]'"
                             class="w-2/3 bg-[#86efac] text-black font-black uppercase tracking-wider py-3 rounded-xl border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] transition-all flex items-center justify-center">
-                            <i class="fa-solid fa-check mr-2"></i> Update
+                            <i class="fa-solid fa-check mr-2"></i>
+                            <span x-text="isSubmitting ? 'Updating...' : 'Update'"></span>
                         </button>
                     </div>
                 </form>
@@ -171,14 +179,13 @@
                 return {
                     show1: false, show2: false, show3: false,
                     password: '',
-                    
-                    /* --- ADD THIS NEW PART --- */
                     password_confirmation: '',
-                    
+                    errorMessages: [],
+                    isSubmitting: false,
+
                     get showMismatchError() {
                         return this.password_confirmation.length > 0 && this.password !== this.password_confirmation;
                     },
-                    /* ------------------------- */
 
                     strength: 0,
                     strengthText: 'NONE',
@@ -190,11 +197,8 @@
                             return;
                         }
                         
-                        // Rule 1: Length >= 8
                         if (this.password.length >= 8) score++;
-                        // Rule 2: Contains both letters and numbers
                         if (/[a-zA-Z]/.test(this.password) && /[0-9]/.test(this.password)) score++;
-                        // Rule 3: Contains special symbols
                         if (/[^a-zA-Z0-9]/.test(this.password)) score++;
 
                         this.strength = score;
@@ -203,6 +207,46 @@
                         else if (score === 2) this.strengthText = 'MID';
                         else if (score === 3) this.strengthText = 'STRONG';
                         else this.strengthText = 'WEAK';
+                    },
+
+                    async submitPasswordUpdate(e) {
+                        this.errorMessages = [];
+                        this.isSubmitting = true;
+                        const form = e.target;
+
+                        try {
+                            const res = await fetch(form.action, {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: new FormData(form)
+                            });
+
+                            let data = {};
+                            try { data = await res.json(); } catch (_) {}
+
+                            if (res.ok) {
+                                window.location.reload();
+                                return;
+                            }
+
+                            if (res.status === 419) {
+                                window.location.reload();
+                                return;
+                            }
+
+                            if (res.status === 422 && data.errors) {
+                                this.errorMessages = Object.values(data.errors).flat();
+                            } else {
+                                this.errorMessages = [data.message || 'Something went wrong. Please try again.'];
+                            }
+                        } catch (err) {
+                            this.errorMessages = ['Network error. Please try again.'];
+                        } finally {
+                            this.isSubmitting = false;
+                        }
                     }
                 }
             }
