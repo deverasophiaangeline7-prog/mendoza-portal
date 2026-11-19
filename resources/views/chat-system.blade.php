@@ -160,6 +160,7 @@
                    id="sidebar-item-{{ $user->user_id }}"
                    data-is-group="{{ $isGroupChat ? 'true' : 'false' }}"
                    data-is-official="{{ $isOfficialGC ? 'true' : 'false' }}"
+                   data-msg-id="{{ $latestMsg ? $latestMsg->id : 0 }}"
                    x-show="searchQuery === '' || '{{ strtolower(addslashes($user->custom_name ?? $user->name)) }}'.includes(searchQuery.toLowerCase())"
                    class="block p-4 border-b border-gray-200 transition {{ $baseBg }} {{ $activeBorder }}">
                     <div class="flex items-center">
@@ -1088,7 +1089,12 @@
                 const parent = sidebarItem.parentNode;
                 
                 if (isOfficial) {
-                    parent.prepend(sidebarItem); 
+                    const firstChatLink = Array.from(parent.children).find(el => el.tagName === 'A');
+                    if (firstChatLink && firstChatLink !== sidebarItem) {
+                        parent.insertBefore(sidebarItem, firstChatLink);
+                    } else if (!firstChatLink) {
+                        parent.appendChild(sidebarItem);
+                    }
                 } else {
                     const firstNonOfficial = Array.from(parent.children).find(el => el.tagName === 'A' && el.getAttribute('data-is-official') === 'false' && el !== sidebarItem);
                     if (firstNonOfficial) parent.insertBefore(sidebarItem, firstNonOfficial); 
@@ -1394,10 +1400,6 @@
                     if (!response.ok) return;
 
                     const data = await response.json();
-                    
-                    // 👇 DITO DAPAT NAKAPWESTO ANG CONSOLE LOG (Pagkatapos ma-define ang 'data')
-                    console.log("✅ Nag-poll sa sidebar...", data.sidebar);
-
                     let totalUnread = 0; 
                     
                     const sidebarArray = Array.isArray(data.sidebar) ? data.sidebar : Object.values(data.sidebar);
@@ -1421,6 +1423,13 @@
                             
                             let isUpdated = false;
 
+                            // Check kung nagbago ang message_id sa DB
+                            let currentMsgId = parseInt(sidebarItem.getAttribute('data-msg-id') || '0');
+                            if (chat.message_id && chat.message_id !== currentMsgId) {
+                                sidebarItem.setAttribute('data-msg-id', chat.message_id);
+                                isUpdated = true;
+                            }
+
                             if (sidebarText.textContent.trim() !== displayText.trim()) {
                                 sidebarText.textContent = displayText;
                                 isUpdated = true;
@@ -1436,7 +1445,7 @@
                                     sidebarText.classList.remove('text-gray-500');
                                     
                                     if (badgeContainer) {
-                                        if (badgeContainer.innerText != chat.unread_count || badgeContainer.classList.contains('hidden')) {
+                                        if (badgeContainer.innerText.trim() != String(chat.unread_count) || badgeContainer.classList.contains('hidden')) {
                                             badgeContainer.innerText = chat.unread_count;
                                             badgeContainer.classList.remove('hidden');
                                             isUpdated = true; 

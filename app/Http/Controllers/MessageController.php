@@ -712,16 +712,24 @@ class MessageController extends Controller
         $authUser = Auth::user();
         $users = $this->getChatHistoryUsers($authId);
         
-        $sidebarData = $users->map(function($user) use ($authId) {
+        // FIX 1: Idinagdag ang $authUser sa use ($authId, $authUser) para hindi mag-Error 500 kapag iba ang nag-chat!
+        $sidebarData = $users->map(function($user) use ($authId, $authUser) {
             $latestMsg = $user->latestMessageWithAuthUser();
             
             $prefix = '';
             $isMentioned = false;
             if ($latestMsg) {
-                if ($latestMsg->sender_id != $authId && (str_contains(strtolower($latestMsg->content), '@' . strtolower($authUser->name)) || str_contains(strtolower($latestMsg->content), '@everybody'))) {
+                $myName = strtolower($authUser->name ?? '');
+                if ($latestMsg->sender_id != $authId && (
+                    ($myName !== '' && str_contains(strtolower($latestMsg->content), '@' . $myName)) || 
+                    str_contains(strtolower($latestMsg->content), '@everybody')
+                )) {
                     $isMentioned = true;
                 }
-                if ($latestMsg->sender_id == $authId) {
+
+                if (str_contains($latestMsg->content, 'created the group:')) {
+                    $prefix = '';
+                } elseif ($latestMsg->sender_id == $authId) {
                     $prefix = 'You: ';
                 } else {
                     $sender = \App\Models\User::find($latestMsg->sender_id);
@@ -736,6 +744,7 @@ class MessageController extends Controller
                 'unread_count' => $user->unreadMessagesCount(),
                 'latest_message' => $latestMsg ? $prefix . $latestMsg->content : 'No messages yet...',
                 'is_mentioned' => $isMentioned,
+                'message_id' => $latestMsg ? $latestMsg->id : 0, // Idinagdag para sa accurate real-time detection
             ];
         });
 

@@ -189,7 +189,7 @@
                             </div>
                             <div class="flex items-end">
                                 <span class="w-12 print:w-14">Teacher:</span>
-                                <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $finalTeacherName }}</span>
+                                <span class="flex-1 border-b border-black font-normal px-1 leading-none pb-0.5">{{ $teacherName ?? '_________________' }}</span>
                             </div>
                         </div>
                     </div>
