@@ -276,22 +276,25 @@
             }
         }
 
+        let isSubmitting = false;
+        document.addEventListener('submit', () => { isSubmitting = true; });
+
         setInterval(() => {
-            if (typeof openModal === 'undefined' || (!openModal && !deleteModal)) {
-                fetch(window.location.href)
-                    .then(response => response.text())
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        const newCalendar = doc.getElementById('calendar-container');
-                        const oldCalendar = document.getElementById('calendar-container');
-                        
-                        if (newCalendar && oldCalendar && newCalendar.innerHTML !== oldCalendar.innerHTML) {
-                            oldCalendar.innerHTML = newCalendar.innerHTML;
-                        }
-                    })
-                    .catch(err => console.error('Sync error:', err));
-            }
+            if (isSubmitting) return;
+
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newCalendar = doc.getElementById('calendar-container');
+                    const oldCalendar = document.getElementById('calendar-container');
+                    
+                    if (newCalendar && oldCalendar && newCalendar.innerHTML !== oldCalendar.innerHTML) {
+                        oldCalendar.innerHTML = newCalendar.innerHTML;
+                    }
+                })
+                .catch(err => console.error('Sync error:', err));
         }, 3000);
     </script>
 

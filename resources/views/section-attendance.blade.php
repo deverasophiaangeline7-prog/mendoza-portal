@@ -397,14 +397,14 @@ document.addEventListener('alpine:init', () => {
                 });
 
                 if (response.ok) {
-                    this.triggerToast('ATTENDANCE SAVED!', 'success');
+                    this.triggerToast('Attendance saved!', 'success');
                     this.isManaging = false; 
                 } else {
                     throw new Error('Server error');
                 }
             } catch (error) {
                 console.error(error);
-                this.triggerToast('FAILED TO SAVE', 'error');
+                this.triggerToast('Failed to save', 'error');
             }
         },
 
