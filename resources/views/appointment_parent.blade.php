@@ -371,27 +371,35 @@
     }
 </style>
 
-{{-- FLOATING TOAST NOTIFICATION FOR SUCCESS --}}
-@if(session('success'))
-<div id="toast-success" style="position: fixed; bottom: 40px; right: 40px; z-index: 9999; background-color: var(--ma-green); color: black; border: 4px solid #000; border-radius: 20px; padding: 15px 30px; font-weight: 900; font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); display: flex; align-items: center; gap: 15px; text-transform: uppercase;">
-    <i class="fa-solid fa-circle-check" style="font-size: 24px;"></i> 
-    <span>{{ session('success') }}</span>
-    <button onclick="document.getElementById('toast-success').style.display='none'" style="background: none; border: none; font-size: 24px; font-weight: black; cursor: pointer; padding: 0;">&times;</button>
-</div>
-<script>
-    setTimeout(() => { const toast = document.getElementById('toast-success'); if(toast) toast.style.display = 'none'; }, 4000);
-</script>
-@endif
+{{-- FIXED 1-LINE TOAST NOTIFICATION (NO HEAVY SHADOW) --}}
+@php
+    $hasToast = session()->has('toast_status') || session()->has('success') || session()->has('error') || session()->has('status') || $errors->any();
+    $isError = $errors->any() || session()->has('error') || session('toast_status') === 'error';
+    $toastMessage = $errors->any()
+        ? $errors->first()
+        : (session('error') ?? session('toast_message') ?? session('success') ?? session('status'));
+@endphp
 
-{{-- FLOATING TOAST NOTIFICATION FOR ERRORS --}}
-@if(session('error'))
-<div id="toast-error" style="position: fixed; bottom: 40px; right: 40px; z-index: 9999; background-color: var(--ma-red); color: white; border: 4px solid #000; border-radius: 20px; padding: 15px 30px; font-weight: 900; font-size: 18px; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); display: flex; align-items: center; gap: 15px; text-transform: uppercase;">
-    <i class="fa-solid fa-circle-exclamation" style="font-size: 24px;"></i> 
-    <span>{{ session('error') }}</span>
-    <button onclick="document.getElementById('toast-error').style.display='none'" style="background: none; border: none; font-size: 24px; font-weight: black; cursor: pointer; padding: 0; color: white;">&times;</button>
+@if($hasToast && $toastMessage)
+<div id="ma-toast"
+     style="position: fixed; bottom: 40px; right: 40px; z-index: 999999; display: flex; align-items: center; justify-content: space-between; gap: 24px; width: auto; max-width: calc(100vw - 40px); border-radius: 12px; border: 3px solid #000000; background-color: {{ $isError ? '#fee2e2' : '#d1fae5' }}; color: {{ $isError ? '#7f1d1d' : '#065f46' }}; padding: 16px 24px; font-weight: 900; font-family: 'Arial', sans-serif; transition: opacity 0.3s;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        @if($isError)
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; flex-shrink: 0;"></i>
+        @else
+            <i class="fa-solid fa-circle-check" style="font-size: 24px; flex-shrink: 0;"></i>
+        @endif
+        <span style="font-size: 16px; line-height: 1.2;">{{ $toastMessage }}</span>
+    </div>
+    <button type="button" onclick="document.getElementById('ma-toast').style.display='none'" style="background: none; border: none; font-size: 22px; cursor: pointer; padding: 0; margin-left: 8px; color: inherit; display: flex; align-items: center; flex-shrink: 0;">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
 </div>
 <script>
-    setTimeout(() => { const toast = document.getElementById('toast-error'); if(toast) toast.style.display = 'none'; }, 4000);
+    setTimeout(() => {
+        const toast = document.getElementById('ma-toast');
+        if (toast) toast.style.display = 'none';
+    }, 5000);
 </script>
 @endif
 
