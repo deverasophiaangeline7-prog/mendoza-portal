@@ -60,7 +60,9 @@ class Section extends Model
         $memberIds = [];
 
         
-        $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->pluck('user_id')->toArray();
+        $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])
+            ->where('status', 'active')
+            ->pluck('user_id')->toArray();
         $memberIds = array_merge($memberIds, $admins);
 
         
@@ -70,6 +72,7 @@ class Section extends Model
 
         
         $parents = \App\Models\User::where('role', 'parent')
+            ->where('status', 'active')
             ->whereHas('student', function($q) use ($section_id) {
                 $q->where('section_id', $section_id);
             })->pluck('user_id')->toArray();

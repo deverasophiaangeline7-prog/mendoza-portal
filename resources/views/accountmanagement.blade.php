@@ -137,7 +137,7 @@
 
                     if ($activeYear->term3_end) {
                         $term3EndDate = \Carbon\Carbon::parse($activeYear->term3_end)->format('F d, Y');
-                        $isTerm3Ended = \Carbon\Carbon::now()->greaterThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term3_end)->endOfDay());
+                        $isTerm3Ended = \Carbon\Carbon::now('Asia/Manila')->startOfDay()->greaterThanOrEqualTo(\Carbon\Carbon::parse($activeYear->term3_end, 'Asia/Manila')->startOfDay());
                     }
                 }
 

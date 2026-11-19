@@ -289,9 +289,9 @@ class UserController extends Controller
         // ==========================================
         // NEW: STRICT TERM 3 TIME-LOCK
         // ==========================================
-        if (!$currentYear->term3_end || \Carbon\Carbon::now()->lessThan(\Carbon\Carbon::parse($currentYear->term3_end)->endOfDay())) {
+        if (!$currentYear->term3_end || \Carbon\Carbon::now('Asia/Manila')->startOfDay()->lessThan(\Carbon\Carbon::parse($currentYear->term3_end, 'Asia/Manila')->startOfDay())) {
             $endDate = $currentYear->term3_end ? \Carbon\Carbon::parse($currentYear->term3_end)->format('M d, Y') : 'UNSET';
-            return back()->with('error', "FINALIZATION BLOCKED: You cannot finalize the school year until Term 3 has officially ended (Expected: {$endDate}).");
+            return back()->with('error', "FINALIZATION BLOCKED: You cannot finalize the school year until Term 3 ends on {$endDate}.");
         }
         // ==========================================
 
@@ -364,6 +364,32 @@ class UserController extends Controller
             \App\Models\Notification::query()->delete(); 
             DB::table('subject_assignments')->delete(); 
 
+            // 0. Archive old Official GCs (preserves chat history in Archived Groups as read-only)
+            $sySlug = Str::slug($currentYear->school_year, '_');
+            $oldOfficialGcs = \App\Models\User::where('username', 'like', 'gc_section_%')->get();
+
+            foreach ($oldOfficialGcs as $oldGc) {
+                $secId = str_replace('gc_section_', '', $oldGc->username);
+                $sec = \App\Models\Section::find($secId);
+                $archiveLabel = $sec
+                    ? strtoupper($sec->grade_level . ' - ' . $sec->section_name . ' (SY ' . $currentYear->school_year . ')')
+                    : strtoupper(str_replace(' (OFFICIAL)', '', $oldGc->custom_name) . ' (SY ' . $currentYear->school_year . ')');
+
+                $archiveKey = 'group_sy_' . $sySlug . '_sec_' . $secId . '_' . substr(uniqid(), -4);
+
+                // Palitan ang username & email para makagawa si syncGC() ng bagong Official GC nang walang duplicate error
+                $oldGc->username = $archiveKey;
+                $oldGc->email = $archiveKey . '@mendoza.edu';
+                $oldGc->custom_name = $archiveLabel;
+                $oldGc->status = 'archived';
+                $oldGc->save();
+
+                // Ilipat sa "Archived Groups" ng lahat ng members nito
+                DB::table('group_members')
+                    ->where('group_id', $oldGc->user_id)
+                    ->update(['is_archived' => true, 'updated_at' => now()]);
+            }
+
             $students = \App\Models\Student::with('section')->get();
 
             foreach ($students as $student) {
@@ -401,19 +427,30 @@ class UserController extends Controller
                 }
 
                 // 3. Handle Section Assignment
-                if ($student->user->status === 'archived') {
-                    $student->section_id = null; 
-                } elseif ($dbStatus !== 'retained') {
-                    $newSection = \App\Models\Section::where('grade_level', $student->grade_level)
-                                        ->orWhere('grade_level', 'GRADE ' . $student->grade_level)
-                                        ->first();
-                    $student->section_id = $newSection ? $newSection->section_id : null; 
-                }
+                    if ($student->user->status === 'archived') {
+                        $student->section_id = null; 
+                    } elseif ($dbStatus !== 'retained') {
+                        $newSection = \App\Models\Section::where('grade_level', $student->grade_level)
+                                            ->orWhere('grade_level', 'GRADE ' . $student->grade_level)
+                                            ->first();
+                        $student->section_id = $newSection ? $newSection->section_id : null; 
+                    }
 
-                // 4. Reset statuses for the fresh school year
-                $student->promotion_status = 'none';
-                $student->next_grade_level = null;
-                $student->save();
+                    // 4. Reset statuses for the fresh school year
+                    $student->promotion_status = 'none';
+                    $student->next_grade_level = null;
+                    $student->save();
+
+                    // I-sync din ang section_id sa parent user record
+                    if ($student->user) {
+                        $student->user->section_id = $student->section_id;
+                        $student->user->save();
+                }
+            }
+
+            // 5. Generate fresh Official GCs for the new School Year using existing teachers & promoted students
+            foreach (\App\Models\Section::all() as $sec) {
+                \App\Models\Section::syncGC($sec->section_id);
             }
 
             \App\Models\AuditLog::create([
