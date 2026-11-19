@@ -22,9 +22,8 @@ class ForgotPasswordController extends Controller
                     ->first();
 
         if (!$user) {
-            return back()->withErrors(['lrn' => 'No account found with that LRN or Email.']);
+            return back()->withErrors(['lrn' => 'No account found with that email address.']);
         }
-
         // Ensure the user account has a valid destination email
         if (empty($user->email)) {
             return back()->withErrors(['lrn' => 'This account does not have a registered email address.']);

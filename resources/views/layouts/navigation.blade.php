@@ -113,7 +113,7 @@
                     <div class="flex items-center justify-between mb-5 border-2 border-black rounded-xl px-4 py-2 bg-gray-50">
                         <span class="text-xs font-black uppercase tracking-wider text-gray-700">Strength:</span>
                         <div class="flex gap-1 flex-1 mx-4">
-                            <div class="h-2 flex-1 rounded-full border border-black" :class="strength >= 1 ? (strength == 1 ? 'bg-red-500' : 'bg-yellow-400') : 'bg-gray-200'"></div>
+                            <div class="h-2 flex-1 rounded-full border border-black" :class="strength >= 1 ? (strength == 1 ? 'bg-red-500' : (strength == 2 ? 'bg-yellow-400' : 'bg-green-500')) : 'bg-gray-200'"></div>
                             <div class="h-2 flex-1 rounded-full border border-black" :class="strength >= 2 ? (strength == 3 ? 'bg-green-500' : 'bg-yellow-400') : 'bg-gray-200'"></div>
                             <div class="h-2 flex-1 rounded-full border border-black" :class="strength >= 3 ? 'bg-green-500' : 'bg-gray-200'"></div>
                         </div>

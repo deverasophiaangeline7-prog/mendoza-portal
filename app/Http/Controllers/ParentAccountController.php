@@ -38,7 +38,7 @@ class ParentAccountController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'username'    => 'required|unique:users,username',
+            'username'    => ['required', 'regex:/^[a-zA-Z0-9._%+-]+@gmail\.com$/i', 'unique:users,username'],
             'password'    => ['required', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
             'lrn'         => 'required|numeric|digits:12|unique:students,lrn',
             'first_name'  => 'required',

@@ -59,7 +59,7 @@
         }
     @endphp
 
-    <div class="fixed top-6 right-6 no-print z-50 flex gap-4">
+    <div id="print-floating-actions" class="fixed top-6 right-6 no-print z-50 flex gap-4 transition-all duration-300">
         <button onclick="window.close()" class="bg-gray-200 text-black font-black px-6 py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-300 transition-all uppercase tracking-wider text-sm">
             Close Tab
         </button>
@@ -212,6 +212,22 @@
         window.onload = function() {
             setTimeout(() => window.print(), 500);
         };
+
+        let lastScrollY = window.scrollY;
+        const floatingBtns = document.getElementById('print-floating-actions');
+
+        window.addEventListener('scroll', () => {
+            if (!floatingBtns) return;
+            const currentScrollY = window.scrollY;
+
+            if (currentScrollY > lastScrollY && currentScrollY > 40) {
+                floatingBtns.classList.add('-translate-y-24', 'opacity-0', 'pointer-events-none');
+            } else {
+                floatingBtns.classList.remove('-translate-y-24', 'opacity-0', 'pointer-events-none');
+            }
+
+            lastScrollY = currentScrollY <= 0 ? 0 : currentScrollY;
+        }, { passive: true });
     </script>
 </body>
 </html>

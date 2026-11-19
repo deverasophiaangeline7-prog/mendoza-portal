@@ -203,14 +203,17 @@
                                    required>
                         </div>
                         
+                        <template x-if="username !== '' && !isValidGmail">
+                            <span class="text-red-600 text-sm ml-0 md:ml-32 mt-1 font-bold italic"><i class="fa-solid fa-circle-exclamation"></i> Must be a valid @gmail.com email address!</span>
+                        </template>
                         <template x-if="isChecking">
                             <span class="text-gray-500 text-sm ml-0 md:ml-32 mt-1 font-bold italic">Checking...</span>
                         </template>
-                        <template x-if="!isChecking && usernameTaken">
-                            <span class="text-red-600 text-sm ml-0 md:ml-32 mt-1 font-bold italic"><i class="fa-solid fa-circle-exclamation"></i> Username is already taken!</span>
+                        <template x-if="!isChecking && isValidGmail && usernameTaken">
+                            <span class="text-red-600 text-sm ml-0 md:ml-32 mt-1 font-bold italic"><i class="fa-solid fa-circle-exclamation"></i> Email is already taken!</span>
                         </template>
-                        <template x-if="!isChecking && username !== '' && !usernameTaken && username.length >= 3">
-                            <span class="text-[#34C759] text-sm ml-0 md:ml-32 mt-1 font-bold italic"><i class="fa-solid fa-circle-check"></i> Username is available!</span>
+                        <template x-if="!isChecking && isValidGmail && !usernameTaken">
+                            <span class="text-[#34C759] text-sm ml-0 md:ml-32 mt-1 font-bold italic"><i class="fa-solid fa-circle-check"></i> Email is available!</span>
                         </template>
 
                         @error('username') <span class="text-red-600 text-sm ml-0 md:ml-32 mt-1 font-bold italic">{{ $message }}</span> @enderror
@@ -299,8 +302,8 @@
                 <div class="col-span-1 md:col-span-2 flex flex-col md:flex-row justify-end gap-4 md:gap-6 pt-6">
                     <a href="{{ route('account.management') }}" class="w-full md:w-auto justify-center bg-[#FF3B30] text-white px-10 py-3 rounded-xl font-bold text-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] border-2 border-black hover:brightness-90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center">Cancel</a>
                     <button type="submit" 
-                            :disabled="pw === '' || pw !== pw_confirm || strength !== 'Strong' || usernameTaken || isChecking"
-                            :class="(pw === '' || pw !== pw_confirm || strength !== 'Strong' || usernameTaken || isChecking) ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
+                            :disabled="pw === '' || pw !== pw_confirm || strength !== 'Strong' || !isValidGmail || usernameTaken || isChecking"
+                            :class="(pw === '' || pw !== pw_confirm || strength !== 'Strong' || !isValidGmail || usernameTaken || isChecking) ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
                             class="w-full md:w-auto justify-center bg-[#34C759] text-white px-10 py-3 rounded-xl font-bold text-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] border-2 border-black transition-all flex items-center">
                         Create Account
                     </button>
@@ -373,8 +376,13 @@ document.addEventListener('alpine:init', () => {
             return allSubjects.filter(subject => !allTakenSubjects.includes(subject));
         },
 
+        get isValidGmail() {
+            return /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(this.username.trim());
+        },
+
+        // Username Check Function
         async checkUsername() {
-            if (this.username.length < 3) {
+            if (!this.isValidGmail) {
                 this.usernameTaken = false;
                 this.isChecking = false;
                 return;
@@ -383,7 +391,7 @@ document.addEventListener('alpine:init', () => {
             this.isChecking = true;
             
             try {
-                let response = await fetch(`/check-username?username=${this.username}`);
+                let response = await fetch(`/check-username?username=${encodeURIComponent(this.username.trim())}`);
                 let data = await response.json();
                 this.usernameTaken = data.taken;
             } catch (error) {
@@ -391,7 +399,7 @@ document.addEventListener('alpine:init', () => {
             }
             
             this.isChecking = false;
-        }
+        },
     }));
 });
 </script>

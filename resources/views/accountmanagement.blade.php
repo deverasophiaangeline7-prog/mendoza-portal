@@ -254,8 +254,13 @@
     <div x-show="passwordModal" 
          x-data="{ 
              userId: '', 
+             newEmail: '{{ old('email') }}',
              newPassword: '', 
              confirmPassword: '',
+             isValidGmail() {
+                 if (this.newEmail.trim() === '') return true;
+                 return /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(this.newEmail.trim());
+             },
              strength() {
                  let p = this.newPassword;
                  if(!p) return '';
@@ -275,7 +280,7 @@
             <h2 class="text-2xl md:text-3xl font-black mb-6 uppercase tracking-tight text-center text-black italic">Update Credentials</h2>
 
             <form action="{{ route('admin.password.reset') }}" method="POST" 
-                @submit.prevent="if(newPassword === confirmPassword && (newPassword === '' || strength() === 'Strong')) $el.submit()">
+            @submit.prevent="if(isValidGmail() && newPassword === confirmPassword && (newPassword === '' || strength() === 'Strong')) $el.submit()">
                 @csrf
                 @method('PUT')
                 
@@ -305,7 +310,10 @@
                         <label class="block font-bold uppercase text-gray-600 text-sm mb-1.5 tracking-widest">
                             New Email <span class="text-gray-400 normal-case text-xs ml-1">(Optional)</span>
                         </label>
-                        <input type="email" name="email" class="w-full border-2 border-black rounded-xl px-4 py-2.5 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366] transition-colors @error('email') border-red-500 bg-red-50 @else bg-white @enderror" value="{{ old('email') }}" placeholder="Leave blank to keep current">
+                        <input type="email" name="email" x-model="newEmail" class="w-full border-2 border-black rounded-xl px-4 py-2.5 font-bold focus:outline-none focus:ring-4 focus:ring-[#ff3366] transition-colors @error('email') border-red-500 bg-red-50 @else bg-white @enderror" placeholder="Leave blank to keep current">
+                        <p x-show="newEmail.trim() !== '' && !isValidGmail()" x-cloak class="text-red-600 font-bold text-xs mt-1.5 flex items-center gap-1">
+                            <i class="fa-solid fa-circle-exclamation"></i> Must be a valid @gmail.com email address.
+                        </p>
                         @error('email') 
                             <p class="text-red-600 font-bold text-xs mt-1.5 flex items-center gap-1"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>
                         @enderror
@@ -360,8 +368,8 @@
                         CANCEL
                     </button>
                     <button type="submit" 
-                            :disabled="(confirmPassword !== '' && newPassword !== confirmPassword) || (newPassword !== '' && strength() !== 'Strong')"
-                            :class="((confirmPassword !== '' && newPassword !== confirmPassword) || (newPassword !== '' && strength() !== 'Strong')) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#ff1a53] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
+                            :disabled="!isValidGmail() || (confirmPassword !== '' && newPassword !== confirmPassword) || (newPassword !== '' && strength() !== 'Strong')"
+                            :class="(!isValidGmail() || (confirmPassword !== '' && newPassword !== confirmPassword) || (newPassword !== '' && strength() !== 'Strong')) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#ff1a53] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'"
                             class="w-full sm:w-1/2 order-1 sm:order-2 bg-[#ff3366] text-black font-black py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-xl uppercase">
                         <i class="fa-solid fa-floppy-disk mr-2"></i> UPDATE
                     </button>

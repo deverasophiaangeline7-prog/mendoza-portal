@@ -8,7 +8,7 @@
             </h2>
 
             <div class="mb-8 text-[11px] font-bold uppercase tracking-widest text-gray-500 leading-relaxed">
-                {{ __('Enter your Student LRN (for Parents) or your registered Email address to receive a password reset link.') }}
+                {{ __('Enter your registered Gmail address to receive a password reset link.') }}
             </div>
 
             <x-auth-session-status class="mb-4 text-green-600 font-bold" :status="session('status')" />
@@ -17,10 +17,14 @@
                 @csrf
 
                 <div class="mb-8">
-                    <x-input-label for="lrn" class="text-gray-700 font-black uppercase text-xs tracking-widest mb-2" :value="__('LRN or Email Address:')" />
+                    <x-input-label for="lrn" class="text-gray-700 font-black uppercase text-xs tracking-widest mb-2" :value="__('Email Address:')" />
                     <x-text-input id="lrn" 
                         class="block w-full border-gray-300 rounded-xl shadow-sm bg-gray-50 py-4" 
-                        type="text" name="lrn" :value="old('lrn')" required autofocus />
+                        type="email" name="lrn" :value="old('lrn')" 
+                        placeholder="example@gmail.com"
+                        pattern="[a-zA-Z0-9._%+\-]+@[gG][mM][aA][iI][lL]\.[cC][oO][mM]"
+                        title="Please enter a valid @gmail.com email address"
+                        required autofocus />
                     <x-input-error :messages="$errors->get('lrn')" class="mt-2" />
                 </div>
 

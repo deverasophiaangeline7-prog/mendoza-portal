@@ -119,7 +119,7 @@ class UserController extends Controller
             'ext_name' => 'nullable|string|max:10',
             'gender' => 'required|in:Male,Female',
             'birthdate' => 'required|date',
-            'username' => 'required|string|unique:users,username',
+            'username' => ['required', 'string', 'regex:/^[a-zA-Z0-9._%+-]+@gmail\.com$/i', 'unique:users,username'],
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()->symbols()],
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -138,12 +138,13 @@ class UserController extends Controller
 
         // 1. Create the base User authentication record
         $user = User::create([
-            'name' => $fullName,
-            'username' => $request->username,
-            'password' => Hash::make($request->password),
-            'role' => 'admin',
-            'status' => 'active',
-        ]);
+         'name' => $fullName,
+         'username' => $request->username,
+         'email' => $request->username,
+         'password' => Hash::make($request->password),
+         'role' => 'admin',
+         'status' => 'active',
+     ]);
 
         // 2. Create the linked Admin profile record
         \App\Models\Admin::create([
@@ -533,7 +534,7 @@ class UserController extends Controller
         // 1. Base validation
         $request->validate([
             'login_id' => ['required', 'string'],
-            'email'    => ['nullable', 'email'], 
+            'email'    => ['nullable', 'email', 'regex:/^[a-zA-Z0-9._%+-]+@gmail\.com$/i'], 
             'password' => ['nullable', 'confirmed'], 
         ]);
 
