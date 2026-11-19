@@ -5,18 +5,20 @@
 @section('content')
 <main class="flex-1 p-8 bg-white min-h-screen relative">
     
-    {{-- BULLETPROOF VANILLA JS TOAST (MOVED TO BOTTOM RIGHT) --}}
+    {{-- FIXED 1-LINE TOAST NOTIFICATION (NO HEAVY SHADOW) --}}
     @if(request()->has('toast_status'))
-        <div id="import-toast" class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-4 min-w-[320px] rounded-xl border-[3px] border-black {{ request('toast_status') === 'success' ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900' }} px-5 py-4 font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-opacity duration-500">
-            <div class="flex items-center gap-3">
-                @if(request('toast_status') === 'success')
-                    <i class="fa-solid fa-circle-check text-2xl"></i>
+        @php $isSuccess = request('toast_status') === 'success'; @endphp
+        <div id="import-toast"
+             style="position: fixed; bottom: 40px; right: 40px; z-index: 999999; display: flex; align-items: center; justify-content: space-between; gap: 24px; width: auto; max-width: calc(100vw - 40px); border-radius: 12px; border: 3px solid #000000; background-color: {{ $isSuccess ? '#d1fae5' : '#fee2e2' }}; color: {{ $isSuccess ? '#065f46' : '#7f1d1d' }}; padding: 16px 24px; font-weight: 900; font-family: 'Arial', sans-serif; transition: opacity 0.5s;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                @if($isSuccess)
+                    <i class="fa-solid fa-circle-check" style="font-size: 24px; flex-shrink: 0;"></i>
                 @else
-                    <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; flex-shrink: 0;"></i>
                 @endif
-                <span class="text-base">{{ request('toast_message') }}</span>
+                <span style="font-size: 16px; line-height: 1.2;">{{ request('toast_message') }}</span>
             </div>
-            <button onclick="document.getElementById('import-toast').style.display='none'" class="text-2xl hover:scale-110 transition ml-2">
+            <button type="button" onclick="document.getElementById('import-toast').style.display='none'" style="background: none; border: none; font-size: 22px; cursor: pointer; padding: 0; margin-left: 8px; color: inherit; display: flex; align-items: center; flex-shrink: 0;">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>

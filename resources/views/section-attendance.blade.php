@@ -104,7 +104,7 @@
                                 </button>
 
                                 <button @click="confirmDeleteDate()" class="w-full sm:w-auto bg-red-600 text-white px-3 sm:px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-red-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap text-sm sm:text-base">
-                                    - DELETE <span class="hidden sm:inline">DATE</span>
+- DELETE <span class="hidden sm:inline">DATE</span>
                                 </button>
                             </div>
                         </div>
@@ -255,11 +255,16 @@
          x-transition:leave="transition ease-in duration-300"
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 translate-y-10"
-         class="fixed bottom-10 right-4 sm:right-10 z-[100] px-6 sm:px-8 py-4 rounded-2xl border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center gap-4"
-         :class="toastType === 'success' ? 'bg-[#4ade80] text-black' : 'bg-red-500 text-white'">
+         style="position: fixed; bottom: 40px; right: 40px; z-index: 999999; display: flex; align-items: center; justify-content: space-between; gap: 24px; width: auto; max-width: calc(100vw - 40px); border-radius: 12px; border: 3px solid #000000; padding: 16px 24px; font-weight: 900; font-family: 'Arial', sans-serif;"
+         :style="toastType === 'success' ? { backgroundColor: '#d1fae5', color: '#065f46' } : { backgroundColor: '#fee2e2', color: '#7f1d1d' }">
         
-        <i class="fa-solid text-2xl" :class="toastType === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
-        <span class="font-black text-lg sm:text-xl tracking-wide" x-text="toastMessage"></span>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa-solid" style="font-size: 24px; flex-shrink: 0;" :class="toastType === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'"></i>
+            <span style="font-size: 16px; line-height: 1.2;" x-text="toastMessage"></span>
+        </div>
+        <button type="button" @click="showToast = false" style="background: none; border: none; font-size: 22px; cursor: pointer; padding: 0; margin-left: 8px; color: inherit; display: flex; align-items: center; flex-shrink: 0;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
     </div>
 
 </main>

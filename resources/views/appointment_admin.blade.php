@@ -48,22 +48,32 @@
     
     .cell-green-half { background: linear-gradient(to bottom, var(--ma-green) 50%, #ffffff 50%); }
 
-    /* Moved to fixed positioning so it works globally outside the modal */
+    /* FIXED 1-LINE TOAST NOTIFICATION (NO HEAVY SHADOW) */
     .toast-banner {
         position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #000;
-        color: #fff;
-        padding: 12px 24px;
-        border-radius: 20px;
-        font-weight: 900;
-        font-size: 15px;
+        bottom: 40px;
+        right: 40px;
         z-index: 99999999;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        width: auto;
+        max-width: calc(100vw - 40px);
+        border-radius: 12px;
+        border: 3px solid #000000;
+        padding: 16px 24px;
+        font-weight: 900;
+        font-family: 'Arial', sans-serif;
         transition: opacity 0.3s ease;
-        border: 2px solid #fff;
-        box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+    }
+    .toast-banner.toast-success {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    .toast-banner.toast-error {
+        background-color: #fee2e2;
+        color: #7f1d1d;
     }
 
     .schedule-grid td.active-manage-cell { outline: 3px dashed #000; outline-offset: -3px; }
@@ -83,7 +93,15 @@
 </style>
 
 <!-- Global Toast Banner -->
-<div id="toastBanner" class="toast-banner hidden"></div>
+<div id="toastBanner" class="toast-banner toast-success hidden">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i id="toastBannerIcon" class="fa-solid fa-circle-check" style="font-size: 24px; flex-shrink: 0;"></i>
+        <span id="toastBannerMessage" style="font-size: 16px; line-height: 1.2;"></span>
+    </div>
+    <button type="button" onclick="hideToast()" style="background: none; border: none; font-size: 22px; cursor: pointer; padding: 0; margin-left: 8px; color: inherit; display: flex; align-items: center; flex-shrink: 0;">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+</div>
 
 <!-- Using the exact same layout structure and classes as Attendance -->
 <div class="flex-1 p-4 md:p-8 bg-white min-h-screen relative flex flex-col items-center">
@@ -247,6 +265,7 @@
     let selectedCell = null;
     let pendingLeaveAction = null; 
     let pendingCancelAction = null;
+    let toastTimer = null;
     
     const cycleClasses = ['cell-white', 'cell-red', 'cell-grey'];
 
@@ -299,12 +318,23 @@
         }
     };
 
+    function hideToast() {
+        document.getElementById('toastBanner').classList.add('hidden');
+        if (toastTimer) clearTimeout(toastTimer);
+    }
+
     function showToast(message, isError = false) {
         const toast = document.getElementById('toastBanner');
-        toast.innerText = message;
-        toast.style.background = isError ? 'var(--ma-red)' : 'var(--ma-green)';
-        toast.classList.remove('hidden');
-        setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+        const icon = document.getElementById('toastBannerIcon');
+        const msg = document.getElementById('toastBannerMessage');
+
+        msg.innerText = message;
+        toast.classList.remove('toast-success', 'toast-error', 'hidden');
+        toast.classList.add(isError ? 'toast-error' : 'toast-success');
+        icon.className = isError ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-check';
+
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { toast.classList.add('hidden'); }, 5000);
     }
 
     function resetControlModes() {

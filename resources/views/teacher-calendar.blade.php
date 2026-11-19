@@ -296,13 +296,26 @@
     </script>
 
     <!-- TOAST NOTIFICATIONS -->
-    <div x-show="showSuccessToast" x-cloak x-transition class="fixed bottom-10 right-10 z-[200] px-8 py-4 rounded-2xl border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black font-black uppercase">
-        <i class="fa-solid fa-circle-check mr-2"></i> {{ session('success') }}
+    <div x-show="showSuccessToast" x-cloak x-transition
+         style="position: fixed; bottom: 40px; right: 40px; z-index: 999999; display: flex; align-items: center; justify-content: space-between; gap: 24px; width: auto; max-width: calc(100vw - 40px); border-radius: 12px; border: 3px solid #000000; background-color: #d1fae5; color: #065f46; padding: 16px 24px; font-weight: 900; font-family: 'Arial', sans-serif;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa-solid fa-circle-check" style="font-size: 24px; flex-shrink: 0;"></i>
+            <span style="font-size: 16px; line-height: 1.2;">{{ session('success') }}</span>
+        </div>
+        <button type="button" @click="showSuccessToast = false" style="background: none; border: none; font-size: 22px; cursor: pointer; padding: 0; margin-left: 8px; color: inherit; display: flex; align-items: center; flex-shrink: 0;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
     </div>
 
-    <div x-show="showErrorToast" x-cloak x-transition class="fixed bottom-10 right-10 z-[200] px-8 py-4 rounded-2xl border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-red-500 text-white font-black uppercase">
-        <i class="fa-solid fa-circle-exclamation mr-2"></i> 
-        @if($errors->any()) {{ $errors->first() }} @else Something went wrong! @endif
+    <div x-show="showErrorToast" x-cloak x-transition
+         style="position: fixed; bottom: 40px; right: 40px; z-index: 999999; display: flex; align-items: center; justify-content: space-between; gap: 24px; width: auto; max-width: calc(100vw - 40px); border-radius: 12px; border: 3px solid #000000; background-color: #fee2e2; color: #7f1d1d; padding: 16px 24px; font-weight: 900; font-family: 'Arial', sans-serif;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; flex-shrink: 0;"></i>
+            <span style="font-size: 16px; line-height: 1.2;">@if($errors->any()) {{ $errors->first() }} @else Something went wrong! @endif</span>
+        </div>
+        <button type="button" @click="showErrorToast = false" style="background: none; border: none; font-size: 22px; cursor: pointer; padding: 0; margin-left: 8px; color: inherit; display: flex; align-items: center; flex-shrink: 0;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
     </div>
 
 </div>
