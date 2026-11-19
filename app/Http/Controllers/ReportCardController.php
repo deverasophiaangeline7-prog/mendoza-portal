@@ -654,7 +654,14 @@ class ReportCardController extends Controller
         if ($processed === 0) {
             $status = 'error';
             $message = "Import failed. No valid matching grades were found in the file for the students in this section.";
-        } 
+        } else {
+            $sectionLabel = strtoupper(trim($section->grade_level . ' - ' . $section->section_name));
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'Batch Grade Import',
+                'description' => Auth::user()->username . " batch imported {$request->subject} (Term {$activeTerm}) grades for {$processed} student(s) in {$sectionLabel}."
+            ]);
+        }
         
         return redirect()->route('reportcard.show', [
             'section_id' => $section_id, 

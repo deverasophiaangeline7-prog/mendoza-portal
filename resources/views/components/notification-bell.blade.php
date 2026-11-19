@@ -91,10 +91,10 @@
 
         <!-- DROPDOWN MENU -->
         <div x-show="notifOpen" 
-             x-transition.opacity.duration.200ms
-             class="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border-[3px] border-black overflow-hidden"
-             style="display: none;" 
-             x-cloak>
+            x-transition.opacity.duration.200ms
+            class="fixed left-3 right-3 top-16 mx-auto max-w-sm sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 sm:max-w-none bg-white rounded-xl shadow-2xl border-[3px] border-black overflow-hidden z-[999]"
+            style="display: none;" 
+            x-cloak>
             
             <div class="bg-gray-100 border-b-[3px] border-black px-4 py-2">
                 <span class="font-black text-black uppercase text-xs tracking-widest">Notifications</span>

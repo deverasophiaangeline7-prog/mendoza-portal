@@ -42,6 +42,90 @@
             return `${this.currentYear}-${(this.currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         },
 
+        get todayDateKey() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        },
+
+        isPastDate(day = this.selectedDate) {
+            return this.getDateKey(day) < this.todayDateKey;
+        },
+
+        isToday(day = this.selectedDate) {
+            return this.getDateKey(day) === this.todayDateKey;
+        },
+
+        getCurrentTimeStr() {
+            const now = new Date();
+            return String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        },
+
+        validateAndSaveEvent() {
+            const dateKey = this.getDateKey(this.selectedDate);
+            const isNewEvent = !this.events[dateKey];
+            const schoolOpen = '07:00';  // 7:00 AM
+            const schoolClose = '17:00'; // 5:00 PM
+            const startTime = (this.tempStartTime || '').slice(0, 5);
+            const endTime = (this.tempEndTime || '').slice(0, 5);
+
+            if (!this.tempName.trim()) {
+                this.triggerNotification('Please enter an event name.');
+                return;
+            }
+            if (isNewEvent && this.isPastDate(this.selectedDate)) {
+                this.triggerNotification('Cannot add events on past dates.');
+                return;
+            }
+            if (!startTime || !endTime) {
+                this.triggerNotification('Please set both start and finish times.');
+                return;
+            }
+            if (startTime < schoolOpen || endTime > schoolClose) {
+                this.triggerNotification('Events must be within school hours (7:00 AM - 5:00 PM).');
+                return;
+            }
+            if (endTime <= startTime) {
+                this.triggerNotification('Finish time must be after the start time.');
+                return;
+            }
+            if (isNewEvent && this.isToday(this.selectedDate) && startTime <= this.getCurrentTimeStr()) {
+                this.triggerNotification('Cannot add an event in a past time today.');
+                return;
+            }
+
+            fetch('{{ route('calendar.store') }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({
+                    start_date: dateKey,
+                    event_title: this.tempName,
+                    start_time: startTime,
+                    end_time: endTime,
+                    description: this.tempPs
+                })
+            })
+            .then(async res => {
+                if (res.ok) {
+                    this.events[dateKey] = {
+                        name: this.tempName,
+                        start_time: startTime,
+                        end_time: endTime,
+                        ps: this.tempPs
+                    };
+                    this.isEditing = false;
+                    this.triggerNotification('Event successfully saved!');
+                } else {
+                    let err = {};
+                    try { err = await res.json(); } catch (_) {}
+                    this.triggerNotification(err.message || 'Failed to save event.');
+                }
+            })
+            .catch(() => this.triggerNotification('Network error while saving event.'));
+        },
+
         init() {
             setInterval(() => {
                 fetch('/fetch-events?t=' + Date.now())
@@ -173,7 +257,7 @@
                                 </template>
 
                                 <template x-for="day in daysInMonth">
-                                    <button @click="selectedDate = day"
+                                    <button @click="selectedDate = day; isEditing = false"
                                             class="aspect-square flex items-center justify-center rounded-lg border-2 font-black text-xl transition-all relative"
                                             :class="{
                                                 'bg-red-500 text-white border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] scale-110 z-10': selectedDate === day,
@@ -231,8 +315,11 @@
                     <div x-show="!events[getDateKey(selectedDate)] && !isEditing" x-cloak x-transition
                          class="bg-white rounded-[40px] p-8 border-[3px] border-black shadow-lg min-h-[420px] flex flex-col justify-center text-center">
                         <p class="text-gray-400 text-2xl font-black italic mb-4">No events for <span x-text="monthNames[currentMonth]"></span> <span x-text="selectedDate"></span></p>
-                        <button @click="isEditing = true; tempName=''; tempStartTime=''; tempEndTime=''; tempPs='';" 
+                        <button x-show="!isPastDate(selectedDate)" @click="isEditing = true; tempName=''; tempStartTime=''; tempEndTime=''; tempPs='';" 
                                 class="text-green-500 text-3xl font-black italic hover:scale-110 transition">+ Add an event</button>
+                        <p x-show="isPastDate(selectedDate)" class="text-red-500 text-sm font-black uppercase italic">
+                            Cannot add events to past dates.
+                        </p>
                     </div>
 
                     <div x-show="isEditing" x-cloak x-transition 
@@ -246,17 +333,29 @@
                         
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block font-black text-xs uppercase text-gray-400">Start Time</label>
-                                <input type="time" x-model="tempStartTime" class="w-full p-2 border-2 border-black rounded-lg font-bold">
+                                <label class="block font-black text-xs uppercase text-gray-400">Start Time (7:00 AM - 5:00 PM)</label>
+                                <input type="time" x-model="tempStartTime" min="07:00" max="17:00" class="w-full p-2 border-2 border-black rounded-lg font-bold">
                             </div>
                             <div>
-                                <label class="block font-black text-xs uppercase text-gray-400">Finish Time</label>
+                                <label class="block font-black text-xs uppercase text-gray-400">Finish Time (7:00 AM - 5:00 PM)</label>
                                 <input type="time" 
                                     x-model="tempEndTime" 
-                                    :min="tempStartTime" 
-                                    @change="if(tempStartTime && tempEndTime < tempStartTime) { tempEndTime = tempStartTime; triggerNotification('Finish time cannot be earlier than the start time.'); }"
+                                    :min="tempStartTime || '07:00'" 
+                                    max="17:00"
+                                    @change="if(tempStartTime && tempEndTime <= tempStartTime) { triggerNotification('Finish time must be after the start time.'); }"
                                     class="w-full p-2 border-2 border-black rounded-lg font-bold">
                             </div>
+                        </div>
+
+                        <label class="block font-black text-xs uppercase text-gray-400">Notes (PS)</label>
+                        <textarea x-model="tempPs" class="w-full p-2 border-2 border-black rounded-lg"></textarea>
+                        
+                        <div class="flex space-x-2 pt-2 w-full">
+                            <button type="button" @click="isEditing = false" class="bg-gray-200 px-4 py-2 rounded-lg font-black flex-1 border-2 border-black hover:bg-gray-300 transition">CANCEL</button>
+                            <button type="button" @click="validateAndSaveEvent()" 
+                                class="bg-red-600 text-white px-4 py-2 rounded-lg font-black flex-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-700 transition">
+                                SAVE
+                            </button>
                         </div>
 
                         <label class="block font-black text-xs uppercase text-gray-400">Notes (PS)</label>

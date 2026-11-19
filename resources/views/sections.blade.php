@@ -37,7 +37,7 @@
                 <a href="{{ route('parent.archived') }}" class="flex-1 md:flex-none justify-center bg-gray-200 hover:bg-gray-300 text-black px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black whitespace-nowrap text-sm md:text-base">
                     <i class="fa-solid fa-box-archive"></i> View Archives
                 </a>
-                <a href="{{ route('parent.list') }}" class="flex-1 md:flex-none justify-center bg-gray-800 hover:bg-black text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 border-2 border-black whitespace-nowrap text-sm md:text-base">
+                <a href="{{ route('parent.list') }}" class="flex-1 md:flex-none justify-center bg-gray-600 hover:bg-gray-800 !text-white hover:!text-white px-4 md:px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
                     <i class="fa-solid fa-arrow-left"></i> Back
                 </a>
             </div>
