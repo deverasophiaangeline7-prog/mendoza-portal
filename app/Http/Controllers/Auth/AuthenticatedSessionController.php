@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Providers\RouteServiceProvider;
+use App\Models\AuditLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +13,7 @@ use Illuminate\View\View;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Display the public login view (Teachers & Parents).
      */
     public function create(): View
     {
@@ -21,71 +21,49 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Handle public login (Teachers & Parents ONLY).
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        $request->authenticate(['teacher', 'parent'], 5, 60, 'public');
         $request->session()->regenerate();
 
         Auth::logoutOtherDevices($request->password);
-        
-        $role = auth()->user()->role;
-        $loginType = $request->input('login_type');
 
-        // 1. If someone used the Admin form but is NOT an admin or superadmin, block them
-        if ($loginType === 'admin' && !in_array($role, ['admin', 'superadmin'])) {
-            
-            // 🚨 LOG: Unauthorized access to Admin portal
-            \App\Models\AuditLog::create([
-                'user_id' => auth()->id(),
-                'action' => 'Unauthorized Login Attempt',
-                'description' => auth()->user()->username . ' attempted to access the Admin login portal without permission.'
-            ]);
-
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return redirect()->route('login')->withInput()->withErrors([
-                'login_id' => 'Access denied. This login is for authorized personnel only.',
-            ]);
-        }
-
-        // 2. If someone used the Parent/Teacher form but IS an admin/superadmin, block them too
-        if ($loginType !== 'admin' && in_array($role, ['admin', 'superadmin'])) {
-            
-            // 🚨 LOG: Admin using the wrong portal
-            \App\Models\AuditLog::create([
-                'user_id' => auth()->id(),
-                'action' => 'Invalid Portal Use',
-                'description' => auth()->user()->username . ' (' . ucfirst($role) . ') attempted to log in through the Parent/Teacher portal.'
-            ]);
-
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return redirect()->route('login')->withInput()->withErrors([
-                'login_id' => 'Please use the Admin Login form.',
-            ]);
-        }
-
-        // ✅ LOG: Successful Login
-        \App\Models\AuditLog::create([
+        AuditLog::create([
             'user_id' => auth()->id(),
             'action' => 'User Login',
-            'description' => auth()->user()->username . ' successfully logged into the system.'
+            'description' => auth()->user()->username . ' successfully logged into the system from IP ' . $request->ip() . '.',
         ]);
 
-        // 3. Route the user to their dashboard
-        return match($role) {
-            'superadmin' => redirect()->route('dashboard'),
-            'admin'   => redirect()->route('dashboard'),
-            'teacher' => redirect()->route('dashboard'),
-            'parent'  => redirect()->route('dashboard'),
-            default   => redirect('/'),
-        };
+        return redirect()->route('dashboard');
+    }
+
+    /**
+     * Display the dedicated Admin login view (Admin & Superadmin).
+     */
+    public function createAdmin(): View
+    {
+        return view('auth.admin-login');
+    }
+
+    /**
+     * Handle Admin login (Admin & Superadmin ONLY, stricter 3-attempt / 5-min lockout).
+     */
+    public function storeAdmin(LoginRequest $request): RedirectResponse
+    {
+        $request->authenticate(['admin', 'superadmin'], 3, 300, 'admin');
+        $request->session()->regenerate();
+
+        Auth::logoutOtherDevices($request->password);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Admin Login',
+            'description' => auth()->user()->username . ' (' . ucfirst(auth()->user()->role) . ') signed in via the Admin Portal from IP ' . $request->ip() . '.',
+        ]);
+
+        return redirect()->route('dashboard');
     }
 
     /**
@@ -93,22 +71,22 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        // 1. Log the action BEFORE destroying the session
+        $isAdmin = false;
+
         if (Auth::check()) {
-            \App\Models\AuditLog::create([
+            $isAdmin = in_array(auth()->user()->role, ['admin', 'superadmin'], true);
+
+            AuditLog::create([
                 'user_id' => auth()->id(),
-                'action' => 'User Logout',
-                'description' => auth()->user()->username . ' logged out of the system.'
+                'action' => $isAdmin ? 'Admin Logout' : 'User Logout',
+                'description' => auth()->user()->username . ' logged out of the system.',
             ]);
         }
 
-        // 2. Standard Laravel logout execution
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return $isAdmin ? redirect()->route('admin.login') : redirect('/');
     }
 }

@@ -16,7 +16,7 @@
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 999999; }
     .modal-overlay.hidden, .toast-banner.hidden { display: none !important; }
     
-    .admin-modal { background: white; border: 4px solid #000; border-radius: 25px; width: 95%; max-width: 1400px; padding: 20px 15px; position: relative; }
+    .admin-modal { background: white; border: 4px solid #000; border-radius: 25px; width: 95%; max-width: 1400px; max-height: 90vh; overflow-y: auto; padding: 20px 15px; position: relative; }
     @media (min-width: 768px) { .admin-modal { padding: 20px 30px; } }
     
     .modal-header-top { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 20px; margin-top: 35px; padding-right: 50px; }
@@ -40,6 +40,10 @@
     .schedule-grid th, .schedule-grid td { border: 2px solid #000; padding: 5px; height: 40px; font-size: 13px; font-weight: 900; }
     .schedule-grid th { background-color: var(--ma-bg-grey); }
     .time-col { background-color: var(--ma-bg-grey); width: 80px; }
+
+    .history-table { width: 100%; min-width: 550px; border-collapse: collapse; text-align: center; border: 2px solid #000; }
+    .history-table th { background-color: var(--ma-orange); color: #000; border: 2px solid #000; padding: 8px; font-size: 13px; font-weight: 900; }
+    .history-table td { border: 2px solid #000; padding: 8px; font-size: 13px; font-weight: bold; background-color: #fff; vertical-align: middle; }
     
     .cell-red { background-color: var(--ma-red); }
     .cell-green { background-color: var(--ma-green); }
@@ -219,8 +223,32 @@
 
         <div class="legend">
             <div class="legend-item"><span class="cell-white"></span>Available</div>
+            <div class="legend-item"><span class="cell-green"></span>Booked</div>
             <div class="legend-item"><span class="cell-red"></span>Class Hours</div>
             <div class="legend-item"><span class="cell-grey"></span>On Leave</div>
+        </div>
+
+        <!-- APPOINTMENT OUTCOMES & REMARKS HISTORY -->
+        <div style="margin-top: 20px; border-top: 2px solid #000; padding-top: 15px;">
+            <h4 style="font-weight: 900; font-size: 16px; margin: 0 0 10px 0; text-align: left;">
+                <i class="fa-solid fa-clipboard-check"></i> Appointment Outcomes & Remarks
+            </h4>
+            <div class="schedule-grid-container" style="max-height: 220px; overflow-y: auto;">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Parent</th>
+                            <th>Topic</th>
+                            <th>Date & Time</th>
+                            <th>Status</th>
+                            <th>Teacher's Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminHistoryBody">
+                        <tr><td colspan="5">Loading history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -283,6 +311,7 @@
             return;
         }
 
+        document.getElementById('adminHistoryBody').innerHTML = '<tr><td colspan="5">Loading history...</td></tr>';
         document.getElementById('adminCalendarModal').classList.remove('hidden');
 
         const newUrl = new URL(window.location.href);
@@ -496,6 +525,23 @@
                     else if (match.status === 'leave' || match.status === 'on_leave') { cell.classList.add('cell-grey'); cell.dataset.originalStatus = 'leave'; } 
                     else { cell.classList.add('cell-white'); cell.dataset.originalStatus = 'available'; }
                 });
+
+                const historyBody = document.getElementById('adminHistoryBody');
+                if (data.history && data.history.length > 0) {
+                    historyBody.innerHTML = data.history.map(item => `
+                        <tr>
+                            <td>${item.parent_name}</td>
+                            <td>${item.topic}</td>
+                            <td>${item.date}<br><small>${item.time}</small></td>
+                            <td style="text-transform: uppercase; color: ${item.status === 'completed' ? 'var(--ma-green)' : (item.status === 'no_show' ? 'var(--ma-red)' : 'var(--ma-orange)')};">
+                                ${item.status.replace('_', '-')}
+                            </td>
+                            <td style="text-align: left; font-weight: normal;">${item.remarks}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    historyBody.innerHTML = '<tr><td colspan="5">No booked or completed appointments yet.</td></tr>';
+                }
             }
         })
         .catch(error => console.error('Error loading schedule:', error));

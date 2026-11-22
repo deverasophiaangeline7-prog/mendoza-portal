@@ -37,8 +37,9 @@ Route::get('/tuitionfee', function () { return view('tuitionfee'); })->name('tui
 Route::get('/faqs', function () { return view('faqs'); })->name('faqs');
 
 Route::get('forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
-Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
-
+Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink'])
+    ->middleware('throttle:5,1')
+    ->name('password.email');
 // ==========================================
 // 2. GENERAL LOGGED-IN USERS (View Only)
 // ==========================================
@@ -122,6 +123,7 @@ Route::middleware(['auth', \App\Http\Middleware\ForcePasswordChange::class])->gr
     Route::patch('/appointments/{appointment}/approve', [AppointmentController::class, 'approve'])->name('appointments.approve');
     Route::patch('/appointments/{appointment}/decline', [AppointmentController::class, 'decline'])->name('appointments.decline');
     Route::patch('/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
+    Route::patch('/appointments/{appointment}/complete', [AppointmentController::class, 'complete'])->name('appointments.complete');
 
     Route::get('/appointments/teacher-schedule', [AppointmentController::class, 'getAvailability'])->name('appointments.getAvailability');
     Route::post('/appointments/update-availability', [AppointmentController::class, 'updateAvailability'])->name('appointments.updateAvailability');

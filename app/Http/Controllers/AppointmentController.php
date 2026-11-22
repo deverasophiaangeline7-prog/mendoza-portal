@@ -41,6 +41,12 @@ class AppointmentController extends Controller
                 ->orderBy('appointment_date', 'asc')
                 ->get();
 
+            $meetingHistory = Appointment::with(['parent.student'])
+                ->where('teacher_id', $user->user_id)
+                ->whereIn('status', ['booked', 'completed', 'no_show'])
+                ->orderBy('appointment_date', 'desc')
+                ->get();
+
             $sectionIds = $user->sections->pluck('section_id');
             $parents = User::where('role', 'parent')
                 ->whereHas('student', function ($query) use ($sectionIds) {
@@ -57,8 +63,8 @@ class AppointmentController extends Controller
 
             $schedules = TeacherSchedule::where('teacher_id', $user->user_id)->get();
 
-            return view('appointment_teacher', compact('incomingRequests', 'mySentRequests', 'parents', 'schedules', 'bookedAppointments'));
-            
+            return view('appointment_teacher', compact('incomingRequests', 'mySentRequests', 'parents', 'schedules', 'bookedAppointments', 'meetingHistory'));
+
         } elseif ($user->role === 'parent') {
             $student = Student::active()
                 ->with('section.teacher')
@@ -77,6 +83,12 @@ class AppointmentController extends Controller
                 ->whereIn('status', ['pending', 'reschedule'])
                 ->where('created_by', $user->user_id)
                 ->orderBy('appointment_date', 'asc')
+                ->get();
+
+            $meetingHistory = Appointment::with(['parent.student'])
+                ->where('parent_id', $user->user_id)
+                ->whereIn('status', ['booked', 'completed', 'no_show'])
+                ->orderBy('appointment_date', 'desc')
                 ->get();
 
             $bookedAppointments = collect();
@@ -98,11 +110,10 @@ class AppointmentController extends Controller
                     ->get();
                 $adviserName = $adviserTeacher->name ?? ($adviserTeacher->first_name . ' ' . $adviserTeacher->last_name);
             }
-                
-            return view('appointment_parent', compact('incomingRequests', 'mySentRequests', 'adviserSchedule', 'student', 'adviserName', 'bookedAppointments'));                
-       
+
+            return view('appointment_parent', compact('incomingRequests', 'mySentRequests', 'adviserSchedule', 'student', 'adviserName', 'bookedAppointments', 'meetingHistory'));
+
         } elseif (in_array($user->role, ['admin', 'superadmin'])) {
-            
             $advisersList = [];
 
             $nkpTeacher = Teacher::whereIn('advisory', ['1,2,3', 'NKP', 'Nursery', 'Kinder', 'Prep', 'KINDERGARTEN', 'PREPARATORY'])->first();
@@ -131,7 +142,7 @@ class AppointmentController extends Controller
 
             $selectedTeacherId = request('teacher_id');
             $scheduleRows = [];
-            
+
             if ($selectedTeacherId) {
                 $teacherSchedules = TeacherSchedule::where('teacher_id', $selectedTeacherId)->get();
                 foreach ($teacherSchedules as $schedule) {
@@ -185,7 +196,7 @@ class AppointmentController extends Controller
         }
 
         $validated['status'] = 'pending';
-        $validated['created_by'] = auth()->id(); 
+        $validated['created_by'] = auth()->id();
 
         Appointment::create($validated);
 
@@ -210,7 +221,7 @@ class AppointmentController extends Controller
     {
         $startTime = Carbon::parse($appointment->start_time);
         $endTime = Carbon::parse($appointment->end_time);
-        $timeSlot = $startTime->format('gA'); // e.g. "8AM", "10AM"
+        $timeSlot = $startTime->format('gA');
 
         // 1. CHECK IF TEACHER IS ON LEAVE OR IN CLASS
         $scheduleConflict = TeacherSchedule::where('teacher_id', $appointment->teacher_id)
@@ -227,8 +238,8 @@ class AppointmentController extends Controller
         // 2. CHECK FOR DOUBLE BOOKING BEFORE APPROVING
         $hasConflict = Appointment::where('teacher_id', $appointment->teacher_id)
             ->where('appointment_date', $appointment->appointment_date)
-            ->where('status', 'booked') // Only check against already approved/booked slots
-            ->where('id', '!=', $appointment->id) // Exclude current appointment
+            ->where('status', 'booked')
+            ->where('id', '!=', $appointment->id)
             ->where(function ($query) use ($appointment) {
                 $query->where('start_time', '<', $appointment->end_time)
                       ->where('end_time', '>', $appointment->start_time);
@@ -291,7 +302,7 @@ class AppointmentController extends Controller
             'appointment_date' => $request->suggested_date,
             'start_time' => $request->suggested_start_time,
             'end_time' => $request->suggested_end_time,
-            'created_by' => auth()->id(), 
+            'created_by' => auth()->id(),
         ]);
 
         Notification::create([
@@ -341,6 +352,37 @@ class AppointmentController extends Controller
         return back()->with('success', 'Appointment request declined successfully.');
     }
 
+    public function complete(Request $request, Appointment $appointment)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:completed,no_show',
+            'remarks' => 'required|string|max:1000',
+        ]);
+
+        $appointment->update([
+            'status' => $validated['status'],
+            'remarks' => $validated['remarks'],
+        ]);
+
+        $statusLabel = $validated['status'] === 'completed' ? 'Completed' : 'No-Show';
+
+        Notification::create([
+            'user_id' => $appointment->parent_id,
+            'title' => 'Appointment ' . $statusLabel,
+            'message' => 'Your appointment for "' . $appointment->discussion_topic . '" was marked as ' . $statusLabel . '. Remarks: ' . $validated['remarks'],
+            'type' => 'appointment',
+            'is_read' => 0,
+        ]);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Appointment ' . $statusLabel,
+            'description' => auth()->user()->name . ' marked the appointment "' . $appointment->discussion_topic . '" as ' . $statusLabel . '. Remarks: ' . $validated['remarks'],
+        ]);
+
+        return back()->with('success', 'Meeting outcome and remarks saved successfully.');
+    }
+
     public function getAvailability(Request $request)
     {
         $request->validate([
@@ -348,6 +390,24 @@ class AppointmentController extends Controller
         ]);
 
         $schedules = TeacherSchedule::where('teacher_id', $request->teacher_id)->get(['date', 'time_slot', 'status']);
+
+        $history = Appointment::with(['parent.student'])
+            ->where('teacher_id', $request->teacher_id)
+            ->whereIn('status', ['booked', 'completed', 'no_show'])
+            ->orderBy('appointment_date', 'desc')
+            ->get()
+            ->map(function ($app) {
+                $student = optional($app->parent->student);
+                $parentName = trim($student->first_name . ' ' . $student->last_name) ?: optional($app->parent)->username;
+                return [
+                    'parent_name' => strtoupper($parentName),
+                    'topic'       => $app->discussion_topic,
+                    'date'        => Carbon::parse($app->appointment_date)->format('M j, Y'),
+                    'time'        => Carbon::parse($app->start_time)->format('g:iA') . ' - ' . Carbon::parse($app->end_time)->format('g:iA'),
+                    'status'      => $app->status,
+                    'remarks'     => $app->remarks ?? 'No remarks yet.',
+                ];
+            });
 
         return response()->json([
             'success' => true,
@@ -358,13 +418,14 @@ class AppointmentController extends Controller
                     'status' => $schedule->status,
                 ];
             }),
+            'history' => $history,
         ]);
     }
 
-    public function updateAvailability(Request $request) 
+    public function updateAvailability(Request $request)
     {
         $request->validate([
-            'teacher_id' => 'required', 
+            'teacher_id' => 'required',
             'schedules' => 'required|array',
             'schedules.*.date' => 'required|date',
             'schedules.*.time' => 'required|string',
@@ -377,7 +438,7 @@ class AppointmentController extends Controller
 
         try {
             foreach ($request->schedules as $schedule) {
-                
+
                 // 1. Update the general schedule layout
                 TeacherSchedule::updateOrCreate(
                     ['teacher_id' => $request->teacher_id, 'date' => $schedule['date'], 'time_slot' => $schedule['time']],
@@ -386,27 +447,23 @@ class AppointmentController extends Controller
 
                 // --- 2. HANDLE CANCELLATIONS (Admin turned Green to White) ---
                 if (!empty($schedule['is_cancelled']) && $schedule['status'] === 'available') {
-                    
-                    // Fetch booked appointments for this slot
+
                     $cancelledAppointments = Appointment::where('teacher_id', $request->teacher_id)
                         ->where('appointment_date', $schedule['date'])
                         ->whereIn('status', ['booked', 'booked-half'])
                         ->get();
-                        
-                    foreach($cancelledAppointments as $appointment) {
-                        $appointmentStartHour = Carbon::parse($appointment->start_time)->format('gA'); 
+
+                    foreach ($cancelledAppointments as $appointment) {
+                        $appointmentStartHour = Carbon::parse($appointment->start_time)->format('gA');
                         $slotStartHour = Carbon::parse($schedule['time'])->format('gA');
-                        
+
                         if ($appointmentStartHour === $slotStartHour) {
-                            
                             $formattedDate = Carbon::parse($appointment->appointment_date)->format('M d, Y');
                             $formattedTime = Carbon::parse($appointment->start_time)->format('h:i A');
-                            $parentId = $appointment->parent_id; // Save ID before deleting
+                            $parentId = $appointment->parent_id;
 
-                            // Delete the appointment instead of updating status to 'cancelled'
                             $appointment->delete();
 
-                            // Alert the Parent
                             Notification::create([
                                 'user_id' => $parentId,
                                 'title' => 'Appointment Cancelled',
@@ -415,7 +472,6 @@ class AppointmentController extends Controller
                                 'is_read' => 0,
                             ]);
 
-                            // Alert the Teacher
                             Notification::create([
                                 'user_id' => $request->teacher_id,
                                 'title' => 'Appointment Cancelled',
@@ -429,22 +485,21 @@ class AppointmentController extends Controller
 
                 // --- 3. HANDLE RESCHEDULES (Admin turned Green to Grey) ---
                 if (!empty($schedule['needs_reschedule']) && $schedule['status'] === 'leave') {
-                    
+
                     $affectedAppointments = Appointment::where('teacher_id', $request->teacher_id)
                         ->where('appointment_date', $schedule['date'])
                         ->whereIn('status', ['booked', 'booked-half'])
                         ->get();
-                        
-                    foreach($affectedAppointments as $appointment) {
-                        $appointmentStartHour = Carbon::parse($appointment->start_time)->format('gA'); 
+
+                    foreach ($affectedAppointments as $appointment) {
+                        $appointmentStartHour = Carbon::parse($appointment->start_time)->format('gA');
                         $slotStartHour = Carbon::parse($schedule['time'])->format('gA');
-                        
+
                         if ($appointmentStartHour === $slotStartHour) {
-                            
                             $appointment->update([
                                 'status' => 'reschedule',
                                 'reschedule_reason' => 'Emergency: Teacher was marked on leave by Admin.',
-                                'created_by' => $appointment->parent_id, 
+                                'created_by' => $appointment->parent_id,
                             ]);
 
                             $formattedDate = Carbon::parse($appointment->appointment_date)->format('M d, Y');
@@ -470,7 +525,6 @@ class AppointmentController extends Controller
                 }
             }
 
-            // Log the action
             AuditLog::create([
                 'user_id' => auth()->id(),
                 'action' => 'Update Teacher Schedule',
@@ -498,7 +552,7 @@ class AppointmentController extends Controller
             'action' => 'Appointment Cancelled',
             'description' => auth()->user()->name . ' cancelled their appointment request for "' . $appointment->discussion_topic . '".'
         ]);
-        
+
         $appointment->delete();
 
         return redirect()->back()->with('success', 'Appointment request cancelled successfully.');

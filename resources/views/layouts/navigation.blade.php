@@ -431,7 +431,6 @@
                                 'admin.list', 
                                 'admin.archived',
                                 'admin.create', 
-                                'admin.content*'
                             ])">
                             {{ $nav['account_management']['label'] ?? 'Account Management' }}
                         </x-sidebar-link>
@@ -444,7 +443,7 @@
                             Site Management
                         </x-sidebar-link>
                     @endif
-                    
+
                 </ul>
             </nav>
 

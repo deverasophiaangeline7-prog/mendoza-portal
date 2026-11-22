@@ -414,7 +414,18 @@
                     @csrf
                     <div class="form-group">
                         <label>Discussion Topic</label>
-                        <input type="text" name="discussion_topic" class="form-control" required>
+                        <select id="topic_select" class="form-control" onchange="toggleOtherInput('topic_select', 'topic_other_input', 'discussion_topic_final')" required>
+                            <option value="">Select Discussion Topic</option>
+                            <option value="Academic Performance / Grades">Academic Performance / Grades</option>
+                            <option value="Attendance and Tardiness">Attendance and Tardiness</option>
+                            <option value="Student Behavior / Conduct">Student Behavior / Conduct</option>
+                            <option value="School Requirements / Projects">School Requirements / Projects</option>
+                            <option value="Health / Special Needs Concern">Health / Special Needs Concern</option>
+                            <option value="Others">Others (Please specify)</option>
+                        </select>
+                        <input type="text" id="topic_other_input" class="form-control" style="display: none; margin-top: 8px;"
+                            placeholder="Specify discussion topic..." oninput="syncOtherValue('topic_other_input', 'discussion_topic_final')">
+                        <input type="hidden" name="discussion_topic" id="discussion_topic_final">
                     </div>
 
                     <div class="form-group">
@@ -557,6 +568,44 @@
                         </div>
                     @endif
                 @endif
+            </div>
+
+            {{-- MEETING HISTORY & REMARKS --}}
+            <div class="ma-card" id="sync-parent-history">
+                <h3>Meeting History & Remarks</h3>
+                <div class="table-responsive">
+                    <table class="pending-table">
+                        <thead>
+                            <tr>
+                                <th>Topic & Schedule</th>
+                                <th>Status</th>
+                                <th>Teacher's Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($meetingHistory as $meeting)
+                                <tr>
+                                    <td>
+                                        <strong>{{ $meeting->discussion_topic }}</strong><br>
+                                        <small>{{ \Carbon\Carbon::parse($meeting->appointment_date)->format('M j, Y') }} • {{ \Carbon\Carbon::parse($meeting->start_time)->format('g:iA') }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="pill-orange" style="background-color: {{ $meeting->status === 'completed' ? 'var(--ma-green)' : ($meeting->status === 'no_show' ? 'var(--ma-red)' : 'var(--ma-orange)') }}; color: {{ $meeting->status === 'no_show' ? '#fff' : '#000' }}; display: inline-block;">
+                                            {{ $meeting->status === 'completed' ? 'Completed' : ($meeting->status === 'no_show' ? 'No-Show' : 'Booked') }}
+                                        </span>
+                                    </td>
+                                    <td style="text-align: left; font-size: 13px;">
+                                        {{ $meeting->remarks ?? 'Pending meeting completion.' }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" style="text-align: center;">No booked or completed meetings yet.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -728,12 +777,22 @@
     <div class="nested-modal-content">
         <h3 style="color: var(--ma-orange); font-weight: bold; text-transform: uppercase;">State your reason for rescheduling</h3>
         
-            <form id="rescheduleForm" method="POST" action="" onsubmit="return validateRescheduleForm(event)">
-                @csrf @method('PATCH')
+        <form id="rescheduleForm" method="POST" action="" onsubmit="return validateRescheduleForm(event)">
+            @csrf @method('PATCH')
             
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Reason</label>
-                <input type="text" name="reason" class="form-control" placeholder="e.g. Conflict with schedule" required>
+                <select id="resched_reason_select" class="form-control" onchange="toggleOtherInput('resched_reason_select', 'resched_reason_other', 'resched_reason_final')" required>
+                    <option value="">Select Reason for Rescheduling</option>
+                    <option value="Schedule Conflict">Schedule Conflict</option>
+                    <option value="Emergency / Urgent Matter">Emergency / Urgent Matter</option>
+                    <option value="Health / Medical Reason">Health / Medical Reason</option>
+                    <option value="Work / Personal Commitment">Work / Personal Commitment</option>
+                    <option value="Others">Others (Please specify)</option>
+                </select>
+                <input type="text" id="resched_reason_other" class="form-control" style="display: none; margin-top: 8px;"
+                    placeholder="Specify reason..." oninput="syncOtherValue('resched_reason_other', 'resched_reason_final')">
+                <input type="hidden" name="reason" id="resched_reason_final">
             </div>
             
             <h4 style="font-weight: 900; margin-bottom: 10px; margin-top: 20px;">RESCHEDULE</h4>
@@ -798,7 +857,17 @@
             
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Reason</label>
-                <input type="text" name="reason" class="form-control" placeholder="e.g. Schedule conflict, out of office" required>
+                <select id="decline_reason_select" class="form-control" onchange="toggleOtherInput('decline_reason_select', 'decline_reason_other', 'decline_reason_final')" required>
+                    <option value="">Select Reason for Declining</option>
+                    <option value="Schedule Conflict">Schedule Conflict</option>
+                    <option value="Out of Office / On Leave">Out of Office / On Leave</option>
+                    <option value="Issue Already Resolved">Issue Already Resolved</option>
+                    <option value="Emergency / Urgent Matter">Emergency / Urgent Matter</option>
+                    <option value="Others">Others (Please specify)</option>
+                </select>
+                <input type="text" id="decline_reason_other" class="form-control" style="display: none; margin-top: 8px;"
+                    placeholder="Specify reason..." oninput="syncOtherValue('decline_reason_other', 'decline_reason_final')">
+                <input type="hidden" name="reason" id="decline_reason_final">
             </div>
             
             <div class="nested-modal-actions">
@@ -810,6 +879,29 @@
 </div>
 
 <script>
+    // === DROPDOWN "OTHERS" HELPER ===
+    function toggleOtherInput(selectId, otherInputId, hiddenInputId) {
+        const select = document.getElementById(selectId);
+        const otherInput = document.getElementById(otherInputId);
+        const hiddenInput = document.getElementById(hiddenInputId);
+
+        if (select.value === 'Others') {
+            otherInput.style.display = 'block';
+            otherInput.required = true;
+            hiddenInput.value = otherInput.value.trim();
+            otherInput.focus();
+        } else {
+            otherInput.style.display = 'none';
+            otherInput.required = false;
+            otherInput.value = '';
+            hiddenInput.value = select.value;
+        }
+    }
+
+    function syncOtherValue(otherInputId, hiddenInputId) {
+        document.getElementById(hiddenInputId).value = document.getElementById(otherInputId).value.trim();
+    }
+
     // === DATE INPUT HELPER (MM/DD/YYYY + CALENDAR PICKER SYNC) ===
     function setupDateField(displayId, hiddenId, pickerId) {
         const displayEl = document.getElementById(displayId);
@@ -862,11 +954,15 @@
         const dateInput = document.getElementById('appointment_date').value;
         const startTimeInput = document.getElementById('start_time').value;
         const endTimeInput = document.getElementById('end_time').value;
-        const topicInput = document.querySelector('input[name="discussion_topic"]').value;
+        const topicInput = document.getElementById('discussion_topic_final').value;
+
+        if (!topicInput) {
+            event.preventDefault(); showValidationPopUp('Please select or specify a discussion topic.'); return false;
+        }
         
-        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
+        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-'\/()]/g;
         if (invalidTopicRegex.test(topicInput)) {
-            event.preventDefault(); showValidationPopUp('The discussion topic can only contain letters, numbers, spaces, periods, commas, hyphens, and apostrophes.'); return false;
+            event.preventDefault(); showValidationPopUp('The discussion topic can only contain letters, numbers, spaces, periods, commas, hyphens, slashes, and apostrophes.'); return false;
         }
 
         if (!dateInput || !startTimeInput || !endTimeInput) return true;
@@ -928,11 +1024,15 @@
         const dateInput = form.querySelector('input[name="suggested_date"]').value;
         const startTimeInput = form.querySelector('input[name="suggested_start_time"]').value;
         const endTimeInput = form.querySelector('input[name="suggested_end_time"]').value;
-        const reasonInput = form.querySelector('input[name="reason"]').value;
+        const reasonInput = document.getElementById('resched_reason_final').value;
 
-        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
+        if (!reasonInput) {
+            event.preventDefault(); showValidationPopUp('Please select or specify a reason for rescheduling.'); return false;
+        }
+
+        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-'\/()]/g;
         if (invalidTopicRegex.test(reasonInput)) {
-            event.preventDefault(); showValidationPopUp('The reason can only contain letters, numbers, spaces, periods, commas, hyphens, and apostrophes.'); return false;
+            event.preventDefault(); showValidationPopUp('The reason can only contain letters, numbers, spaces, periods, commas, hyphens, slashes, and apostrophes.'); return false;
         }
 
         if (!dateInput || !startTimeInput || !endTimeInput) return true;
@@ -1096,7 +1196,7 @@
                 document.getElementById('start_time').value = formattedStartTime;
                 document.getElementById('end_time').value = formattedEndTime;
                 
-                document.querySelector('input[name="discussion_topic"]').focus();
+                document.getElementById('topic_select').focus();
                 
             } else {
                 let status = cell.getAttribute('data-status');
@@ -1126,6 +1226,12 @@
                     const currentParentRequests = document.getElementById('sync-parent-requests');
                     if (newParentRequests && currentParentRequests) {
                         currentParentRequests.innerHTML = newParentRequests.innerHTML;
+                    }
+
+                    const newParentHistory = doc.getElementById('sync-parent-history');
+                    const currentParentHistory = document.getElementById('sync-parent-history');
+                    if (newParentHistory && currentParentHistory) {
+                        currentParentHistory.innerHTML = newParentHistory.innerHTML;
                     }
 
                     const newScheduleGrid = doc.getElementById('sync-schedule-grid');

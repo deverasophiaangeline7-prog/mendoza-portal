@@ -472,7 +472,18 @@
 
                     <div class="form-group">
                         <label>Discussion Topic</label>
-                        <input type="text" name="discussion_topic" class="form-control" required>
+                        <select id="topic_select" class="form-control" onchange="toggleOtherInput('topic_select', 'topic_other_input', 'discussion_topic_final')" required>
+                            <option value="">Select Discussion Topic</option>
+                            <option value="Academic Performance / Grades">Academic Performance / Grades</option>
+                            <option value="Attendance and Tardiness">Attendance and Tardiness</option>
+                            <option value="Student Behavior / Conduct">Student Behavior / Conduct</option>
+                            <option value="School Requirements / Projects">School Requirements / Projects</option>
+                            <option value="Health / Special Needs Concern">Health / Special Needs Concern</option>
+                            <option value="Others">Others (Please specify)</option>
+                        </select>
+                        <input type="text" id="topic_other_input" class="form-control" style="display: none; margin-top: 8px;"
+                            placeholder="Specify discussion topic..." oninput="syncOtherValue('topic_other_input', 'discussion_topic_final')">
+                        <input type="hidden" name="discussion_topic" id="discussion_topic_final">
                     </div>
 
                     <div class="form-group">
@@ -562,6 +573,55 @@
                             @empty
                                 <tr>
                                     <td colspan="5" style="text-align: center;">No sent requests.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- BOOKED & COMPLETED MEETINGS WITH REMARKS --}}
+            <div id="sync-teacher-history" style="margin-top: 10px;">
+                <div style="text-align: left; font-weight: 900; font-size: 18px; margin-bottom: 10px; margin-left: 5px;">
+                    Booked & Completed Meetings
+                </div>
+                <div class="table-responsive">
+                    <table class="pending-table">
+                        <thead>
+                            <tr>
+                                <th>Parent</th>
+                                <th>Topic & Schedule</th>
+                                <th>Status / Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($meetingHistory as $meeting)
+                                <tr>
+                                    <td>
+                                        {{ strtoupper(optional($meeting->parent->student)->first_name . ' ' . optional($meeting->parent->student)->last_name ?: optional($meeting->parent)->username) }}
+                                    </td>
+                                    <td>
+                                        <strong>{{ $meeting->discussion_topic }}</strong><br>
+                                        <small>{{ \Carbon\Carbon::parse($meeting->appointment_date)->format('M j, Y') }} • {{ \Carbon\Carbon::parse($meeting->start_time)->format('g:iA') }}</small>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        @if($meeting->status === 'booked')
+                                            <button type="button" class="btn-flat btn-approve" onclick="openRemarksModal({{ $meeting->id }})">
+                                                Mark Done / Remarks
+                                            </button>
+                                        @else
+                                            <span class="pill-orange" style="background-color: {{ $meeting->status === 'completed' ? 'var(--ma-green)' : 'var(--ma-red)' }}; color: {{ $meeting->status === 'completed' ? '#000' : '#fff' }}; display: inline-block; margin-bottom: 6px;">
+                                                {{ $meeting->status === 'completed' ? 'Completed' : 'No-Show' }}
+                                            </span>
+                                            <div style="font-size: 12px; text-align: left; background: #f4f4f4; padding: 6px 8px; border-radius: 8px; border: 1px solid #000;">
+                                                <strong>Remarks:</strong> {{ $meeting->remarks }}
+                                            </div>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" style="text-align: center;">No booked or completed meetings yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -748,6 +808,45 @@
     </div>
 </div>
 
+<!-- MEETING OUTCOME & REMARKS MODAL -->
+<div id="remarksModal" class="modal-overlay modal-hidden">
+    <div class="nested-modal-content">
+        <h3 style="color: var(--ma-green); font-weight: 900; text-transform: uppercase;">Record Meeting Outcome</h3>
+        <form id="remarksForm" method="POST" action="">
+            @csrf @method('PATCH')
+
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Meeting Status</label>
+                <select name="status" class="form-control" required>
+                    <option value="completed">Successful / Completed</option>
+                    <option value="no_show">No-Show / Did Not Attend</option>
+                </select>
+            </div>
+
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Remarks</label>
+                <select id="remarks_select" class="form-control" onchange="toggleOtherInput('remarks_select', 'remarks_other_input', 'remarks_final')" required>
+                    <option value="">Select Remark</option>
+                    <option value="Meeting successful - Issue resolved">Meeting successful - Issue resolved</option>
+                    <option value="Meeting successful - Action plan agreed">Meeting successful - Action plan agreed</option>
+                    <option value="Needs follow-up meeting">Needs follow-up meeting</option>
+                    <option value="Referred to Guidance / Principal">Referred to Guidance / Principal</option>
+                    <option value="Parent did not attend (No-Show)">Parent did not attend (No-Show)</option>
+                    <option value="Others">Others (Please specify)</option>
+                </select>
+                <input type="text" id="remarks_other_input" class="form-control" style="display: none; margin-top: 8px;"
+                    placeholder="Specify remarks..." oninput="syncOtherValue('remarks_other_input', 'remarks_final')">
+                <input type="hidden" name="remarks" id="remarks_final">
+            </div>
+
+            <div class="nested-modal-actions">
+                <button type="button" class="btn-flat" style="background: var(--ma-dark-grey); color: black;" onclick="closeModal('remarksModal')">Cancel</button>
+                <button type="submit" class="btn-flat btn-approve">Save Remarks</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- INCOMING REQUESTS MODAL -->
 <div id="requestsModalOverlay" class="modal-overlay modal-hidden">
     <div class="requests-modal">
@@ -810,7 +909,17 @@
             
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Reason</label>
-                <input type="text" name="reason" class="form-control" placeholder="e.g. Conflict with schedule" required>
+                <select id="resched_reason_select" class="form-control" onchange="toggleOtherInput('resched_reason_select', 'resched_reason_other', 'resched_reason_final')" required>
+                    <option value="">Select Reason for Rescheduling</option>
+                    <option value="Schedule Conflict">Schedule Conflict</option>
+                    <option value="Emergency / Urgent Matter">Emergency / Urgent Matter</option>
+                    <option value="Health / Medical Reason">Health / Medical Reason</option>
+                    <option value="Work / Personal Commitment">Work / Personal Commitment</option>
+                    <option value="Others">Others (Please specify)</option>
+                </select>
+                <input type="text" id="resched_reason_other" class="form-control" style="display: none; margin-top: 8px;"
+                    placeholder="Specify reason..." oninput="syncOtherValue('resched_reason_other', 'resched_reason_final')">
+                <input type="hidden" name="reason" id="resched_reason_final">
             </div>
             
             <h4 style="font-weight: 900; margin-bottom: 10px; margin-top: 20px;">RESCHEDULE</h4>
@@ -875,7 +984,17 @@
             
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-weight: 900; font-size: 13px; margin-left: 5px;">Reason</label>
-                <input type="text" name="reason" class="form-control" placeholder="e.g. Schedule conflict, out of office" required>
+                <select id="decline_reason_select" class="form-control" onchange="toggleOtherInput('decline_reason_select', 'decline_reason_other', 'decline_reason_final')" required>
+                    <option value="">Select Reason for Declining</option>
+                    <option value="Schedule Conflict">Schedule Conflict</option>
+                    <option value="Out of Office / On Leave">Out of Office / On Leave</option>
+                    <option value="Issue Already Resolved">Issue Already Resolved</option>
+                    <option value="Emergency / Urgent Matter">Emergency / Urgent Matter</option>
+                    <option value="Others">Others (Please specify)</option>
+                </select>
+                <input type="text" id="decline_reason_other" class="form-control" style="display: none; margin-top: 8px;"
+                    placeholder="Specify reason..." oninput="syncOtherValue('decline_reason_other', 'decline_reason_final')">
+                <input type="hidden" name="reason" id="decline_reason_final">
             </div>
             
             <div class="nested-modal-actions">
@@ -887,6 +1006,29 @@
 </div>
 
 <script>
+    // === DROPDOWN "OTHERS" HELPER ===
+    function toggleOtherInput(selectId, otherInputId, hiddenInputId) {
+        const select = document.getElementById(selectId);
+        const otherInput = document.getElementById(otherInputId);
+        const hiddenInput = document.getElementById(hiddenInputId);
+
+        if (select.value === 'Others') {
+            otherInput.style.display = 'block';
+            otherInput.required = true;
+            hiddenInput.value = otherInput.value.trim();
+            otherInput.focus();
+        } else {
+            otherInput.style.display = 'none';
+            otherInput.required = false;
+            otherInput.value = '';
+            hiddenInput.value = select.value;
+        }
+    }
+
+    function syncOtherValue(otherInputId, hiddenInputId) {
+        document.getElementById(hiddenInputId).value = document.getElementById(otherInputId).value.trim();
+    }
+
     // === DATE INPUT HELPER (MM/DD/YYYY + CALENDAR PICKER SYNC) ===
     function setupDateField(displayId, hiddenId, pickerId) {
         const displayEl = document.getElementById(displayId);
@@ -935,15 +1077,29 @@
         openModal('cancelModalOverlay');
     }
 
+    function openRemarksModal(appointmentId) {
+        document.getElementById('remarksForm').action = `/appointments/${appointmentId}/complete`;
+        document.getElementById('remarks_select').value = '';
+        document.getElementById('remarks_other_input').value = '';
+        document.getElementById('remarks_other_input').style.display = 'none';
+        document.getElementById('remarks_other_input').required = false;
+        document.getElementById('remarks_final').value = '';
+        openModal('remarksModal');
+    }
+
     function validateAppointmentForm(event) {
         const dateInput = document.getElementById('appointment_date').value;
         const startTimeInput = document.getElementById('start_time').value;
         const endTimeInput = document.getElementById('end_time').value;
-        const topicInput = document.querySelector('input[name="discussion_topic"]').value;
+        const topicInput = document.getElementById('discussion_topic_final').value;
 
-        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
+        if (!topicInput) {
+            event.preventDefault(); showValidationPopUp('Please select or specify a discussion topic.'); return false;
+        }
+
+        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-'\/()]/g;
         if (invalidTopicRegex.test(topicInput)) {
-            event.preventDefault(); showValidationPopUp('The discussion topic can only contain letters, numbers, spaces, periods, commas, hyphens, and apostrophes.'); return false;
+            event.preventDefault(); showValidationPopUp('The discussion topic can only contain letters, numbers, spaces, periods, commas, hyphens, slashes, and apostrophes.'); return false;
         }
 
         if (!dateInput || !startTimeInput || !endTimeInput) return true;
@@ -1005,11 +1161,15 @@
         const dateInput = form.querySelector('input[name="suggested_date"]').value;
         const startTimeInput = form.querySelector('input[name="suggested_start_time"]').value;
         const endTimeInput = form.querySelector('input[name="suggested_end_time"]').value;
-        const reasonInput = form.querySelector('input[name="reason"]').value;
+        const reasonInput = document.getElementById('resched_reason_final').value;
 
-        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-']/g;
+        if (!reasonInput) {
+            event.preventDefault(); showValidationPopUp('Please select or specify a reason for rescheduling.'); return false;
+        }
+
+        const invalidTopicRegex = /[^a-zA-Z0-9 .,\-'\/()]/g;
         if (invalidTopicRegex.test(reasonInput)) {
-            event.preventDefault(); showValidationPopUp('The reason can only contain letters, numbers, spaces, periods, commas, hyphens, and apostrophes.'); return false;
+            event.preventDefault(); showValidationPopUp('The reason can only contain letters, numbers, spaces, periods, commas, hyphens, slashes, and apostrophes.'); return false;
         }
 
         if (!dateInput || !startTimeInput || !endTimeInput) return true;
@@ -1084,12 +1244,14 @@
         const resOverlay = document.getElementById('rescheduleModal');
         const decOverlay = document.getElementById('trueDeclineModal');
         const cancelOverlay = document.getElementById('cancelModalOverlay');
+        const remarksOverlay = document.getElementById('remarksModal');
         
         if (event.target === overlay) closeModal('requestsModalOverlay');
         if (event.target === valOverlay) closeModal('validationModalOverlay');
         if (event.target === resOverlay) closeModal('rescheduleModal');
         if (event.target === decOverlay) closeModal('trueDeclineModal');
         if (event.target === cancelOverlay) closeModal('cancelModalOverlay');
+        if (event.target === remarksOverlay) closeModal('remarksModal');
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -1188,7 +1350,7 @@
                 if (!parentSelect.value) {
                     parentSelect.focus();
                 } else {
-                    document.querySelector('input[name="discussion_topic"]').focus();
+                    document.getElementById('topic_select').focus();
                 }
                 
             } else {
@@ -1206,7 +1368,7 @@
 
     // === 4. BACKGROUND SYNC ===
     setInterval(() => {
-        const isModalOpen = document.querySelectorAll('.modal-overlay:not(.modal-hidden)').length > 0;
+        const isModalOpen = document.querySelectorAll('.modal-overlay:not(.modal-hidden), .nested-modal:not(.modal-hidden)').length > 0;
         
         if (!isModalOpen) {
             fetch(window.location.href)
@@ -1215,16 +1377,16 @@
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     
-                    const newParentRequests = doc.getElementById('sync-parent-requests');
-                    const currentParentRequests = document.getElementById('sync-parent-requests');
-                    if (newParentRequests && currentParentRequests) {
-                        currentParentRequests.innerHTML = newParentRequests.innerHTML;
-                    }
-
                     const newTeacherSent = doc.getElementById('sync-teacher-sent');
                     const currentTeacherSent = document.getElementById('sync-teacher-sent');
                     if (newTeacherSent && currentTeacherSent) {
                         currentTeacherSent.innerHTML = newTeacherSent.innerHTML;
+                    }
+
+                    const newTeacherHistory = doc.getElementById('sync-teacher-history');
+                    const currentTeacherHistory = document.getElementById('sync-teacher-history');
+                    if (newTeacherHistory && currentTeacherHistory) {
+                        currentTeacherHistory.innerHTML = newTeacherHistory.innerHTML;
                     }
 
                     const newTeacherIncoming = doc.getElementById('sync-teacher-incoming');

@@ -112,4 +112,6 @@ return [
 
     'password_timeout' => 10800,
 
+    'admin_login_slug' => env('ADMIN_LOGIN_SLUG', 'mai-admin-32559178'),
+
 ];
