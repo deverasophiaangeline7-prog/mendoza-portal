@@ -15,11 +15,6 @@
                 <h2 class="text-2xl font-black text-gray-900 uppercase tracking-wide">
                     Site Management
                 </h2>
-                <a href="{{ route('account.management') }}" 
-                   title="Close and go back"
-                   class="bg-red-600 text-white h-10 w-10 flex items-center justify-center rounded-full shadow-md hover:bg-red-800 hover:scale-110 transition-all">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </a>
             </div>
 
             @if (session('status'))

@@ -436,6 +436,15 @@
                             {{ $nav['account_management']['label'] ?? 'Account Management' }}
                         </x-sidebar-link>
                     @endif
+
+                    @if(auth()->user()->role === 'superadmin')
+                        <x-sidebar-link href="{{ route('admin.content.edit') }}"
+                            icon="fa-solid fa-sliders"
+                            :active="request()->routeIs('admin.content*')">
+                            Site Management
+                        </x-sidebar-link>
+                    @endif
+                    
                 </ul>
             </nav>
 
