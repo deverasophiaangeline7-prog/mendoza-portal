@@ -5,7 +5,17 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ $siteSettings['school_name'] ?? config('app.name', 'Laravel') }}</title>
+        <link rel="icon" href="{{ asset($siteSettings['favicon_path'] ?? 'images/favicon.ico') }}" type="image/x-icon">
+
+        <style>
+            :root {
+                --color-primary: {{ $siteSettings['primary_color'] ?? '#6d0101' }};
+                --color-accent: {{ $siteSettings['accent_color'] ?? '#d4af37' }};
+                --color-navbar-bg: {{ $siteSettings['navbar_bg'] ?? '#6d0101' }};
+                --color-navbar-text: {{ $siteSettings['navbar_text'] ?? '#ffffff' }};
+            }
+        </style>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

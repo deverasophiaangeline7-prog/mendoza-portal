@@ -536,7 +536,7 @@
     @if(auth()->user()->role === 'superadmin')
     <a href="{{ route('admin.content.edit') }}" 
        class="w-full max-w-md mx-auto bg-[#6d0101] hover:bg-red-900 text-white font-black text-lg md:text-2xl py-4 md:py-5 px-4 md:px-8 rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-3">
-        Edit Homepage <i class="fas fa-globe"></i>
+        Site Management <i class="fas fa-globe"></i>
     </a>
     @endif
 

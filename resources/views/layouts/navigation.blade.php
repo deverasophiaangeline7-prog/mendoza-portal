@@ -4,15 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Mendoza Academy')</title>
+    <title>@yield('title', $siteSettings['school_name'] ?? 'Mendoza Academy')</title>
 
-    <link rel="icon" type="image/png" href="{{ asset('images/MAILogo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset($siteSettings['favicon_path'] ?? 'images/MAILogo.png') }}">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
+        :root {
+            --color-primary: {{ $siteSettings['primary_color'] ?? '#6d0101' }};
+            --color-accent: {{ $siteSettings['accent_color'] ?? '#fb923c' }};
+            --color-navbar-bg: {{ $siteSettings['navbar_bg'] ?? '#6d0101' }};
+            --color-navbar-text: {{ $siteSettings['navbar_text'] ?? '#ffffff' }};
+        }
+
         /* Instant Anti-FOUC & Anti-Blue Link Reset (Bago pa mag-load ang Tailwind CDN) */
         *, *::before, *::after {
             -webkit-tap-highlight-color: transparent;
@@ -27,7 +34,7 @@
         }
 
         .hero-gradient {
-            background-color: #6d0101;
+            background-color: var(--color-primary);
         }
         [x-cloak] { display: none !important; }
         
@@ -41,7 +48,7 @@
         nav ul a { 
             font-size: 1.125rem !important; 
             font-weight: 500 !important;    
-            color: #ffffff;
+            color: var(--color-navbar-text);
             text-decoration: none;
         }
     </style>
@@ -264,11 +271,11 @@
                 </button>
 
                 <a href="{{ auth()->check() ? route('dashboard') : url('/') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer">
-                    <img src="{{ asset('images/MAILogo.png') }}"
-                        class="h-10 w-10 p-1 rounded shadow"
+                    <img src="{{ asset($siteSettings['logo_path'] ?? 'images/MAILogo.png') }}"
+                        class="h-10 w-10 p-1 rounded shadow object-contain"
                         alt="Logo">
                     <h1 class="text-xl sm:text-2xl font-bold uppercase tracking-tight hidden sm:block">
-                        Mendoza Academy, Inc.
+                        {{ $siteSettings['school_name'] ?? 'Mendoza Academy, Inc.' }}
                     </h1>
                 </a>
             </div>
@@ -293,7 +300,6 @@
                 @include('components.notification-bell')
 
                 <!-- USER PROFILE ICON -->
-                <!-- Add title="Profile" to the button -->
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" @click.away="open = false" title="Profile" class="hover:scale-110 transition-transform focus:outline-none flex items-center">
                         <i class="fa-solid fa-circle-user text-orange-400 text-3xl sm:text-4xl"></i>
@@ -336,42 +342,44 @@
             </div>
 
             {{-- SIDEBAR --}}
+            @php $nav = $siteSettings['nav_items'] ?? []; @endphp
             <nav :class="sidebarOpen ? '!translate-x-0' : '-translate-x-full'"
-                 class="mobile-sidebar-init -translate-x-full fixed md:relative inset-y-0 left-0 z-[70] w-64 bg-[#6d0101] text-white pt-4 shadow-2xl transform transition-transform duration-300 md:!translate-x-0 overflow-y-auto shrink-0">
+                 style="background-color: var(--color-navbar-bg); color: var(--color-navbar-text);"
+                 class="mobile-sidebar-init -translate-x-full fixed md:relative inset-y-0 left-0 z-[70] w-64 pt-4 shadow-2xl transform transition-transform duration-300 md:!translate-x-0 overflow-y-auto shrink-0">
                 <ul class="space-y-1">
                     <x-sidebar-link href="{{ route('dashboard') }}"
-                        icon="fa-solid fa-chart-line"
+                        icon="{{ $nav['dashboard']['icon'] ?? 'fa-solid fa-chart-line' }}"
                         :active="request()->routeIs('dashboard')">
-                        Dashboard
+                        {{ $nav['dashboard']['label'] ?? 'Dashboard' }}
                     </x-sidebar-link>
 
                     @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
                         <x-sidebar-link href="{{ route('admin.information') }}"
-                            icon="fa-solid fa-user-shield" 
+                            icon="{{ $nav['admin_info']['icon'] ?? 'fa-solid fa-user-shield' }}" 
                             :active="request()->routeIs('admin.information')">
-                            {{ auth()->user()->role === 'superadmin' ? 'Superadmin Information' : 'Admin Information' }}
+                            {{ auth()->user()->role === 'superadmin' ? 'Superadmin Information' : ($nav['admin_info']['label'] ?? 'Admin Information') }}
                         </x-sidebar-link>
                     @endif
                      
                     @if(auth()->user()->role === 'parent')
                         <x-sidebar-link href="{{ route('student.view') }}"
-                            icon="fa-solid fa-user-graduate"
+                            icon="{{ $nav['student_info']['icon'] ?? 'fa-solid fa-user-graduate' }}"
                             :active="request()->routeIs('student.view')">
-                            Student Information
+                            {{ $nav['student_info']['label'] ?? 'Student Information' }}
                         </x-sidebar-link>
                     @endif
 
                     @if(auth()->user()->role === 'teacher')
-                    <x-sidebar-link href="{{ route('teacher.information') }}"
-                        icon="fa-solid fa-user-tie"
-                        :active="request()->routeIs('teacher.information')">
-                        Teacher Information
-                    </x-sidebar-link>
+                        <x-sidebar-link href="{{ route('teacher.information') }}"
+                            icon="{{ $nav['teacher_info']['icon'] ?? 'fa-solid fa-user-tie' }}"
+                            :active="request()->routeIs('teacher.information')">
+                            {{ $nav['teacher_info']['label'] ?? 'Teacher Information' }}
+                        </x-sidebar-link>
 
                         <x-sidebar-link href="{{ route('students.index') }}"
-                            icon="fa-solid fa-chalkboard-user"
+                            icon="{{ $nav['advisory_class']['icon'] ?? 'fa-solid fa-chalkboard-user' }}"
                             :active="request()->routeIs('students.*')">
-                            Advisory Class
+                            {{ $nav['advisory_class']['label'] ?? 'Advisory Class' }}
                         </x-sidebar-link>
                     @endif
 
@@ -384,50 +392,50 @@
                     @endphp
 
                     <x-sidebar-link href="{{ $calendarRoute }}"
-                        icon="fa-solid fa-calendar-days"
+                        icon="{{ $nav['student_calendar']['icon'] ?? 'fa-solid fa-calendar-days' }}"
                         :active="request()->routeIs('admin.student.participation') || request()->routeIs('student.calendar*')">
-                        Student Calendar
+                        {{ $nav['student_calendar']['label'] ?? 'Student Calendar' }}
                     </x-sidebar-link>
 
                     <x-sidebar-link
                         href="{{ auth()->user()->role === 'parent' ? route('parent.reportcard') : route('reportcard.index') }}"
-                        icon="fa-solid fa-star"
+                        icon="{{ $nav['report_card']['icon'] ?? 'fa-solid fa-star' }}"
                         :active="request()->routeIs('reportcard.*') || request()->routeIs('parent.reportcard')">
-                        Report Card
+                        {{ $nav['report_card']['label'] ?? 'Report Card' }}
                     </x-sidebar-link>
 
                     <x-sidebar-link
                         href="{{ auth()->user()->role === 'parent' ? route('parent.attendance') : route('attendance.index') }}"
-                        icon="fa-solid fa-calendar-check"
+                        icon="{{ $nav['attendance']['icon'] ?? 'fa-solid fa-calendar-check' }}"
                         :active="request()->routeIs('attendance.*') || request()->routeIs('parent.attendance')">
-                        Attendance
+                        {{ $nav['attendance']['label'] ?? 'Attendance' }}
                     </x-sidebar-link>
 
                     <x-sidebar-link
                         href="{{ route('appointments.index') }}"
-                        icon="fa-solid fa-user-group" 
+                        icon="{{ $nav['appointments']['icon'] ?? 'fa-solid fa-user-group' }}" 
                         :active="request()->routeIs('appointments.*')">
-                        Appointment Scheduling
+                        {{ $nav['appointments']['label'] ?? 'Appointment Scheduling' }}
                     </x-sidebar-link>
 
                     @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
-                    <x-sidebar-link href="{{ route('account.management') }}"
-                        icon="fa-solid fa-users-gear"
-                        :active="request()->routeIs([
-                            'account.management', 
-                            'admin.audit_logs', 
-                            'parent.*', 
-                            'teacher.*', 
-                            'grade.show', 
-                            'account.*', 
-                            'admin.list', 
-                            'admin.archived',
-                            'admin.create', 
-                            'admin.content*'
-                        ])">
-                        Account Management
-                    </x-sidebar-link>
-                @endif
+                        <x-sidebar-link href="{{ route('account.management') }}"
+                            icon="{{ $nav['account_management']['icon'] ?? 'fa-solid fa-users-gear' }}"
+                            :active="request()->routeIs([
+                                'account.management', 
+                                'admin.audit_logs', 
+                                'parent.*', 
+                                'teacher.*', 
+                                'grade.show', 
+                                'account.*', 
+                                'admin.list', 
+                                'admin.archived',
+                                'admin.create', 
+                                'admin.content*'
+                            ])">
+                            {{ $nav['account_management']['label'] ?? 'Account Management' }}
+                        </x-sidebar-link>
+                    @endif
                 </ul>
             </nav>
 

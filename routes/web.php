@@ -177,6 +177,7 @@ Route::middleware(['auth', 'verified', 'role:admin,superadmin'])->group(function
     Route::get('/archives/report-cards/view/{student_id}/{school_year_id}', [ReportCardController::class, 'archivedShowStudent'])->name('archives.reportcards.showStudent'); 
     Route::post('/admin/accounts/admin/update-picture', [App\Http\Controllers\Admin\UserController::class, 'updatePicture'])->name('account.admin.updatePicture');
     Route::get('/admin-information', function () {return view('admin-information');})->name('admin.information');
+    Route::post('/admin/website-content/reset', [AdminSiteContentController::class, 'reset'])->name('admin.content.reset');
 
     Route::get('/account-management', function () { 
         $activeYear = \App\Models\SchoolYear::where('status', 'active')->first();

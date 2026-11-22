@@ -59,6 +59,11 @@ class AppServiceProvider extends ServiceProvider
             } else {
                 $view->with('unreadTotal', 0);
             }
+
         });
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('site_settings')) {
+            View::share('siteSettings', \App\Models\SiteSetting::getAll());
+        }
     }
 }
