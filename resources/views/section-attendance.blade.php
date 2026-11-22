@@ -355,7 +355,7 @@ document.addEventListener('alpine:init', () => {
             }
 
             if (!this.addedDates.includes(this.selectedDate)) {
-                this.addedDates.push(this.selectedDate);
+                  this.addedDates.push(this.selectedDate);
                 this.addedDates.sort(); 
             } else {
                 this.triggerToast('Date already added!', 'error');

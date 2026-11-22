@@ -29,7 +29,7 @@
                 @endif
 
                 <div class="text-center text-[11px] font-bold uppercase tracking-[0.2em] text-white px-2 drop-shadow-lg mb-4">
-                    <span>Parent &amp; Teacher Portal</span>
+                    <span>Parent &amp; Teacher Login</span>
                 </div>
 
                 <div class="flex w-full justify-center">
@@ -38,8 +38,28 @@
                     </button>
                 </div>
 
-                <x-modal name="parent-login" :show="$errors->has('login_id')" maxWidth="md" focusable>                    
-                    <div class="p-8 bg-white rounded-2xl border-t-8 border-red-800 shadow-2xl text-center relative">
+                <x-modal name="parent-login" :show="$errors->has('login_id') || ($lockoutSeconds ?? 0) > 0" maxWidth="md" focusable>                    
+                    <div class="p-8 bg-white rounded-2xl border-t-8 border-red-800 shadow-2xl text-center relative"
+                         x-data="{
+                             lockout: {{ (int) ($lockoutSeconds ?? 0) }},
+                             stage: {{ (int) ($lockoutStage ?? 0) }},
+                             init() {
+                                 if (this.lockout > 0) {
+                                     const timer = setInterval(() => {
+                                         if (this.lockout > 0) {
+                                             this.lockout--;
+                                         } else {
+                                             clearInterval(timer);
+                                         }
+                                     }, 1000);
+                                 }
+                             },
+                             formatTime(sec) {
+                                 const m = Math.floor(sec / 60);
+                                 const s = sec % 60;
+                                 return `${m}:${String(s).padStart(2, '0')}`;
+                             }
+                         }">
                         <button @click="$dispatch('close-modal', 'parent-login')" class="absolute top-4 right-4 text-gray-400 hover:text-red-800 transition-colors">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -51,21 +71,42 @@
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-1">Child's LRN for parents | Email for Teachers</p>
                         </div>
 
+                        {{-- LIVE PROGRESSIVE LOCKOUT WARNING BANNER --}}
+                        <div x-show="lockout > 0" x-cloak
+                             class="mb-5 p-4 bg-red-50 border-2 border-red-400 text-red-800 rounded-2xl text-left flex items-start gap-3 shadow-sm">
+                            <i class="fa-solid fa-lock text-red-600 text-lg mt-0.5"></i>
+                            <div class="text-xs leading-relaxed">
+                                <p class="font-black uppercase tracking-wider text-red-700"
+                                   x-text="stage >= 2 ? 'Extended Security Lockout (10 Mins)' : 'Temporary Lockout (3 Mins)'"></p>
+                                <p class="font-semibold text-red-700/90 mt-0.5">
+                                    Too many failed login attempts. Please try again in
+                                    <span class="font-black underline tabular-nums" x-text="formatTime(lockout)"></span>.
+                                </p>
+                            </div>
+                        </div>
+
                         <form method="POST" action="{{ route('login') }}">
                             @csrf
                             
                             <div class="mb-5 text-left">
                                 <x-input-label for="parent_id" class="text-red-800 font-black uppercase text-[11px] tracking-widest mb-1" :value="__('Child\'s LRN or Email')" />
-                                <x-text-input id="parent_id" class="block mt-1 w-full border-gray-300 focus:border-red-700 focus:ring-red-700 rounded-md shadow-sm bg-gray-50" type="text" name="login_id" :value="old('login_id')" required autofocus />
-                                <x-input-error :messages="$errors->get('login_id')" class="mt-2" />
+                                <x-text-input id="parent_id"
+                                    class="block mt-1 w-full border-gray-300 focus:border-red-700 focus:ring-red-700 rounded-md shadow-sm bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    type="text" name="login_id" :value="old('login_id')"
+                                    x-bind:disabled="lockout > 0"
+                                    required autofocus />
+                                <div x-show="lockout === 0">
+                                    <x-input-error :messages="$errors->get('login_id')" class="mt-2" />
+                                </div>
                             </div>
 
                             <div class="mb-6 text-left" x-data="{ show: false }">
                                 <x-input-label for="parent_pass" class="text-red-800 font-black uppercase text-[11px] tracking-widest mb-1" :value="__('Password')" />
                                 <div class="relative flex items-center">
                                     <x-text-input id="parent_pass" 
-                                        class="block mt-1 w-full border-gray-300 focus:border-red-700 focus:ring-red-700 rounded-md shadow-sm bg-gray-50 pr-10" 
+                                        class="block mt-1 w-full border-gray-300 focus:border-red-700 focus:ring-red-700 rounded-md shadow-sm bg-gray-50 pr-10 disabled:opacity-60 disabled:cursor-not-allowed" 
                                         ::type="show ? 'text' : 'password'" 
+                                        x-bind:disabled="lockout > 0"
                                         name="password" required />
                                     
                                     <button type="button" @click="show = !show" class="absolute right-3 mt-1 text-gray-400 hover:text-red-800 focus:outline-none transition-colors">
@@ -82,8 +123,11 @@
                                 </label>
                             </div>
 
-                            <button type="submit" class="w-full bg-red-800 text-white font-black py-4 rounded-full shadow-lg hover:bg-red-900 transition-all uppercase text-sm tracking-widest">
-                                {{ __('Log In') }}
+                            <button type="submit"
+                                    x-bind:disabled="lockout > 0"
+                                    class="w-full bg-red-800 text-white font-black py-4 rounded-full shadow-lg hover:bg-red-900 transition-all uppercase text-sm tracking-widest disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span x-show="lockout === 0">{{ __('Log In') }}</span>
+                                <span x-show="lockout > 0" x-cloak>Locked (<span x-text="formatTime(lockout)"></span>)</span>
                             </button>
                         </form>
 
