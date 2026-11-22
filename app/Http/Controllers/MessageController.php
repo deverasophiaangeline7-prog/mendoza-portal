@@ -27,7 +27,7 @@ class MessageController extends Controller
         return view('chat-system', compact('users', 'contacts', 'archivedGroups'));
     }
 
-    public function show($id)
+public function show($id)
     {
         $authId = Auth::id();
         $authUser = Auth::user();
@@ -50,6 +50,16 @@ class MessageController extends Controller
 
         // SMART QUERY: Check if we are loading a Group Chat or a 1-on-1 Chat
         if ($isGroup) {
+            // Security check: only group members (or creator) can view this GC
+            $isMember = DB::table('group_members')
+                ->where('group_id', $id)
+                ->where('user_id', $authId)
+                ->exists();
+
+            if (!$isMember && (int) $selectedUser->created_by !== (int) $authId) {
+                abort(403, 'You are not a member of this group chat.');
+            }
+
             // Fetch ALL messages sent to this group (KASAMA NA ANG READERS PARA HINDI MAG-LAG)
             $messages = Message::with('readers.user')
                                 ->where('receiver_id', $id)
@@ -103,6 +113,10 @@ class MessageController extends Controller
 
     public function storeGroup(Request $request)
     {
+        if (strtolower(Auth::user()->role) === 'parent') {
+            abort(403, 'Parents are not allowed to create group chats.');
+        }
+
         $request->validate([
             'group_name' => 'required|string|max:255',
             'members'    => 'required|array',
@@ -189,6 +203,13 @@ class MessageController extends Controller
 
     public function restoreGroup($id)
     {
+        $group = User::where('user_id', $id)->firstOrFail();
+
+        // Keep past School Year Official GCs permanently archived (read-only history)
+        if (Str::startsWith($group->username, 'group_sy_')) {
+            return back()->withErrors(['group' => 'Archived school year group chats are read-only and cannot be restored.']);
+        }
+
         // 1. Personal Restore
         DB::table('group_members')
             ->where('group_id', $id)
@@ -196,8 +217,7 @@ class MessageController extends Controller
             ->update(['is_archived' => false]);
 
         // 2. Safety Net: Fixes the old global testing data that got stuck
-        $group = User::where('user_id', $id)->first();
-        if ($group && $group->status === 'archived') {
+        if ($group->status === 'archived') {
             $group->status = 'active';
             $group->save();
         }
@@ -208,6 +228,11 @@ class MessageController extends Controller
     public function deleteGroup($id)
     {
         $group = User::where('user_id', $id)->whereNotNull('custom_name')->firstOrFail();
+
+        if (!$this->canManageGroup($group, Auth::user())) {
+            abort(403, 'You are not authorized to delete this group chat.');
+        }
+
         DB::table('group_members')->where('group_id', $id)->delete();
         $group->delete();
 
@@ -264,6 +289,9 @@ class MessageController extends Controller
 
         $apiKey = env('GEMINI_API_KEY');
         $receiver = User::find($currentMessage->receiver_id);
+        if (!$receiver) {
+            return response()->json(['error' => 'Receiver not found'], 404);
+        }
         $receiverRole = strtolower($receiver->role);
 
         $upcomingEvents = SchoolCalendar::orderBy('start_date', 'asc')->limit(10)->get();
@@ -296,7 +324,7 @@ class MessageController extends Controller
         $historyContext = "";
         foreach ($history as $msg) {
             $sender = ($msg->sender_id == $currentMessage->sender_id) ? "User" : "AI";
-            $cleanText = str_replace("🤖 AI Assistant: ", "", $msg->content);
+            $cleanText = str_replace("🤖 AI Chatbot: ", "", $msg->content);
             $historyContext .= "{$sender}: {$cleanText}\n";
         }
         
@@ -321,7 +349,7 @@ class MessageController extends Controller
         $currentDateString = \Carbon\Carbon::now('Asia/Manila')->format('F j, Y');
 
         if (in_array($receiverRole, ['admin', 'superadmin'])) {
-            $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc.
+            $systemPrompt = "You are the automated AI chatbot for Mendoza Academy, Inc.
             IMPORTANT: You are currently responding on behalf of the Admin account.
             TODAY'S CURRENT DATE IS: {$currentDateString}. You MUST use this date as your reference point.
             
@@ -341,10 +369,10 @@ class MessageController extends Controller
             {$historyContext}
 
             [ACCOUNT & SETTINGS]
-            - Passwords (reset, change, forgot): Users can change it in 'Student Information' or use the 'Forgot Password' link on the login page (which requires an email code for security). Alternatively, the Admin can change the password for them.
-            - Email Address: The email address is fixed and cannot be changed.";
+- Passwords (reset, change, forgot): Users can change their password in their profile/account settings or use the 'Forgot Password' link on the login page to receive a password reset link via their registered Gmail address. Alternatively, an Admin can reset their password for them.
+- Email Address: Users cannot change their own email address directly, so they need to request an Admin to update their registered Gmail address for them.";
         } else {
-            $systemPrompt = "You are the automated virtual assistant for Mendoza Academy, Inc.
+            $systemPrompt = "You are the automated AI chatbot for Mendoza Academy, Inc.
             IMPORTANT: You are currently responding on behalf of a Teacher account.
             TODAY'S CURRENT DATE IS: {$currentDateString}. You MUST use this date as your reference point.
             
@@ -425,6 +453,10 @@ class MessageController extends Controller
             }
         }
 
+        if (str_starts_with($aiText, 'API ERROR:')) {
+            Log::error('Gemini Chatbot Error: ' . $aiText);
+            return response()->json(['success' => false, 'action' => 'api_error']);
+        }
         $finalAiCheck = trim(strtoupper($aiText));
 
         if ($finalAiCheck === 'IGNORE') {
@@ -435,7 +467,10 @@ class MessageController extends Controller
         if ($finalAiCheck === 'HANDOFF') {
             $lastAiMessage = Message::where('sender_id', $currentMessage->receiver_id)
                 ->where('receiver_id', $currentMessage->sender_id)
-                ->where('content', 'LIKE', '🤖 AI Assistant:%')
+                ->where(function ($q) {
+                    $q->where('content', 'LIKE', '🤖 AI Chatbot:%')
+                      ->orWhere('content', 'LIKE', '🤖 AI Assistant:%');
+                })
                 ->orderBy('created_at', 'desc')
                 ->first();
 
@@ -449,8 +484,8 @@ class MessageController extends Controller
         // --------------------------------------------------
 
         $content = ($finalAiCheck === 'HANDOFF') 
-            ? "🤖 AI Assistant: Hi! I'm the automated assistant. Your question requires the teacher's personal attention, so I'll stop answering now and leave your message for them to read. They will reply as soon as they are available!"
-            : "🤖 AI Assistant: " . $aiText;
+            ? "🤖 AI Chatbot: Hi! I'm the automated AI chatbot. Your question requires the teacher's personal attention, so I'll stop answering now and leave your message for them to read. They will reply as soon as they are available!"
+            : "🤖 AI Chatbot: " . $aiText;
 
         Message::create([
             'sender_id' => $currentMessage->receiver_id,
@@ -629,6 +664,15 @@ class MessageController extends Controller
         
         // Kukunin lahat ng message (kahit sino pa nag-send) na mas bago kaysa sa lastId sa screen
         if ($isGroup) {
+            $isMember = DB::table('group_members')
+                ->where('group_id', $conversationId)
+                ->where('user_id', $authId)
+                ->exists();
+
+            if (!$isMember && (int) $receiver->created_by !== (int) $authId) {
+                return response()->json(['messages' => [], 'last_sent_read' => false], 403);
+            }
+
             $query = Message::where('receiver_id', $conversationId);
         } else {
             $query = Message::where(function($q) use ($authId, $conversationId) {

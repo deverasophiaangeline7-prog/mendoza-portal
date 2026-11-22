@@ -427,17 +427,22 @@
         </div>
 
         <div x-show="showNotification" 
-             x-cloak 
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 translate-y-10"
-             x-transition:enter-end="opacity-100 translate-y-0"
-             x-transition:leave="transition ease-in duration-300"
-             x-transition:leave-start="opacity-100 translate-y-0"
-             x-transition:leave-end="opacity-0 translate-y-10"
-             :class="notificationType === 'success' ? 'bg-green-600' : 'bg-red-600'"
-             class="fixed bottom-10 right-10 text-white font-black px-6 py-4 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black z-[200] flex items-center space-x-3">
-            <i class="fa-solid text-2xl" :class="notificationType === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
-            <span x-text="notificationMessage"></span>
+            x-cloak 
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-10"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100 translate-y-0"
+            x-transition:leave-end="opacity-0 translate-y-10"
+            :class="notificationType === 'success' ? 'bg-[#d1fae5] text-[#065f46]' : 'bg-red-100 text-red-900'"
+            class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto rounded-xl border-[3px] border-black px-6 py-4 font-black transition-opacity duration-300">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid text-2xl shrink-0" :class="notificationType === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'"></i>
+                <span class="text-base whitespace-nowrap leading-none" x-text="notificationMessage"></span>
+            </div>
+            <button type="button" @click="showNotification = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
 
         <!-- CUSTOM DELETE CONFIRMATION MODAL -->

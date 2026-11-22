@@ -7,6 +7,7 @@ use App\Models\SiteContent;
 use App\Models\SiteSetting;
 use App\Models\AuditLog;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AdminSiteContentController extends Controller
 {
@@ -38,6 +39,16 @@ class AdminSiteContentController extends Controller
     {
         if (auth()->user()->role !== 'superadmin') {
             abort(403, 'Unauthorized access. Only superadmins can manage the site.');
+        }
+
+        $request->validate([
+            'confirm_password' => 'required|string',
+        ]);
+
+        if (!Hash::check($request->confirm_password, auth()->user()->password)) {
+            return redirect()->back()
+                ->withErrors(['confirm_password' => 'Incorrect password. Changes were not saved.'])
+                ->withInput();
         }
 
         $updatedPages = [];

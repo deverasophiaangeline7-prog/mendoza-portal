@@ -3,11 +3,46 @@
 @section('title', 'Site Management')
 
 @section('content')
-<div class="flex-1 bg-gray-50 relative p-4 md:p-8 flex flex-col items-center min-h-screen w-full pt-16 md:pt-8">
+
+@php
+    $hasToast = session()->has('status') || session()->has('toast_status') || session()->has('success') || $errors->any();
+    $isError = $errors->any() || session('toast_status') === 'error';
+    $toastMessage = $errors->any()
+        ? $errors->first()
+        : (session('toast_message') ?? session('status') ?? session('success'));
+@endphp
+
+<div class="flex-1 bg-gray-50 relative p-4 md:p-8 flex flex-col items-center min-h-screen w-full pt-16 md:pt-8"
+     x-data="{
+         tab: 'branding',
+         showPasswordModal: {{ $errors->has('confirm_password') ? 'true' : 'false' }},
+         showPwd: false,
+         showToast: {{ $hasToast ? 'true' : 'false' }}
+     }">
+
+    {{-- FIXED 1-LINE TOAST NOTIFICATION --}}
+    @if($hasToast)
+    <div x-show="showToast"
+         x-init="setTimeout(() => showToast = false, 5000)"
+         x-cloak
+         class="fixed bottom-10 right-10 z-[999999] flex items-center justify-between gap-6 w-auto rounded-xl border-[3px] border-black {{ $isError ? 'bg-red-100 text-red-900' : 'bg-[#d1fae5] text-[#065f46]' }} px-6 py-4 font-black transition-opacity duration-300">
+        <div class="flex items-center gap-3">
+            @if($isError)
+                <i class="fa-solid fa-triangle-exclamation text-2xl shrink-0"></i>
+            @else
+                <i class="fa-solid fa-circle-check text-2xl shrink-0"></i>
+            @endif
+            <span class="text-base whitespace-nowrap leading-none">{{ $toastMessage }}</span>
+        </div>
+        <button type="button" @click="showToast = false" class="text-2xl hover:scale-110 transition ml-2 shrink-0">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    @endif
+
     <div class="w-full max-w-7xl mx-auto">
         
-        <div x-data="{ tab: 'branding' }"
-             style="border-top-color: var(--color-primary);"
+        <div style="border-top-color: var(--color-primary);"
              class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 md:p-8 border-t-8">
             
             {{-- HEADER --}}
@@ -16,12 +51,6 @@
                     Site Management
                 </h2>
             </div>
-
-            @if (session('status'))
-                <div class="mb-6 bg-green-600 text-white p-4 rounded-xl font-bold uppercase text-xs tracking-widest text-center shadow-md">
-                    {{ session('status') }}
-                </div>
-            @endif
 
             {{-- TAB NAVIGATION --}}
             <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-4 mb-6">
@@ -355,13 +384,55 @@
                     </div>
                 </div>
 
-                <!-- SUBMIT BUTTON -->
+                <!-- SINGLE SAVE BUTTON FOR ALL TABS -->
                 <div class="flex justify-end pt-4 border-t border-gray-200">
-                    <button type="submit"
+                    <button type="button"
+                            @click="showPasswordModal = true"
                             style="background-color: var(--color-primary);"
                             class="text-white font-black py-3 px-8 rounded-full shadow-[0px_4px_0px_0px_#3a0000] hover:opacity-90 transition-all uppercase text-xs tracking-widest border-2 border-black active:translate-y-1 active:shadow-[0px_1px_0px_0px_#3a0000]">
                         Save Changes
                     </button>
+                </div>
+
+                <!-- PASSWORD CONFIRMATION MODAL -->
+                <div x-show="showPasswordModal"
+                     x-cloak
+                     class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div @click.away="showPasswordModal = false"
+                         class="bg-white rounded-2xl border-2 border-black shadow-2xl w-full max-w-md p-6">
+                        <h3 class="text-lg font-black text-gray-900 uppercase tracking-wide mb-2">
+                            <i class="fa-solid fa-lock mr-2" style="color: var(--color-primary);"></i>
+                            Confirm Site Changes
+                        </h3>
+                        <p class="text-xs text-gray-600 font-semibold mb-4">
+                            Enter your Superadmin password to apply these changes across the website.
+                        </p>
+
+                        <div class="relative mb-6">
+                            <input :type="showPwd ? 'text' : 'password'"
+                                   name="confirm_password"
+                                   required
+                                   placeholder="Enter your password"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-black focus:outline-none text-sm font-semibold pr-10">
+                            <button type="button" @click="showPwd = !showPwd"
+                                    class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-black">
+                                <i class="fa-solid" :class="showPwd ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex justify-end gap-3">
+                            <button type="button"
+                                    @click="showPasswordModal = false"
+                                    class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    style="background-color: var(--color-primary);"
+                                    class="px-5 py-2 rounded-lg text-white font-black text-xs uppercase tracking-widest hover:opacity-90 transition">
+                                Confirm & Save
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
             </form>
