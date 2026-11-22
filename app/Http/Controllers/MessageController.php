@@ -261,14 +261,14 @@ public function show($id)
         // ==========================================
         // 2. AI INTERCEPTOR LOGIC (Kept as provided)
         // ==========================================
-        $apiKey = env('GEMINI_API_KEY');
+        $apiKey = config('services.gemini.key');
         
        $senderRole = strtolower(Auth::user()->role);
         $receiverRole = $receiver ? strtolower($receiver->role) : '';
         $teacherRoles = ['teacher', 'adviser', 'faculty', 'instructor'];
         
         $aiShouldRespond = (in_array($receiverRole, ['admin', 'superadmin'])) || ($senderRole === 'parent' && in_array($receiverRole, $teacherRoles));
-        $triggerAi = env('GEMINI_API_KEY') && $aiShouldRespond && $receiver && !$isReceiverGroup;
+        $triggerAi =config('services.gemini.key') && $aiShouldRespond && $receiver && !$isReceiverGroup;
 
         // PATCHED: Correctly handle JSON responses for dynamic send flow
         if ($request->wantsJson()) {
@@ -287,7 +287,7 @@ public function show($id)
         $currentMessage = Message::find($messageId);
         if (!$currentMessage) return response()->json(['error' => 'Message not found']);
 
-        $apiKey = env('GEMINI_API_KEY');
+        $apiKey = config('services.gemini.key');
         $receiver = User::find($currentMessage->receiver_id);
         if (!$receiver) {
             return response()->json(['error' => 'Receiver not found'], 404);

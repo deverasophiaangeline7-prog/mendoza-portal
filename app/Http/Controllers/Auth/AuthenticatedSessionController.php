@@ -68,7 +68,7 @@ class AuthenticatedSessionController extends Controller
         return redirect()->route('dashboard');
     }
 
-    public function createAdmin(Request $request): View
+   public function createAdmin(Request $request): \Illuminate\Http\Response
     {
         $now = now()->timestamp;
         $lockoutSeconds = 0;
