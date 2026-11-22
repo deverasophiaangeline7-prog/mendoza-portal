@@ -67,7 +67,9 @@ class ForgotPasswordController extends Controller
      */
     public function showAdminLinkRequestForm()
     {
-        return view('auth.admin-forgot-password');
+       return response()
+            ->view('auth.admin-forgot-password')
+            ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
     /**

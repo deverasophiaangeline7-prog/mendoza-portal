@@ -93,7 +93,9 @@ class AuthenticatedSessionController extends Controller
             }
         }
 
-        return view('auth.admin-login', compact('lockoutSeconds', 'lockoutStage'));
+       return response()
+            ->view('auth.admin-login', compact('lockoutSeconds', 'lockoutStage'))
+            ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
     public function storeAdmin(LoginRequest $request): RedirectResponse
