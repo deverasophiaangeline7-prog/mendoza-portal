@@ -10,7 +10,13 @@
         deleteModalOpen: false,
         showNotification: false,
         notificationMessage: '',
-        triggerNotification(msg) { this.notificationMessage = msg; this.showNotification = true; setTimeout(() => this.showNotification = false, 3000); },
+        notificationType: 'error',
+        triggerNotification(msg, type = 'error') {
+            this.notificationMessage = msg;
+            this.notificationType = type;
+            this.showNotification = true;
+            setTimeout(() => this.showNotification = false, 3000);
+        },
         selectedDate: {{ now()->day }}, 
         isEditing: false,
         tempName: '',
@@ -133,7 +139,7 @@
                         ps: this.tempPs
                     };
                     this.isEditing = false;
-                    this.triggerNotification('Event successfully saved!');
+                    this.triggerNotification('Event successfully saved!', 'success');
                 } else {
                     let err = {};
                     try { err = await res.json(); } catch (_) {}
@@ -286,6 +292,7 @@
                                     </button>
                                 </template>
                             </div>
+
                             <p class="mt-4 pt-3 border-t border-gray-200 text-center text-xs font-bold text-gray-500 italic">
                                 <i class="fa-solid fa-circle-info text-amber-700 mr-1"></i>
                                 Note: New events can only be created at least 1 week (7 days) prior to the event date.
@@ -386,7 +393,7 @@
                         <div class="flex space-x-2 pt-2 w-full">
                             <button type="button" @click="isEditing = false" class="bg-gray-200 px-4 py-2 rounded-lg font-black flex-1 border-2 border-black hover:bg-gray-300 transition">CANCEL</button>
                             <button type="button" @click="validateAndSaveEvent()" 
-                                class="bg-red-600 text-white px-4 py-2 rounded-lg font-black flex-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-700 transition">
+                                class="bg-green-600 text-white px-4 py-2 rounded-lg font-black flex-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-green-700 transition">
                                 SAVE
                             </button>
                         </div>
@@ -402,7 +409,10 @@
                     @csrf
                     <div class="mb-4">
                         <label class="block font-bold text-gray-700 mb-2 uppercase text-xs">Select File</label>
-                        <input type="file" name="image" required class="block w-full text-sm border-2 border-dashed p-4 rounded-xl cursor-pointer hover:border-amber-700 transition">
+                        <input type="file" name="image" accept=".jpg,.jpeg,.png" required class="block w-full text-sm border-2 border-dashed p-4 rounded-xl cursor-pointer hover:border-amber-700 transition">
+                        <p class="mt-2 text-[11px] font-extrabold uppercase tracking-wide text-slate-500">
+                            ACCEPTED FORMATS: JPG, PNG. MAX SIZE: 2MB.
+                        </p>
                     </div>
                     <div class="mb-6">
                         <label class="block font-bold text-gray-700 mb-2 uppercase text-xs">Caption</label>
@@ -424,8 +434,9 @@
              x-transition:leave="transition ease-in duration-300"
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 translate-y-10"
-             class="fixed bottom-10 right-10 bg-red-600 text-white font-black px-6 py-4 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black z-[200] flex items-center space-x-3">
-            <i class="fa-solid fa-circle-exclamation text-2xl"></i>
+             :class="notificationType === 'success' ? 'bg-green-600' : 'bg-red-600'"
+             class="fixed bottom-10 right-10 text-white font-black px-6 py-4 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black z-[200] flex items-center space-x-3">
+            <i class="fa-solid text-2xl" :class="notificationType === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
             <span x-text="notificationMessage"></span>
         </div>
 
@@ -454,7 +465,7 @@
                             if(res.ok) {
                                 delete events[key];
                                 deleteModalOpen = false;
-                                triggerNotification('Event deleted successfully!');
+                                triggerNotification('Event deleted successfully!', 'success');
                             }
                         });
                     " class="flex-1 px-4 py-3 bg-red-600 border-[3px] border-black text-white font-black uppercase rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-700 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
@@ -463,5 +474,5 @@
                 </div>
             </div>
         </div>
-    </div> <!-- Closes the wrapper div we added at the top -->
+    </div>
 @endsection

@@ -8,21 +8,16 @@ use App\Models\AuditLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the public login view (Teachers & Parents).
-     */
     public function create(): View
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle public login (Teachers & Parents ONLY).
-     */
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate(['teacher', 'parent'], 5, 60, 'public');
@@ -39,20 +34,26 @@ class AuthenticatedSessionController extends Controller
         return redirect()->route('dashboard');
     }
 
-    /**
-     * Display the dedicated Admin login view (Admin & Superadmin).
-     */
-    public function createAdmin(): View
+    public function createAdmin(Request $request): View
     {
-        return view('auth.admin-login');
+        $state = Cache::get('admin_lockout|' . $request->ip());
+        $lockoutSeconds = 0;
+        $lockoutStage = 0;
+
+        if ($state && !empty($state['locked_until'])) {
+            $remaining = (int) $state['locked_until'] - now()->timestamp;
+            if ($remaining > 0) {
+                $lockoutSeconds = $remaining;
+                $lockoutStage = (int) ($state['stage'] ?? 1);
+            }
+        }
+
+        return view('auth.admin-login', compact('lockoutSeconds', 'lockoutStage'));
     }
 
-    /**
-     * Handle Admin login (Admin & Superadmin ONLY, stricter 3-attempt / 5-min lockout).
-     */
     public function storeAdmin(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate(['admin', 'superadmin'], 3, 300, 'admin');
+        $request->authenticate(['admin', 'superadmin'], 3, 180, 'admin');
         $request->session()->regenerate();
 
         Auth::logoutOtherDevices($request->password);
@@ -60,15 +61,12 @@ class AuthenticatedSessionController extends Controller
         AuditLog::create([
             'user_id' => auth()->id(),
             'action' => 'Admin Login',
-            'description' => auth()->user()->username . ' (' . ucfirst(auth()->user()->role) . ') signed in via the Admin Portal from IP ' . $request->ip() . '.',
+            'description' => auth()->user()->username . ' (' . ucfirst(auth()->user()->role) . ') signed in via Admin Login from IP ' . $request->ip() . '.',
         ]);
 
         return redirect()->route('dashboard');
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         $isAdmin = false;
