@@ -223,25 +223,61 @@
                             </template>
                         </tr>
                     </thead>
-                    <tbody>
+                   <tbody>
                         @foreach($students as $student)
                         <tr class="border-b-[2px] border-black hover:bg-yellow-50/50">
+                            
                             <td class="p-4 sm:p-5 border-r-[3px] border-black font-black text-base sm:text-lg text-black truncate sticky left-0 bg-white z-10">
                                 {{ strtoupper($student->last_name . ', ' . $student->first_name) }}
                             </td>
                             
-                           <thead>
-                        <tr class="bg-gray-100 border-b-[3px] border-black">
-                    <th class="p-4 sm:p-5 border-r-[3px] border-black min-w-[220px] text-left uppercase font-black text-xl sm:text-2xl truncate sticky left-0 bg-gray-100 z-10">Learner Name</th>
-        
-                      <template x-for="day in addedDates" :key="day">
-                          <th class="border-r-[2px] last:border-r-0 border-black text-center text-base sm:text-lg py-4 px-3 bg-amber-700 font-black truncate transition-all" 
-                     :class="isManaging ? 'min-w-[190px] sm:min-w-[210px]' : 'min-w-[120px]'"
-                  x-text="new Date(day).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })">
-                    </th>
-                      </template>
-        
-        <template x-if="addedDates.length === 0">
+                            <!-- Cell 2: Dates at Radio Buttons -->
+                            <template x-for="day in addedDates" :key="day">
+                                <td class="border-r-[2px] last:border-r-0 border-black h-14 sm:h-16 attendance-cell transition-colors px-2"
+                                    x-data="{ status: Number(getSavedStatus('{{ $student->student_id }}', day)) }"
+                                    :data-student="'{{ $student->student_id }}'"
+                                    :data-date="day"
+                                    :data-status="status"
+                                    :class="!isManaging ? {
+                                        'bg-white': status === 0,
+                                        'bg-green-500': status === 1,
+                                        'bg-red-500': status === 2,
+                                        'bg-[#facc15]': status === 3,
+                                        'bg-blue-500': status === 4
+                                    } : 'bg-white min-w-[190px] sm:min-w-[210px]'">
+                                    
+                                    <div x-show="isManaging" x-cloak class="flex items-center justify-center gap-1.5 sm:gap-2 py-1">
+                                        <label class="circle-radio opt-present" title="Present">
+                                            <input type="radio" :name="'att_{{ $student->student_id }}_' + day" value="1" :checked="status === 1" @change="status = 1">
+                                            <span>P</span>
+                                        </label>
+
+                                        <label class="circle-radio opt-absent" title="Absent">
+                                            <input type="radio" :name="'att_{{ $student->student_id }}_' + day" value="2" :checked="status === 2" @change="status = 2">
+                                            <span>A</span>
+                                        </label>
+
+                                        <label class="circle-radio opt-late" title="Late">
+                                            <input type="radio" :name="'att_{{ $student->student_id }}_' + day" value="3" :checked="status === 3" @change="status = 3">
+                                            <span>L</span>
+                                        </label>
+
+                                        <label class="circle-radio opt-excused" title="Excused">
+                                            <input type="radio" :name="'att_{{ $student->student_id }}_' + day" value="4" :checked="status === 4" @change="status = 4">
+                                            <span>E</span>
+                                        </label>
+                                    </div>
+                                </td>
+                            </template>
+                            
+                            <template x-if="addedDates.length === 0">
+                                <td class="bg-white min-w-[200px]"></td>
+                            </template>
+                        </tr>
+                        @endforeach
+                    </tbody>
+      
+                    <template x-if="addedDates.length === 0">
             <th class="p-5 text-gray-400 italic font-bold text-lg text-center min-w-[200px]">No dates added yet...</th>
         </template>
     </tr>
