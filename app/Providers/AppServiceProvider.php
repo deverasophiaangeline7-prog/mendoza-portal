@@ -62,8 +62,12 @@ class AppServiceProvider extends ServiceProvider
 
         });
 
-        if (\Illuminate\Support\Facades\Schema::hasTable('site_settings')) {
-            View::share('siteSettings', \App\Models\SiteSetting::getAll());
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('site_settings')) {
+                View::share('siteSettings', \App\Models\SiteSetting::getAll());
+            }
+        } catch (\Throwable $e) {
+            // Database unavailable (e.g. during image build / artisan optimize); skip sharing site settings.
         }
     }
 }
