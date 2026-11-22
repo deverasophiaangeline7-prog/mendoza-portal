@@ -50,8 +50,21 @@
             return `${y}-${m}-${d}`;
         },
 
+        get minEventDateKey() {
+            const minDate = new Date();
+            minDate.setDate(minDate.getDate() + 7);
+            const y = minDate.getFullYear();
+            const m = String(minDate.getMonth() + 1).padStart(2, '0');
+            const d = String(minDate.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        },
+
         isPastDate(day = this.selectedDate) {
             return this.getDateKey(day) < this.todayDateKey;
+        },
+
+        isTooSoon(day = this.selectedDate) {
+            return this.getDateKey(day) < this.minEventDateKey;
         },
 
         isToday(day = this.selectedDate) {
@@ -77,6 +90,10 @@
             }
             if (isNewEvent && this.isPastDate(this.selectedDate)) {
                 this.triggerNotification('Cannot add events on past dates.');
+                return;
+            }
+            if (isNewEvent && this.isTooSoon(this.selectedDate)) {
+                this.triggerNotification('Events must be scheduled at least 1 week (7 days) in advance.');
                 return;
             }
             if (!startTime || !endTime) {
@@ -197,31 +214,31 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                 <div>
-                  @php
-    $activeSyRecord = \App\Models\SchoolYear::where('status', 'active')->first();
-    
-    if ($activeSyRecord && $activeSyRecord->school_year) {
-        $syText = $activeSyRecord->school_year;
-    } else {
-        $currentMonth = now()->month;
-        $currentYear = now()->year;
-        $syStart = $currentMonth >= 6 ? $currentYear : $currentYear - 1;
-        $syEnd = $syStart + 1;
-        $syText = $syStart . ' - ' . $syEnd;
-    }
-    
-    // Extract the start and end years to lock the calendar boundaries
-    preg_match_all('/\d{4}/', $syText, $matches);
-    $syStartYear = $matches[0][0] ?? now()->year;
-    $syEndYear = $matches[0][1] ?? (now()->year + 1);
-@endphp
+                    @php
+                        $activeSyRecord = \App\Models\SchoolYear::where('status', 'active')->first();
+                        
+                        if ($activeSyRecord && $activeSyRecord->school_year) {
+                            $syText = $activeSyRecord->school_year;
+                        } else {
+                            $currentMonth = now()->month;
+                            $currentYear = now()->year;
+                            $syStart = $currentMonth >= 6 ? $currentYear : $currentYear - 1;
+                            $syEnd = $syStart + 1;
+                            $syText = $syStart . ' - ' . $syEnd;
+                        }
+                        
+                        // Extract the start and end years to lock the calendar boundaries
+                        preg_match_all('/\d{4}/', $syText, $matches);
+                        $syStartYear = $matches[0][0] ?? now()->year;
+                        $syEndYear = $matches[0][1] ?? (now()->year + 1);
+                    @endphp
 
-<h3 class="text-3xl md:text-4xl font-black text-center mb-6 tracking-tighter uppercase">
-    SCHOOL CALENDAR
-    <span class="block text-xl md:text-2xl mt-1">SY {{ $syText }}</span>
-</h3>
+                    <h3 class="text-3xl md:text-4xl font-black text-center mb-6 tracking-tighter uppercase">
+                        SCHOOL CALENDAR
+                        <span class="block text-xl md:text-2xl mt-1">SY {{ $syText }}</span>
+                    </h3>
                     <div class="bg-[#b26905] rounded-[40px] p-6 border-[3px] border-black shadow-lg">
-                       <div class="flex justify-between items-center mb-4 px-2">
+                        <div class="flex justify-between items-center mb-4 px-2">
                             <!-- Left Arrow -->
                             <button @click="prevMonth()" 
                                     :class="{ 'invisible': currentYear == {{ $syStartYear }} && currentMonth == 0 }"
@@ -261,7 +278,8 @@
                                             class="aspect-square flex items-center justify-center rounded-lg border-2 font-black text-xl transition-all relative"
                                             :class="{
                                                 'bg-red-500 text-white border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] scale-110 z-10': selectedDate === day,
-                                                'bg-white text-black border-gray-200 hover:bg-amber-700': selectedDate !== day,
+                                                'bg-white text-black border-gray-200 hover:bg-amber-700 hover:text-white': selectedDate !== day && !isTooSoon(day),
+                                                'bg-gray-100 text-gray-400 border-gray-200 opacity-60 hover:bg-gray-200': selectedDate !== day && isTooSoon(day),
                                                 'ring-2 ring-red-600 ring-offset-1': events[getDateKey(day)]
                                             }"
                                             x-text="day">
@@ -314,11 +332,22 @@
 
                     <div x-show="!events[getDateKey(selectedDate)] && !isEditing" x-cloak x-transition
                          class="bg-white rounded-[40px] p-8 border-[3px] border-black shadow-lg min-h-[420px] flex flex-col justify-center text-center">
-                        <p class="text-gray-400 text-2xl font-black italic mb-4">No events for <span x-text="monthNames[currentMonth]"></span> <span x-text="selectedDate"></span></p>
-                        <button x-show="!isPastDate(selectedDate)" @click="isEditing = true; tempName=''; tempStartTime=''; tempEndTime=''; tempPs='';" 
-                                class="text-green-500 text-3xl font-black italic hover:scale-110 transition">+ Add an event</button>
+                        <p class="text-gray-400 text-2xl font-black italic mb-4">
+                            No events for <span x-text="monthNames[currentMonth]"></span> <span x-text="selectedDate"></span>
+                        </p>
+
+                        <button x-show="!isPastDate(selectedDate) && !isTooSoon(selectedDate)" 
+                                @click="isEditing = true; tempName=''; tempStartTime=''; tempEndTime=''; tempPs='';" 
+                                class="text-green-500 text-3xl font-black italic hover:scale-110 transition">
+                            + Add an event
+                        </button>
+
                         <p x-show="isPastDate(selectedDate)" class="text-red-500 text-sm font-black uppercase italic">
                             Cannot add events to past dates.
+                        </p>
+
+                        <p x-show="!isPastDate(selectedDate) && isTooSoon(selectedDate)" class="text-red-500 text-sm font-black uppercase italic">
+                            Events must be scheduled at least 1 week in advance.
                         </p>
                     </div>
 
@@ -353,37 +382,6 @@
                         <div class="flex space-x-2 pt-2 w-full">
                             <button type="button" @click="isEditing = false" class="bg-gray-200 px-4 py-2 rounded-lg font-black flex-1 border-2 border-black hover:bg-gray-300 transition">CANCEL</button>
                             <button type="button" @click="validateAndSaveEvent()" 
-                                class="bg-red-600 text-white px-4 py-2 rounded-lg font-black flex-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-700 transition">
-                                SAVE
-                            </button>
-                        </div>
-                        
-                        <div class="flex space-x-2 pt-2 w-full">
-                            <button @click="isEditing = false" class="bg-gray-200 px-4 py-2 rounded-lg font-black flex-1 border-2 border-black hover:bg-gray-300 transition">CANCEL</button>
-                            <button @click="
-                                fetch('{{ route('calendar.store') }}', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                                    body: JSON.stringify({
-                                        start_date: getDateKey(selectedDate),
-                                        event_title: tempName,
-                                        start_time: tempStartTime,
-                                        end_time: tempEndTime,
-                                        description: tempPs
-                                    })
-                                })
-                                .then(res => {
-                                    if(res.ok) {
-                                        events[getDateKey(selectedDate)] = { 
-                                            name: tempName, 
-                                            start_time: tempStartTime, 
-                                            end_time: tempEndTime, 
-                                            ps: tempPs 
-                                        };
-                                        isEditing = false;
-                                        triggerNotification('Event successfully saved!');
-                                    }
-                                })" 
                                 class="bg-red-600 text-white px-4 py-2 rounded-lg font-black flex-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-700 transition">
                                 SAVE
                             </button>
@@ -426,6 +424,7 @@
             <i class="fa-solid fa-circle-exclamation text-2xl"></i>
             <span x-text="notificationMessage"></span>
         </div>
+
         <!-- CUSTOM DELETE CONFIRMATION MODAL -->
         <div x-show="deleteModalOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[150]" x-cloak>
             <div @click.away="deleteModalOpen = false" class="bg-white p-8 rounded-3xl shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm border-[4px] border-red-700 text-center relative" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-90" x-transition:enter-end="opacity-100 scale-100">

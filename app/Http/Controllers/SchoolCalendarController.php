@@ -59,11 +59,30 @@ class SchoolCalendarController extends Controller
 
     public function store(Request $request)
     {
+        $isNewEvent = !SchoolCalendar::where('start_date', $request->start_date)->exists();
+
+        $request->validate([
+            'start_date' => array_filter([
+                'required',
+                'date',
+                $isNewEvent ? 'after_or_equal:' . now()->addDays(7)->toDateString() : null,
+            ]),
+            'event_title' => 'required|string|max:255',
+            'start_time'  => 'required|date_format:H:i|after_or_equal:07:00',
+            'end_time'    => 'required|date_format:H:i|after:start_time|before_or_equal:17:00',
+            'description' => 'nullable|string',
+        ], [
+            'start_date.after_or_equal' => 'Events must be scheduled at least 1 week (7 days) in advance.',
+            'start_time.after_or_equal' => 'Events must start at or after 7:00 AM.',
+            'end_time.before_or_equal'  => 'Events must finish by 5:00 PM.',
+            'end_time.after'            => 'Finish time must be after the start time.',
+        ]);
+
         // Standardize saving the time with a clean dash separator
         $combinedTime = $request->start_time . ' - ' . $request->end_time;
 
         // 1. Save or Update the Event
-        $event = \App\Models\SchoolCalendar::updateOrCreate(
+        $event = SchoolCalendar::updateOrCreate(
             ['start_date' => $request->start_date],
             [
                 'event_title' => $request->event_title,
