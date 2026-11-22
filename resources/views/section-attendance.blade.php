@@ -276,20 +276,7 @@
                         </tr>
                         @endforeach
                     </tbody>
-      
-                    <template x-if="addedDates.length === 0">
-            <th class="p-5 text-gray-400 italic font-bold text-lg text-center min-w-[200px]">No dates added yet...</th>
-        </template>
-    </tr>
-</thead>
-                            
-                            <template x-if="addedDates.length === 0">
-                                <td class="bg-white min-w-[200px]"></td>
-                            </template>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </table>
             </div>
         </div>
     </div>
