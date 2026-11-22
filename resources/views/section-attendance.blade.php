@@ -26,6 +26,45 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #9ca3af;
     }
+    /* Circular Neobrutalism Radio Buttons */
+.circle-radio input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.circle-radio span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9999px;
+    border: 2.5px solid #000;
+    background-color: #ffffff;
+    font-weight: 900;
+    font-size: 13px;
+    color: #000000;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+    transition: transform 0.1s ease, background-color 0.15s ease, color 0.15s ease;
+    user-select: none;
+}
+@media (min-width: 640px) {
+    .circle-radio span {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+}
+.circle-radio span:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+}
+.circle-radio.opt-present input:checked + span { background-color: #22c55e; color: #000000; }
+.circle-radio.opt-absent input:checked + span { background-color: #ef4444; color: #ffffff; }
+.circle-radio.opt-late input:checked + span { background-color: #facc15; color: #000000; }
+.circle-radio.opt-excused input:checked + span { background-color: #3b82f6; color: #ffffff; }
 </style>
 
 <main class="flex-1 p-4 sm:p-8 bg-white min-h-screen relative" x-data="attendanceData()">
@@ -172,11 +211,12 @@
                         <tr class="bg-gray-100 border-b-[3px] border-black">
                             <th class="p-4 sm:p-5 border-r-[3px] border-black min-w-[220px] text-left uppercase font-black text-xl sm:text-2xl truncate sticky left-0 bg-gray-100 z-10">Learner Name</th>
                             
-                            <template x-for="day in addedDates" :key="day">
-                                <th class="border-r-[2px] last:border-r-0 border-black text-center text-base sm:text-lg py-4 px-2 bg-amber-700 font-black truncate min-w-[120px]" 
-                                    x-text="new Date(day).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })">
-                                </th>
-                            </template>
+                           <template x-for="day in addedDates" :key="day">
+                            <th class="border-r-[2px] last:border-r-0 border-black text-center text-base sm:text-lg py-4 px-3 bg-amber-700 font-black truncate transition-all" 
+                              :class="isManaging ? 'min-w-[190px] sm:min-w-[210px]' : 'min-w-[120px]'"
+                         x-text="new Date(day).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })">
+                            </th>
+                             </template>
                             
                             <template x-if="addedDates.length === 0">
                                 <th class="p-5 text-gray-400 italic font-bold text-lg text-center min-w-[200px]">No dates added yet...</th>
@@ -190,23 +230,22 @@
                                 {{ strtoupper($student->last_name . ', ' . $student->first_name) }}
                             </td>
                             
-                            <template x-for="day in addedDates" :key="day">
-                                <td class="border-r-[2px] last:border-r-0 border-black h-12 sm:h-16 attendance-cell min-w-[120px]"
-                                    x-data="{ status: getSavedStatus('{{ $student->student_id }}', day) }"
-                                    :data-student="'{{ $student->student_id }}'"
-                                    :data-date="day"
-                                    :data-status="status"
-                                    @click="if(isManaging) status = (status + 1) % 5"
-                                    :class="{
-                                        'bg-white': status === 0,
-                                        'bg-green-500': status === 1,
-                                        'bg-red-500': status === 2,
-                                        'bg-[#facc15]': status === 3,
-                                        'bg-blue-500': status === 4,
-                                        'cursor-pointer': isManaging
-                                    }">
-                                </td>
-                            </template>
+                           <thead>
+                        <tr class="bg-gray-100 border-b-[3px] border-black">
+                    <th class="p-4 sm:p-5 border-r-[3px] border-black min-w-[220px] text-left uppercase font-black text-xl sm:text-2xl truncate sticky left-0 bg-gray-100 z-10">Learner Name</th>
+        
+                      <template x-for="day in addedDates" :key="day">
+                          <th class="border-r-[2px] last:border-r-0 border-black text-center text-base sm:text-lg py-4 px-3 bg-amber-700 font-black truncate transition-all" 
+                     :class="isManaging ? 'min-w-[190px] sm:min-w-[210px]' : 'min-w-[120px]'"
+                  x-text="new Date(day).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })">
+                    </th>
+                      </template>
+        
+        <template x-if="addedDates.length === 0">
+            <th class="p-5 text-gray-400 italic font-bold text-lg text-center min-w-[200px]">No dates added yet...</th>
+        </template>
+    </tr>
+</thead>
                             
                             <template x-if="addedDates.length === 0">
                                 <td class="bg-white min-w-[200px]"></td>

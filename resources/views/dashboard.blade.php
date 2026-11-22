@@ -286,6 +286,10 @@
                                     </button>
                                 </template>
                             </div>
+                            <p class="mt-4 pt-3 border-t border-gray-200 text-center text-xs font-bold text-gray-500 italic">
+                                <i class="fa-solid fa-circle-info text-amber-700 mr-1"></i>
+                                Note: New events can only be created at least 1 week (7 days) prior to the event date.
+                            </p>
                         </div>
                     </div>
                 </div>

@@ -579,55 +579,6 @@
                     </table>
                 </div>
             </div>
-
-            {{-- BOOKED & COMPLETED MEETINGS WITH REMARKS --}}
-            <div id="sync-teacher-history" style="margin-top: 10px;">
-                <div style="text-align: left; font-weight: 900; font-size: 18px; margin-bottom: 10px; margin-left: 5px;">
-                    Booked & Completed Meetings
-                </div>
-                <div class="table-responsive">
-                    <table class="pending-table">
-                        <thead>
-                            <tr>
-                                <th>Parent</th>
-                                <th>Topic & Schedule</th>
-                                <th>Status / Remarks</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($meetingHistory as $meeting)
-                                <tr>
-                                    <td>
-                                        {{ strtoupper(optional($meeting->parent->student)->first_name . ' ' . optional($meeting->parent->student)->last_name ?: optional($meeting->parent)->username) }}
-                                    </td>
-                                    <td>
-                                        <strong>{{ $meeting->discussion_topic }}</strong><br>
-                                        <small>{{ \Carbon\Carbon::parse($meeting->appointment_date)->format('M j, Y') }} • {{ \Carbon\Carbon::parse($meeting->start_time)->format('g:iA') }}</small>
-                                    </td>
-                                    <td style="text-align: center;">
-                                        @if($meeting->status === 'booked')
-                                            <button type="button" class="btn-flat btn-approve" onclick="openRemarksModal({{ $meeting->id }})">
-                                                Mark Done / Remarks
-                                            </button>
-                                        @else
-                                            <span class="pill-orange" style="background-color: {{ $meeting->status === 'completed' ? 'var(--ma-green)' : 'var(--ma-red)' }}; color: {{ $meeting->status === 'completed' ? '#000' : '#fff' }}; display: inline-block; margin-bottom: 6px;">
-                                                {{ $meeting->status === 'completed' ? 'Completed' : 'No-Show' }}
-                                            </span>
-                                            <div style="font-size: 12px; text-align: left; background: #f4f4f4; padding: 6px 8px; border-radius: 8px; border: 1px solid #000;">
-                                                <strong>Remarks:</strong> {{ $meeting->remarks }}
-                                            </div>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" style="text-align: center;">No booked or completed meetings yet.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
         <div class="right-column">
@@ -673,7 +624,7 @@
             </div>
 
             <p class="tap-instruction">
-                Tap on an available cell below to quickly select your time.
+                Tap an available cell to book, or tap a booked (green) cell to record remarks.
             </p>
 
             <div class="table-responsive" id="sync-schedule-grid">
@@ -732,7 +683,9 @@
                                         if ($meeting) {
                                             $statusValue = 'booked';
                                             $parentName = strtoupper(optional($meeting->parent->student)->first_name . ' ' . optional($meeting->parent->student)->last_name ?: optional($meeting->parent)->username);
-                                            $meetingTooltip = $parentName . ' • ' . $meeting->discussion_topic . ' • ' . \Carbon\Carbon::parse($meeting->start_time)->format('g:iA') . ' - ' . \Carbon\Carbon::parse($meeting->end_time)->format('g:iA');
+                                            $statusLabel = $meeting->status === 'completed' ? 'Completed' : ($meeting->status === 'no_show' ? 'No-Show' : 'Booked');
+                                            $remarksText = $meeting->remarks ?: 'Pending (Click cell to add remarks)';
+                                            $meetingTooltip = $parentName . ' • ' . $meeting->discussion_topic . ' • ' . \Carbon\Carbon::parse($meeting->start_time)->format('g:iA') . ' - ' . \Carbon\Carbon::parse($meeting->end_time)->format('g:iA') . "\nStatus: " . $statusLabel . "\nRemarks: " . $remarksText;
                                             
                                             $appStart = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->start_time);
                                             $appEnd = \Carbon\Carbon::parse($meeting->appointment_date . ' ' . $meeting->end_time);
@@ -756,7 +709,10 @@
                                     <td class="{{ $cellClass }}" 
                                         data-date="{{ $day->format('Y-m-d') }}" 
                                         data-time="{{ $time }}" 
-                                        data-status="{{ $statusValue }}" 
+                                        data-status="{{ $statusValue }}"
+                                        data-appointment-id="{{ $meeting ? $meeting->id : '' }}"
+                                        data-appointment-status="{{ $meeting ? $meeting->status : '' }}"
+                                        style="{{ $meeting ? 'cursor: pointer;' : '' }}"
                                         title="{{ $meetingTooltip }}">
                                     </td>
                                 @endforeach
@@ -799,11 +755,11 @@
     </div>
 </div>
 
-<!-- VALIDATION POPUP MODAL -->
+<!-- VALIDATION / DETAILS POPUP MODAL -->
 <div id="validationModalOverlay" class="modal-overlay modal-hidden" style="z-index: 9999;">
     <div class="validation-modal">
         <h3 id="valModalTitle"><i class="fa-solid fa-triangle-exclamation"></i> Invalid Action</h3>
-        <p id="valModalMessage" style="font-weight: bold; font-size: 15px; margin: 20px 0; color: #333;"></p>
+        <p id="valModalMessage" style="font-weight: bold; font-size: 15px; margin: 20px 0; color: #333; white-space: pre-line;"></p>
         <button type="button" class="btn-submit" onclick="closeModal('validationModalOverlay')" style="margin: 0 auto;">OK</button>
     </div>
 </div>
@@ -1093,6 +1049,8 @@
         const endTimeInput = document.getElementById('end_time').value;
         const topicInput = document.getElementById('discussion_topic_final').value;
 
+        document.getElementById('valModalTitle').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Invalid Action';
+
         if (!topicInput) {
             event.preventDefault(); showValidationPopUp('Please select or specify a discussion topic.'); return false;
         }
@@ -1162,6 +1120,8 @@
         const startTimeInput = form.querySelector('input[name="suggested_start_time"]').value;
         const endTimeInput = form.querySelector('input[name="suggested_end_time"]').value;
         const reasonInput = document.getElementById('resched_reason_final').value;
+
+        document.getElementById('valModalTitle').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Invalid Action';
 
         if (!reasonInput) {
             event.preventDefault(); showValidationPopUp('Please select or specify a reason for rescheduling.'); return false;
@@ -1355,8 +1315,21 @@
                 
             } else {
                 let status = cell.getAttribute('data-status');
+                let appId = cell.getAttribute('data-appointment-id');
+                let appStatus = cell.getAttribute('data-appointment-status');
+
+                if (status === 'booked' && appId) {
+                    if (appStatus === 'booked') {
+                        openRemarksModal(appId);
+                    } else {
+                        document.getElementById('valModalTitle').innerHTML = '<i class="fa-solid fa-clipboard-check" style="color: var(--ma-green);"></i> Meeting Outcome';
+                        showValidationPopUp(cell.getAttribute('title'));
+                    }
+                    return;
+                }
+
+                document.getElementById('valModalTitle').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Invalid Action';
                 let message = 'This time slot is unavailable.';
-                
                 if (status === 'class') message = 'Cannot book here. This slot is reserved for Class Hours.';
                 if (status === 'leave') message = 'Cannot book here. You are On Leave for this day.';
                 if (status === 'booked') message = 'Cannot book here. This slot is already taken.';
@@ -1381,12 +1354,6 @@
                     const currentTeacherSent = document.getElementById('sync-teacher-sent');
                     if (newTeacherSent && currentTeacherSent) {
                         currentTeacherSent.innerHTML = newTeacherSent.innerHTML;
-                    }
-
-                    const newTeacherHistory = doc.getElementById('sync-teacher-history');
-                    const currentTeacherHistory = document.getElementById('sync-teacher-history');
-                    if (newTeacherHistory && currentTeacherHistory) {
-                        currentTeacherHistory.innerHTML = newTeacherHistory.innerHTML;
                     }
 
                     const newTeacherIncoming = doc.getElementById('sync-teacher-incoming');

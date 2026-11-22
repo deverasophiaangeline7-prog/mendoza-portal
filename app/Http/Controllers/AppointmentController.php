@@ -37,14 +37,8 @@ class AppointmentController extends Controller
 
             $bookedAppointments = Appointment::with(['parent.student'])
                 ->where('teacher_id', $user->user_id)
-                ->where('status', 'booked')
-                ->orderBy('appointment_date', 'asc')
-                ->get();
-
-            $meetingHistory = Appointment::with(['parent.student'])
-                ->where('teacher_id', $user->user_id)
                 ->whereIn('status', ['booked', 'completed', 'no_show'])
-                ->orderBy('appointment_date', 'desc')
+                ->orderBy('appointment_date', 'asc')
                 ->get();
 
             $sectionIds = $user->sections->pluck('section_id');
@@ -63,7 +57,7 @@ class AppointmentController extends Controller
 
             $schedules = TeacherSchedule::where('teacher_id', $user->user_id)->get();
 
-            return view('appointment_teacher', compact('incomingRequests', 'mySentRequests', 'parents', 'schedules', 'bookedAppointments', 'meetingHistory'));
+            return view('appointment_teacher', compact('incomingRequests', 'mySentRequests', 'parents', 'schedules', 'bookedAppointments'));
 
         } elseif ($user->role === 'parent') {
             $student = Student::active()
@@ -85,12 +79,6 @@ class AppointmentController extends Controller
                 ->orderBy('appointment_date', 'asc')
                 ->get();
 
-            $meetingHistory = Appointment::with(['parent.student'])
-                ->where('parent_id', $user->user_id)
-                ->whereIn('status', ['booked', 'completed', 'no_show'])
-                ->orderBy('appointment_date', 'desc')
-                ->get();
-
             $bookedAppointments = collect();
             $adviserSchedule = collect();
             $adviserName = null;
@@ -106,12 +94,12 @@ class AppointmentController extends Controller
                 $adviserSchedule = TeacherSchedule::where('teacher_id', $adviserTeacher->user_id)->get();
                 $bookedAppointments = Appointment::with(['parent.student'])
                     ->where('teacher_id', $adviserTeacher->user_id)
-                    ->where('status', 'booked')
+                    ->whereIn('status', ['booked', 'completed', 'no_show'])
                     ->get();
                 $adviserName = $adviserTeacher->name ?? ($adviserTeacher->first_name . ' ' . $adviserTeacher->last_name);
             }
 
-            return view('appointment_parent', compact('incomingRequests', 'mySentRequests', 'adviserSchedule', 'student', 'adviserName', 'bookedAppointments', 'meetingHistory'));
+            return view('appointment_parent', compact('incomingRequests', 'mySentRequests', 'adviserSchedule', 'student', 'adviserName', 'bookedAppointments'));
 
         } elseif (in_array($user->role, ['admin', 'superadmin'])) {
             $advisersList = [];
@@ -391,23 +379,22 @@ class AppointmentController extends Controller
 
         $schedules = TeacherSchedule::where('teacher_id', $request->teacher_id)->get(['date', 'time_slot', 'status']);
 
-        $history = Appointment::with(['parent.student'])
+        $appointments = Appointment::with(['parent.student'])
             ->where('teacher_id', $request->teacher_id)
             ->whereIn('status', ['booked', 'completed', 'no_show'])
-            ->orderBy('appointment_date', 'desc')
-            ->get()
-            ->map(function ($app) {
-                $student = optional($app->parent->student);
-                $parentName = trim($student->first_name . ' ' . $student->last_name) ?: optional($app->parent)->username;
-                return [
-                    'parent_name' => strtoupper($parentName),
-                    'topic'       => $app->discussion_topic,
-                    'date'        => Carbon::parse($app->appointment_date)->format('M j, Y'),
-                    'time'        => Carbon::parse($app->start_time)->format('g:iA') . ' - ' . Carbon::parse($app->end_time)->format('g:iA'),
-                    'status'      => $app->status,
-                    'remarks'     => $app->remarks ?? 'No remarks yet.',
-                ];
-            });
+            ->get();
+
+        $tooltips = [];
+        foreach ($appointments as $app) {
+            $student = optional($app->parent->student);
+            $parentName = strtoupper(trim($student->first_name . ' ' . $student->last_name) ?: optional($app->parent)->username);
+            $statusLabel = $app->status === 'completed' ? 'Completed' : ($app->status === 'no_show' ? 'No-Show' : 'Booked');
+            $remarksText = $app->remarks ?: 'Pending meeting completion';
+            $timeRange = Carbon::parse($app->start_time)->format('g:iA') . ' - ' . Carbon::parse($app->end_time)->format('g:iA');
+
+            $slotKey = $app->appointment_date . '|' . Carbon::parse($app->start_time)->format('gA');
+            $tooltips[$slotKey] = "{$parentName} • {$app->discussion_topic} • {$timeRange}\nStatus: {$statusLabel}\nRemarks: {$remarksText}";
+        }
 
         return response()->json([
             'success' => true,
@@ -418,7 +405,7 @@ class AppointmentController extends Controller
                     'status' => $schedule->status,
                 ];
             }),
-            'history' => $history,
+            'tooltips' => $tooltips,
         ]);
     }
 
