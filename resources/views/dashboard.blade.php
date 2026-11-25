@@ -409,10 +409,26 @@
                     @csrf
                     <div class="mb-4">
                         <label class="block font-bold text-gray-700 mb-2 uppercase text-xs">Select File</label>
-                        <input type="file" name="image" accept=".jpg,.jpeg,.png" required class="block w-full text-sm border-2 border-dashed p-4 rounded-xl cursor-pointer hover:border-amber-700 transition">
+                        <input type="file"
+                            name="image"
+                            accept=".jpg,.jpeg,.png"
+                            required
+                            @change="
+                                const file = $event.target.files[0];
+                                if (file && file.size > 2 * 1024 * 1024) {
+                                    $event.target.value = '';
+                                    triggerNotification('File size exceeds 2MB! Please choose a smaller image.');
+                                }
+                            "
+                            class="block w-full text-sm border-2 border-dashed p-4 rounded-xl cursor-pointer hover:border-amber-700 transition">
                         <p class="mt-2 text-[11px] font-extrabold uppercase tracking-wide text-slate-500">
                             ACCEPTED FORMATS: JPG, PNG. MAX SIZE: 2MB.
                         </p>
+                        @error('image')
+                            <p class="mt-2 text-xs font-black text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
                     </div>
                     <div class="mb-6">
                         <label class="block font-bold text-gray-700 mb-2 uppercase text-xs">Caption</label>

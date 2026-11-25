@@ -13,6 +13,11 @@ class AnnouncementImageController extends Controller
         $request->validate([
             'image'   => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'caption' => 'nullable|string|max:255',
+        ], [
+            'image.required' => 'Please select an image to upload.',
+            'image.image'    => 'The selected file must be a valid image.',
+            'image.mimes'    => 'Only JPG, JPEG, PNG, and GIF images are allowed.',
+            'image.max'      => 'Image size must not exceed 2MB.',
         ]);
 
         $path = $request->file('image')->store('announcement_images', 'public');
