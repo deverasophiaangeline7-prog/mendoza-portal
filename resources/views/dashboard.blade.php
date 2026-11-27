@@ -77,6 +77,11 @@
             return this.getDateKey(day) === this.todayDateKey;
         },
 
+        isWeekend(day = this.selectedDate) {
+            const dow = new Date(this.currentYear, this.currentMonth, day).getDay();
+            return dow === 0 || dow === 6; // 0 = Sunday, 6 = Saturday
+        },
+
         getCurrentTimeStr() {
             const now = new Date();
             return String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
@@ -114,6 +119,10 @@
             }
             if (isNewEvent && this.isTooSoon(this.selectedDate)) {
                 this.triggerNotification('Events must be scheduled at least 1 week (7 days) in advance.');
+                return;
+            }
+            if (isNewEvent && this.isWeekend(this.selectedDate)) {
+                this.triggerNotification('Events cannot be scheduled on weekends.');
                 return;
             }
             if (!startTime || !endTime) {
@@ -302,8 +311,8 @@
                                             class="aspect-square flex items-center justify-center rounded-lg border-2 font-black text-xl transition-all relative"
                                             :class="{
                                                 'bg-red-500 text-white border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] scale-110 z-10': selectedDate === day,
-                                                'bg-white text-black border-gray-200 hover:bg-amber-700 hover:text-white': selectedDate !== day && !isTooSoon(day),
-                                                'bg-gray-100 text-gray-400 border-gray-200 opacity-60 hover:bg-gray-200': selectedDate !== day && isTooSoon(day),
+                                                'bg-white text-black border-gray-200 hover:bg-amber-700 hover:text-white': selectedDate !== day && !isTooSoon(day) && !isWeekend(day),
+                                                'bg-gray-100 text-gray-400 border-gray-200 opacity-60 hover:bg-gray-200': selectedDate !== day && (isTooSoon(day) || isWeekend(day)),
                                                 'ring-2 ring-red-600 ring-offset-1': events[getDateKey(day)]
                                             }"
                                             x-text="day">
@@ -365,7 +374,7 @@
                             No events for <span x-text="monthNames[currentMonth]"></span> <span x-text="selectedDate"></span>
                         </p>
 
-                        <button x-show="!isPastDate(selectedDate) && !isTooSoon(selectedDate)" 
+                        <button x-show="!isPastDate(selectedDate) && !isTooSoon(selectedDate) && !isWeekend(selectedDate)" 
                                 @click="isEditing = true; tempName=''; tempStartTime=''; tempEndTime=''; tempPs='';" 
                                 class="text-green-500 text-3xl font-black italic hover:scale-110 transition">
                             + Add an event
@@ -375,7 +384,11 @@
                             Cannot add events to past dates.
                         </p>
 
-                        <p x-show="!isPastDate(selectedDate) && isTooSoon(selectedDate)" class="text-red-500 text-sm font-black uppercase italic">
+                        <p x-show="!isPastDate(selectedDate) && isWeekend(selectedDate)" class="text-red-500 text-sm font-black uppercase italic">
+                            Events cannot be scheduled on weekends.
+                        </p>
+
+                        <p x-show="!isPastDate(selectedDate) && !isWeekend(selectedDate) && isTooSoon(selectedDate)" class="text-red-500 text-sm font-black uppercase italic">
                             Events must be scheduled at least 1 week in advance.
                         </p>
                     </div>
