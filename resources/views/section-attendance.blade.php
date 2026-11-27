@@ -103,8 +103,9 @@
 
         @if($canManage)
             <!-- CONTROL PANEL -->
-                <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-gray-50 flex flex-col xl:flex-row items-center justify-between gap-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full">
-                    
+            <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-gray-50 flex flex-col gap-3 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full">
+                
+                <div class="flex flex-col xl:flex-row items-center justify-between gap-4 w-full">
                     <!-- Left Side: Actions -->
                     <div class="flex flex-col xl:flex-row items-center justify-center xl:justify-start gap-4 w-full xl:w-auto">
                         
@@ -143,7 +144,7 @@
                                 </button>
 
                                 <button @click="confirmDeleteDate()" class="w-full sm:w-auto bg-red-600 text-white px-3 sm:px-6 py-2.5 rounded-xl border-[3px] border-black font-black hover:bg-red-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap text-sm sm:text-base">
-- DELETE <span class="hidden sm:inline">DATE</span>
+                                    - DELETE <span class="hidden sm:inline">DATE</span>
                                 </button>
                             </div>
                         </div>
@@ -154,6 +155,18 @@
                         <i class="fa-solid fa-floppy-disk mr-2"></i> SAVE ATTENDANCE
                     </button>
                 </div>
+
+                <!-- Instruction Line -->
+                <div class="pt-3 border-t-[2px] border-dashed border-gray-300 text-sm font-bold text-gray-700 flex items-center justify-center xl:justify-start gap-2 text-center xl:text-left">
+                    <i class="fa-solid fa-circle-info text-blue-600 shrink-0"></i>
+                    <span x-show="!isManaging">
+                        Switch to <strong class="text-black">Editing Mode</strong> to add dates and update attendance.
+                    </span>
+                    <span x-show="isManaging" x-cloak class="animate-fade-in">
+                        Pick a weekday and click <strong class="text-black">+ ADD DATE</strong>, select each learner's status from the dropdown, then click <strong class="text-black">SAVE ATTENDANCE</strong>.
+                    </span>
+                </div>
+            </div>
         @elseif(auth()->user()->role === 'admin')
             <!-- Admin View Block Retained -->
             <div class="mb-10 p-4 border-[3px] border-black rounded-[25px] bg-blue-100 flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-blue-900">
