@@ -82,6 +82,20 @@
             return String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
         },
 
+        timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [hours, minutes] = timeStr.slice(0, 5).split(':').map(Number);
+            return (hours * 60) + minutes;
+        },
+
+        get minEndTime() {
+            if (!this.tempStartTime) return '08:00';
+            const totalMins = this.timeToMinutes(this.tempStartTime) + 60;
+            const h = String(Math.floor(totalMins / 60)).padStart(2, '0');
+            const m = String(totalMins % 60).padStart(2, '0');
+            return `${h}:${m}`;
+        },
+
         validateAndSaveEvent() {
             const dateKey = this.getDateKey(this.selectedDate);
             const isNewEvent = !this.events[dateKey];
@@ -112,6 +126,10 @@
             }
             if (endTime <= startTime) {
                 this.triggerNotification('Finish time must be after the start time.');
+                return;
+            }
+            if (this.timeToMinutes(endTime) - this.timeToMinutes(startTime) < 60) {
+                this.triggerNotification('Event duration must be at least 1 hour.');
                 return;
             }
             if (isNewEvent && this.isToday(this.selectedDate) && startTime <= this.getCurrentTimeStr()) {
@@ -373,16 +391,24 @@
                         
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block font-black text-xs uppercase text-gray-400">Start Time (7:00 AM - 5:00 PM)</label>
-                                <input type="time" x-model="tempStartTime" min="07:00" max="17:00" class="w-full p-2 border-2 border-black rounded-lg font-bold">
+                                <label class="block font-black text-xs uppercase text-gray-400">Start Time (7:00 AM - 4:00 PM)</label>
+                                <input type="time" x-model="tempStartTime" min="07:00" max="16:00" class="w-full p-2 border-2 border-black rounded-lg font-bold">
                             </div>
                             <div>
-                                <label class="block font-black text-xs uppercase text-gray-400">Finish Time (7:00 AM - 5:00 PM)</label>
+                                <label class="block font-black text-xs uppercase text-gray-400">Finish Time (8:00 AM - 5:00 PM)</label>
                                 <input type="time" 
                                     x-model="tempEndTime" 
-                                    :min="tempStartTime || '07:00'" 
+                                    :min="minEndTime" 
                                     max="17:00"
-                                    @change="if(tempStartTime && tempEndTime <= tempStartTime) { triggerNotification('Finish time must be after the start time.'); }"
+                                    @change="
+                                        if (tempStartTime && tempEndTime) {
+                                            if (tempEndTime <= tempStartTime) {
+                                                triggerNotification('Finish time must be after the start time.');
+                                            } else if (timeToMinutes(tempEndTime) - timeToMinutes(tempStartTime) < 60) {
+                                                triggerNotification('Event duration must be at least 1 hour.');
+                                            }
+                                        }
+                                    "
                                     class="w-full p-2 border-2 border-black rounded-lg font-bold">
                             </div>
                         </div>
